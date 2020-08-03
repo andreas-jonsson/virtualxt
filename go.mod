@@ -1,4 +1,4 @@
-module github.com/andreas-jonsson/i8088-core
+module github.com/andreas-jonsson/virtualxt
 
 go 1.13
 

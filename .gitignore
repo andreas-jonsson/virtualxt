@@ -2,7 +2,7 @@
 *.lst
 
 /*.bin
-main.exe
+virtualxt.exe
 
 boot/freedos.img
 boot/boot-basic.img
