@@ -21,8 +21,8 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/andreas-jonsson/i8088-core/emulator/memory"
-	"github.com/andreas-jonsson/i8088-core/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/memory"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
 type Device struct {

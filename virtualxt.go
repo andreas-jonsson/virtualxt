@@ -24,7 +24,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/andreas-jonsson/i8088-core/emulator"
+	"github.com/andreas-jonsson/virtualxt/emulator"
 	"github.com/veandco/go-sdl2/sdl"
 )
 

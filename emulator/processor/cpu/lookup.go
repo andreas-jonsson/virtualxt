@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package cpu
 
 import (
-	"github.com/andreas-jonsson/i8088-core/emulator/memory"
+	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 )
 
 const (

@@ -21,9 +21,9 @@ import (
 	"errors"
 	"log"
 
-	"github.com/andreas-jonsson/i8088-core/emulator/memory"
-	"github.com/andreas-jonsson/i8088-core/emulator/peripheral"
-	"github.com/andreas-jonsson/i8088-core/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/memory"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
 const MaxPeripherals = 32

@@ -21,7 +21,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/andreas-jonsson/i8088-core/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
 const MaxEvents = 64

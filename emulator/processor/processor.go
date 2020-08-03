@@ -20,7 +20,7 @@ package processor
 import (
 	"errors"
 
-	"github.com/andreas-jonsson/i8088-core/emulator/memory"
+	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 )
 
 type Stats struct {

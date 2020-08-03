@@ -23,12 +23,12 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/andreas-jonsson/i8088-core/emulator/memory"
-	"github.com/andreas-jonsson/i8088-core/emulator/peripheral"
-	"github.com/andreas-jonsson/i8088-core/emulator/peripheral/pic"
-	"github.com/andreas-jonsson/i8088-core/emulator/peripheral/ram"
-	"github.com/andreas-jonsson/i8088-core/emulator/peripheral/rom"
-	"github.com/andreas-jonsson/i8088-core/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/memory"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pic"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/ram"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/rom"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
 func loadBin(t *testing.T, name string) []byte {

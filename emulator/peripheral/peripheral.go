@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package peripheral
 
 import (
-	"github.com/andreas-jonsson/i8088-core/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
 type Peripheral interface {

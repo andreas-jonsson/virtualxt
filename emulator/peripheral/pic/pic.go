@@ -20,7 +20,7 @@ package pic
 import (
 	"errors"
 
-	"github.com/andreas-jonsson/i8088-core/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
 var ErrNoInterrupts = errors.New("no interrupts")
