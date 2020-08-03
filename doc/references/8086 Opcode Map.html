@@ -1,0 +1,2565 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html class="gr__mlsite_net"><head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<link href="8086%20Opcode%20Map_files/map.css" type="text/css" rel="stylesheet">
+		<title>8086 Opcode Map</title>
+	</head>
+	<body data-gr-c-s-loaded="true">
+		<div class="menu">
+			<ul>
+				<li><a href="#tbl_map1">Map (Part 1)</a></li>
+				<li><a href="#tbl_map2">Map (Part 2)</a></li>
+				<li><a href="#tbl_ext">Extensions</a></li>
+				<li><a href="#tbl_addr">Addressing</a></li>
+				<li><a href="#tbl_oper">Operands</a></li>
+				<li><a href="#tbl_spcl">Special</a></li>
+			</ul>
+		</div>
+		<div class="copy">
+			<p>This is an HTML-ized version of the opcode map for the 8086 processor.  
+			It is based on the opcode map from Appendix A of Volume 2 of the <a href="http://developer.intel.com/design/PentiumII/manuals/24319102.pdf">Intel
+			Architecture Software Developer's Manual</a>.  A <a href="http://mlsite.net/8086/8086_table.txt">
+			plain-text</a> version - easily parsable by software - is also available.</p>
+
+			<p>This map was constructed by taking a map for a more recent x86 processor
+			and removing information irrelevant to the (much earlier) 8086 processor.  I
+			wanted as simple a map as possible, and, to that end, this map contains some
+			lacunae:</p>
+
+			<ul>
+				<li>* Opcodes D8 through DF - the co-processor escape opcodes - are 
+				here treated as undefined opcodes.  I wanted to focus on integer
+				opcodes in this map, as floating-point would be exceedingly rare in
+				production 8086 code.</li>
+
+				<li>* Opcode 0F - "POP CS" on the 8086, and the first byte in 
+				multi-byte opcodes on later processors - is also treated as an 
+				undefined opcode.  I wouldn't expect to see this in 8086 code (as 
+				the "POP CS" instruction is particularly useless) and wanted to
+				treat its appearance as an error condition.</li>
+
+				<li>* Opcodes C6, C7, and 8F require that the reg bits of the 
+				ModR/M byte which follows them be equal to zero.  Other values are
+				illegal.  This restriction is not shared with other opcodes with
+				"E"-addressed arguments, and not reflected in the map.</li>
+
+				<li>* Arguments are not given for a large number of opcodes (e.g.
+				A4 through A7, 9C, 9D) which correspond to instructions which take
+				no arguments when written as assembly code (e.g. MOVSB, MOVSW, 
+				CMPSB, CMPSW, PUSHF, POPF).  I want to use this map to build a 
+				disassembler, not a simulated processor, and the extra arguments
+				would only be burdensome.</li>
+			</ul>
+
+			<p>In addition to the information that was removed, this map contains two known
+			errors.  These were added intentionally so that the results of disassembly
+			based upon this map would mirror the output of DOS DEBUG:</p>
+
+			<ul>
+				<li>* Opcode 84 should have arguments of Eb, Gb - not Gb, Eb.
+				This distinction only affects (dis)assembly, since the order of
+				operands is irrelevant to TEST's function.  Nevertheless, DOS
+				DEBUG has it backwards, and I duplicate the error here.</li>
+
+				<li>* Opcode 85 should have arguments of Ev, Gv - not Gv, Ev.
+				All the preceeding remarks about opcode 84 apply equally here.
+				</li>
+			</ul>
+
+			<p>To use the map, find the cell in the row labelled with the opcode's most
+			significant 4 bits, and the column labelled with the opcode's least 
+			significant 4 bits.  (The map is split in half; columns 0-7 appear in the
+			<a href="#tbl_map1">first part</a>, while columns 8-F appear in the 
+			<a href="#tbl_map2">second</a>.)  For instance, opcode 23 appears in the 3rd
+			row, 4th column of the first part of the map (AND Gv, Ev).  Opcode 4E appears
+			in the 5th row, 7th column of the second part of the map (DEC SI).</p>
+
+			<p>Arguments are either a pair of letters - the first in upper case, the second
+			in lower case - or a special symbol.  An upper case/lower case pair can be
+			interpreted by looking up the upper case letter in the 
+			"<a href="#tbl_addr">Argument Addressing Codes</a>" table, and the lower case
+			letter in the "<a href="#tbl_oper">Argument Operand Codes</a>" table.  Other 
+			special symbols can be looked up in the "<a href="#tbl_spcl">Special Argument
+			Codes</a>" table.</p>
+
+			<p>Continuing the earlier example, opcode 23 resolves to an AND Gv, Ev
+			instruction.  Both arguments are upper case/lower case pairs.  G represents a
+			general-purpose register selected by the reg bits of a ModR/M byte following
+			the opcode byte.  E represents a memory location or general-purpose register 
+			selected by the mod and r/m bits of a ModR/M byte following the opcode byte.
+			Both operands are of type "v", so both are WORDs.  Opcode 23, therefore, takes
+			the logical AND of a WORD from a 16-bit register or memory location with the
+			WORD from a 16-bit register, and stores the result to the latter register.  The
+			particular register(s) and/or memory location involved can be determined by
+			examining the ModR/M byte following the opcode, and consulting page 2-5 of the
+			<a href="http://developer.intel.com/design/PentiumII/manuals/24319102.pdf">
+			Instruction Set Reference</a>.</p>
+
+			<p>Opcode 4E, on the other hand, resolves to a DEC SI instruction.  The SI
+			argument is not an upper case/lower case pair, so we check the special code
+			table.  SI turns out to represent (as one might expect) the 16-bit SI register,
+			so opcode 4E simply decrements this register by 1.  (Yes, with nearly 30 years
+			hindsight, there probably shouldn't be an entire opcode devoted to this
+			operation.)</p>
+
+			<p>The one remaining complexity involves "group" opcodes, such as 80.  These
+			opcodes perform different operations depending upon the value of the reg bits
+			in the ModR/M byte following the opcode byte.  For example, opcode 80 followed
+			by a ModR/M byte with a reg of 4 is an AND Eb, Ib instruction, while that same
+			opcode followed by a ModR/M byte with a reg of 7 is a CMP Eb, Ib instruction.
+			</p>
+
+			<p>To disassemble "group" opcodes, consult the "<a href="#tbl_ext">Opcode
+			Extensions</a>" table for any entry in the opcode map with a mneumonic
+			of the form GRP#.  Find the entry in the row labelled with the mneumonic and 
+			the column labeled with the value of the reg field of the ModR/M byte following
+			the opcode byte.  Note that arguments may be specified in both the opcode map 
+			and the opcode extensions table (e.g. for opcode F6, reg 0); if this occurs, 
+			the entries in the extensions table take precedence.  Normally, however, the 
+			arguments from the opcode map are used.</p>
+
+			<p>As far as I know, this opcode map is, modulo the lacunae and errata mentioned
+			above, correct.  I've used it to implement a full 8086 integer disassembler, the
+			results of which agree with DOS DEBUG.  However, if you see something that doesn't
+			look right, please <a href="http://mlsite.net/mail.xhtml">contact</a> me.  If you're interested in
+			reading more about the disassembler, the following posts might be worth a look:
+			</p>
+
+			<ul>
+				<li><a href="http://mlsite.net/blog/?p=55">Disassembly by hand</a></li>
+				<li><a href="http://mlsite.net/blog/?p=57">Building the map</a></li>
+				<li><a href="http://mlsite.net/blog/?p=58">319 lines of Python</a></li>
+			</ul>
+		</div>
+		<table>
+			<caption>
+				<span><a name="tbl_map1">Opcode Map (Part 1)</a></span>
+			</caption>
+			<tbody><tr>
+				<td>
+				</td>
+				<td class="col_header">
+					0
+				</td>
+				<td class="col_header">
+					1
+				</td>
+				<td class="col_header">
+					2
+				</td>
+				<td class="col_header">
+					3
+				</td>
+				<td class="col_header">
+					4
+				</td>
+				<td class="col_header">
+					5
+				</td>
+				<td class="col_header">
+					6
+				</td>
+				<td class="col_header">
+					7
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>0</p>
+				</td>
+				<td class="cell checker0">
+					<p>ADD</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>ADD</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>ADD</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>ADD</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>ADD</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>ADD</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_ES">ES</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_ES">ES</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>1</p>
+				</td>
+				<td class="cell checker0">
+					<p>ADC</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>ADC</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>ADC</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>ADC</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>ADC</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>ADC</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_SS">SS</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_SS">SS</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>2</p>
+				</td>
+				<td class="cell checker0">
+					<p>AND</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>AND</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>AND</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>AND</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>AND</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>AND</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>ES:</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>DAA</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>3</p>
+				</td>
+				<td class="cell checker0">
+					<p>XOR</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>XOR</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>XOR</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>XOR</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>XOR</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>XOR</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>SS:</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>AAA</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>4</p>
+				</td>
+				<td class="cell checker0">
+					<p>INC</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>INC</p>
+					<p>
+						<span><a href="#arg_CX">CX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>INC</p>
+					<p>
+						<span><a href="#arg_DX">DX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>INC</p>
+					<p>
+						<span><a href="#arg_BX">BX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>INC</p>
+					<p>
+						<span><a href="#arg_SP">SP</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>INC</p>
+					<p>
+						<span><a href="#arg_BP">BP</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>INC</p>
+					<p>
+						<span><a href="#arg_SI">SI</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>INC</p>
+					<p>
+						<span><a href="#arg_DI">DI</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>5</p>
+				</td>
+				<td class="cell checker0">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_CX">CX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_DX">DX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_BX">BX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_SP">SP</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_BP">BP</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_SI">SI</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_DI">DI</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>6</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>7</p>
+				</td>
+				<td class="cell checker0">
+					<p>JO</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JNO</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>JB</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JNB</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>JZ</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JNZ</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>JBE</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JA</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>8</p>
+				</td>
+				<td class="cell checker0">
+					<p><a href="#grp_GRP1">GRP1</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p><a href="#grp_GRP1">GRP1</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p><a href="#grp_GRP1">GRP1</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p><a href="#grp_GRP1">GRP1</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>TEST</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>TEST</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>XCHG</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>XCHG</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>9</p>
+				</td>
+				<td class="cell checker0">
+					<p>NOP</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>XCHG</p>
+					<p>
+						<span><a href="#arg_CX">CX</a></span>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>XCHG</p>
+					<p>
+						<span><a href="#arg_DX">DX</a></span>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>XCHG</p>
+					<p>
+						<span><a href="#arg_BX">BX</a></span>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>XCHG</p>
+					<p>
+						<span><a href="#arg_SP">SP</a></span>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>XCHG</p>
+					<p>
+						<span><a href="#arg_BP">BP</a></span>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>XCHG</p>
+					<p>
+						<span><a href="#arg_SI">SI</a></span>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>XCHG</p>
+					<p>
+						<span><a href="#arg_DI">DI</a></span>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>A</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_O">O</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_O">O</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#addr_O">O</a><a href="#oper_b">b</a></span>
+						<span><a href="#arg_AL">AL</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#addr_O">O</a><a href="#oper_v">v</a></span>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOVSB</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOVSW</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>CMPSB</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>CMPSW</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>B</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_CL">CL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_DL">DL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_BL">BL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_AH">AH</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_CH">CH</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_DH">DH</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_BH">BH</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>C</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>RET</p>
+					<p>
+						<span><a href="#addr_I">I</a><a href="#oper_w">w</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>RET</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>LES</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_M">M</a><a href="#oper_p">p</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>LDS</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_M">M</a><a href="#oper_p">p</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>D</p>
+				</td>
+				<td class="cell checker0">
+					<p><a href="#grp_GRP2">GRP2</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#arg_1">1</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p><a href="#grp_GRP2">GRP2</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#arg_1">1</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p><a href="#grp_GRP2">GRP2</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#arg_CL">CL</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p><a href="#grp_GRP2">GRP2</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#arg_CL">CL</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>AAM</p>
+					<p>
+						<span><a href="#addr_I">I</a><a href="#oper_0">0</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>AAD</p>
+					<p>
+						<span><a href="#addr_I">I</a><a href="#oper_0">0</a></span>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>XLAT</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>E</p>
+				</td>
+				<td class="cell checker0">
+					<p>LOOPNZ</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>LOOPZ</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>LOOP</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JCXZ</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>IN</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>IN</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>OUT</p>
+					<p>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+						<span><a href="#arg_AL">AL</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>OUT</p>
+					<p>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>F</p>
+				</td>
+				<td class="cell checker0">
+					<p>LOCK</p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>REPNZ</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>REPZ</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>HLT</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>CMC</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p><a href="#grp_GRP3a">GRP3a</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p><a href="#grp_GRP3b">GRP3b</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+			</tr>
+		</tbody></table>
+		<table>
+			<caption>
+				<span><a name="tbl_map2">Opcode Map (Part 2)</a></span>
+			</caption>
+			<tbody><tr>
+				<td>
+				</td>
+				<td class="col_header">
+					8
+				</td>
+				<td class="col_header">
+					9
+				</td>
+				<td class="col_header">
+					A
+				</td>
+				<td class="col_header">
+					B
+				</td>
+				<td class="col_header">
+					C
+				</td>
+				<td class="col_header">
+					D
+				</td>
+				<td class="col_header">
+					E
+				</td>
+				<td class="col_header">
+					F
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>0</p>
+				</td>
+				<td class="cell checker0">
+					<p>OR</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>OR</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>OR</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>OR</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>OR</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>OR</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_CS">CS</a></span>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>1</p>
+				</td>
+				<td class="cell checker0">
+					<p>SBB</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SBB</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>SBB</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SBB</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>SBB</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SBB</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>PUSH</p>
+					<p>
+						<span><a href="#arg_DS">DS</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_DS">DS</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>2</p>
+				</td>
+				<td class="cell checker0">
+					<p>SUB</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SUB</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>SUB</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SUB</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>SUB</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SUB</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>CS:</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>DAS</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>3</p>
+				</td>
+				<td class="cell checker0">
+					<p>CMP</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>CMP</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>CMP</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>CMP</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>CMP</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>CMP</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>DS:</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>AAS</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>4</p>
+				</td>
+				<td class="cell checker0">
+					<p>DEC</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>DEC</p>
+					<p>
+						<span><a href="#arg_CX">CX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>DEC</p>
+					<p>
+						<span><a href="#arg_DX">DX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>DEC</p>
+					<p>
+						<span><a href="#arg_BX">BX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>DEC</p>
+					<p>
+						<span><a href="#arg_SP">SP</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>DEC</p>
+					<p>
+						<span><a href="#arg_BP">BP</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>DEC</p>
+					<p>
+						<span><a href="#arg_SI">SI</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>DEC</p>
+					<p>
+						<span><a href="#arg_DI">DI</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>5</p>
+				</td>
+				<td class="cell checker0">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_CX">CX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_DX">DX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_BX">BX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_SP">SP</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_BP">BP</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_SI">SI</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>POP</p>
+					<p>
+						<span><a href="#arg_DI">DI</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>6</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>7</p>
+				</td>
+				<td class="cell checker0">
+					<p>JS</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JNS</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>JPE</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JPO</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>JL</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JGE</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>JLE</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JG</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>8</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_w">w</a></span>
+						<span><a href="#addr_S">S</a><a href="#oper_w">w</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>LEA</p>
+					<p>
+						<span><a href="#addr_G">G</a><a href="#oper_v">v</a></span>
+						<span><a href="#arg_M">M</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#addr_S">S</a><a href="#oper_w">w</a></span>
+						<span><a href="#addr_E">E</a><a href="#oper_w">w</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>POP</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>9</p>
+				</td>
+				<td class="cell checker0">
+					<p>CBW</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>CWD</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>CALL</p>
+					<p>
+						<span><a href="#addr_A">A</a><a href="#oper_p">p</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>WAIT</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>PUSHF</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>POPF</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>SAHF</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>LAHF</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>A</p>
+				</td>
+				<td class="cell checker0">
+					<p>TEST</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>TEST</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>STOSB</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>STOSW</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>LODSB</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>LODSW</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>SCASB</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SCASW</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>B</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_CX">CX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_DX">DX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_BX">BX</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_SP">SP</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_BP">BP</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_SI">SI</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>MOV</p>
+					<p>
+						<span><a href="#arg_DI">DI</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>C</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>RETF</p>
+					<p>
+						<span><a href="#addr_I">I</a><a href="#oper_w">w</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>RETF</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>INT</p>
+					<p>
+						<span><a href="#arg_3">3</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>INT</p>
+					<p>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>INTO</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>IRET</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>D</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>E</p>
+				</td>
+				<td class="cell checker0">
+					<p>CALL</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JMP</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>JMP</p>
+					<p>
+						<span><a href="#addr_A">A</a><a href="#oper_p">p</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JMP</p>
+					<p>
+						<span><a href="#addr_J">J</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>IN</p>
+					<p>
+						<span><a href="#arg_AL">AL</a></span>
+						<span><a href="#arg_DX">DX</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>IN</p>
+					<p>
+						<span><a href="#arg_AX">AX</a></span>
+						<span><a href="#arg_DX">DX</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>OUT</p>
+					<p>
+						<span><a href="#arg_DX">DX</a></span>
+						<span><a href="#arg_AL">AL</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>OUT</p>
+					<p>
+						<span><a href="#arg_DX">DX</a></span>
+						<span><a href="#arg_AX">AX</a></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p>F</p>
+				</td>
+				<td class="cell checker0">
+					<p>CLC</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>STC</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>CLI</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>STI</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>CLD</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>STD</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p><a href="#grp_GRP4">GRP4</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p><a href="#grp_GRP5">GRP5</a></p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+			</tr>
+		</tbody></table>
+		<table>
+			<caption>
+				<span><a name="tbl_ext">Opcode Map (Opcode Extensions)</a></span>
+			</caption>
+			<tbody><tr>
+				<td>
+				</td>
+				<td class="col_header">
+					0
+				</td>
+				<td class="col_header">
+					1
+				</td>
+				<td class="col_header">
+					2
+				</td>
+				<td class="col_header">
+					3
+				</td>
+				<td class="col_header">
+					4
+				</td>
+				<td class="col_header">
+					5
+				</td>
+				<td class="col_header">
+					6
+				</td>
+				<td class="col_header">
+					7
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="grp_GRP1">GRP1</a></p>
+				</td>
+				<td class="cell checker0">
+					<p>ADD</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>OR</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>ADC</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SBB</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>AND</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SUB</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>XOR</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>CMP</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="grp_GRP2">GRP2</a></p>
+				</td>
+				<td class="cell checker0">
+					<p>ROL</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>ROR</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>RCL</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>RCR</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>SHL</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SHR</p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>SAR</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="grp_GRP3a">GRP3a</a></p>
+				</td>
+				<td class="cell checker0">
+					<p>TEST</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_b">b</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_b">b</a></span>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>NOT</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>NEG</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MUL</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>IMUL</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>DIV</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>IDIV</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="grp_GRP3b">GRP3b</a></p>
+				</td>
+				<td class="cell checker0">
+					<p>TEST</p>
+					<p>
+						<span><a href="#addr_E">E</a><a href="#oper_v">v</a></span>
+						<span><a href="#addr_I">I</a><a href="#oper_v">v</a></span>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>NOT</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>NEG</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>MUL</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>IMUL</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>DIV</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>IDIV</p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="grp_GRP4">GRP4</a></p>
+				</td>
+				<td class="cell checker0">
+					<p>INC</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>DEC</p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell0">
+					<p></p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="grp_GRP5">GRP5</a></p>
+				</td>
+				<td class="cell checker0">
+					<p>INC</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>DEC</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>CALL</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>CALL</p>
+					<p>
+						<span><a href="#addr_M">M</a><a href="#oper_p">p</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>JMP</p>
+					<p>
+					</p>
+				</td>
+				<td class="cell checker1">
+					<p>JMP</p>
+					<p>
+						<span><a href="#addr_M">M</a><a href="#oper_p">p</a></span>
+					</p>
+				</td>
+				<td class="cell checker0">
+					<p>PUSH</p>
+					<p>
+					</p>
+				</td>
+				<td class="bad_cell1">
+					<p></p>
+					<p>
+					</p>
+				</td>
+			</tr>
+		</tbody></table>
+		<table>
+			<caption>
+				<span><a name="tbl_addr">Argument Addressing Codes</a></span>
+			</caption>
+			<tbody><tr>
+				<td class="row_header">
+					<p><a name="addr_A">A</a></p>
+				</td>
+				<td class="long_cell">
+					<p>Direct address.  The instruction has no ModR/M byte; the address
+ of the operand is encoded in the instruction.  Applicable, e.g., to far
+ JMP (opcode EA).</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="addr_E">E</a></p>
+				</td>
+				<td class="long_cell">
+					<p>A ModR/M byte follows the opcode and specifies the operand. The 
+operand is either a general-purpose register or a memory address.  If it
+ is a memory address, the address is computed from a segment register 
+and any of the following values: a base register, an index register, a 
+displacement.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="addr_G">G</a></p>
+				</td>
+				<td class="long_cell">
+					<p>The reg field of the ModR/M byte selects a general register.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="addr_I">I</a></p>
+				</td>
+				<td class="long_cell">
+					<p>Immediate data.  The operand value is encoded in subsequent bytes of the instruction.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="addr_J">J</a></p>
+				</td>
+				<td class="long_cell">
+					<p>The instruction contains a relative offset to be added to the 
+address of the subsequent instruction.  Applicable, e.g., to short JMP 
+(opcode EB), or LOOP.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="addr_M">M</a></p>
+				</td>
+				<td class="long_cell">
+					<p>The ModR/M byte may refer only to memory.  Applicable, e.g., to LES and LDS.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="addr_O">O</a></p>
+				</td>
+				<td class="long_cell">
+					<p>The instruction has no ModR/M byte; the offset of the operand is
+ encoded as a WORD in the instruction.  Applicable, e.g., to certain 
+MOVs (opcodes A0 through A3).</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="addr_S">S</a></p>
+				</td>
+				<td class="long_cell">
+					<p>The reg field of the ModR/M byte selects a segment register.</p>
+				</td>
+			</tr>
+		</tbody></table>
+		<table>
+			<caption>
+				<span><a name="tbl_oper">Argument Operand Codes</a></span>
+			</caption>
+			<tbody><tr>
+				<td class="row_header">
+					<p><a name="oper_0">0</a></p>
+				</td>
+				<td class="long_cell">
+					<p>Byte argument.  Unusual in that arguments of this type are 
+suppressed in ASM output when they have the default value of 10 (0xA). 
+Applicable, e.g., to AAM and AAD.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="oper_b">b</a></p>
+				</td>
+				<td class="long_cell">
+					<p>Byte argument.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="oper_p">p</a></p>
+				</td>
+				<td class="long_cell">
+					<p>32-bit segment:offset pointer.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="oper_w">w</a></p>
+				</td>
+				<td class="long_cell">
+					<p>Word argument.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="oper_v">v</a></p>
+				</td>
+				<td class="long_cell">
+					<p>Word argument.  (The 'v' code has a more complex meaning in 
+later x86 opcode maps, from which this was derived, but here it's just a
+ synonym for the 'w' code.)</p>
+				</td>
+			</tr>
+		</tbody></table>
+		<table>
+			<caption>
+				<span><a name="tbl_spcl">Special Argument Codes</a></span>
+			</caption>
+			<tbody><tr>
+				<td class="row_header">
+					<p><a name="arg_AL">AL</a></p>
+				</td>
+				<td class="long_cell">
+					<p>8-bit register:  The low byte of AX</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_CL">CL</a></p>
+				</td>
+				<td class="long_cell">
+					<p>8-bit register:  The low byte of CX</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_DL">DL</a></p>
+				</td>
+				<td class="long_cell">
+					<p>8-bit register:  The low byte of DX</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_BL">BL</a></p>
+				</td>
+				<td class="long_cell">
+					<p>8-bit register:  The low byte of BX</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_AH">AH</a></p>
+				</td>
+				<td class="long_cell">
+					<p>8-bit register:  The high byte of AX</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_CH">CH</a></p>
+				</td>
+				<td class="long_cell">
+					<p>8-bit register:  The high byte of CX</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_DH">DH</a></p>
+				</td>
+				<td class="long_cell">
+					<p>8-bit register:  The high byte of DX</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_BH">BH</a></p>
+				</td>
+				<td class="long_cell">
+					<p>8-bit register:  The high byte of BX</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_AX">AX</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'accumulator' register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_CX">CX</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'counter' register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_DX">DX</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'data' register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_BX">BX</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'base' register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_SP">SP</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'stack pointer' register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_BP">BP</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'base pointer' register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_SI">SI</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'source index' register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_DI">DI</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'destination index' register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_ES">ES</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'extra' segment register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_CS">CS</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'code' segment register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_SS">SS</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'stack' segment register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_DS">DS</a></p>
+				</td>
+				<td class="long_cell">
+					<p>16-bit register:  The 'data' segment register</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_1">1</a></p>
+				</td>
+				<td class="long_cell">
+					<p>A constant argument of 1, implicit in the opcode, and not 
+represented elsewhere in the instruction.  This argument *is* displayed 
+in assembly code.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_3">3</a></p>
+				</td>
+				<td class="long_cell">
+					<p>A constant argument of 3, implicit in the opcode, and not 
+represented elsewhere in the instruction.  This argument *is* displayed 
+in assembly code.</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="row_header">
+					<p><a name="arg_M">M</a></p>
+				</td>
+				<td class="long_cell">
+					<p>The ModR/M byte refers to a memory location, however the 
+contents of that memory location are irrelevant; the address itself is 
+the operand of the instruction.  Applicable, e.g., to LEA.</p>
+				</td>
+			</tr>
+		</tbody></table>
+	
+
+</body></html>

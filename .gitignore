@@ -1,0 +1,10 @@
+*.dump
+*.lst
+
+/*.bin
+main.exe
+
+boot/freedos.img
+boot/boot-basic.img
+boot/boot-os.img
+boot/boot-rogue.img
