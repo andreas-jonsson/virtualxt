@@ -1,3 +1,5 @@
+// +build sdl
+
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
 
@@ -15,25 +17,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//go:generate bash -c "cd boot && ./build.sh"
-
-package main
+package emulator
 
 import (
-	"flag"
-	"os"
-	"runtime"
-
-	"github.com/andreas-jonsson/virtualxt/emulator"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/cga"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
-func init() {
-	// Is this needed for SDL2 if we use sdl.Main?
-	runtime.LockOSThread()
+func Start() {
+	sdl.Main(emuLoop)
 }
 
-func main() {
-	flag.Parse()
-	emulator.Start()
-	os.Exit(0) // Callig Exit is required!
+var mdaVideo = false
+
+func defaultVideoDevice() peripheral.Peripheral {
+	return &cga.Device{}
 }

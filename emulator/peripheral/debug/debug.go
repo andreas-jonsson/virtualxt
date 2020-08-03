@@ -39,8 +39,8 @@ import (
 )
 
 var (
-	EnableDebug, noHistory, debugBreak bool
-	tcpDebug                           net.Conn
+	EnableDebug, traceInstructions, debugBreak bool
+	tcpDebug                                   net.Conn
 )
 
 var ErrQuit = errors.New("QUIT!")
@@ -69,11 +69,9 @@ func (l *Logger) Write(p []byte) (n int, err error) {
 }
 
 func init() {
-	flag.BoolVar(&noHistory, "nohistory", false, "do not build histogram")
-	flag.BoolVar(&EnableDebug, "debug", false, "enable telnet debugger")
-	flag.BoolVar(&debugBreak, "break", false, "break on startup")
-
-	log.SetOutput(internalLogger)
+	flag.BoolVar(&traceInstructions, "trace", false, "Trace instruction execution")
+	flag.BoolVar(&EnableDebug, "debug", false, "Enable telnet debugger")
+	flag.BoolVar(&debugBreak, "break", false, "Break on startup")
 }
 
 func readLine() string {
@@ -94,6 +92,12 @@ func readLine() string {
 		tcpDebug = nil
 	}
 	return ""
+}
+
+func SetTCPLogging(b bool) {
+	if b {
+		log.SetOutput(internalLogger)
+	}
 }
 
 type Device struct {
@@ -435,10 +439,10 @@ func (m *Device) Step(cycles int) error {
 			m.printRegisters()
 		case ln == "v":
 			m.renderVideo()
-		case ln == "h":
+		case ln == "t":
 			m.showHistory(16)
-		case ln == "ch":
-			log.Print("Clear history!")
+		case ln == "ct":
+			log.Print("Clear trace!")
 		drainHistory:
 			select {
 			case <-m.historyChan:
@@ -461,7 +465,7 @@ func (m *Device) Step(cycles int) error {
 			m.showMemMap()
 		case strings.HasPrefix(ln, "o "):
 			m.setCodeOffset(ln[2:])
-		case strings.HasPrefix(ln, "h "):
+		case strings.HasPrefix(ln, "t "):
 			m.showHistoryWithLength(ln[2:])
 		case strings.HasPrefix(ln, "b "):
 			m.setBreakpoint(ln[2:])
@@ -474,7 +478,7 @@ func (m *Device) Step(cycles int) error {
 		}
 	}
 
-	if !noHistory {
+	if traceInstructions {
 		m.pushHistory(fmt.Sprintf("| [%s:0x%X] %s", m.csToString(), m.r.IP-m.codeOffset, inst))
 	}
 

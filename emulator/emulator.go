@@ -27,7 +27,6 @@ import (
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/cga"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/debug"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/disk"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/keyboard"
@@ -42,7 +41,7 @@ import (
 var (
 	biosImage, vbiosImage string
 	limitMIPS             float64
-	v20cpu, mdaVideo      bool
+	v20cpu                bool
 
 	driveImage [0x100]struct {
 		name string
@@ -52,7 +51,7 @@ var (
 
 func init() {
 	flag.BoolVar(&v20cpu, "v20", false, "Emulate NEC V20 CPU")
-	flag.BoolVar(&mdaVideo, "mda", false, "Emulate MDA video in termainal mode")
+
 	flag.Float64Var(&limitMIPS, "mips", 0, "Limit CPU speed")
 	flag.StringVar(&biosImage, "bios", "bios/pcxtbios.bin", "Path to BIOS image")
 	flag.StringVar(&vbiosImage, "vbios", "bios/ati_ega_wonder_800_plus.bin", "Path to EGA/VGA BIOS image")
@@ -61,9 +60,13 @@ func init() {
 	flag.StringVar(&driveImage[0x1].name, "b", "", "Mount image as floppy B")
 	flag.StringVar(&driveImage[0x80].name, "c", "", "Mount image as haddrive C")
 	flag.StringVar(&driveImage[0x81].name, "d", "", "Mount image as haddrive D")
+
+	if !mdaVideo {
+		flag.BoolVar(&mdaVideo, "mda", false, "Emulate MDA video in termainal mode")
+	}
 }
 
-func Start() {
+func emuLoop() {
 	bios, err := os.Open(biosImage)
 	if err != nil {
 		fmt.Println(err)
@@ -105,10 +108,11 @@ func Start() {
 		return
 	}
 
-	var video peripheral.Peripheral = &cga.Device{}
+	video := defaultVideoDevice()
 	if mdaVideo {
 		video = &mda.Device{}
 	}
+	debug.SetTCPLogging(mdaVideo)
 
 	peripherals := []peripheral.Peripheral{
 		&ram.Device{}, // RAM (needs to go first since it maps the full memory range)
