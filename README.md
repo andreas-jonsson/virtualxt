@@ -21,6 +21,6 @@ If you want graphics and sound you need to link with the SDL2 library by passing
 
 ### Screenshots
 
-![dos3 screenshot](doc/screenshots/dos3.png)
+![dos3 screenshot](doc/screenshots/dos3.PNG)
 
-![edit screenshot](doc/screenshots/edit.png)
+![edit screenshot](doc/screenshots/edit.PNG)
