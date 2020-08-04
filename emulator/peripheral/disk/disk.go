@@ -108,7 +108,7 @@ func (m *Device) Insert(dnum byte, disk io.ReadWriteSeeker) error {
 	if d.isHD = dnum >= 0x80; d.isHD {
 		d.sectors = 63
 		d.heads = 16
-		d.cylinders = uint16(d.fileSize / uint32(d.sectors*d.heads*512))
+		d.cylinders = uint16(d.fileSize / (uint32(d.sectors) * uint32(d.heads) * 512))
 		m.numHD++
 	} else {
 		d.sectors = 18
