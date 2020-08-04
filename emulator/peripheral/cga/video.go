@@ -20,9 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package cga
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
@@ -73,6 +75,9 @@ type Device struct {
 	surface  *sdl.Surface
 	texture  *sdl.Texture
 
+	windowTitleTicker  *time.Ticker
+	atomicCycleCounter int32
+
 	cursorPos uint16
 	cursor    consoleCursor
 	p         processor.Processor
@@ -82,6 +87,7 @@ func (m *Device) Install(p processor.Processor) error {
 	m.p = p
 	m.memoryBase = 0xB8000
 	m.cursor.visible = true
+	m.windowTitleTicker = time.NewTicker(time.Second)
 
 	// Scramble memory.
 	rand.Read(m.mem[:])
@@ -105,7 +111,8 @@ func (m *Device) Name() string {
 func (m *Device) Reset() {
 }
 
-func (m *Device) Step(int) error {
+func (m *Device) Step(cycles int) error {
+	atomic.AddInt32(&m.atomicCycleCounter, int32(cycles))
 	return nil
 }
 
@@ -148,6 +155,7 @@ func (m *Device) startRenderLoop() error {
 		if m.window, m.renderer, err = sdl.CreateWindowAndRenderer(640, 480, 0); err != nil {
 			return
 		}
+		m.window.SetTitle("VirtualXT")
 		if m.surface, err = sdl.CreateRGBSurface(0, 640, 200, 32, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF); err != nil {
 			return
 		}
@@ -165,6 +173,13 @@ func (m *Device) startRenderLoop() error {
 			sdl.Do(func() {
 				m.lock.RLock()
 				defer m.lock.RUnlock()
+
+				select {
+				case <-m.windowTitleTicker.C:
+					numCycles := float64(atomic.SwapInt32(&m.atomicCycleCounter, 0))
+					m.window.SetTitle(fmt.Sprintf("VirtualXT - %.2f MIPS", numCycles/1000000))
+				default:
+				}
 
 				if m.dirtyMemory {
 					m.renderer.Clear()

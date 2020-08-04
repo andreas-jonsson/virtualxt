@@ -252,11 +252,11 @@ func (m *Device) startRenderLoop() error {
 					}
 
 					if m.cursor.update {
-						if !m.cursor.visible {
-							s.HideCursor()
-						} else {
-							s.ShowCursor(int(m.cursor.x), int(m.cursor.y))
-						}
+						//if m.cursor.visible {
+						s.ShowCursor(int(m.cursor.x), int(m.cursor.y))
+						//} else {
+						//	s.HideCursor()
+						//}
 						m.cursor.update = false
 					}
 

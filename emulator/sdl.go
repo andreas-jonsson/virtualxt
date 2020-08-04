@@ -20,13 +20,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package emulator
 
 import (
+	"flag"
+	"os"
+
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/cga"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
 func Start() {
+	flag.Parse()
 	sdl.Main(emuLoop)
+	os.Exit(0) // Callig Exit is required!
 }
 
 var mdaVideo = false

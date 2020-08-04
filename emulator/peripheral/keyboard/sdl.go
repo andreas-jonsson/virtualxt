@@ -45,7 +45,7 @@ func (m *Device) startSDLEventLoop() {
 }
 
 func (m *Device) sdlProcessKey(ev *sdl.KeyboardEvent) {
-	if scan := sdlKeyToScan(ev.Keysym.Sym); scan != ScanInvalid {
+	if scan := sdlScanToXTScan(ev.Keysym.Scancode); scan != ScanInvalid {
 		if ev.Type == sdl.KEYUP {
 			scan |= KeyUpMask
 		}
@@ -55,173 +55,173 @@ func (m *Device) sdlProcessKey(ev *sdl.KeyboardEvent) {
 	}
 }
 
-func sdlKeyToScan(key sdl.Keycode) Scancode {
-	switch key {
-	case sdl.K_ESCAPE:
+func sdlScanToXTScan(scan sdl.Scancode) Scancode {
+	switch scan {
+	case sdl.SCANCODE_ESCAPE:
 		return ScanEscape
-	case sdl.K_1:
+	case sdl.SCANCODE_1:
 		return Scan1
-	case sdl.K_2:
+	case sdl.SCANCODE_2:
 		return Scan2
-	case sdl.K_3:
+	case sdl.SCANCODE_3:
 		return Scan3
-	case sdl.K_4:
+	case sdl.SCANCODE_4:
 		return Scan4
-	case sdl.K_5:
+	case sdl.SCANCODE_5:
 		return Scan5
-	case sdl.K_6:
+	case sdl.SCANCODE_6:
 		return Scan6
-	case sdl.K_7:
+	case sdl.SCANCODE_7:
 		return Scan7
-	case sdl.K_8:
+	case sdl.SCANCODE_8:
 		return Scan8
-	case sdl.K_9:
+	case sdl.SCANCODE_9:
 		return Scan9
-	case sdl.K_0:
+	case sdl.SCANCODE_0:
 		return Scan0
-	case sdl.K_MINUS:
+	case sdl.SCANCODE_MINUS:
 		return ScanMinus
-	case sdl.K_EQUALS:
+	case sdl.SCANCODE_EQUALS:
 		return ScanEqual
-	case sdl.K_BACKSPACE:
+	case sdl.SCANCODE_BACKSPACE:
 		return ScanBackspace
-	case sdl.K_TAB:
+	case sdl.SCANCODE_TAB:
 		return ScanTab
-	case sdl.K_q:
+	case sdl.SCANCODE_Q:
 		return ScanQ
-	case sdl.K_w:
+	case sdl.SCANCODE_W:
 		return ScanW
-	case sdl.K_e:
+	case sdl.SCANCODE_E:
 		return ScanE
-	case sdl.K_r:
+	case sdl.SCANCODE_R:
 		return ScanR
-	case sdl.K_t:
+	case sdl.SCANCODE_T:
 		return ScanT
-	case sdl.K_y:
+	case sdl.SCANCODE_Y:
 		return ScanY
-	case sdl.K_u:
+	case sdl.SCANCODE_U:
 		return ScanU
-	case sdl.K_i:
+	case sdl.SCANCODE_I:
 		return ScanI
-	case sdl.K_o:
+	case sdl.SCANCODE_O:
 		return ScanO
-	case sdl.K_p:
+	case sdl.SCANCODE_P:
 		return ScanP
-	case sdl.K_LEFTBRACKET:
+	case sdl.SCANCODE_LEFTBRACKET:
 		return ScanLBracket
-	case sdl.K_RIGHTBRACKET:
+	case sdl.SCANCODE_RIGHTBRACKET:
 		return ScanRBracket
-	case sdl.K_RETURN, sdl.K_KP_ENTER:
+	case sdl.SCANCODE_RETURN, sdl.SCANCODE_KP_ENTER:
 		return ScanEnter
-	case sdl.K_LCTRL, sdl.K_RCTRL:
+	case sdl.SCANCODE_LCTRL, sdl.SCANCODE_RCTRL:
 		return ScanControl
-	case sdl.K_a:
+	case sdl.SCANCODE_A:
 		return ScanA
-	case sdl.K_s:
+	case sdl.SCANCODE_S:
 		return ScanS
-	case sdl.K_d:
+	case sdl.SCANCODE_D:
 		return ScanD
-	case sdl.K_f:
+	case sdl.SCANCODE_F:
 		return ScanF
-	case sdl.K_g:
+	case sdl.SCANCODE_G:
 		return ScanG
-	case sdl.K_h:
+	case sdl.SCANCODE_H:
 		return ScanH
-	case sdl.K_j:
+	case sdl.SCANCODE_J:
 		return ScanJ
-	case sdl.K_k:
+	case sdl.SCANCODE_K:
 		return ScanK
-	case sdl.K_l:
+	case sdl.SCANCODE_L:
 		return ScanL
-	case sdl.K_SEMICOLON:
+	case sdl.SCANCODE_SEMICOLON:
 		return ScanSemicolon
-	case sdl.K_QUOTE:
+	case sdl.SCANCODE_APOSTROPHE:
 		return ScanQuote
-	case sdl.K_BACKQUOTE:
+	case sdl.SCANCODE_GRAVE:
 		return ScanBackquote
-	case sdl.K_LSHIFT:
+	case sdl.SCANCODE_LSHIFT:
 		return ScanLShift
-	case sdl.K_BACKSLASH:
+	case sdl.SCANCODE_BACKSLASH:
 		return ScanBackslash
-	case sdl.K_z:
+	case sdl.SCANCODE_Z:
 		return ScanZ
-	case sdl.K_x:
+	case sdl.SCANCODE_X:
 		return ScanX
-	case sdl.K_c:
+	case sdl.SCANCODE_C:
 		return ScanC
-	case sdl.K_v:
+	case sdl.SCANCODE_V:
 		return ScanV
-	case sdl.K_b:
+	case sdl.SCANCODE_B:
 		return ScanB
-	case sdl.K_n:
+	case sdl.SCANCODE_N:
 		return ScanN
-	case sdl.K_m:
+	case sdl.SCANCODE_M:
 		return ScanM
-	case sdl.K_COMMA:
+	case sdl.SCANCODE_COMMA:
 		return ScanComma
-	case sdl.K_PERIOD:
+	case sdl.SCANCODE_PERIOD:
 		return ScanPeriod
-	case sdl.K_SLASH:
+	case sdl.SCANCODE_SLASH:
 		return ScanSlash
-	case sdl.K_RSHIFT:
+	case sdl.SCANCODE_RSHIFT:
 		return ScanRShift
-	case sdl.K_PRINTSCREEN:
+	case sdl.SCANCODE_PRINTSCREEN:
 		return ScanPrint
-	case sdl.K_LALT, sdl.K_RALT:
+	case sdl.SCANCODE_LALT, sdl.SCANCODE_RALT:
 		return ScanAlt
-	case sdl.K_SPACE:
+	case sdl.SCANCODE_SPACE:
 		return ScanSpace
-	case sdl.K_CAPSLOCK:
+	case sdl.SCANCODE_CAPSLOCK:
 		return ScanCapslock
-	case sdl.K_F1:
+	case sdl.SCANCODE_F1:
 		return ScanF1
-	case sdl.K_F2:
+	case sdl.SCANCODE_F2:
 		return ScanF2
-	case sdl.K_F3:
+	case sdl.SCANCODE_F3:
 		return ScanF3
-	case sdl.K_F4:
+	case sdl.SCANCODE_F4:
 		return ScanF4
-	case sdl.K_F5:
+	case sdl.SCANCODE_F5:
 		return ScanF5
-	case sdl.K_F6:
+	case sdl.SCANCODE_F6:
 		return ScanF6
-	case sdl.K_F7:
+	case sdl.SCANCODE_F7:
 		return ScanF7
-	case sdl.K_F8:
+	case sdl.SCANCODE_F8:
 		return ScanF8
-	case sdl.K_F9:
+	case sdl.SCANCODE_F9:
 		return ScanF9
-	case sdl.K_F10:
+	case sdl.SCANCODE_F10:
 		return ScanF10
-	case sdl.K_NUMLOCKCLEAR:
+	case sdl.SCANCODE_NUMLOCKCLEAR:
 		return ScanNumlock
-	case sdl.K_SCROLLLOCK:
+	case sdl.SCANCODE_SCROLLLOCK:
 		return ScanScrlock
-	case sdl.K_KP_7:
+	case sdl.SCANCODE_KP_7:
 		return ScanKPHome
-	case sdl.K_KP_8, sdl.K_UP:
+	case sdl.SCANCODE_KP_8, sdl.SCANCODE_UP:
 		return ScanKPUp
-	case sdl.K_KP_9:
+	case sdl.SCANCODE_KP_9:
 		return ScanKPPageup
-	case sdl.K_KP_MINUS:
+	case sdl.SCANCODE_KP_MINUS:
 		return ScanKPMinus
-	case sdl.K_KP_4, sdl.K_LEFT:
+	case sdl.SCANCODE_KP_4, sdl.SCANCODE_LEFT:
 		return ScanKPLeft
-	case sdl.K_KP_5:
+	case sdl.SCANCODE_KP_5:
 		return ScanKP5
-	case sdl.K_KP_6, sdl.K_RIGHT:
+	case sdl.SCANCODE_KP_6, sdl.SCANCODE_RIGHT:
 		return ScanKPRight
-	case sdl.K_KP_PLUS:
+	case sdl.SCANCODE_KP_PLUS:
 		return ScanKPPlus
-	case sdl.K_KP_1:
+	case sdl.SCANCODE_KP_1:
 		return ScanKPEnd
-	case sdl.K_KP_2, sdl.K_DOWN:
+	case sdl.SCANCODE_KP_2, sdl.SCANCODE_DOWN:
 		return ScanKPDown
-	case sdl.K_KP_3:
+	case sdl.SCANCODE_KP_3:
 		return ScanKPPagedown
-	case sdl.K_KP_0:
+	case sdl.SCANCODE_KP_0:
 		return ScanKPInsert
-	case sdl.K_KP_COMMA:
+	case sdl.SCANCODE_KP_COMMA:
 		return ScanKPDelete
 	default:
 		return ScanInvalid

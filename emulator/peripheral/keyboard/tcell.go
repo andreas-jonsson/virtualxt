@@ -68,80 +68,44 @@ func createEventFromTCELL(ev *tcell.EventKey) Scancode {
 		return ScanKPRight
 	case tcell.KeyUp:
 		return ScanKPUp
+	case tcell.KeyPrint:
+		return ScanPrint
+	case tcell.KeyDelete:
+		return ScanKPDelete
+	case tcell.KeyInsert:
+		return ScanKPInsert
+	case tcell.KeyEnd:
+		return ScanKPEnd
+	case tcell.KeyPgUp:
+		return ScanKPUp
+	case tcell.KeyPgDn:
+		return ScanKPDown
+	case tcell.KeyHome:
+		return ScanKPHome
+	case tcell.KeyF1:
+		return ScanF1
+	case tcell.KeyF2:
+		return ScanF2
+	case tcell.KeyF3:
+		return ScanF3
+	case tcell.KeyF4:
+		return ScanF4
+	case tcell.KeyF5:
+		return ScanF5
+	case tcell.KeyF6:
+		return ScanF6
+	case tcell.KeyF7:
+		return ScanF7
+	case tcell.KeyF8:
+		return ScanF8
+	case tcell.KeyF9:
+		return ScanF9
+	case tcell.KeyF10:
+		return ScanF10
 
-		/*
-			case SDLK_LALT:
-				key.scancode |= VXT_KEY_ALT
-				return key
-			case SDLK_NUMLOCKCLEAR:
-				key.scancode |= VXT_KEY_NUMLOCK
-				return key
-			case SDLK_SCROLLLOCK:
-				key.scancode |= VXT_KEY_SCROLLOCK
-				return key
-			case SDLK_CAPSLOCK:
-				key.scancode |= VXT_KEY_CAPSLOCK
-				return key
-			case SDLK_LSHIFT:
-				key.scancode |= VXT_KEY_LSHIFT
-				return key
-			case SDLK_RSHIFT:
-				key.scancode |= VXT_KEY_RSHIFT
-				return key
-			case SDLK_PRINTSCREEN:
-				key.scancode |= VXT_KEY_PRINT
-				return key
+	// Not implemented!
+	// ScanAlt, ScanNumlock, ScanScrlock, ScanCapslock, ScanLShift, ScanRShift
 
-			case SDLK_DELETE:
-				key.scancode |= VXT_KEY_KP_DELETE_PERIOD
-				return key
-			case SDLK_INSERT:
-				key.scancode |= VXT_KEY_KP_INSERT_0
-				return key
-			case SDLK_END:
-				key.scancode |= VXT_KEY_KP_END_1
-				return key
-			case SDLK_PAGEUP:
-				key.scancode |= VXT_KEY_KP_PAGEUP_9
-				return key
-			case SDLK_PAGEDOWN:
-			key.scancode |= VXT_KEY_KP_PAGEDOWN_3
-			return key
-				case SDLK_HOME:
-			key.scancode |= VXT_KEY_KP_HOME_7
-			return key
-
-			case SDLK_F1:
-				key.scancode |= VXT_KEY_F1
-				return key
-			case SDLK_F2:
-				key.scancode |= VXT_KEY_F2
-				return key
-			case SDLK_F3:
-				key.scancode |= VXT_KEY_F3
-				return key
-			case SDLK_F4:
-				key.scancode |= VXT_KEY_F4
-				return key
-			case SDLK_F5:
-				key.scancode |= VXT_KEY_F5
-				return key
-			case SDLK_F6:
-				key.scancode |= VXT_KEY_F6
-				return key
-			case SDLK_F7:
-				key.scancode |= VXT_KEY_F7
-				return key
-			case SDLK_F8:
-				key.scancode |= VXT_KEY_F8
-				return key
-			case SDLK_F9:
-				key.scancode |= VXT_KEY_F9
-				return key
-			case SDLK_F10:
-				key.scancode |= VXT_KEY_F10
-				return key
-		*/
 	case tcell.KeyRune:
 		if c := byte(ev.Rune()); c > 0x1F && c < 0x7F {
 			return asciiToScancode[c-0x20]

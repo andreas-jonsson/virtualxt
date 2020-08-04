@@ -20,8 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package main
 
 import (
-	"flag"
-	"os"
 	"runtime"
 
 	"github.com/andreas-jonsson/virtualxt/emulator"
@@ -33,7 +31,5 @@ func init() {
 }
 
 func main() {
-	flag.Parse()
 	emulator.Start()
-	os.Exit(0) // Callig Exit is required!
 }

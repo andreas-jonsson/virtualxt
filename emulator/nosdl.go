@@ -20,11 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package emulator
 
 import (
+	"flag"
+
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/mda"
 )
 
 func Start() {
+	flag.Parse()
 	emuLoop()
 }
 
