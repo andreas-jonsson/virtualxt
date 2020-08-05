@@ -69,10 +69,10 @@ notifications:
 install:
   - export PATH=$TRAVIS_BUILD_DIR:$PATH
 
-#deploy:
-#  provider: script
-#  skip_cleanup: true
-#  script: bash tools/package/itch/push.sh
-#  on:
-#    all_branches: true
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: bash tools/package/itch/push.sh
+  on:
+    all_branches: true
 #    condition: $TRAVIS_BRANCH =~ ^(edge|release)$
