@@ -1,12 +1,12 @@
 #!/bin/bash
 
 PACKAGE_DEST="$TRAVIS_BUILD_DIR/package/virtualxt"
-rm -rf $PACKAGE_DEST virtualxt-x86_64.AppImage
+rm -rf $PACKAGE_DEST VirtualXT-x86_64.AppImage
 mkdir -p $PACKAGE_DEST/bios
 
 exec tools/package/appimage/build.sh
 
-cp virtualxt-x86_64.AppImage $PACKAGE_DEST
+cp VirtualXT-x86_64.AppImage $PACKAGE_DEST
 #cp -r doc/manual $PACKAGE_DEST
 cp bios/pcxtbios.bin $PACKAGE_DEST/bios
 cp boot/freedos/freedos.img $PACKAGE_DEST
