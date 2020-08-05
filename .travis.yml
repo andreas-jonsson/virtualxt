@@ -22,6 +22,7 @@ matrix:
         - go build -tags sdl virtualxt.go
         - ./tools/package/itch/package.linux.sh
 
+        - ls -al
         - ls -al "$TRAVIS_BUILD_DIR/package/virtualxt"
 
     ################ OSX Build ################
