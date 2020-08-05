@@ -11,4 +11,4 @@ fi
 
 export LD_LIBRARY_PATH
 
-exec "$SELF_DIR/virtualxt" $@
+exec "$SELF_DIR/virtualxt" "$@"
