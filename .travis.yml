@@ -1,0 +1,78 @@
+matrix:
+  include:
+
+    ################ Linux Build ################
+
+    - name: Linux
+      os: linux
+      dist: xenial
+
+      addons:
+        apt:
+          packages:
+            - libsdl2-dev
+
+      before_install:
+        - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
+    
+      script:
+        - go build -tags sdl virtualxt.go
+        - ./tools/package/itch/package.linux.sh
+
+    ################ OSX Build ################
+
+    - name: OSX
+      os: osx
+      osx_image: xcode10.1
+
+      before_install:
+        - curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip
+        - curl -L -o sdl.dmg https://www.libsdl.org/release/SDL2-2.0.10.dmg && hdiutil attach sdl.dmg
+        - sudo cp -r /Volumes/SDL2/SDL2.framework /Library/Frameworks
+
+      script:
+        - go build -tags sdl virtualxt.go
+        - ./tools/package/itch/package.osx.sh
+
+    ################ Windows Build ################
+
+    - name: Windows
+      os: windows
+
+      before_install:
+        - curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip
+        - curl -L -o sdl.tar.gz https://www.libsdl.org/release/SDL2-devel-2.0.10-mingw.tar.gz
+        - 7z x sdl.tar.gz && 7z x sdl.tar
+
+        - export C_INCLUDE_PATH=${TRAVIS_BUILD_DIR}/SDL2-2.0.10/x86_64-w64-mingw32/include
+        - export LIBRARY_PATH=${TRAVIS_BUILD_DIR}/SDL2-2.0.10/x86_64-w64-mingw32/lib
+
+      script:
+        - go build -tags sdl virtualxt.go
+        - ./tools/package/itch/package.bat
+
+################ Common ################
+
+language: go
+
+go:
+  - "1.13.x"
+
+env:
+  - VXT_VERSION=0.5.0
+
+notifications:
+  email:
+    on_success: never
+    on_failure: change
+
+install:
+  - export PATH=$TRAVIS_BUILD_DIR:$PATH
+
+#deploy:
+#  provider: script
+#  skip_cleanup: true
+#  script: bash tools/package/itch/push.sh
+#  on:
+#    all_branches: true
+#    condition: $TRAVIS_BRANCH =~ ^(edge|release)$

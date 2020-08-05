@@ -152,7 +152,8 @@ func (m *Device) startRenderLoop() error {
 	var err error
 	sdl.Do(func() {
 		sdl.SetHint(sdl.HINT_RENDER_SCALE_QUALITY, "0")
-		if m.window, m.renderer, err = sdl.CreateWindowAndRenderer(640, 480, 0); err != nil {
+		sdl.SetHint(sdl.HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1")
+		if m.window, m.renderer, err = sdl.CreateWindowAndRenderer(640, 480, sdl.WINDOW_RESIZABLE); err != nil {
 			return
 		}
 		m.window.SetTitle("VirtualXT")
