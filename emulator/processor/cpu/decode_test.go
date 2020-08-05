@@ -41,7 +41,7 @@ func loadBin(t *testing.T, name string) []byte {
 
 func runTest(t *testing.T, progName string) *CPU {
 	p := NewCPU([]peripheral.Peripheral{
-		&ram.Device{},
+		&ram.Device{Clear: true},
 		&rom.Device{
 			RomName: fmt.Sprintf("TEST: %s.bin", progName),
 			Base:    memory.NewPointer(0xF000, 0),

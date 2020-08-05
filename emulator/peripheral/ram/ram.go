@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package ram
 
 import (
+	"crypto/rand"
+
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
@@ -25,12 +27,14 @@ import (
 const Size = 0x100000 // 1MB
 
 type Device struct {
-	mem [Size]byte
+	Clear bool
+	mem   [Size]byte
 }
 
 func (m *Device) Install(p processor.Processor) error {
-	// There are issues with the tests here. Need to investigate more.
-	//rand.Read(m.mem[:]) // Scramble memory.
+	if !m.Clear {
+		rand.Read(m.mem[:]) // Scramble memory.
+	}
 
 	return p.InstallMemoryDevice(m, 0x0, Size-1)
 }
