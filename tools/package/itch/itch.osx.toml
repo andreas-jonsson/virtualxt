@@ -11,6 +11,6 @@ path = "freedos.sh"
 name = "Boot Floppy Image"
 path = "VirtualXT.app"
 
-[[actions]]
-name = "manual"
-path = "VirtualXT.app/Contents/Resources/manual/index.html"
+#[[actions]]
+#name = "manual"
+#path = "VirtualXT.app/Contents/Resources/manual/index.html"
