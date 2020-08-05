@@ -71,7 +71,7 @@ install:
 
 deploy:
   provider: script
-  skip_cleanup: true
+#  skip_cleanup: true
   script: bash tools/package/itch/push.sh
   on:
     all_branches: true
