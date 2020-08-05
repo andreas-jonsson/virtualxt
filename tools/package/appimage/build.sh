@@ -16,5 +16,7 @@ chmod +x apptool.AppImage
 
 ./apptool.AppImage $APP_DIR
 
+ls -al
+
 rm apptool.AppImage
 rm -rf $APP_DIR

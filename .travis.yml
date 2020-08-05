@@ -12,7 +12,7 @@ matrix:
           packages:
             - libsdl2-dev
 
-      before_install:
+      install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
     
       script:
@@ -25,7 +25,7 @@ matrix:
       os: osx
       osx_image: xcode10.1
 
-      before_install:
+      install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip
         - curl -L -o sdl.dmg https://www.libsdl.org/release/SDL2-2.0.10.dmg && hdiutil attach sdl.dmg
         - sudo cp -r /Volumes/SDL2/SDL2.framework /Library/Frameworks
@@ -39,7 +39,7 @@ matrix:
     - name: Windows
       os: windows
 
-      before_install:
+      install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip
         - curl -L -o sdl.tar.gz https://www.libsdl.org/release/SDL2-devel-2.0.10-mingw.tar.gz
         - 7z x sdl.tar.gz && 7z x sdl.tar
@@ -66,8 +66,11 @@ notifications:
     on_success: never
     on_failure: change
 
-install:
+before_install:
   - export PATH=$TRAVIS_BUILD_DIR:$PATH
+
+before_script:
+  - go test ./...
 
 deploy:
   provider: script
