@@ -2,6 +2,7 @@
 
 APP_DIR="$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage-build"
 cp -r "$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage" $APP_DIR
+rm -f VirtualXT-x86_64.AppImage
 mkdir -p $APP_DIR/lib/x86_64-linux-gnu
 
 # Should locate this in some way.
@@ -15,8 +16,6 @@ curl -L -o apptool.AppImage https://github.com/AppImage/AppImageKit/releases/dow
 chmod +x apptool.AppImage
 
 ./apptool.AppImage $APP_DIR
-
-ls -al
 
 rm apptool.AppImage
 rm -rf $APP_DIR
