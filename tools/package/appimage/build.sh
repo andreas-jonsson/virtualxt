@@ -1,7 +1,7 @@
 #!/bin/sh
 
 APP_DIR="$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage-build"
-cp -r "$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage" APP_DIR
+cp -r "$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage" $APP_DIR
 mkdir -p $APP_DIR/lib/x86_64-linux-gnu
 
 # Should locate this in some way.
