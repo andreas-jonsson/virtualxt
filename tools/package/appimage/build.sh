@@ -1,7 +1,7 @@
 #!/bin/sh
 
 APP_DIR="$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage-build"
-cp "$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage" APP_DIR
+cp -r "$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage" APP_DIR
 mkdir -p $APP_DIR/lib/x86_64-linux-gnu
 
 # Should locate this in some way.
@@ -11,10 +11,10 @@ cp /usr/lib/x86_64-linux-gnu/libsndio.so.6.1 $APP_DIR/lib/x86_64-linux-gnu
 cp virtualxt $APP_DIR/virtualxt
 cp doc/icon/icon.png $APP_DIR/virtualxt-icon.png
 
-wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-chmod +x appimagetool-x86_64.AppImage
+curl -L -o apptool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+chmod +x apptool.AppImage
 
-./appimagetool-x86_64.AppImage $APP_DIR
+./apptool.AppImage $APP_DIR
 
-rm appimagetool-x86_64.AppImage
+rm apptool.AppImage
 rm -rf $APP_DIR
