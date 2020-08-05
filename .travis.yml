@@ -18,8 +18,6 @@ matrix:
       script:
         - go build -tags sdl virtualxt.go
         - ./tools/package/itch/package.linux.sh
-        - ls -al
-        - ls -al "$TRAVIS_BUILD_DIR/package/virtualxt"
 
     ################ OSX Build ################
 
@@ -49,7 +47,10 @@ matrix:
         - export C_INCLUDE_PATH=${TRAVIS_BUILD_DIR}/SDL2-2.0.10/x86_64-w64-mingw32/include
         - export LIBRARY_PATH=${TRAVIS_BUILD_DIR}/SDL2-2.0.10/x86_64-w64-mingw32/lib
 
+        - go get github.com/akavel/rsrc
+
       script:
+        - rsrc -ico=doc/icon/icon.ico -arch=amd64
         - go build -tags sdl virtualxt.go
         - ./tools/package/itch/package.bat
 
