@@ -11,4 +11,7 @@ fi
 
 export LD_LIBRARY_PATH
 
+export VXT_DEFAULT_BIOS_PATH=$SELF_DIR/bios/pcxtbios.bin
+export VXT_DEFAULT_VIDEO_BIOS_PATH=$SELF_DIR/bios/ati_ega_wonder_800_plus.bin
+
 exec "$SELF_DIR/virtualxt" "$@"

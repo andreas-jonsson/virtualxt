@@ -39,9 +39,13 @@ import (
 )
 
 var (
-	biosImage, vbiosImage string
-	limitMIPS             float64
-	v20cpu                bool
+	biosImage  = "bios/pcxtbios.bin"
+	vbiosImage = "bios/ati_ega_wonder_800_plus.bin"
+)
+
+var (
+	limitMIPS float64
+	v20cpu    bool
 
 	driveImage [0x100]struct {
 		name string
@@ -50,11 +54,19 @@ var (
 )
 
 func init() {
+	if p, ok := os.LookupEnv("VXT_DEFAULT_BIOS_PATH"); ok {
+		biosImage = p
+	}
+
+	if p, ok := os.LookupEnv("VXT_DEFAULT_VIDEO_BIOS_PATH"); ok {
+		vbiosImage = p
+	}
+
 	flag.BoolVar(&v20cpu, "v20", false, "Emulate NEC V20 CPU")
 
 	flag.Float64Var(&limitMIPS, "mips", 0, "Limit CPU speed")
-	flag.StringVar(&biosImage, "bios", "bios/pcxtbios.bin", "Path to BIOS image")
-	flag.StringVar(&vbiosImage, "vbios", "bios/ati_ega_wonder_800_plus.bin", "Path to EGA/VGA BIOS image")
+	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")
+	flag.StringVar(&vbiosImage, "vbios", vbiosImage, "Path to EGA/VGA BIOS image")
 
 	flag.StringVar(&driveImage[0x0].name, "a", "", "Mount image as floppy A")
 	flag.StringVar(&driveImage[0x1].name, "b", "", "Mount image as floppy B")
