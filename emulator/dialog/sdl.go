@@ -1,0 +1,220 @@
+// +build sdl
+
+/*
+Copyright (C) 2019-2020 Andreas T Jonsson
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+package dialog
+
+import (
+	"errors"
+	"os"
+	"path/filepath"
+	"sync/atomic"
+
+	"github.com/veandco/go-sdl2/sdl"
+)
+
+func MainMenu() error {
+	atomic.StoreInt32(&mainMenuWasOpen, 1)
+
+	buttons := []sdl.MessageBoxButtonData{
+		{
+			Flags:    sdl.MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT,
+			ButtonID: 0,
+			Text:     "Cancel",
+		},
+	}
+
+	if DriveImages[0].Fp != nil || DriveImages[1].Fp != nil {
+		buttons = append(buttons, sdl.MessageBoxButtonData{
+			ButtonID: 3,
+			Text:     "Eject",
+		})
+	}
+
+	buttons = append(buttons, sdl.MessageBoxButtonData{
+		ButtonID: 2,
+		Text:     "Configure",
+	}, sdl.MessageBoxButtonData{
+		ButtonID: 1,
+		Text:     "Help",
+	})
+
+	mbd := sdl.MessageBoxData{
+		Flags:   sdl.MESSAGEBOX_INFORMATION,
+		Title:   "Menu Options",
+		Message: "To mount a new floppy image, drag-n-drop it in the main window.",
+		Buttons: buttons,
+	}
+
+	if id, err := sdl.ShowMessageBox(&mbd); err == nil {
+		switch id {
+		case 1:
+			return OpenURL("https://phix.itch.io/virtualxt")
+		case 2:
+			if p, err := os.Executable(); err == nil {
+				return OpenURL(filepath.Join(filepath.Dir(p), "config.json"))
+			}
+			return OpenURL("config.json")
+		case 3:
+			return EjectFloppy()
+		default:
+			return errors.New("operation canceled")
+		}
+	} else {
+		return err
+	}
+}
+
+func EjectFloppy() error {
+	buttons := []sdl.MessageBoxButtonData{
+		{
+			Flags:    sdl.MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT,
+			ButtonID: 0,
+			Text:     "Cancel",
+		},
+	}
+
+	if v := &DriveImages[1]; v.Fp != nil {
+		buttons = append(buttons, sdl.MessageBoxButtonData{
+			ButtonID: 2,
+			Text:     "Drive B",
+		})
+	}
+
+	if v := &DriveImages[0]; v.Fp != nil {
+		buttons = append(buttons, sdl.MessageBoxButtonData{
+			ButtonID: 1,
+			Text:     "Drive A",
+		})
+	}
+
+	if len(buttons) <= 1 {
+		ShowErrorMessage("No floppy image mounted!")
+		return errors.New("no image mounted")
+	}
+
+	mbd := sdl.MessageBoxData{
+		Flags:   sdl.MESSAGEBOX_INFORMATION,
+		Title:   "Eject Floppy",
+		Message: "Select floppy drive to eject.",
+		Buttons: buttons,
+	}
+
+	if id, err := sdl.ShowMessageBox(&mbd); err == nil {
+		if id == 0 {
+			return errors.New("operation canceled")
+		}
+
+		drive := byte(id - 1)
+		if _, err := FloppyController.Eject(drive); err != nil {
+			ShowErrorMessage(err.Error())
+			return err
+		}
+
+		DriveImages[drive].Fp.Close()
+		DriveImages[drive].Fp = nil
+		DriveImages[drive].Name = ""
+		return nil
+	} else {
+		return err
+	}
+}
+
+func MountFloppyImage(file string) error {
+	mbd := sdl.MessageBoxData{
+		Flags:   sdl.MESSAGEBOX_INFORMATION,
+		Title:   "Mount Floppy Image",
+		Message: file,
+		Buttons: []sdl.MessageBoxButtonData{
+			{
+				Flags:    sdl.MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT,
+				ButtonID: 0,
+				Text:     "Cancel",
+			},
+			{
+				ButtonID: 2,
+				Text: func() string {
+					if DriveImages[1].Name == "" {
+						return "Drive B"
+					}
+					return "Drive B*"
+				}(),
+			},
+			{
+				Flags:    sdl.MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT,
+				ButtonID: 1,
+				Text: func() string {
+					if DriveImages[0].Name == "" {
+						return "Drive A"
+					}
+					return "Drive A*"
+				}(),
+			},
+		},
+	}
+
+	if id, err := sdl.ShowMessageBox(&mbd); err == nil {
+		if id == 0 {
+			return errors.New("operation canceled")
+		}
+
+		driveId := byte(id - 1)
+		oldFp := DriveImages[driveId].Fp
+
+		if DriveImages[driveId].Fp, err = os.OpenFile(file, os.O_RDWR, 0644); err != nil {
+			DriveImages[driveId].Fp = oldFp
+			sdl.ShowSimpleMessageBox(sdl.MESSAGEBOX_ERROR, "Error", err.Error(), nil)
+			return err
+		} else if err = FloppyController.Replace(driveId, DriveImages[driveId].Fp); err != nil {
+			sdl.ShowSimpleMessageBox(sdl.MESSAGEBOX_ERROR, "Error", err.Error(), nil)
+			return err
+		} else if oldFp != nil {
+			oldFp.Close()
+		}
+		return nil
+	} else {
+		return err
+	}
+}
+
+func ShowErrorMessage(msg string) error {
+	return sdl.ShowSimpleMessageBox(sdl.MESSAGEBOX_ERROR, "Error", msg, nil)
+}
+
+func AskToQuit() bool {
+	mbd := sdl.MessageBoxData{
+		Flags:   sdl.MESSAGEBOX_INFORMATION,
+		Title:   "Shutdown",
+		Message: "Do you want to shutdown the emulator?",
+		Buttons: []sdl.MessageBoxButtonData{
+			{
+				Flags:    sdl.MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT,
+				ButtonID: 0,
+				Text:     "No",
+			},
+			{
+				Flags:    sdl.MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT,
+				ButtonID: 1,
+				Text:     "Yes",
+			},
+		},
+	}
+
+	id, err := sdl.ShowMessageBox(&mbd)
+	return err != nil || id == 1
+}

@@ -24,19 +24,30 @@ import (
 	"os"
 	"time"
 
+	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
 func (m *Device) startSDLEventLoop() {
+	sdl.Do(func() {
+		sdl.EventState(sdl.DROPFILE, sdl.ENABLE)
+	})
+
 	go func() {
 		for range time.Tick(time.Second / 30) {
 			sdl.Do(func() {
 				for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 					switch ev := event.(type) {
 					case *sdl.QuitEvent:
-						os.Exit(0)
+						if dialog.AskToQuit() {
+							os.Exit(0)
+						}
 					case *sdl.KeyboardEvent:
 						m.sdlProcessKey(ev)
+					case *sdl.DropEvent:
+						if ev.Type == sdl.DROPFILE {
+							dialog.MountFloppyImage(ev.File)
+						}
 					}
 				}
 			})
@@ -50,6 +61,10 @@ func (m *Device) sdlProcessKey(ev *sdl.KeyboardEvent) {
 			scan |= KeyUpMask
 		}
 		m.pushEvent(scan)
+	} else if ev.Keysym.Scancode == sdl.SCANCODE_F11 || ev.Keysym.Scancode == sdl.SCANCODE_F12 {
+		if ev.Type == sdl.KEYUP {
+			dialog.MainMenu()
+		}
 	} else {
 		log.Printf("Invalid key \"%s\"", sdl.GetKeyName(ev.Keysym.Sym))
 	}

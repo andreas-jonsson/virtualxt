@@ -21,6 +21,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"sync"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
@@ -38,6 +39,7 @@ type Device struct {
 	BootDrive byte
 
 	cpu    processor.Processor
+	lock   sync.Mutex
 	buffer [512]byte
 	numHD  byte
 
@@ -78,6 +80,9 @@ func (m *Device) Step(int) error {
 }
 
 func (m *Device) Eject(dnum byte) (io.ReadWriteSeeker, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	d := &m.disks[dnum]
 	if !d.present {
 		return nil, errors.New("no disk")
@@ -89,7 +94,15 @@ func (m *Device) Eject(dnum byte) (io.ReadWriteSeeker, error) {
 	return d.rws, nil
 }
 
+func (m *Device) Replace(dnum byte, disk io.ReadWriteSeeker) error {
+	m.Eject(dnum)
+	return m.Insert(dnum, disk)
+}
+
 func (m *Device) Insert(dnum byte, disk io.ReadWriteSeeker) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	d := &m.disks[dnum]
 	if d.present {
 		return errors.New("has disk")
@@ -195,6 +208,9 @@ func (m *Device) executeAndSet(readOp bool) {
 }
 
 func (m *Device) HandleInterrupt(n int) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	if n == 0x19 {
 		m.bootstrap()
 		return nil

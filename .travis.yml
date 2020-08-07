@@ -73,6 +73,8 @@ before_install:
   - export PATH=$TRAVIS_BUILD_DIR:$PATH
 
 before_script:
+  - export FULL_VERSION=${VXT_VERSION}.${TRAVIS_BUILD_ID}
+  - go generate ./...
   - go test ./...
 
 deploy:
@@ -81,4 +83,4 @@ deploy:
   script: bash tools/package/itch/push.sh
   on:
     all_branches: true
-#    condition: $TRAVIS_BRANCH =~ ^(edge|release)$
+    condition: $TRAVIS_BRANCH =~ ^(edge|release)$

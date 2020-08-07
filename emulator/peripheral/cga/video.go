@@ -27,6 +27,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/veandco/go-sdl2/sdl"
@@ -177,8 +178,12 @@ func (m *Device) startRenderLoop() error {
 
 				select {
 				case <-m.windowTitleTicker.C:
+					hlp := " (Press F12 for menu)"
+					if dialog.MainMenuWasOpen() {
+						hlp = ""
+					}
 					numCycles := float64(atomic.SwapInt32(&m.atomicCycleCounter, 0))
-					m.window.SetTitle(fmt.Sprintf("VirtualXT - %.2f MIPS", numCycles/1000000))
+					m.window.SetTitle(fmt.Sprintf("VirtualXT - %.2f MIPS%s", numCycles/1000000, hlp))
 				default:
 				}
 

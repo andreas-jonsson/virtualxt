@@ -19,12 +19,12 @@ package emulator
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"runtime"
 	"time"
 
+	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/debug"
@@ -46,11 +46,6 @@ var (
 var (
 	limitMIPS float64
 	v20cpu    bool
-
-	driveImage [0x100]struct {
-		name string
-		fp   *os.File
-	}
 )
 
 func init() {
@@ -68,11 +63,6 @@ func init() {
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")
 	flag.StringVar(&vbiosImage, "vbios", vbiosImage, "Path to EGA/VGA BIOS image")
 
-	flag.StringVar(&driveImage[0x0].name, "a", "", "Mount image as floppy A")
-	flag.StringVar(&driveImage[0x1].name, "b", "", "Mount image as floppy B")
-	flag.StringVar(&driveImage[0x80].name, "c", "", "Mount image as haddrive C")
-	flag.StringVar(&driveImage[0x81].name, "d", "", "Mount image as haddrive D")
-
 	if !mdaVideo {
 		flag.BoolVar(&mdaVideo, "mda", false, "Emulate MDA video in termainal mode")
 	}
@@ -81,23 +71,24 @@ func init() {
 func emuLoop() {
 	bios, err := os.Open(biosImage)
 	if err != nil {
-		fmt.Println(err)
+		dialog.ShowErrorMessage(err.Error())
 		return
 	}
 	defer bios.Close()
 
 	videoBios, err := os.Open(vbiosImage)
 	if err != nil {
-		fmt.Println(err)
+		dialog.ShowErrorMessage(err.Error())
 		return
 	}
 	defer videoBios.Close()
 
 	dc := &disk.Device{BootDrive: 0xFF}
+	dialog.FloppyController = dc
 
-	for i, v := range driveImage {
-		if v.name != "" {
-			name := v.name
+	for i, v := range dialog.DriveImages {
+		if v.Name != "" {
+			name := v.Name
 			bootable := false
 			if name[0] == '*' {
 				bootable = true
@@ -105,10 +96,10 @@ func emuLoop() {
 			}
 
 			var err error
-			if v.fp, err = os.OpenFile(name, os.O_RDWR, 0644); err != nil {
-				fmt.Println(err)
-			} else if err = dc.Insert(byte(i), v.fp); err != nil {
-				fmt.Println(err)
+			if dialog.DriveImages[i].Fp, err = os.OpenFile(name, os.O_RDWR, 0644); err != nil {
+				dialog.ShowErrorMessage(err.Error())
+			} else if err = dc.Insert(byte(i), dialog.DriveImages[i].Fp); err != nil {
+				dialog.ShowErrorMessage(err.Error())
 			} else if bootable || dc.BootDrive == 0xFF {
 				dc.BootDrive = byte(i)
 			}
@@ -116,7 +107,7 @@ func emuLoop() {
 	}
 
 	if dc.BootDrive == 0xFF {
-		fmt.Println("No boot device!")
+		dialog.ShowErrorMessage("No boot device selected!")
 		return
 	}
 

@@ -1,3 +1,5 @@
+// +build !sdl
+
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
 
@@ -15,19 +17,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package main
+package dialog
 
 import (
-	"runtime"
-
-	"github.com/andreas-jonsson/virtualxt/emulator"
+	"fmt"
+	"sync/atomic"
 )
 
-func init() {
-	// Is this needed for SDL2 if we use sdl.Main?
-	runtime.LockOSThread()
+func MainMenu() error {
+	atomic.StoreInt32(&mainMenuWasOpen, 1)
+	return nil
 }
 
-func main() {
-	emulator.Start()
+func EjectFloppy() error {
+	return nil
+}
+
+func MountFloppyImage(file string) error {
+	return nil
+}
+
+func ShowErrorMessage(msg string) error {
+	fmt.Println(msg)
+	return nil
+}
+
+func AskToQuit() bool {
+	return true
 }
