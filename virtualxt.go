@@ -18,15 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package main
 
 import (
-	"runtime"
-
 	"github.com/andreas-jonsson/virtualxt/emulator"
 )
-
-func init() {
-	// Is this needed for SDL2 if we use sdl.Main?
-	runtime.LockOSThread()
-}
 
 func main() {
 	emulator.Start()

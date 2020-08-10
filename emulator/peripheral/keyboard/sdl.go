@@ -56,13 +56,27 @@ func (m *Device) startSDLEventLoop() {
 }
 
 func (m *Device) sdlProcessKey(ev *sdl.KeyboardEvent) {
+	keyUp := ev.Type == sdl.KEYUP
 	if scan := sdlScanToXTScan(ev.Keysym.Scancode); scan != ScanInvalid {
-		if ev.Type == sdl.KEYUP {
+		if keyUp {
 			scan |= KeyUpMask
 		}
 		m.pushEvent(scan)
-	} else if ev.Keysym.Scancode == sdl.SCANCODE_F11 || ev.Keysym.Scancode == sdl.SCANCODE_F12 {
-		if ev.Type == sdl.KEYUP {
+	} else if ev.Keysym.Scancode == sdl.SCANCODE_F11 {
+		if keyUp {
+			w, err := sdl.GetWindowFromID(ev.WindowID)
+			if err != nil {
+				log.Printf("Could not find window: 0x%X", ev.WindowID)
+				return
+			}
+			if (w.GetFlags() & sdl.WINDOW_FULLSCREEN) != 0 {
+				w.SetFullscreen(0)
+			} else {
+				w.SetFullscreen(sdl.WINDOW_FULLSCREEN_DESKTOP)
+			}
+		}
+	} else if ev.Keysym.Scancode == sdl.SCANCODE_F12 {
+		if keyUp {
 			dialog.MainMenu()
 		}
 	} else {
