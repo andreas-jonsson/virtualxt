@@ -37,7 +37,7 @@ func (b buttonList) Len() int {
 }
 
 func (b buttonList) Less(i, j int) bool {
-	return b[i].ButtonID > b[j].ButtonID
+	return b[i].ButtonID < b[j].ButtonID
 }
 
 func (b buttonList) Swap(i, j int) {
@@ -46,7 +46,7 @@ func (b buttonList) Swap(i, j int) {
 
 func sortButtons(buttons []sdl.MessageBoxButtonData) []sdl.MessageBoxButtonData {
 	if runtime.GOOS != "windows" {
-		sort.Reverse(buttonList(buttons))
+		sort.Sort(sort.Reverse(buttonList(buttons)))
 	}
 	return buttons
 }
@@ -61,23 +61,23 @@ func MainMenu() error {
 			Text:     "Cancel",
 		},
 		{
-			ButtonID: 4,
+			ButtonID: 1,
 			Text:     "Reset",
 		},
 	}
 
 	if DriveImages[0].Fp != nil || DriveImages[1].Fp != nil {
 		buttons = append(buttons, sdl.MessageBoxButtonData{
-			ButtonID: 3,
+			ButtonID: 2,
 			Text:     "Eject",
 		})
 	}
 
 	buttons = append(buttons, sdl.MessageBoxButtonData{
-		ButtonID: 2,
+		ButtonID: 3,
 		Text:     "Configure",
 	}, sdl.MessageBoxButtonData{
-		ButtonID: 1,
+		ButtonID: 4,
 		Text:     "Help",
 	})
 
@@ -90,16 +90,16 @@ func MainMenu() error {
 
 	if id, err := sdl.ShowMessageBox(&mbd); err == nil {
 		switch id {
-		case 1:
+		case 4:
 			return OpenURL("https://phix.itch.io/virtualxt")
-		case 2:
+		case 3:
 			if p, err := os.Executable(); err == nil {
 				return OpenURL(filepath.Join(filepath.Dir(p), "config.json"))
 			}
 			return OpenURL("config.json")
-		case 3:
+		case 2:
 			return EjectFloppy()
-		case 4:
+		case 1:
 			atomic.StoreInt32(&requestRestart, 1)
 			return nil
 		default:
@@ -121,14 +121,14 @@ func EjectFloppy() error {
 
 	if v := &DriveImages[1]; v.Fp != nil {
 		buttons = append(buttons, sdl.MessageBoxButtonData{
-			ButtonID: 2,
+			ButtonID: 1,
 			Text:     "Drive B",
 		})
 	}
 
 	if v := &DriveImages[0]; v.Fp != nil {
 		buttons = append(buttons, sdl.MessageBoxButtonData{
-			ButtonID: 1,
+			ButtonID: 2,
 			Text:     "Drive A",
 		})
 	}
@@ -150,7 +150,7 @@ func EjectFloppy() error {
 			return errors.New("operation canceled")
 		}
 
-		drive := byte(id - 1)
+		drive := byte(2 - id)
 		if _, err := FloppyController.Eject(drive); err != nil {
 			ShowErrorMessage(err.Error())
 			return err
@@ -177,7 +177,7 @@ func MountFloppyImage(file string) error {
 				Text:     "Cancel",
 			},
 			{
-				ButtonID: 2,
+				ButtonID: 1,
 				Text: func() string {
 					if DriveImages[1].Name == "" {
 						return "Drive B"
@@ -187,7 +187,7 @@ func MountFloppyImage(file string) error {
 			},
 			{
 				Flags:    sdl.MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT,
-				ButtonID: 1,
+				ButtonID: 2,
 				Text: func() string {
 					if DriveImages[0].Name == "" {
 						return "Drive A"
@@ -203,7 +203,7 @@ func MountFloppyImage(file string) error {
 			return errors.New("operation canceled")
 		}
 
-		driveId := byte(id - 1)
+		driveId := byte(2 - id)
 		oldFp := DriveImages[driveId].Fp
 
 		if DriveImages[driveId].Fp, err = os.OpenFile(file, os.O_RDWR, 0644); err != nil {
