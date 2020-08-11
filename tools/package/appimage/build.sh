@@ -10,7 +10,7 @@ cp /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 $APP_DIR/lib/x86_64-linux-gnu/
 cp /usr/lib/x86_64-linux-gnu/libsndio.so.6.1 $APP_DIR/lib/x86_64-linux-gnu/
 
 cp virtualxt $APP_DIR/
-cp boot/freedos.bin $APP_DIR/boot/
+cp boot/freedos.img $APP_DIR/boot/
 cp bios/pcxtbios.bin $APP_DIR/bios/
 cp doc/icon/icon.png $APP_DIR/virtualxt-icon.png
 

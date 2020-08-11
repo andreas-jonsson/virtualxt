@@ -1,5 +1,7 @@
 # VirtualXT
 
+[![Build Status](https://travis-ci.com/andreas-jonsson/virtualxt.svg?branch=edge)](https://travis-ci.com/andreas-jonsson/virtualxt)
+
 ```
 THIS EMULATOR IS WORK-IN-PROGRESS!
 
@@ -21,6 +23,8 @@ If you want graphics and sound you need to link with the SDL2 library by passing
 
 ### Screenshots
 
-![dos3 screenshot](doc/screenshots/dos3.PNG)
+![bios screenshot](doc/screenshots/bios.PNG)
+
+![freedos screenshot](doc/screenshots/freedos.PNG)
 
 ![edit screenshot](doc/screenshots/edit.PNG)
