@@ -69,7 +69,7 @@ type Device struct {
 	crtReg      [0x100]byte
 
 	crtAddr, modeCtrlReg,
-	refresh byte
+	palReg, refresh byte
 
 	window   *sdl.Window
 	renderer *sdl.Renderer
@@ -87,7 +87,6 @@ type Device struct {
 func (m *Device) Install(p processor.Processor) error {
 	m.p = p
 	m.memoryBase = 0xB8000
-	m.cursor.visible = true
 	m.windowTitleTicker = time.NewTicker(time.Second)
 
 	// Scramble memory.
@@ -110,6 +109,8 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
+	m.palReg = 0x20
+	m.cursor.visible = true
 }
 
 func (m *Device) Step(cycles int) error {
@@ -122,6 +123,13 @@ func (m *Device) Close() error {
 	return nil
 }
 
+func blit32(pixels []byte, offset int, color uint32) {
+	pixels[offset] = byte((color & 0xFF0000) >> 16)
+	pixels[offset+1] = byte((color & 0x00FF00) >> 8)
+	pixels[offset+2] = byte(color & 0x0000FF)
+	pixels[offset+3] = 0xFF
+}
+
 func (m *Device) blitChar(ch, attrib byte, x, y int) {
 	pixels := m.surface.Pixels()
 	bgColor := cgaColor[(attrib&0x70)>>4]
@@ -132,6 +140,11 @@ func (m *Device) blitChar(ch, attrib byte, x, y int) {
 	//	fgColor = bgColor
 	//}
 
+	charWidth := 1
+	if m.modeCtrlReg&1 == 0 {
+		charWidth = 2
+	}
+
 	for i := 0; i < 8; i++ {
 		glyphLine := cgaFont[int(ch)*8+i]
 		for j := 0; j < 8; j++ {
@@ -140,11 +153,11 @@ func (m *Device) blitChar(ch, attrib byte, x, y int) {
 			if glyphLine&mask == 0 {
 				col = bgColor
 			}
-			offset := (int(m.surface.W)*(y+i) + x + j) * 4
-			pixels[offset] = byte((col & 0xFF0000) >> 16)
-			pixels[offset+1] = byte((col & 0x00FF00) >> 8)
-			pixels[offset+2] = byte(col & 0x0000FF)
-			pixels[offset+3] = 0xFF
+			offset := (int(m.surface.W)*(y+i) + x*charWidth + j*charWidth) * 4
+			blit32(pixels, offset, col)
+			if charWidth == 2 { // 40 columns?
+				blit32(pixels, offset+4, col)
+			}
 		}
 	}
 }
@@ -192,36 +205,58 @@ func (m *Device) startRenderLoop() error {
 
 					// In graphics mode?
 					if m.modeCtrlReg&2 != 0 {
-						offset := 0
-						pixels := m.surface.Pixels()
+						dst := m.surface.Pixels()
 
-						for i := 0; i < 200; i++ {
-							for j := 0; j < 80; j++ {
-								block := m.mem[i*80+j]
-								for p := 0; p < 4; p++ {
-									c := cgaColor[(block>>p)&3]
-									pixels[offset] = byte((c & 0xFF0000) >> 16)
-									pixels[offset+1] = byte((c & 0x00FF00) >> 8)
-									pixels[offset+2] = byte(c & 0x0000FF)
-									pixels[offset+3] = 0xFF
-									offset += 4
+						// Is in high-resolution mode?
+						if m.modeCtrlReg&0x10 != 0 {
+							for y := 0; y < 200; y++ {
+								for x := 0; x < 640; x++ {
+									addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 3))
+									pixel := (m.mem[(m.memoryBase+addr)-0xB8000] >> (7 - (x & 7))) & 1
+									col := cgaColor[pixel*15]
+									offset := (y*640 + x) * 4
+									blit32(dst, offset, col)
+								}
+							}
+						} else {
+							palette := (m.palReg >> 5) & 1
+							intensity := ((m.palReg >> 4) & 1) << 3
+
+							for y := 0; y < 200; y++ {
+								for x := 0; x < 320; x++ {
+									addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 2))
+									pixel := m.mem[(m.memoryBase+addr)-0xB8000]
+
+									switch x & 3 {
+									case 0:
+										pixel = (pixel >> 6) & 3
+									case 1:
+										pixel = (pixel >> 4) & 3
+									case 2:
+										pixel = (pixel >> 2) & 3
+									case 3:
+										pixel = pixel & 3
+									}
+
+									col := cgaColor[pixel*2+palette+intensity]
+									offset := (y*640 + x*2) * 4
+									blit32(dst, offset, col)
+									blit32(dst, offset+4, col)
 								}
 							}
 						}
-						/*
-							for i := 0; i < 200; i++ {
-								for j := 0; j < 80; j++ {
-									m.mem[8192+j] = 0
-								}
-							}
-						*/
 					} else {
-						numChar := 80 * 25
+						numCol := 80
+						if m.modeCtrlReg&1 == 0 {
+							numCol = 40
+						}
+
+						numChar := numCol * 25
 						for i := 0; i < numChar*2; i += 2 {
 							txt := (int(m.memoryBase) + i) - 0xB8000
 							ch := m.mem[txt]
 							idx := i / 2
-							m.blitChar(ch, m.mem[txt+1], (idx%80)*8, (idx/80)*8)
+							m.blitChar(ch, m.mem[txt+1], (idx%numCol)*8, (idx/numCol)*8)
 						}
 					}
 
@@ -244,9 +279,27 @@ func (m *Device) HandleInterrupt(int) error {
 		videoMode := r.AL() & 0x7F
 		log.Printf("Set video mode: 0x%X", videoMode)
 
-		m.p.WriteByte(memory.NewPointer(0x40, 0x49), videoMode)
-		m.p.WriteWord(memory.NewPointer(0x40, 0x4A), 80)
+		var numCol uint16
+		m.modeCtrlReg &= 0x20
 
+		switch {
+		case videoMode == 0 || videoMode == 1:
+			numCol = 40
+		case videoMode == 2 || videoMode == 3:
+			m.modeCtrlReg |= 1
+			numCol = 80
+		case videoMode == 4 || videoMode == 5:
+			m.modeCtrlReg |= 2
+			numCol = 40
+		case videoMode == 6:
+			m.modeCtrlReg |= 0x12
+			numCol = 80
+		}
+
+		m.p.WriteByte(memory.NewPointer(0x40, 0x49), videoMode)
+		m.p.WriteWord(memory.NewPointer(0x40, 0x4A), numCol)
+
+		// TODO: Fix this for all modes.
 		for i := 0; i < 80*25*2; i += 2 {
 			m.mem[i] = 0
 			m.mem[i+1] = 7
@@ -263,12 +316,12 @@ func (m *Device) In(port uint16) byte {
 
 	switch port {
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
-		fallthrough
-	case 0x3B1, 0x3B3, 0x3B5, 0x3B7:
 		return m.crtReg[m.crtAddr]
 	case 0x3BA, 0x3DA:
 		m.refresh ^= 0x9
 		return m.refresh
+	case 0x3B9:
+		return m.palReg
 	}
 	return 0
 }
@@ -276,12 +329,8 @@ func (m *Device) In(port uint16) byte {
 func (m *Device) Out(port uint16, data byte) {
 	switch port {
 	case 0x3D0, 0x3D2, 0x3D4, 0x3D6:
-		fallthrough
-	case 0x3B0, 0x3B2, 0x3B4, 0x3B6:
 		m.crtAddr = data
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
-		fallthrough
-	case 0x3B1, 0x3B3, 0x3B5, 0x3B7:
 		m.lock.Lock()
 
 		m.crtReg[m.crtAddr] = data
@@ -305,6 +354,8 @@ func (m *Device) Out(port uint16, data byte) {
 		fallthrough
 	case 0x3B8:
 		m.modeCtrlReg = data
+	case 0x3B9:
+		m.palReg = data
 	}
 }
 

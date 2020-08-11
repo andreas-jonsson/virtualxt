@@ -156,6 +156,10 @@ func emuLoop() {
 		var cycles int64
 		t := time.Now().UnixNano()
 
+		if dialog.RestartRequested() {
+			p.Reset()
+		}
+
 	step:
 		c, err := p.Step()
 		if err != nil {

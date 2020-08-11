@@ -23,10 +23,33 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
+	"sort"
 	"sync/atomic"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
+
+type buttonList []sdl.MessageBoxButtonData
+
+func (b buttonList) Len() int {
+	return len(b)
+}
+
+func (b buttonList) Less(i, j int) bool {
+	return b[i].ButtonID > b[j].ButtonID
+}
+
+func (b buttonList) Swap(i, j int) {
+	b[i], b[j] = b[j], b[i]
+}
+
+func sortButtons(buttons []sdl.MessageBoxButtonData) []sdl.MessageBoxButtonData {
+	if runtime.GOOS != "windows" {
+		sort.Reverse(buttonList(buttons))
+	}
+	return buttons
+}
 
 func MainMenu() error {
 	atomic.StoreInt32(&mainMenuWasOpen, 1)
@@ -36,6 +59,10 @@ func MainMenu() error {
 			Flags:    sdl.MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT,
 			ButtonID: 0,
 			Text:     "Cancel",
+		},
+		{
+			ButtonID: 4,
+			Text:     "Reset",
 		},
 	}
 
@@ -58,7 +85,7 @@ func MainMenu() error {
 		Flags:   sdl.MESSAGEBOX_INFORMATION,
 		Title:   "Menu Options",
 		Message: "To mount a new floppy image, drag-n-drop it in the main window.",
-		Buttons: buttons,
+		Buttons: sortButtons(buttons),
 	}
 
 	if id, err := sdl.ShowMessageBox(&mbd); err == nil {
@@ -72,6 +99,9 @@ func MainMenu() error {
 			return OpenURL("config.json")
 		case 3:
 			return EjectFloppy()
+		case 4:
+			atomic.StoreInt32(&requestRestart, 1)
+			return nil
 		default:
 			return errors.New("operation canceled")
 		}
@@ -112,7 +142,7 @@ func EjectFloppy() error {
 		Flags:   sdl.MESSAGEBOX_INFORMATION,
 		Title:   "Eject Floppy",
 		Message: "Select floppy drive to eject.",
-		Buttons: buttons,
+		Buttons: sortButtons(buttons),
 	}
 
 	if id, err := sdl.ShowMessageBox(&mbd); err == nil {
@@ -140,7 +170,7 @@ func MountFloppyImage(file string) error {
 		Flags:   sdl.MESSAGEBOX_INFORMATION,
 		Title:   "Mount Floppy Image",
 		Message: file,
-		Buttons: []sdl.MessageBoxButtonData{
+		Buttons: sortButtons([]sdl.MessageBoxButtonData{
 			{
 				Flags:    sdl.MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT,
 				ButtonID: 0,
@@ -165,7 +195,7 @@ func MountFloppyImage(file string) error {
 					return "Drive A*"
 				}(),
 			},
-		},
+		}),
 	}
 
 	if id, err := sdl.ShowMessageBox(&mbd); err == nil {
@@ -201,7 +231,7 @@ func AskToQuit() bool {
 		Flags:   sdl.MESSAGEBOX_INFORMATION,
 		Title:   "Shutdown",
 		Message: "Do you want to shutdown the emulator?",
-		Buttons: []sdl.MessageBoxButtonData{
+		Buttons: sortButtons([]sdl.MessageBoxButtonData{
 			{
 				Flags:    sdl.MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT,
 				ButtonID: 0,
@@ -212,7 +242,7 @@ func AskToQuit() bool {
 				ButtonID: 1,
 				Text:     "Yes",
 			},
-		},
+		}),
 	}
 
 	id, err := sdl.ShowMessageBox(&mbd)

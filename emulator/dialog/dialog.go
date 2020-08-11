@@ -31,9 +31,11 @@ type DiskController interface {
 	Replace(dnum byte, disk io.ReadWriteSeeker) error
 }
 
+var FloppyController DiskController
+
 var (
-	FloppyController DiskController
-	mainMenuWasOpen  int32
+	mainMenuWasOpen,
+	requestRestart int32
 )
 
 var DriveImages [0x100]struct {
@@ -72,4 +74,8 @@ func OpenURL(url string) error {
 
 func MainMenuWasOpen() bool {
 	return atomic.LoadInt32(&mainMenuWasOpen) != 0
+}
+
+func RestartRequested() bool {
+	return atomic.SwapInt32(&requestRestart, 0) != 0
 }
