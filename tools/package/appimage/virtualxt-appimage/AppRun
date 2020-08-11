@@ -10,6 +10,8 @@ else
 fi
 
 export LD_LIBRARY_PATH
+
 export VXT_DEFAULT_BIOS_PATH=$SELF_DIR/bios/pcxtbios.bin
+export VXT_DEFAULT_FLOPPY_IMAGE=$SELF_DIR/boot/freedos.img
 
 exec "$SELF_DIR/virtualxt" "$@"

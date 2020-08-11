@@ -1,11 +1,10 @@
 [[actions]]
-name = "Boot FreeDOS"
+name = "VirtualXT - FreeDOS"
 path = "VirtualXT-x86_64.AppImage"
-args = ["-a", "freedos.img"]
 
-[[actions]]
-name = "Boot Floppy Image"
-path = "VirtualXT-x86_64.AppImage"
+#[[actions]]
+#name = "Boot Floppy Image"
+#path = "VirtualXT-x86_64.AppImage"
 
 #[[actions]]
 #name = "manual"

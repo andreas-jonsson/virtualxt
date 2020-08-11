@@ -1,15 +1,10 @@
 [[actions]]
-name = "Boot FreeDOS"
-
-#TODO: Fix this! Passing arguments to app bundle seems to be a problem.
-path = "freedos.sh"
-
-#path = "VirtualXT.app"
-#args = ["-a", "VirtualXT.app/Contents/Resources/freedos.img"]
-
-[[actions]]
-name = "Boot Floppy Image"
+name = "VirtualXT - FreeDOS"
 path = "VirtualXT.app"
+
+#[[actions]]
+#name = "Boot Floppy Image"
+#path = "VirtualXT.app"
 
 #[[actions]]
 #name = "manual"

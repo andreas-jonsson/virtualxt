@@ -38,13 +38,19 @@ var (
 	requestRestart int32
 )
 
+var defaultFloppyImage = "boot/freedos.img"
+
 var DriveImages [0x100]struct {
 	Name string
 	Fp   *os.File
 }
 
 func init() {
-	flag.StringVar(&DriveImages[0x0].Name, "a", "", "Mount image as floppy A")
+	if p, ok := os.LookupEnv("VXT_DEFAULT_FLOPPY_IMAGE"); ok {
+		defaultFloppyImage = p
+	}
+
+	flag.StringVar(&DriveImages[0x0].Name, "a", defaultFloppyImage, "Mount image as floppy A")
 	flag.StringVar(&DriveImages[0x1].Name, "b", "", "Mount image as floppy B")
 	flag.StringVar(&DriveImages[0x80].Name, "c", "", "Mount image as haddrive C")
 	flag.StringVar(&DriveImages[0x81].Name, "d", "", "Mount image as haddrive D")
