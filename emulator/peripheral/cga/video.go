@@ -35,6 +35,8 @@ import (
 
 const memorySize = 0x4000
 
+var applicationStart = time.Now()
+
 var cgaColor = []uint32{
 	0x000000,
 	0x0000AA,
@@ -110,6 +112,7 @@ func (m *Device) Name() string {
 
 func (m *Device) Reset() {
 	m.palReg = 0x20
+	m.modeCtrlReg = 1
 	m.cursor.visible = true
 }
 
@@ -130,15 +133,19 @@ func blit32(pixels []byte, offset int, color uint32) {
 	pixels[offset+3] = 0xFF
 }
 
+func blinkTick() bool {
+	return ((applicationStart.UnixNano()/int64(time.Millisecond))/500)%2 == 0
+}
+
 func (m *Device) blitChar(ch, attrib byte, x, y int) {
 	pixels := m.surface.Pixels()
 	bgColor := cgaColor[(attrib&0x70)>>4]
-	//blink := attrib&0x80 != 0 && m.modeCtrlReg&0x20 != 0
+	blink := attrib&0x80 != 0 && m.modeCtrlReg&0x20 != 0
 	fgColor := cgaColor[attrib&0xF]
 
-	//if blinkTick {
-	//	fgColor = bgColor
-	//}
+	if blink && blinkTick() {
+		fgColor = bgColor
+	}
 
 	charWidth := 1
 	if m.modeCtrlReg&1 == 0 {
@@ -192,7 +199,7 @@ func (m *Device) startRenderLoop() error {
 				select {
 				case <-m.windowTitleTicker.C:
 					hlp := " (Press F12 for menu)"
-					if dialog.MainMenuWasOpen() {
+					if dialog.MainMenuWasOpen() || time.Since(applicationStart) > time.Second*10 {
 						hlp = ""
 					}
 					numCycles := float64(atomic.SwapInt32(&m.atomicCycleCounter, 0))
@@ -200,7 +207,8 @@ func (m *Device) startRenderLoop() error {
 				default:
 				}
 
-				if m.dirtyMemory {
+				blink := blinkTick()
+				if m.dirtyMemory || m.cursor.update || blink {
 					m.renderer.Clear()
 
 					// In graphics mode?
@@ -257,6 +265,12 @@ func (m *Device) startRenderLoop() error {
 							ch := m.mem[txt]
 							idx := i / 2
 							m.blitChar(ch, m.mem[txt+1], (idx%numCol)*8, (idx/numCol)*8)
+						}
+
+						if blink {
+							x, y := int(m.cursor.x), int(m.cursor.y)
+							attr := (m.mem[numCol*2*y+x*2+1] & 0x70) | 0xF
+							m.blitChar('_', attr, x*8, y*8)
 						}
 					}
 
@@ -328,8 +342,12 @@ func (m *Device) In(port uint16) byte {
 
 func (m *Device) Out(port uint16, data byte) {
 	switch port {
+	case 0x3B0, 0x3B2, 0x3B4, 0x3B6:
+		fallthrough // Don't think we should need this.
 	case 0x3D0, 0x3D2, 0x3D4, 0x3D6:
 		m.crtAddr = data
+	case 0x3B1, 0x3B3, 0x3B5, 0x3B7:
+		fallthrough // Don't think we should need this.
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
 		m.lock.Lock()
 
@@ -346,8 +364,13 @@ func (m *Device) Out(port uint16, data byte) {
 			m.cursorPos = (m.cursorPos & 0xFF00) | uint16(data)
 		}
 
-		m.cursor.x = byte(m.cursorPos % 80)
-		m.cursor.y = byte(m.cursorPos / 80)
+		var numCol uint16 = 80
+		if m.modeCtrlReg&1 == 0 {
+			numCol = 40
+		}
+
+		m.cursor.x = byte(m.cursorPos % numCol)
+		m.cursor.y = byte(m.cursorPos / numCol)
 
 		m.lock.Unlock()
 	case 0x3D8:
