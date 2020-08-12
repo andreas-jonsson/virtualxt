@@ -33,12 +33,12 @@ matrix:
 
       install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip
-        - curl -L -o sdl.dmg https://www.libsdl.org/release/SDL2-2.0.10.dmg && hdiutil attach sdl.dmg
-        - sudo cp -r /Volumes/SDL2/SDL2.framework /Library/Frameworks
+        #- curl -L -o sdl.dmg https://www.libsdl.org/release/SDL2-2.0.10.dmg && hdiutil attach sdl.dmg
+        #- sudo cp -r /Volumes/SDL2/SDL2.framework /Library/Frameworks
 
       script:
         #- go build -tags sdl virtualxt.go
-        - go build -tags static,sdl -ldflags "-s -w" virtualxt.go
+        - go build -tags sdl,static -ldflags "-s -w" virtualxt.go
         - ./tools/package/itch/package.osx.sh
 
     ################ Windows Build ################
