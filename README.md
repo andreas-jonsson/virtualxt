@@ -1,6 +1,6 @@
 # VirtualXT
 
-[![Build Status](https://travis-ci.com/andreas-jonsson/virtualxt.svg?branch=edge)](https://travis-ci.com/andreas-jonsson/virtualxt)
+[![Build Status](https://travis-ci.com/andreas-jonsson/virtualxt.svg?branch=master)](https://travis-ci.com/andreas-jonsson/virtualxt)
 
 ```
 THIS EMULATOR IS WORK-IN-PROGRESS!
