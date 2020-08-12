@@ -1,8 +1,9 @@
 #!/bin/sh
 
 APP_DIR="$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage-build"
+rm -rf $APP_DIR VirtualXT-x86_64.AppImage
+
 cp -r "$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage" $APP_DIR
-rm -f VirtualXT-x86_64.AppImage
 mkdir -p $APP_DIR/lib/x86_64-linux-gnu $APP_DIR/bios
 
 # Should locate this in some way.

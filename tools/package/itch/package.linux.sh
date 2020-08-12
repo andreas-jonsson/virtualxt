@@ -7,7 +7,6 @@ mkdir -p $PACKAGE_DEST/bios $PACKAGE_DEST/boot
 ./tools/package/appimage/build.sh
 
 cp VirtualXT-x86_64.AppImage $PACKAGE_DEST/
-#cp -r doc/manual $PACKAGE_DEST
 cp boot/freedos.img $PACKAGE_DEST/boot/
 cp tools/package/itch/itch.linux.toml $PACKAGE_DEST/.itch.toml
 
