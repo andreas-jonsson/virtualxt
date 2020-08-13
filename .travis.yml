@@ -14,7 +14,7 @@ matrix:
 
       install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
-        - curl -L -o sdl2.tar.gz https://www.libsdl.org/release/SDL2-devel-2.0.10.tar.gz && tar xf sdl2.tar.gz
+        - curl -L -o sdl2.tar.gz https://www.libsdl.org/release/SDL2-2.0.10.tar.gz && tar xf sdl2.tar.gz
 
         - ls -al
 
