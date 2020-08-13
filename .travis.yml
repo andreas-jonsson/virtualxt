@@ -7,10 +7,11 @@ matrix:
       os: linux
       dist: xenial
 
-      #addons:
-      #  apt:
-      #    packages:
-      #      - libsdl2-dev
+      addons:
+        apt:
+          update: true
+          packages:
+            - libsdl2-dev
 
       install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
