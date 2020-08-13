@@ -2,7 +2,7 @@
 
 PACKAGE_DEST="$TRAVIS_BUILD_DIR/package/virtualxt"
 rm -rf $PACKAGE_DEST
-mkdir -p $PACKAGE_DEST/bios $PACKAGE_DEST/boot
+mkdir -p $PACKAGE_DEST
 
 ./tools/package/appimage/build.sh
 

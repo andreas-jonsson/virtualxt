@@ -45,7 +45,7 @@ func (b buttonList) Swap(i, j int) {
 }
 
 func sortButtons(buttons []sdl.MessageBoxButtonData) []sdl.MessageBoxButtonData {
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && runtime.GOOS != "darwin" {
 		sort.Sort(sort.Reverse(buttonList(buttons)))
 	}
 	return buttons

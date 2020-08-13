@@ -29,7 +29,6 @@ matrix:
         homebrew:
           packages:
             - sdl2
-            - pkg-config
             - rpl
 
       install:
