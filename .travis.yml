@@ -5,7 +5,7 @@ matrix:
 
     - name: Linux
       os: linux
-      dist: bionic
+      dist: focal
 
       addons:
         apt:
@@ -28,7 +28,7 @@ matrix:
 
     - name: OSX
       os: osx
-      osx_image: xcode10.1
+      osx_image: xcode12
 
       addons:
         homebrew:
