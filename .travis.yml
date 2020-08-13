@@ -5,7 +5,7 @@ matrix:
 
     - name: Linux
       os: linux
-      dist: xenial
+      dist: bionic
 
       addons:
         apt:
