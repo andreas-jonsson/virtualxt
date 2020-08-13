@@ -8,6 +8,3 @@ mkdir -p $PACKAGE_DEST/bios $PACKAGE_DEST/boot
 
 cp VirtualXT-x86_64.AppImage $PACKAGE_DEST/
 cp tools/package/itch/itch.linux.toml $PACKAGE_DEST/.itch.toml
-
-# This is done in the AppImage build script.
-#curl -L -o $PACKAGE_DEST/bios/ati_ega_wonder_800_plus.bin "https://github.com/BaRRaKudaRain/PCem-ROMs/raw/master/ATI%20EGA%20Wonder%20800%2B%20N1.00.BIN"
