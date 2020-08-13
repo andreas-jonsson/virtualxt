@@ -4,10 +4,10 @@ APP_DIR="$TRAVIS_BUILD_DIR/VirtualXT.app"
 rm -rf $APP_DIR
 
 cp -r "$TRAVIS_BUILD_DIR/tools/package/appbundle/virtualxt-appbundle" $APP_DIR
-mkdir -p $APP_DIR/Contents/MacOS/bios $APP_DIR/Contents/Resources $APP_DIR/Contents/Frameworks
+mkdir -p $APP_DIR/Contents/MacOS $APP_DIR/Contents/Resources/bios
 
 cp virtualxt $APP_DIR/Contents/MacOS/
-cp bios/pcxtbios.bin $APP_DIR/Contents/MacOS/bios/
+cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
 cp doc/icon/icon.icns $APP_DIR/Contents/Resources/
 #cp -r doc/manual $APP_DIR/Contents/Resources
 
