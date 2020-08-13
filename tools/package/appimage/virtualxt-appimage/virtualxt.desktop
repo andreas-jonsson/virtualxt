@@ -3,5 +3,5 @@ Type=Application
 Name=VirtualXT
 Comment=VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.
 Icon=virtualxt-icon
-Terminal=true
+Terminal=false
 Categories=Utility;
