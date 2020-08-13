@@ -16,10 +16,8 @@ matrix:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
         - curl -L -o sdl2.tar.gz https://www.libsdl.org/release/SDL2-2.0.10.tar.gz && tar xf sdl2.tar.gz
 
-        - ls -al
-
-        - sudo apt remove libsdl2-dev
-        - cd SDL-* && ./configure && make && sudo make install && cd ..
+        - sudo apt remove libsdl2 libsdl2-dev
+        - cd SDL2-* && ./configure && make && sudo make install && cd ..
     
       script:
         - go build -tags sdl,static -ldflags "-s -w" virtualxt.go
