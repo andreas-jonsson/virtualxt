@@ -10,7 +10,7 @@ cp -r VirtualXT.app $PACKAGE_DEST
 cp boot/freedos.img $PACKAGE_DEST/boot/
 cp tools/package/itch/itch.osx.toml $PACKAGE_DEST/.itch.toml
 
-cat > $PACKAGE_DEST/Launch.sh << EOL
+cat > $PACKAGE_DEST/Launch.sh << 'EOL'
 #!/bin/bash
 HERE="$(cd "$(dirname "$0")" && pwd -P)"
 exec "${HERE}/VirtualXT.app/Contents/MacOS/start.sh" "$@"
