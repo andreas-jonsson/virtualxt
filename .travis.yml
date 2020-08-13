@@ -16,10 +16,11 @@ matrix:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
         - curl -L -o sdl2.tar.gz https://www.libsdl.org/release/SDL2-2.0.10.tar.gz && tar xf sdl2.tar.gz
 
-        - cd SDL2-* && ./configure && make && sudo make install && cd ..
+        #- cd SDL2-* && ./configure && make && sudo make install && cd $TRAVIS_BUILD_DIR
     
       script:
-        - go build -tags sdl,static -ldflags "-s -w" virtualxt.go
+        #- go build -tags sdl,static -ldflags "-s -w" virtualxt.go
+        - go build -tags sdl virtualxt.go
         - ./tools/package/itch/package.linux.sh
 
     ################ OSX Build ################
