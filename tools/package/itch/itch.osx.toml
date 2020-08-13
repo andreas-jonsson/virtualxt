@@ -1,6 +1,7 @@
 [[actions]]
 name = "VirtualXT - FreeDOS"
-path = "VirtualXT.app"
+#path = "VirtualXT.app"
+path = "Launch.sh"
 
 #[[actions]]
 #name = "Boot Floppy Image"
