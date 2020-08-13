@@ -16,7 +16,7 @@ matrix:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
     
       script:
-        - go build -tags sdl virtualxt.go
+        - go build -tags sdl,static -ldflags "-s -w" virtualxt.go
         - ./tools/package/itch/package.linux.sh
 
     ################ OSX Build ################
@@ -36,7 +36,6 @@ matrix:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip
 
       script:
-        # OSX uses static linking with SDL2
         - go build -tags sdl,static -ldflags "-s -w" virtualxt.go
         - ./tools/package/itch/package.osx.sh
 
@@ -57,7 +56,7 @@ matrix:
 
       script:
         - rsrc -ico=doc/icon/icon.ico -arch=amd64
-        - go build -tags sdl virtualxt.go
+        - go build -tags sdl,static -ldflags "-s -w" virtualxt.go
         - ./tools/package/itch/package.bat
 
 ################ Common ################
