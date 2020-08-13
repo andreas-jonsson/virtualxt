@@ -20,7 +20,7 @@ curl -L -o $APP_DIR/bios/ati_ega_wonder_800_plus.bin "https://github.com/BaRRaKu
 curl -L -o apptool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
 chmod +x apptool.AppImage
 
-./apptool.AppImage $APP_DIR
+ARCH=x86_64 ./apptool.AppImage $APP_DIR
 
 rm apptool.AppImage
 rm -rf $APP_DIR
