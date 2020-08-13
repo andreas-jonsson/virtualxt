@@ -11,7 +11,7 @@ matrix:
         apt:
           packages:
             - libsdl2-dev
-            - libsdl2-dbg
+          update: true
 
       install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
