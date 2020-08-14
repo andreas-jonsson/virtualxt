@@ -1,0 +1,65 @@
+name: virtualxt
+version: "0.5.0"
+summary: "Lightweight IBM PC/XT emulator"
+description: |
+  VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.
+  It is designed to be simple and lightweight yet still capable enough to run a large library of old application and games.
+
+base: core20
+confinement: strict
+grade: devel
+#grade: stable
+#license: GPL3
+icon: doc/icon/icon.png
+architectures:
+  #- build-on: [amd64, arm64]
+  - build-on: [amd64]
+
+parts:
+  virtualxt:
+    plugin: go
+    source: https://github.com/andreas-jonsson/virtualxt.git
+    go-buildtags: [sdl]
+    artifacts:
+      - virtualxt
+    #organize:
+    #  virtualxt: bin/virtualxt
+    build-packages:
+      - gcc
+      - libsdl2-dev
+    stage-packages:
+      - libsdl2-2.0-0
+      #- libgl1
+
+  #manual:
+  #  source: doc/manual/
+  #  plugin: dump
+  #  organize:
+  #    "*": usr/share/virtualxt/manual/
+
+  #desktop:
+  #  source: tools/package/snap/
+  #  plugin: dump
+
+apps:
+  virtualxt:
+    command: virtualxt
+    desktop: tools/package/appimage/virtualxt-appimage/virtualxt.desktop
+    #extensions: [gnome-3-28]
+    environment:
+      SHELL: bash
+      LC_ALL: C.UTF-8
+      SNAPCRAFT_ARCH_TRIPLET: $SNAPCRAFT_ARCH_TRIPLET
+      __EGL_VENDOR_LIBRARY_DIRS: $SNAP/etc/glvnd/egl_vendor.d:$SNAP/usr/share/glvnd/egl_vendor.d
+      LIBGL_DRIVERS_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/dri
+      LIBVA_DRIVERS_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/dri
+      LD_LIBRARY_PATH: LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
+      HOME: $SNAP_USER_DATA
+      XDG_CACHE_HOME: $SNAP_USER_DATA/.cache
+    plugs:
+      - x11
+      - opengl
+      - audio-playback
+      - pulseaudio
+      - joystick
+      - home
