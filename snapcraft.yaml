@@ -17,9 +17,11 @@ architectures:
 parts:
   virtualxt:
     plugin: go
+    go-channel: "1.14/stable"
     source: https://github.com/andreas-jonsson/virtualxt.git
     go-buildtags: [sdl]
     override-build: |
+      export FULL_VERSION=${SNAP_VERSION}.${SNAP_REVISION}
       go generate ./...
       snapcraftctl build
     #organize:
