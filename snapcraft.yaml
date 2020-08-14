@@ -19,6 +19,9 @@ parts:
     plugin: go
     source: https://github.com/andreas-jonsson/virtualxt.git
     go-buildtags: [sdl]
+    override-build: |
+      go generate ./...
+      snapcraftctl build
     #organize:
     #  virtualxt: bin/virtualxt
     build-packages:
