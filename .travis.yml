@@ -25,14 +25,14 @@ matrix:
       #if: branch = release OR branch = edge
       if: branch = master
       os: linux
-      dist: bionic
+      dist: focal
       sudo: required
 
-      addons:
-        snaps:
-          - name: multipass
-          - name: snapcraft
-            confinement: classic
+      #addons:
+      #  snaps:
+      #    - name: multipass
+      #    - name: snapcraft
+      #      confinement: classic
 
       #install:
       #  - export PUSH_SNAP=1
