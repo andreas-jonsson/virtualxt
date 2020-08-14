@@ -29,10 +29,8 @@ matrix:
       sudo: required
 
       addons:
-        apt:
-          packages:
-            - libsdl2-dev
-            - multipass
+        snaps:
+          - multipass
 
       #install:
       #  - export PUSH_SNAP=1
