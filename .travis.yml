@@ -25,7 +25,7 @@ matrix:
       #if: branch = release OR branch = edge
       if: branch = master
       os: linux
-      dist: focal
+      dist: bionic
       sudo: required
 
       #addons:
@@ -109,7 +109,8 @@ before_install:
 before_script:
   - export FULL_VERSION=${VXT_VERSION}.${TRAVIS_BUILD_ID}
   - go generate ./...
-  - go test ./...
+  - go test -race -coverprofile coverage.txt -covermode atomic ./...
+  - bash <(curl -s https://codecov.io/bash)
 
 deploy:
   provider: script
