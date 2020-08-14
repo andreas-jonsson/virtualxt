@@ -36,14 +36,11 @@ matrix:
       #  - export PUSH_SNAP=1
 
       script:
-        - sudo snap install --classic multipass
+        - sudo snap install multipass
         - sudo snap install --classic snapcraft
 
-        - sudo ls /var/snap/multipass/common
+        - sleep 5
         - sudo chown $USER:$USER /var/snap/multipass/common/multipass_socket
-
-        - multipass list
-        - multipass launch --name snapcraft:core20
 
         #- echo $SNAPCRAFT_LOGIN_FILE | base64 --decode --ignore-garbage > snapcraft.login
         #- snapcraft login --with snapcraft.login
