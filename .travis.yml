@@ -23,7 +23,7 @@ matrix:
 
     - name: Linux (snap)
       #if: branch = release OR branch = edge
-      if: branch = master
+      if: branch = snap-build
       os: linux
       dist: bionic
       sudo: required
