@@ -28,15 +28,15 @@ matrix:
       dist: focal
       sudo: required
 
-      addons:
-        snaps:
-          - multipass
+      #addons:
+      #  snaps:
+      #    - multipass
 
       #install:
       #  - export PUSH_SNAP=1
 
       script:
-        #- sudo snap install --classic multipass
+        - sudo snap install multipass
         #- sudo snap install --classic snapcraft
 
         - sudo chown $USER:$USER /var/snap/multipass/common/multipass_socket
