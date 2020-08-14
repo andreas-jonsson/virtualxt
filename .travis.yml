@@ -36,7 +36,7 @@ matrix:
       #  - export PUSH_SNAP=1
 
       script:
-        - sudo snap install multipass
+        - sudo snap install --edge multipass
         #- sudo snap install --classic snapcraft
 
         - sudo chown $USER:$USER /var/snap/multipass/common/multipass_socket
