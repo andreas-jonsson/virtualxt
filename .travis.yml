@@ -28,16 +28,18 @@ matrix:
       dist: bionic
       sudo: required
 
-      #addons:
-      #  snaps:
-      #    - multipass
+      addons:
+        snaps:
+          - name: multipass
+          - name: snapcraft
+            confinement: classic
 
       #install:
       #  - export PUSH_SNAP=1
 
       script:
-        - sudo snap install multipass
-        - sudo snap install --classic snapcraft
+        #- sudo snap install multipass
+        #- sudo snap install --classic snapcraft
 
         - sleep 5
         - sudo chown $USER:$USER /var/snap/multipass/common/multipass_socket
