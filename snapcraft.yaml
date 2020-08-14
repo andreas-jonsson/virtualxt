@@ -22,7 +22,7 @@ parts:
     #organize:
     #  virtualxt: bin/virtualxt
     build-packages:
-      - gcc
+      - build-essential
       - libsdl2-dev
     stage-packages:
       - libsdl2-2.0-0
