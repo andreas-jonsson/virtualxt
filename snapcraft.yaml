@@ -9,19 +9,16 @@ base: core20
 confinement: strict
 grade: devel
 #grade: stable
-#license: GPL3
+license: GPL-3.0
 icon: doc/icon/icon.png
 architectures:
-  #- build-on: [amd64, arm64]
-  - build-on: [amd64]
+  - build-on: amd64
 
 parts:
   virtualxt:
     plugin: go
     source: https://github.com/andreas-jonsson/virtualxt.git
     go-buildtags: [sdl]
-    artifacts:
-      - virtualxt
     #organize:
     #  virtualxt: bin/virtualxt
     build-packages:
@@ -29,7 +26,7 @@ parts:
       - libsdl2-dev
     stage-packages:
       - libsdl2-2.0-0
-      #- libgl1
+      - libgl1
 
   #manual:
   #  source: doc/manual/
@@ -45,7 +42,6 @@ apps:
   virtualxt:
     command: virtualxt
     desktop: tools/package/appimage/virtualxt-appimage/virtualxt.desktop
-    #extensions: [gnome-3-28]
     environment:
       SHELL: bash
       LC_ALL: C.UTF-8
