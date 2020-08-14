@@ -25,23 +25,19 @@ matrix:
       #if: branch = release OR branch = edge
       if: branch = master
       os: linux
-      dist: focal
+      dist: bionic
       sudo: required
 
-      #addons:
-      #  snaps:
-      #    - name: multipass
-      #    - name: snapcraft
-      #      confinement: classic
+      addons:
+        snaps:
+          - name: multipass
+          - name: snapcraft
+            confinement: classic
 
-      #install:
-      #  - export PUSH_SNAP=1
+      install:
+        - export PUSH_SNAP=1
 
       script:
-        #- sudo snap install multipass
-        #- sudo snap install --classic snapcraft
-
-        - sleep 5
         - sudo chown $USER:$USER /var/snap/multipass/common/multipass_socket
 
         #- echo $SNAPCRAFT_LOGIN_FILE | base64 --decode --ignore-garbage > snapcraft.login
