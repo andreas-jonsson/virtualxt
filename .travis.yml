@@ -16,7 +16,7 @@ matrix:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
 
       script:
-        - go build -tags sdl,static -ldflags "-s -w" virtualxt.go
+        - go build -tags sdl,static -ldflags "-s -w"
         - ./tools/package/itch/package.linux.sh
 
     ################ OSX Build ################
@@ -35,7 +35,7 @@ matrix:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip
 
       script:
-        - go build -tags sdl,static -ldflags "-s -w" virtualxt.go
+        - go build -tags sdl,static -ldflags "-s -w"
         - ./tools/package/itch/package.osx.sh
 
     ################ Windows Build ################
@@ -54,8 +54,8 @@ matrix:
         - go get github.com/akavel/rsrc
 
       script:
-        - rsrc -ico=doc/icon/icon.ico -arch=amd64
-        - go build -tags sdl,static -ldflags "-s -w" virtualxt.go
+        - rsrc -ico=doc/icon/icon.ico
+        - go build -tags sdl,static -ldflags "-s -w"
         - ./tools/package/itch/package.bat
 
 ################ Common ################
@@ -63,7 +63,7 @@ matrix:
 language: go
 
 go:
-  - "1.14.x"
+  - "1.15.x"
 
 env:
   - VXT_VERSION=0.5.0
