@@ -19,7 +19,7 @@ library of old application and games.
 
 ### Build
 
-The emulator is written i pure Go and should compile with only the standard
+The emulator is written in pure Go and should compile with only the standard
 Go [toolchain](https://golang.org/dl/) installed. Although in that case you are limited to textmode only.
 If you want graphics and sound you need to link with the SDL2 library by passing the build tag ```sdl```.
 
