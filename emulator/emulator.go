@@ -35,6 +35,7 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pit"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/ram"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/rom"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/speaker"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
 )
 
@@ -136,11 +137,12 @@ func emuLoop() {
 			Base:    memory.NewPointer(0xC000, 0),
 			Reader:  videoBios,
 		},
-		&pic.Device{},      // Programmable Interrupt Controller
-		&pit.Device{},      // Programmable Interval Timer
-		dc,                 // Disk Controller
-		video,              // Video Device
-		&keyboard.Device{}, // Keyboard Controller
+		&pic.Device{},       // Programmable Interrupt Controller
+		&pit.Device{},       // Programmable Interval Timer
+		dc,                  // Disk Controller
+		video,               // Video Device
+		speaker.NewDevice(), // PC Speaker
+		&keyboard.Device{},  // Keyboard Controller
 	}
 	if debug.EnableDebug {
 		peripherals = append(peripherals, &debug.Device{})
@@ -152,13 +154,15 @@ func emuLoop() {
 	}
 
 	p := cpu.NewCPU(peripherals)
+	defer p.Close()
+
 	p.SetV20Support(v20cpu)
 
 	p.Reset()
 	//p.IP = 0xFFF0
 	//p.CS = 0xF000
 
-	for {
+	for !dialog.ShutdownRequested() {
 		var cycles int64
 		t := time.Now().UnixNano()
 

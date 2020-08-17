@@ -90,6 +90,7 @@ func (m *Device) Install(p processor.Processor) error {
 	m.p = p
 	m.memoryBase = 0xB8000
 	m.windowTitleTicker = time.NewTicker(time.Second)
+	m.quitChan = make(chan struct{})
 
 	// Scramble memory.
 	rand.Read(m.mem[:])
@@ -122,7 +123,8 @@ func (m *Device) Step(cycles int) error {
 }
 
 func (m *Device) Close() error {
-	// TODO!
+	m.quitChan <- struct{}{}
+	<-m.quitChan
 	return nil
 }
 
@@ -191,95 +193,104 @@ func (m *Device) startRenderLoop() error {
 	}
 
 	go func() {
-		for range time.Tick(time.Second / 60) {
-			sdl.Do(func() {
-				m.lock.RLock()
-				defer m.lock.RUnlock()
+		ticker := time.NewTicker(time.Second / 60)
+		defer ticker.Stop()
 
-				select {
-				case <-m.windowTitleTicker.C:
-					hlp := " (Press F12 for menu)"
-					if dialog.MainMenuWasOpen() || time.Since(applicationStart) > time.Second*10 {
-						hlp = ""
+		for {
+			select {
+			case <-m.quitChan:
+				close(m.quitChan)
+				return
+			case <-ticker.C:
+				sdl.Do(func() {
+					m.lock.RLock()
+					defer m.lock.RUnlock()
+
+					select {
+					case <-m.windowTitleTicker.C:
+						hlp := " (Press F12 for menu)"
+						if dialog.MainMenuWasOpen() || time.Since(applicationStart) > time.Second*10 {
+							hlp = ""
+						}
+						numCycles := float64(atomic.SwapInt32(&m.atomicCycleCounter, 0))
+						m.window.SetTitle(fmt.Sprintf("VirtualXT - %.2f MIPS%s", numCycles/1000000, hlp))
+					default:
 					}
-					numCycles := float64(atomic.SwapInt32(&m.atomicCycleCounter, 0))
-					m.window.SetTitle(fmt.Sprintf("VirtualXT - %.2f MIPS%s", numCycles/1000000, hlp))
-				default:
-				}
 
-				blink := blinkTick()
-				if m.dirtyMemory || m.cursor.update || blink {
-					m.renderer.Clear()
+					blink := blinkTick()
+					if m.dirtyMemory || m.cursor.update || blink {
+						m.renderer.Clear()
 
-					// In graphics mode?
-					if m.modeCtrlReg&2 != 0 {
-						dst := m.surface.Pixels()
+						// In graphics mode?
+						if m.modeCtrlReg&2 != 0 {
+							dst := m.surface.Pixels()
 
-						// Is in high-resolution mode?
-						if m.modeCtrlReg&0x10 != 0 {
-							for y := 0; y < 200; y++ {
-								for x := 0; x < 640; x++ {
-									addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 3))
-									pixel := (m.mem[(m.memoryBase+addr)-0xB8000] >> (7 - (x & 7))) & 1
-									col := cgaColor[pixel*15]
-									offset := (y*640 + x) * 4
-									blit32(dst, offset, col)
+							// Is in high-resolution mode?
+							if m.modeCtrlReg&0x10 != 0 {
+								for y := 0; y < 200; y++ {
+									for x := 0; x < 640; x++ {
+										addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 3))
+										pixel := (m.mem[(m.memoryBase+addr)-0xB8000] >> (7 - (x & 7))) & 1
+										col := cgaColor[pixel*15]
+										offset := (y*640 + x) * 4
+										blit32(dst, offset, col)
+									}
+								}
+							} else {
+								palette := (m.palReg >> 5) & 1
+								intensity := ((m.palReg >> 4) & 1) << 3
+
+								for y := 0; y < 200; y++ {
+									for x := 0; x < 320; x++ {
+										addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 2))
+										pixel := m.mem[(m.memoryBase+addr)-0xB8000]
+
+										switch x & 3 {
+										case 0:
+											pixel = (pixel >> 6) & 3
+										case 1:
+											pixel = (pixel >> 4) & 3
+										case 2:
+											pixel = (pixel >> 2) & 3
+										case 3:
+											pixel = pixel & 3
+										}
+
+										col := cgaColor[pixel*2+palette+intensity]
+										offset := (y*640 + x*2) * 4
+										blit32(dst, offset, col)
+										blit32(dst, offset+4, col)
+									}
 								}
 							}
 						} else {
-							palette := (m.palReg >> 5) & 1
-							intensity := ((m.palReg >> 4) & 1) << 3
+							numCol := 80
+							if m.modeCtrlReg&1 == 0 {
+								numCol = 40
+							}
 
-							for y := 0; y < 200; y++ {
-								for x := 0; x < 320; x++ {
-									addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 2))
-									pixel := m.mem[(m.memoryBase+addr)-0xB8000]
+							numChar := numCol * 25
+							for i := 0; i < numChar*2; i += 2 {
+								txt := (int(m.memoryBase) + i) - 0xB8000
+								ch := m.mem[txt]
+								idx := i / 2
+								m.blitChar(ch, m.mem[txt+1], (idx%numCol)*8, (idx/numCol)*8)
+							}
 
-									switch x & 3 {
-									case 0:
-										pixel = (pixel >> 6) & 3
-									case 1:
-										pixel = (pixel >> 4) & 3
-									case 2:
-										pixel = (pixel >> 2) & 3
-									case 3:
-										pixel = pixel & 3
-									}
-
-									col := cgaColor[pixel*2+palette+intensity]
-									offset := (y*640 + x*2) * 4
-									blit32(dst, offset, col)
-									blit32(dst, offset+4, col)
-								}
+							if blink {
+								x, y := int(m.cursor.x), int(m.cursor.y)
+								attr := (m.mem[numCol*2*y+x*2+1] & 0x70) | 0xF
+								m.blitChar('_', attr, x*8, y*8)
 							}
 						}
-					} else {
-						numCol := 80
-						if m.modeCtrlReg&1 == 0 {
-							numCol = 40
-						}
 
-						numChar := numCol * 25
-						for i := 0; i < numChar*2; i += 2 {
-							txt := (int(m.memoryBase) + i) - 0xB8000
-							ch := m.mem[txt]
-							idx := i / 2
-							m.blitChar(ch, m.mem[txt+1], (idx%numCol)*8, (idx/numCol)*8)
-						}
-
-						if blink {
-							x, y := int(m.cursor.x), int(m.cursor.y)
-							attr := (m.mem[numCol*2*y+x*2+1] & 0x70) | 0xF
-							m.blitChar('_', attr, x*8, y*8)
-						}
+						m.texture.Update(nil, m.surface.Pixels(), int(m.surface.Pitch))
 					}
 
-					m.texture.Update(nil, m.surface.Pixels(), int(m.surface.Pitch))
-				}
-
-				m.renderer.Copy(m.texture, nil, nil)
-				m.renderer.Present()
-			})
+					m.renderer.Copy(m.texture, nil, nil)
+					m.renderer.Present()
+				})
+			}
 		}
 	}()
 

@@ -35,7 +35,8 @@ var FloppyController DiskController
 
 var (
 	mainMenuWasOpen,
-	requestRestart int32
+	requestRestart,
+	quitFlag int32
 )
 
 var defaultFloppyImage = "boot/freedos.img"
@@ -92,4 +93,8 @@ func MainMenuWasOpen() bool {
 
 func RestartRequested() bool {
 	return atomic.SwapInt32(&requestRestart, 0) != 0
+}
+
+func ShutdownRequested() bool {
+	return atomic.LoadInt32(&quitFlag) != 0
 }

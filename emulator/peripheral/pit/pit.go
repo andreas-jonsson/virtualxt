@@ -89,6 +89,10 @@ func (m *Device) Step(int) error {
 	return nil
 }
 
+func (m *Device) GetFrequency(channel int) float64 {
+	return m.channels[channel].frequency
+}
+
 func (m *Device) In(port uint16) byte {
 	if port == 0x43 {
 		return 0

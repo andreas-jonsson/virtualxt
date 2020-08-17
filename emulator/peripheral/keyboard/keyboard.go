@@ -40,7 +40,7 @@ func (m *Device) Install(p processor.Processor) error {
 	m.ticker = time.NewTicker(time.Millisecond * 10)
 	m.events = make(chan Scancode, MaxEvents)
 
-	if err := p.InstallIODevice(m, 0x60, 0x64); err != nil {
+	if err := p.InstallIODeviceAt(m, 0x60, 0x62, 0x64); err != nil {
 		return err
 	}
 	m.startSDLEventLoop()

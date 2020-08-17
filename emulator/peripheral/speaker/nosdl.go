@@ -17,32 +17,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package dialog
+package speaker
 
 import (
-	"fmt"
-	"sync/atomic"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
-func MainMenu() error {
-	atomic.StoreInt32(&mainMenuWasOpen, 1)
+type spkrDevice struct {
+}
+
+func NewDevice() peripheral.Peripheral {
+	return &spkrDevice{}
+}
+
+func (m *spkrDevice) Install(p processor.Processor) error {
 	return nil
 }
 
-func EjectFloppy() error {
-	return nil
+func (m *spkrDevice) Name() string {
+	return "NULL AUDIO"
 }
 
-func MountFloppyImage(file string) error {
-	return nil
+func (m *spkrDevice) Reset() {
 }
 
-func ShowErrorMessage(msg string) error {
-	fmt.Println(msg)
+func (m *spkrDevice) Step(cycles int) error {
 	return nil
-}
-
-func AskToQuit() bool {
-	atomic.StoreInt32(&quitFlag, 1)
-	return true
 }

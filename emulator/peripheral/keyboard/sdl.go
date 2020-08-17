@@ -21,7 +21,6 @@ package keyboard
 
 import (
 	"log"
-	"os"
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
@@ -39,9 +38,7 @@ func (m *Device) startSDLEventLoop() {
 				for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 					switch ev := event.(type) {
 					case *sdl.QuitEvent:
-						if dialog.AskToQuit() {
-							os.Exit(0)
-						}
+						dialog.AskToQuit()
 					case *sdl.KeyboardEvent:
 						m.sdlProcessKey(ev)
 					case *sdl.DropEvent:
