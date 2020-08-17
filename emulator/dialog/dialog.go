@@ -78,6 +78,14 @@ func OpenURL(url string) error {
 	return nil
 }
 
+func OpenManual() error {
+	defaultPath := "manual/index.md.html"
+	if p, ok := os.LookupEnv("VXT_DEFAULT_MANUAL_INDEX"); ok {
+		defaultPath = p
+	}
+	return OpenURL(defaultPath)
+}
+
 func MainMenuWasOpen() bool {
 	return atomic.LoadInt32(&mainMenuWasOpen) != 0
 }

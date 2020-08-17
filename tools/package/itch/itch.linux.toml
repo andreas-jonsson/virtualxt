@@ -6,6 +6,7 @@ path = "VirtualXT-x86_64.AppImage"
 #name = "Boot Floppy Image"
 #path = "VirtualXT-x86_64.AppImage"
 
-#[[actions]]
-#name = "manual"
-#path = "manual/index.html"
+[[actions]]
+name = "manual"
+path = "VirtualXT-x86_64.AppImage"
+args = ["-m"]

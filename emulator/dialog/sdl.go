@@ -91,7 +91,7 @@ func MainMenu() error {
 	if id, err := sdl.ShowMessageBox(&mbd); err == nil {
 		switch id {
 		case 4:
-			return OpenURL("https://phix.itch.io/virtualxt")
+			return OpenManual()
 		case 3:
 			if p, err := os.Executable(); err == nil {
 				return OpenURL(filepath.Join(filepath.Dir(p), "config.json"))

@@ -10,6 +10,7 @@ cp virtualxt $APP_DIR/
 cp bios/pcxtbios.bin $APP_DIR/bios/
 cp boot/freedos.img $APP_DIR/boot/
 cp doc/icon/icon.png $APP_DIR/virtualxt-icon.png
+cp -r doc/manual $APP_DIR
 
 curl -L -o $APP_DIR/bios/ati_ega_wonder_800_plus.bin "https://github.com/BaRRaKudaRain/PCem-ROMs/raw/master/ATI%20EGA%20Wonder%20800%2B%20N1.00.BIN"
 

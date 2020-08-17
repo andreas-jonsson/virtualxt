@@ -10,7 +10,7 @@ cp virtualxt $APP_DIR/Contents/MacOS/
 cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
 cp boot/freedos.img $APP_DIR/Contents/Resources/boot/
 cp doc/icon/icon.icns $APP_DIR/Contents/Resources/
-#cp -r doc/manual $APP_DIR/Contents/Resources
+cp -r doc/manual $APP_DIR/Contents/Resources
 
 curl -L -o $APP_DIR/Contents/Resources/bios/ati_ega_wonder_800_plus.bin "https://github.com/BaRRaKudaRain/PCem-ROMs/raw/master/ATI%20EGA%20Wonder%20800%2B%20N1.00.BIN"
 

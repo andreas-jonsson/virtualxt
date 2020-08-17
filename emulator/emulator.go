@@ -44,8 +44,8 @@ var (
 )
 
 var (
-	limitMIPS float64
-	v20cpu    bool
+	limitMIPS   float64
+	v20cpu, man bool
 )
 
 func init() {
@@ -58,6 +58,7 @@ func init() {
 	}
 
 	flag.BoolVar(&v20cpu, "v20", false, "Emulate NEC V20 CPU")
+	flag.BoolVar(&man, "m", false, "Open manual")
 
 	flag.Float64Var(&limitMIPS, "mips", 0, "Limit CPU speed")
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")
@@ -69,6 +70,11 @@ func init() {
 }
 
 func emuLoop() {
+	if man {
+		dialog.OpenManual()
+		return
+	}
+
 	bios, err := os.Open(biosImage)
 	if err != nil {
 		dialog.ShowErrorMessage(err.Error())

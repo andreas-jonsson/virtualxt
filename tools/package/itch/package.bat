@@ -5,7 +5,7 @@ if exist %PACKAGE_DEST%\ rmdir /q /s %PACKAGE_DEST%
 mkdir %PACKAGE_DEST%\bios %PACKAGE_DEST%\boot
 
 copy virtualxt.exe %PACKAGE_DEST%
-rem xcopy /S /Y /I doc\manual %PACKAGE_DEST%\manual
+xcopy /S /Y /I doc\manual %PACKAGE_DEST%\manual
 copy bios\pcxtbios.bin %PACKAGE_DEST%\bios
 copy boot\freedos.img %PACKAGE_DEST%\boot
 copy tools\package\itch\itch.windows.toml %PACKAGE_DEST%\.itch.toml
