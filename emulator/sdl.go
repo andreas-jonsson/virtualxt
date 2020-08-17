@@ -31,7 +31,7 @@ import (
 func Start() {
 	flag.Parse()
 	sdl.Main(emuLoop)
-	os.Exit(0) // Callig Exit is required!
+	os.Exit(0) // Calling Exit is required!
 }
 
 var mdaVideo = false
