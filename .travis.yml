@@ -54,7 +54,7 @@ matrix:
         - go get github.com/akavel/rsrc
 
       script:
-        - rsrc -ico=doc/icon/icon.ico
+        - rsrc -ico=doc/icon/icon.ico -arch=amd64
         - go build -tags sdl,static -ldflags "-s -w"
         - ./tools/package/itch/package.bat
 
