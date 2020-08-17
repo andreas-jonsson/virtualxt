@@ -301,6 +301,8 @@ func (m *Device) HandleInterrupt(int) error {
 	r := m.p.GetRegisters()
 	switch r.AH() {
 	case 0:
+		m.lock.Lock()
+
 		videoMode := r.AL() & 0x7F
 		log.Printf("Set video mode: 0x%X", videoMode)
 
@@ -321,14 +323,17 @@ func (m *Device) HandleInterrupt(int) error {
 			numCol = 80
 		}
 
-		m.p.WriteByte(memory.NewPointer(0x40, 0x49), videoMode)
-		m.p.WriteWord(memory.NewPointer(0x40, 0x4A), numCol)
-
 		// TODO: Fix this for all modes.
 		for i := 0; i < 80*25*2; i += 2 {
 			m.mem[i] = 0
 			m.mem[i+1] = 7
 		}
+
+		// We must unlock before we can use the CPU interface.
+		m.lock.Unlock()
+
+		m.p.WriteByte(memory.NewPointer(0x40, 0x49), videoMode)
+		m.p.WriteWord(memory.NewPointer(0x40, 0x4A), numCol)
 		return nil
 	}
 	return processor.ErrInterruptNotHandled
@@ -338,6 +343,9 @@ func (m *Device) In(port uint16) byte {
 	// Force CGA
 	addr := memory.NewPointer(0x40, 0x10)
 	m.p.WriteWord(addr, (m.p.ReadWord(addr)&0xFFCF)|0x20)
+
+	m.lock.Lock()
+	defer m.lock.Unlock()
 
 	switch port {
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
@@ -352,6 +360,9 @@ func (m *Device) In(port uint16) byte {
 }
 
 func (m *Device) Out(port uint16, data byte) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	switch port {
 	case 0x3B0, 0x3B2, 0x3B4, 0x3B6:
 		fallthrough // Don't think we should need this.
@@ -360,8 +371,6 @@ func (m *Device) Out(port uint16, data byte) {
 	case 0x3B1, 0x3B3, 0x3B5, 0x3B7:
 		fallthrough // Don't think we should need this.
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
-		m.lock.Lock()
-
 		m.crtReg[m.crtAddr] = data
 		switch m.crtAddr {
 		case 0xA:
@@ -382,8 +391,6 @@ func (m *Device) Out(port uint16, data byte) {
 
 		m.cursor.x = byte(m.cursorPos % numCol)
 		m.cursor.y = byte(m.cursorPos / numCol)
-
-		m.lock.Unlock()
 	case 0x3D8:
 		fallthrough
 	case 0x3B8:

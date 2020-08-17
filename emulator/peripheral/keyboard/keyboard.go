@@ -29,21 +29,23 @@ const MaxEvents = 64
 type Device struct {
 	dataPort, commandPort byte
 
-	state  Scancode
-	events chan Scancode
-	ticker *time.Ticker
-	pic    processor.InterruptController
+	state    Scancode
+	events   chan Scancode
+	quitChan chan struct{}
+	ticker   *time.Ticker
+	pic      processor.InterruptController
 }
 
 func (m *Device) Install(p processor.Processor) error {
 	m.pic = p.GetInterruptController()
 	m.ticker = time.NewTicker(time.Millisecond * 10)
 	m.events = make(chan Scancode, MaxEvents)
+	m.quitChan = make(chan struct{})
 
 	if err := p.InstallIODeviceAt(m, 0x60, 0x62, 0x64); err != nil {
 		return err
 	}
-	m.startSDLEventLoop()
+	m.startEventLoop()
 	return nil
 }
 
@@ -96,6 +98,8 @@ func (m *Device) Step(int) error {
 
 func (m *Device) Close() error {
 	m.ticker.Stop()
+	m.quitChan <- struct{}{}
+	<-m.quitChan
 	return nil
 }
 

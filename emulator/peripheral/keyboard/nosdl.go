@@ -19,5 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package keyboard
 
-func (m *Device) startSDLEventLoop() {
+func (m *Device) startEventLoop() {
+	go func() {
+		<-m.quitChan
+		close(m.quitChan)
+	}()
 }

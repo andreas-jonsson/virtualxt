@@ -27,27 +27,36 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-func (m *Device) startSDLEventLoop() {
+func (m *Device) startEventLoop() {
 	sdl.Do(func() {
 		sdl.EventState(sdl.DROPFILE, sdl.ENABLE)
 	})
 
 	go func() {
-		for range time.Tick(time.Second / 30) {
-			sdl.Do(func() {
-				for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-					switch ev := event.(type) {
-					case *sdl.QuitEvent:
-						dialog.AskToQuit()
-					case *sdl.KeyboardEvent:
-						m.sdlProcessKey(ev)
-					case *sdl.DropEvent:
-						if ev.Type == sdl.DROPFILE {
-							dialog.MountFloppyImage(ev.File)
+		ticker := time.NewTicker(time.Second / 30)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-m.quitChan:
+				close(m.quitChan)
+				return
+			case <-ticker.C:
+				sdl.Do(func() {
+					for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+						switch ev := event.(type) {
+						case *sdl.QuitEvent:
+							dialog.AskToQuit()
+						case *sdl.KeyboardEvent:
+							m.sdlProcessKey(ev)
+						case *sdl.DropEvent:
+							if ev.Type == sdl.DROPFILE {
+								dialog.MountFloppyImage(ev.File)
+							}
 						}
 					}
-				}
-			})
+				})
+			}
 		}
 	}()
 }
