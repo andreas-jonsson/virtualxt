@@ -29,6 +29,10 @@ import (
 
 func (m *Device) startEventLoop() {
 	sdl.Do(func() {
+		if err := sdl.InitSubSystem(sdl.INIT_EVENTS); err != nil {
+			log.Print(err)
+			return
+		}
 		sdl.EventState(sdl.DROPFILE, sdl.ENABLE)
 	})
 
@@ -39,6 +43,9 @@ func (m *Device) startEventLoop() {
 		for {
 			select {
 			case <-m.quitChan:
+				sdl.Do(func() {
+					sdl.QuitSubSystem(sdl.INIT_EVENTS)
+				})
 				close(m.quitChan)
 				return
 			case <-ticker.C:

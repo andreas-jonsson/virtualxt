@@ -137,12 +137,12 @@ func emuLoop() {
 			Base:    memory.NewPointer(0xC000, 0),
 			Reader:  videoBios,
 		},
-		&pic.Device{},       // Programmable Interrupt Controller
-		&pit.Device{},       // Programmable Interval Timer
-		dc,                  // Disk Controller
-		video,               // Video Device
-		speaker.NewDevice(), // PC Speaker
-		&keyboard.Device{},  // Keyboard Controller
+		&pic.Device{},      // Programmable Interrupt Controller
+		&pit.Device{},      // Programmable Interval Timer
+		dc,                 // Disk Controller
+		video,              // Video Device
+		&speaker.Device{},  // PC Speaker
+		&keyboard.Device{}, // Keyboard Controller
 	}
 	if debug.EnableDebug {
 		peripherals = append(peripherals, &debug.Device{})

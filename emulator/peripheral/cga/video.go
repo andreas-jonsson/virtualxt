@@ -125,6 +125,9 @@ func (m *Device) Step(cycles int) error {
 func (m *Device) Close() error {
 	m.quitChan <- struct{}{}
 	<-m.quitChan
+	sdl.Do(func() {
+		sdl.QuitSubSystem(sdl.INIT_VIDEO)
+	})
 	return nil
 }
 
@@ -174,6 +177,10 @@ func (m *Device) blitChar(ch, attrib byte, x, y int) {
 func (m *Device) startRenderLoop() error {
 	var err error
 	sdl.Do(func() {
+		if err = sdl.InitSubSystem(sdl.INIT_VIDEO); err != nil {
+			return
+		}
+
 		sdl.SetHint(sdl.HINT_RENDER_SCALE_QUALITY, "0")
 		sdl.SetHint(sdl.HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1")
 		if m.window, m.renderer, err = sdl.CreateWindowAndRenderer(640, 480, sdl.WINDOW_RESIZABLE); err != nil {

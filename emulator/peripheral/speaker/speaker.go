@@ -19,91 +19,103 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package speaker
 
-// #include <stdlib.h>
-// typedef unsigned char Uint8;
-// void AudioCallback(void *userdata, Uint8 *stream, int len);
-import "C"
 import (
 	"errors"
-	"reflect"
 	"time"
-	"unsafe"
 
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/veandco/go-sdl2/sdl"
+)
+
+const (
+	frequency  = 48000
+	latency    = 10
+	toneVolume = 32
 )
 
 type pitInterface interface {
 	GetFrequency(channel int) float64
 }
 
-type spkrDevice struct {
-	cpu     processor.Processor
-	pit     pitInterface
-	ticker  *time.Ticker
-	step    uint64
+type Device struct {
+	cpu    processor.Processor
+	pit    pitInterface
+	ticker *time.Ticker
+
+	deviceID sdl.AudioDeviceID
+	spec     *sdl.AudioSpec
+
+	soundBuffer []byte
+	sampleCount int
+	sampleIndex uint64
+
 	enabled bool
-	buffer  chan int8
+	port    byte
 }
 
-//export AudioCallback
-func AudioCallback(userdata unsafe.Pointer, stream *C.Uint8, length C.int) {
-	m := (*spkrDevice)(userdata)
-	n := int(length)
-	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(stream)), Len: n, Cap: n}
-	buf := *(*[]C.Uint8)(unsafe.Pointer(&hdr))
-
-	for i := 0; i < n; i++ {
-		select {
-		case s := <-m.buffer:
-			buf[i] = C.Uint8(s)
-		default:
-			buf[i] = 0 // Silence?
-		}
-	}
+func nextPow(v uint16) uint16 {
+	v--
+	v |= v >> 1
+	v |= v >> 2
+	v |= v >> 4
+	v |= v >> 8
+	v++
+	return v
 }
 
-func NewDevice() peripheral.Peripheral {
-	return (*spkrDevice)(C.calloc(1, C.size_t(unsafe.Sizeof(spkrDevice{}))))
-}
-
-func (m *spkrDevice) Install(p processor.Processor) error {
-	const freq = 48000
-	const numSamples = 128 // ???
-
-	m.cpu = p
-	m.buffer = make(chan int8, numSamples)
-	m.ticker = time.NewTicker(time.Second / freq)
-
+func (m *Device) Install(p processor.Processor) error {
 	var err error
 	sdl.Do(func() {
-		spec := &sdl.AudioSpec{
-			Freq:     freq,
-			Format:   sdl.AUDIO_U8,
-			Channels: 1,
-			Samples:  numSamples,
-			Callback: sdl.AudioCallback(C.AudioCallback),
-			UserData: unsafe.Pointer(m),
+		if err = sdl.InitSubSystem(sdl.INIT_AUDIO); err != nil {
+			return
 		}
-		if err = sdl.OpenAudio(spec, nil); err == nil {
-			sdl.PauseAudio(!m.enabled)
+
+		m.spec = &sdl.AudioSpec{
+			Freq:     frequency,
+			Format:   sdl.AUDIO_S8,
+			Channels: 1,
+			Samples:  nextPow(uint16((frequency / 1000) * latency)),
+		}
+
+		var have sdl.AudioSpec
+		if m.deviceID, err = sdl.OpenAudioDevice("", false, m.spec, &have, sdl.AUDIO_ALLOW_FREQUENCY_CHANGE|sdl.AUDIO_ALLOW_CHANNELS_CHANGE); err == nil {
+			m.spec = &have
+			sdl.PauseAudioDevice(m.deviceID, true)
 		}
 	})
 	if err != nil {
 		return err
 	}
+
+	numSamples := int(m.spec.Samples)
+	m.ticker = time.NewTicker(time.Second / time.Duration(int(m.spec.Freq)/numSamples))
+
+	bytesPerSample := int(m.spec.Channels)
+	bytesToWrite := numSamples * bytesPerSample
+
+	m.soundBuffer = make([]byte, bytesToWrite)
+	m.sampleCount = bytesToWrite / bytesPerSample
+
+	m.cpu = p
 	return p.InstallIODeviceAt(m, 0x61)
 }
 
-func (m *spkrDevice) Name() string {
+func (m *Device) Name() string {
 	return "PC Speaker"
 }
 
-func (m *spkrDevice) Reset() {
+func (m *Device) Reset() {
+	m.sampleIndex = 0
+	m.port = 0
+	m.enabled = false
+
+	sdl.Do(func() {
+		sdl.PauseAudioDevice(m.deviceID, true)
+		sdl.ClearQueuedAudio(m.deviceID)
+	})
 }
 
-func (m *spkrDevice) Step(cycles int) error {
+func (m *Device) Step(cycles int) error {
 	if m.pit == nil {
 		var ok bool
 		if m.pit, ok = m.cpu.GetMappedIODevice(0x40).(pitInterface); !ok {
@@ -115,48 +127,58 @@ func (m *spkrDevice) Step(cycles int) error {
 		return nil
 	}
 
-	select {
-	case <-m.ticker.C:
-	default:
-		return nil
+	if m.sampleIndex > 0 {
+		select {
+		case <-m.ticker.C:
+		default:
+			return nil
+		}
 	}
 
-	const sampleRate = 48000 / 128
+	toneHz := m.pit.GetFrequency(2)
+	squareWavePeriod := uint64(float64(m.spec.Freq) / toneHz)
+	halfSquareWavePeriod := squareWavePeriod / 2
 
-	fullStep := uint64(sampleRate / m.pit.GetFrequency(2))
-	if fullStep < 2 {
-		fullStep = 2
+	var ptr int
+	for i := 0; i < m.sampleCount; i++ {
+		var sampleValue int8 = -toneVolume
+		if m.sampleIndex++; (m.sampleIndex/halfSquareWavePeriod)%2 != 0 {
+			sampleValue = toneVolume
+		}
+
+		for j := 0; j < int(m.spec.Channels); j++ {
+			m.soundBuffer[ptr] = byte(sampleValue)
+			ptr++
+		}
 	}
 
-	var sample int8 = -32
-	if m.step < fullStep>>1 {
-		sample = 32
-	}
-
-	select {
-	case m.buffer <- sample:
-	default:
-	}
-
-	m.step = (m.step + 1) % fullStep
+	sdl.Do(func() {
+		sdl.QueueAudio(m.deviceID, m.soundBuffer)
+	})
 	return nil
 }
 
-func (m *spkrDevice) In(port uint16) byte {
-	return 0
+func (m *Device) In(port uint16) byte {
+	return m.port
 }
 
-func (m *spkrDevice) Out(_ uint16, data byte) {
+func (m *Device) Out(_ uint16, data byte) {
+	m.port = data
 	if b := data&3 == 3; b != m.enabled {
 		m.enabled = b
 		sdl.Do(func() {
-			sdl.PauseAudio(!b)
+			sdl.ClearQueuedAudio(m.deviceID)
+			sdl.PauseAudioDevice(m.deviceID, !b)
+			m.sampleIndex = 0
 		})
 	}
 }
 
-func (m *spkrDevice) Close() error {
-	sdl.Do(sdl.CloseAudio)
-	C.free(unsafe.Pointer(m))
+func (m *Device) Close() error {
+	m.ticker.Stop()
+	sdl.Do(func() {
+		sdl.CloseAudioDevice(m.deviceID)
+		sdl.QuitSubSystem(sdl.INIT_AUDIO)
+	})
 	return nil
 }

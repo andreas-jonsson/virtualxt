@@ -20,28 +20,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package speaker
 
 import (
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
-type spkrDevice struct {
+type Device struct {
 }
 
-func NewDevice() peripheral.Peripheral {
-	return &spkrDevice{}
-}
-
-func (m *spkrDevice) Install(p processor.Processor) error {
+func (m *Device) Install(p processor.Processor) error {
 	return nil
 }
 
-func (m *spkrDevice) Name() string {
+func (m *Device) Name() string {
 	return "NULL AUDIO"
 }
 
-func (m *spkrDevice) Reset() {
+func (m *Device) Reset() {
 }
 
-func (m *spkrDevice) Step(cycles int) error {
+func (m *Device) Step(cycles int) error {
 	return nil
 }
