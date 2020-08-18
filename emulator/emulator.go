@@ -118,6 +118,11 @@ func emuLoop() {
 		return
 	}
 
+	if !checkBootsector(dc) {
+		dialog.ShowErrorMessage("The selected disk is not bootable!")
+		return
+	}
+
 	video := defaultVideoDevice()
 	if mdaVideo {
 		video = &mda.Device{}
@@ -128,9 +133,8 @@ func emuLoop() {
 		&ram.Device{}, // RAM (needs to go first since it maps the full memory range)
 		&rom.Device{
 			RomName: "BIOS",
-			//Base:    memory.NewPointer(0xF000, 0),
-			Base:   memory.NewPointer(0xFE00, 0),
-			Reader: bios,
+			Base:    memory.NewPointer(0xFE00, 0),
+			Reader:  bios,
 		},
 		&rom.Device{
 			RomName: "Video BIOS",
@@ -157,10 +161,7 @@ func emuLoop() {
 	defer p.Close()
 
 	p.SetV20Support(v20cpu)
-
 	p.Reset()
-	//p.IP = 0xFFF0
-	//p.CS = 0xF000
 
 	for !dialog.ShutdownRequested() {
 		var cycles int64
@@ -189,4 +190,12 @@ func emuLoop() {
 			goto wait
 		}
 	}
+}
+
+func checkBootsector(dc *disk.Device) bool {
+	fp := dialog.DriveImages[dc.BootDrive].Fp
+	var sector [512]byte
+	fp.ReadAt(sector[:], 0)
+	fp.Seek(0, os.SEEK_SET)
+	return sector[511] == 0xAA && sector[510] == 0x55
 }
