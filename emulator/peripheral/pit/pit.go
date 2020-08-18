@@ -53,7 +53,6 @@ type Device struct {
 
 func (m *Device) Install(p processor.Processor) error {
 	m.pic = p.GetInterruptController()
-	m.ticks = time.Now().UnixNano() / 1000
 	return p.InstallIODevice(m, 0x40, 0x43)
 }
 
@@ -62,7 +61,7 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
-	*m = Device{pic: m.pic}
+	*m = Device{pic: m.pic, ticks: time.Now().UnixNano() / 1000}
 }
 
 func (m *Device) Step(int) error {
