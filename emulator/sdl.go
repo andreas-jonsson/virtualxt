@@ -30,7 +30,13 @@ import (
 
 func Start() {
 	flag.Parse()
-	sdl.Main(emuLoop)
+	sdl.Main(func() {
+		if err := sdl.Init(0); err != nil {
+			panic(err)
+		}
+		emuLoop()
+		sdl.Quit()
+	})
 	os.Exit(0) // Callig Exit is required!
 }
 
