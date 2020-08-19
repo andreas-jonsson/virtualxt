@@ -8,6 +8,7 @@ mkdir -p $APP_DIR/bios $APP_DIR/boot
 
 cp virtualxt $APP_DIR/
 cp bios/pcxtbios.bin $APP_DIR/bios/
+cp bios/vxtvga/vxtvga.bin $APP_DIR/bios/
 cp boot/freedos.img $APP_DIR/boot/
 cp doc/icon/icon.png $APP_DIR/virtualxt-icon.png
 cp -r doc/manual $APP_DIR

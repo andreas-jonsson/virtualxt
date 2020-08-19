@@ -9,3 +9,4 @@ boot/freedos.img
 boot/boot-basic.img
 boot/boot-os.img
 boot/boot-rogue.img
+bios/vxtvga/vxtvga.bin

@@ -8,6 +8,7 @@ mkdir -p $APP_DIR/Contents/MacOS $APP_DIR/Contents/Resources/bios $APP_DIR/Conte
 
 cp virtualxt $APP_DIR/Contents/MacOS/
 cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
+cp bios/vxtvga/vxtvga.bin $APP_DIR/Contents/Resources/bios/
 cp boot/freedos.img $APP_DIR/Contents/Resources/boot/
 cp doc/icon/icon.icns $APP_DIR/Contents/Resources/
 cp -r doc/manual $APP_DIR/Contents/Resources
