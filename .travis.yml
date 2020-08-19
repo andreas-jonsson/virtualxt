@@ -31,6 +31,7 @@ matrix:
           packages:
             - sdl2
             - rpl
+            - nasm
 
       install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip
@@ -51,6 +52,8 @@ matrix:
 
         - export C_INCLUDE_PATH=${TRAVIS_BUILD_DIR}/SDL2-2.0.10/x86_64-w64-mingw32/include
         - export LIBRARY_PATH=${TRAVIS_BUILD_DIR}/SDL2-2.0.10/x86_64-w64-mingw32/lib
+
+        - choco install nasm
 
         - go get github.com/akavel/rsrc
 

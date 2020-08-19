@@ -88,5 +88,5 @@ func main() {
 		os.Exit(-1)
 	}
 
-	log.Print("Checksum: 0x%X", buf[0])
+	log.Printf("Checksum: 0x%X", buf[0])
 }
