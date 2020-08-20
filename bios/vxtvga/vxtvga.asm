@@ -29,7 +29,7 @@ int10_handler:
     cmp	ah, 0x00 ; Set video mode
     je int10_set_vm
     cmp	ah, 0x01 ; Set cursor shape
-    ;je	int10_set_cshape
+    je int10_set_cshape
     cmp	ah, 0x02 ; Set cursor position
     je int10_set_cursor
     cmp	ah, 0x03 ; Get cursor position
@@ -38,13 +38,13 @@ int10_handler:
     ; 0x04 Get Light Pen Position
 
     cmp	ah, 0x05 ; Set active display page
-    ;je	int10_set_disp_page
+    je int10_set_disp_page
     cmp	ah, 0x06 ; Scroll up window
     je int10_scrollup
     cmp	ah, 0x07 ; Scroll down window
     je int10_scrolldown
     cmp	ah, 0x08 ; Get character at cursor
-    ;je	int10_charatcur
+    je int10_charatcur
     cmp	ah, 0x09 ; Write char and attribute
     je int10_write_char_attrib
     cmp	ah, 0x0a ; Write char only
@@ -58,7 +58,7 @@ int10_handler:
     cmp	ah, 0x0e ; Write character at cursor position, tty mode
     je int10_write_char_tty
     cmp	ah, 0x0f ; Get video mode
-    ;je	int10_get_vm
+    je int10_get_vm
 
     ; EGA/VGA stuff
 
@@ -75,6 +75,24 @@ int10_handler:
     ;cmp	ah, 0x1b
     ;je	int10_get_state_info
 
+    iret
+
+int10_get_vm:
+    ; int 10, 0f
+    ; On exit:
+    ;  AH = number of screen columns
+    ;  AL = mode currently active
+    ;  BH = current display page
+
+    push ds
+    mov	ax, 0x40
+    mov	ds, ax
+
+    mov	ah, [BDA_NUM_COLUMNS]
+    mov	al, [BDA_ACTIVE_VIDEOMODE]
+    mov	bh, [BDA_ACTIVE_VIDEO_PAGE]
+
+    pop	ds
     iret
 
 int10_set_vm:
@@ -302,6 +320,106 @@ int10_set_vm:
     pop	ds
     iret
 
+int10_set_disp_page:
+    ; On entry:
+    ;   AL = page number
+
+    push ds
+    push si
+    push dx
+    push bx	
+    push ax
+
+    ; SI = display page cursor pos offset
+    mov	bl, al
+    mov	bh, 0
+    shl	bx, 1
+    mov	si, bx
+
+    mov	bx, 0x40
+    mov	ds, bx
+
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x00
+    je .set_disp_page_t40
+
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x01
+    je .set_disp_page_t40
+
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x02
+    je .set_disp_page_t80
+
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x03
+    je .set_disp_page_t80
+
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x04
+    je .set_disp_page_done
+
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x05
+    je .set_disp_page_done
+
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x06
+    je .set_disp_page_done
+
+    jmp	.set_disp_page_done
+
+  .set_disp_page_t40:
+    cmp	al, 8
+    jge	.set_disp_page_done
+
+    mov	[BDA_ACTIVE_VIDEO_PAGE], al
+    mov	bl, 0x08
+    mul	byte bl
+    mov	bh, al
+    mov	bl, 0
+
+    jmp	.set_disp_page_upd
+
+  .set_disp_page_t80:
+    cmp	al, 8
+    jge	.set_disp_page_done	
+
+    mov	[BDA_ACTIVE_VIDEO_PAGE], al
+    mov	bl, 0x10
+    mul	byte bl
+    mov	bh, al
+    mov	bl, 0
+
+  .set_disp_page_upd:
+    ; bx contains page offset, so store it in the BIOS data area
+    mov	[BDA_ACTIVE_PAGE_OFFSET], bx
+
+    ; update CRTC page offset
+    mov	dx, 0x03d4
+    mov	al, 0x0c
+    out	dx, al
+
+    mov	dx, 0x03d5
+    mov	al, bh
+    out	dx, al
+
+    mov	dx, 0x03d4
+    mov	al, 0x0d
+    out	dx, al
+
+    mov	dx, 0x03d5
+    mov	al, bl
+    out	dx, al
+    
+    ; update CRTC cursor pos
+    mov	dl, [si+BDA_CURSOR_X]
+    mov	[BDA_CRT_CURSOR_X], dl
+    mov	dl, [si+BDA_CURSOR_Y]
+    mov	[BDA_CRT_CURSOR_Y], dl
+    call set_crtc_cursor_pos
+
+  .set_disp_page_done:
+    pop	ax
+    pop	bx
+    pop	dx
+    pop	si
+    pop	ds
+    iret
+
 int10_scrollup:
     ; AL = number of lines by which to scroll up (00h = clear entire window)
     ; BH = attribute used to write blank lines at bottom of window
@@ -358,6 +476,59 @@ int10_scrolldown:
 
   .scrolldown_done:
     pop	bp
+    iret
+
+int10_set_cshape:
+    ; CH = cursor start line (bits 0-4) and options (bits 5-7).
+    ; CL = bottom cursor line (bits 0-4).
+
+    push ds
+    push ax
+    push cx
+    push dx
+
+    mov	ax, 0x40
+    mov	ds, ax
+
+    mov	ax, cx
+    and	ch, 01100000b
+    cmp	ch, 00100000b
+    jne	.cur_visible
+
+  .cur_not_visible:
+    mov	cx, ax
+    jmp	.cur_vischk_done
+
+  .cur_visible:
+    ; Only store cursor shape if visible.
+    and	ax, 0x1f1f
+    mov	[BDA_CURSOR_SHAPE_END], ax
+    or	ax, 0x6000
+    mov	cx, ax
+      
+  .cur_vischk_done:
+    ; Set CRTC registers for cursor shape
+    mov	al, 0x0a
+    mov	dx, 0x3d4
+    out	dx, al
+
+    mov	al, ch
+    mov	dx, 0x3d5
+    out	dx, al
+
+    mov	al, 0x0b
+    mov	dx, 0x3d4
+    out	dx, al
+
+    mov	al, cl
+    mov	dx, 0x3d5
+    out	dx, al
+
+  .set_cshape_done:
+    pop	dx
+    pop	cx
+    pop	ax
+    pop	ds
     iret
 
 int10_set_cursor:
@@ -433,6 +604,82 @@ int10_get_cursor:
     pop	ax
     pop	si
     pop	ds
+    iret
+
+int10_charatcur:
+    ; This returns the character at the cursor.
+    ;   BH = display page
+    ; On exit:
+    ;   AH, AL = attribute code, ASCII character code
+    
+    push ds
+    push es
+    push si
+    push di
+    push bx
+
+    mov	ax, 0x40
+    mov	ds, ax
+
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x00
+    je .charatcur_t40
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x01
+    je .charatcur_t40
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x02
+    je .charatcur_t80
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x03
+    je .charatcur_t80
+
+    ; Can't do this in graphics mode
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 0x04
+    jge	.charatcur_done
+
+  .charatcur_t40:
+    cmp	bh, 0x07
+    jg .charatcur_done
+    jmp	.charatcur_page_ok
+
+  .charatcur_t80:
+    cmp	bh, 0x07
+    jg .charatcur_done
+
+  .charatcur_page_ok:
+    ; Get bios data cursor position offset for this page into SI
+    push bx
+    mov	bl, bh
+    mov	bh, 0
+    shl	bx, 1
+    mov	si, bx
+    pop	bx
+
+    ; Get video page offset into DI
+    mov	al, [BDA_ACTIVE_PAGE_SIZE+1]
+    mul	byte bh
+    mov	ah, al
+    mov	al, 0
+    mov	di, ax
+
+    ; Get video RAM offset for the cursor position into BX
+    mov	al, [si+BDA_CURSOR_Y]
+    mul	byte [BDA_NUM_COLUMNS]
+    add	al, [si+BDA_CURSOR_X]
+    adc	ah, 0
+    shl	ax, 1
+    mov	bx, ax
+
+    ; Get video RAM segment into ES
+    mov	ax, 0xb800
+    mov	es, ax
+
+    mov	ax, [es:bx+di]
+
+  .charatcur_done:
+    pop	bx
+    pop	di
+    pop	si
+    pop	es
+    pop	ds
+
     iret
 
 int10_write_char:
@@ -1956,9 +2203,379 @@ set_crtc_cursor_pos:
     ret
 
 clear_screen:
+    ; Clear video memory with attribute in BH
+
+    push ax
+    push bx
+    push cx
+    push ds
+    push es
+    push di
+    push si
+
+    mov	ax, 0x40
+    mov	ds, ax
+
+    mov	al, [BDA_ACTIVE_VIDEO_PAGE]
+    mov	ah, 0
+    shl	ax, 1
+    mov	si, ax
+
+    mov	byte [si+BDA_CURSOR_X], 0
+    mov	byte [BDA_CRT_CURSOR_X], 0
+    mov	byte [si+BDA_CURSOR_Y], 0
+    mov	byte [BDA_CRT_CURSOR_Y], 0
+
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 4
+    je .clear_gfx
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 5
+    je .clear_gfx
+    cmp	byte [BDA_ACTIVE_VIDEOMODE], 6
+    je .clear_gfx
+
+    cld
+    mov	al, [BDA_ACTIVE_PAGE_SIZE+1]
+    mul	byte [BDA_ACTIVE_VIDEO_PAGE]
+    mov	ah, al
+    mov	al, 0
+    shr	ax, 1
+    shr	ax, 1
+    shr	ax, 1
+    shr	ax, 1
+    add	ax, 0xb800
+    mov	es, ax
+    mov	di, 0
+    mov	al, 0
+    mov	ah, bh
+    mov	cx, [BDA_ACTIVE_PAGE_SIZE]
+    rep	stosw
+    jmp	.clear_done
+
+  .clear_gfx:
+    cld
+    mov	ax, 0xb800
+    mov	es, ax
+    mov	di, 0
+    mov	ax, 0
+    mov	cx, 4000
+    rep	stosw
+
+    mov	ax, 0xba00
+    mov	es, ax
+    mov	di, 0
+    mov	ax, 0
+    mov	cx, 4000
+    rep	stosw
+
+  .clear_done:
+    call set_crtc_cursor_pos
+
+    pop	si
+    pop	di
+    pop	es
+    pop	ds
+    pop	cx
+    pop	bx
+    pop	ax
+
+    ret
+
 put_cga320_char:
+    ; Character is in AL
+    ; Colour is in AH
+    
+    push ax
+    push bx
+    push cx
+    push ds	
+    push es
+    push di
+    push bp
+
+    ; Get the colour mask into BH
+    cmp	ah, 1
+    jne	.put_cga320_char_c2
+    mov	bh, 0x55
+    jmp	.put_cga320_char_cdone
+    
+  .put_cga320_char_c2:
+    cmp	ah, 2
+    jne	.put_cga320_char_c3
+    mov	bh, 0xAA
+    jmp	.put_cga320_char_cdone
+  
+  .put_cga320_char_c3:
+    mov	bh, 0xFF
+
+  .put_cga320_char_cdone:
+    ; Get glyph character top offset into bp and character segment into cx
+    test al, 0x80
+    jne	.put_cga320_char_high
+
+    ; Characters 0 .. 127 are always in ROM
+    mov	ah, 0
+    shl	ax, 1
+    shl	ax, 1
+    shl	ax, 1
+    add	ax, cga_glyphs
+    mov	bp, ax
+
+    mov	cx, cs
+
+    jmp	.put_cga320_char_vidoffset
+
+  .put_cga320_char_high:
+    ; Characters 128 .. 255 get their address from interrupt vector 1F
+    and	al, 0x7F
+    mov	ah, 0
+    shl	ax, 1
+    shl	ax, 1
+    shl	ax, 1
+    mov	bp, ax
+
+    mov	ax, 0
+    mov	ds, ax
+    mov	ax, [ds:0x7c]
+    add	bp, ax 
+
+    mov	cx, [ds:0x7e]
+
+  .put_cga320_char_vidoffset:
+    mov	ax, 0x40
+    mov	ds, ax
+
+    ; Get the address offset in video ram for the top of the character into DI
+    mov	al, 80 ; bytes per row
+    mul	byte [ds:BDA_CURSOR_Y]
+    shl	ax, 1
+    shl	ax, 1
+    add	al, [ds:BDA_CURSOR_X]
+    adc	ah, 0
+    add	al, [ds:BDA_CURSOR_X]
+    adc	ah, 0
+    mov	di, ax
+
+    ; get segment for character data into ds
+    mov	ds, cx
+
+    ; get video RAM address for even lines into es
+    mov	ax, 0xb800
+    mov	es, ax
+
+    push di
+
+    mov	bl, byte [ds:bp]
+    ; Translate character glyph into CGA 320 format
+    call put_cga320_char_double
+    stosw
+    add	di, 78
+
+    mov	bl, byte [ds:bp+2]
+    ; Translate character glyph into CGA 320 format
+    call put_cga320_char_double
+    stosw
+    add	di, 78
+
+    mov	bl, byte [ds:bp+4]
+    ; Translate character glyph into CGA 320 format
+    call put_cga320_char_double
+    stosw
+    add	di, 78
+
+    mov	bl, byte [ds:bp+6]
+    ; Translate character glyph into CGA 320 format
+    call put_cga320_char_double
+    stosw
+
+    ; get video RAM address for odd lines into es
+    mov ax, 0xba00
+    mov es, ax
+
+    pop	di
+
+    mov	bl, byte [ds:bp+1]
+    ; Translate character glyph into CGA 320 format
+    call put_cga320_char_double
+    stosw
+    add	di, 78
+
+    mov	bl, byte [ds:bp+3]
+    ; Translate character glyph into CGA 320 format
+    call put_cga320_char_double
+    stosw
+    add	di, 78
+
+    mov	bl, byte [ds:bp+5]
+    ; Translate character glyph into CGA 320 format
+    call put_cga320_char_double
+    stosw
+    add	di, 78
+
+    mov	bl, byte [ds:bp+7]
+    ; Translate character glyph into CGA 320 format
+    call put_cga320_char_double
+    stosw	
+
+  .put_cga320_char_done:
+    pop	bp
+    pop	di
+    pop	es
+    pop	ds
+    pop	cx
+    pop	bx
+    pop	ax
+    ret
+
 put_cga320_char_double:
+    ; BL = character bit pattern
+    ; BH = colour mask
+    ; AX is set to double width character bit pattern
+
+    mov	ax, 0
+    test bl, 0x80
+    je .put_chachar_bit6
+    or al, 0xc0
+  .put_chachar_bit6:
+    test bl, 0x40
+    je .put_chachar_bit5
+    or al, 0x30
+  .put_chachar_bit5:
+    test bl, 0x20
+    je .put_chachar_bit4
+    or al, 0x0c
+  .put_chachar_bit4:
+    test bl, 0x10
+    je .put_chachar_bit3
+    or al, 0x03
+  .put_chachar_bit3:
+    test bl, 0x08
+    je .put_chachar_bit2
+    or ah, 0xc0
+  .put_chachar_bit2:
+    test bl, 0x04
+    je .put_chachar_bit1
+    or ah, 0x30
+  .put_chachar_bit1:
+    test bl, 0x02
+    je .put_chachar_bit0
+    or ah, 0x0c
+  .put_chachar_bit0:
+    test bl, 0x01
+    je .put_chachar_done
+    or ah, 0x03
+  .put_chachar_done:
+    and	al, bh
+    and	ah, bh
+    ret
+
 put_cga640_char:
+    ; Character is in AL
+
+    push ax
+    push bx
+    push cx
+    push ds	
+    push es
+    push di
+    push bp
+
+    ; Get glyph character top offset into bp and character segment into cx
+    test al, 0x80
+    jne	.put_cga640_char_high
+
+    ; Characters 0 .. 127 are always in ROM
+    mov	ah, 0
+    shl	ax, 1
+    shl	ax, 1
+    shl	ax, 1
+    add	ax, cga_glyphs
+    mov	bp, ax
+
+    mov	cx, cs
+
+    jmp	.put_cga640_char_vidoffset
+
+  .put_cga640_char_high:
+    ; Characters 128 .. 255 get their address from interrupt vector 1F
+    and	al, 0x7f
+    mov	ah, 0
+    shl	ax, 1
+    shl	ax, 1
+    shl	ax, 1
+    mov	bp, ax
+
+    mov	ax, 0
+    mov	ds, ax
+    mov	ax, [ds:0x7c]
+    add	bp, ax 
+
+    mov	cx, [ds:0x7e]
+
+  .put_cga640_char_vidoffset:
+    mov	ax, 0x40
+    mov	ds, ax
+
+    ; Get the address offset in video ram for the top of the character into DI
+    mov	al, 80 ; bytes per row
+    mul	byte [ds:BDA_CURSOR_Y]
+    shl	ax, 1
+    shl	ax, 1
+    add	al, [ds:BDA_CURSOR_X]
+    adc	ah, 0
+    mov	di, ax
+
+    ; get segment for character data into ds
+    mov	ds, cx
+
+    ; get video RAM address for even lines into ds
+    mov	ax, 0xb800
+    mov	es, ax
+
+    push	di
+
+    mov	al, byte [ds:bp]
+    stosb
+    add	di, 79
+
+    mov	al, byte [ds:bp+2]
+    stosb
+    add	di, 79
+
+    mov	al, byte [ds:bp+4]
+    stosb
+    add	di, 79
+
+    mov	al, byte [ds:bp+6]
+    stosb
+
+    ; get video RAM address for odd lines into ds
+    mov ax, 0xba00
+    mov es, ax
+
+    pop	di
+
+    mov	al, byte [ds:bp+1]
+    stosb
+    add	di, 79
+
+    mov	al, byte [ds:bp+3]
+    stosb
+    add	di, 79
+
+    mov	al, byte [ds:bp+5]
+    stosb
+    add	di, 79
+
+    mov	al, byte [ds:bp+7]
+    stosb
+
+    pop	bp
+    pop	di
+    pop	es
+    pop	ds
+    pop	cx
+    pop	bx
+    pop	ax
     ret
 
 init_video:
@@ -1968,20 +2585,10 @@ init_video:
     mov ax,0x40
     mov ds,ax               ; Point DS to the BDA
 
-    mov al,1
-    out 0x3B8,al            ; Reset modectrl register
-
     mov ax,[BDA_MACHINE_WORD]
     and ax,0xFFCF
     or ax,0x20                        ; Set CGA support for now
     mov [BDA_MACHINE_WORD],ax
-
-    mov byte [BDA_ACTIVE_VIDEOMODE], 3
-    mov word [BDA_NUM_COLUMNS], 80
-    mov word [BDA_ACTIVE_PAGE_SIZE], 0x1000
-    mov byte [BDA_CURSOR_X], 0
-    mov byte [BDA_CURSOR_Y], 0
-    mov byte [BDA_NUM_ROWS], 24
 
     pop ds
     pop ax

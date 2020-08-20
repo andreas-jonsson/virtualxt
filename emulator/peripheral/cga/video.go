@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package cga
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -34,6 +35,8 @@ import (
 )
 
 const memorySize = 0x4000
+
+var atiBiosCompat = true
 
 var applicationStart = time.Now()
 
@@ -95,8 +98,10 @@ func (m *Device) Install(p processor.Processor) error {
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	if err := p.InstallInterruptHandler(0x10, m); err != nil {
-		return err
+	if atiBiosCompat {
+		if err := p.InstallInterruptHandler(0x10, m); err != nil {
+			return err
+		}
 	}
 	if err := p.InstallMemoryDevice(m, 0xB8000, 0xB8000+memorySize); err != nil {
 		return err
@@ -347,9 +352,11 @@ func (m *Device) HandleInterrupt(int) error {
 }
 
 func (m *Device) In(port uint16) byte {
-	// Force CGA
-	addr := memory.NewPointer(0x40, 0x10)
-	m.p.WriteWord(addr, (m.p.ReadWord(addr)&0xFFCF)|0x20)
+	if atiBiosCompat {
+		// Force CGA
+		addr := memory.NewPointer(0x40, 0x10)
+		m.p.WriteWord(addr, (m.p.ReadWord(addr)&0xFFCF)|0x20)
+	}
 
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -419,4 +426,8 @@ func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 	m.dirtyMemory = true
 	m.mem[(addr-m.memoryBase)&0x3FFF] = data
 	m.lock.Unlock()
+}
+
+func init() {
+	flag.BoolVar(&atiBiosCompat, "ati", atiBiosCompat, "ATI video BIOS compatibility")
 }
