@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	outputFile = "../vxtcga.bin"
+	outputFile = "../../vxtcga.bin"
 	inputFile  = "../vxtcga.asm"
 )
 

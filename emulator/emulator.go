@@ -41,7 +41,7 @@ import (
 
 var (
 	biosImage  = "bios/pcxtbios.bin"
-	vbiosImage = "bios/ati_ega_wonder_800_plus.bin"
+	vbiosImage = "bios/vxtcga.bin"
 )
 
 var (

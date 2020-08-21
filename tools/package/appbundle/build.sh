@@ -8,12 +8,10 @@ mkdir -p $APP_DIR/Contents/MacOS $APP_DIR/Contents/Resources/bios $APP_DIR/Conte
 
 cp virtualxt $APP_DIR/Contents/MacOS/
 cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
-cp bios/vxtvga/vxtvga.bin $APP_DIR/Contents/Resources/bios/
+cp bios/vxtcga.bin $APP_DIR/Contents/Resources/bios/
 cp boot/freedos.img $APP_DIR/Contents/Resources/boot/
 cp doc/icon/icon.icns $APP_DIR/Contents/Resources/
 cp -r doc/manual $APP_DIR/Contents/Resources
-
-curl -L -o $APP_DIR/Contents/Resources/bios/ati_ega_wonder_800_plus.bin "https://github.com/BaRRaKudaRain/PCem-ROMs/raw/master/ATI%20EGA%20Wonder%20800%2B%20N1.00.BIN"
 
 YEAR=$(date +%Y)
 rpl e14f19fc-199d-4fb9-b334-aed07b29a113 $YEAR $APP_DIR/Contents/Info.plist

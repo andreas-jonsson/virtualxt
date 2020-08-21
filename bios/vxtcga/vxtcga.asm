@@ -1,4 +1,4 @@
-; VXTCGA - CGA/HGA Video BIOS for VirtualXT.
+; VXTCGA - CGA/HGA Video BIOS for VirtualXT
 ; Copyright (c) 2013-2014 Adrian Cable (adrian.cable@gmail.com)
 ; Copyright (c) 2014 Julian Olds
 ; Copyright (c) 2019-2020 Andreas T Jonsson (mail@andreasjonsson.se)
@@ -2588,12 +2588,6 @@ install_handler:
     mov ds,ax   ; Point DS to the IVT
     mov ax,0x40
     mov es,ax   ; Point ES to the BDA
-  
-    ; Back-up the original vector set up by the BIOS!
-    ;mov ax,[INT10_OFFSET]             ; BIOS INT10 offset
-    ;mov [es:BDA_INT10_OFFSET],ax      ; Save to our save position!
-    ;mov ax,[INT10_SEGMENT]            ; BIOS INT10 segment
-    ;mov [es:BDA_INT10_SEGMENT],ax     ; Save to our save position!
 
     ; Set up our own vector!
     mov word [INT10_OFFSET], int10_handler   ; Hook our
@@ -2608,12 +2602,10 @@ install_handler:
 
 INT10_OFFSET equ 0x40
 INT10_SEGMENT equ 0x42
-BDA_INT10_OFFSET equ 0xAC
-BDA_INT10_SEGMENT equ 0xAE
 
 ; Temp!
 BDA_CRT_CURSOR_X equ 0xAC
-BDA_CRT_CURSOR_Y equ 0xAE
+BDA_CRT_CURSOR_Y equ 0xAD
 
 BDA_MACHINE_WORD equ 0x10
 BDA_ACTIVE_VIDEOMODE equ 0x49
@@ -2758,6 +2750,9 @@ cga_glyphs:
   db	0x00, 0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x0f, 0x08, 0x08, 0x08, 0x08, 0xc8, 0x28, 0x18
   db	0x78, 0x44, 0x44, 0x44, 0x44, 0x00, 0x00, 0x00, 0x30, 0x48, 0x10, 0x20, 0x78, 0x00, 0x00, 0x00
   db	0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+
+db 'VXTCGA - CGA/HGA Video BIOS for VirtualXT', 0xA
+db 'This work is licensed under the MIT License.', 0
 
 times 0x1FFF-($-$$) db 0
 checksum db 0

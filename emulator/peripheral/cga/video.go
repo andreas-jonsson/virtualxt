@@ -36,7 +36,7 @@ import (
 
 const memorySize = 0x4000
 
-var atiBiosCompat = true
+var atiBiosCompat bool
 
 var applicationStart = time.Now()
 
@@ -113,7 +113,7 @@ func (m *Device) Install(p processor.Processor) error {
 }
 
 func (m *Device) Name() string {
-	return "CGA/HGA compatible device"
+	return "VirtualXT CGA/HGA compatible device"
 }
 
 func (m *Device) Reset() {

@@ -7,10 +7,9 @@
 ```
 THIS EMULATOR IS WORK-IN-PROGRESS!
 
-At this point you need a video BIOS image from an alternative source.
-(https://github.com/BaRRaKudaRain/PCem-ROMs)
-
-One image that is known to work is the ATI EGA Wonder 800+ but most EGA/VGA ones should do the trick.
+VirtualXT ships with an opensource CGA video BIOS but if you want to try a proprietary one
+you can run with the ```-ati``` option that enables you to run a few other ones.
+One BIOS that is known to work is the ATI EGA Wonder 800+ but some other EGA/VGA ones should work as well.
 ```
 
 VirtualXT is a IBM PC/XT emulator that runs on modern hardware and operating systems.
