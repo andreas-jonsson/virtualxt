@@ -61,7 +61,7 @@ var cgaColor = []uint32{
 
 type consoleCursor struct {
 	update, visible bool
-	x, y            byte
+	position        uint16
 }
 
 type Device struct {
@@ -84,9 +84,8 @@ type Device struct {
 	windowTitleTicker  *time.Ticker
 	atomicCycleCounter int32
 
-	cursorPos uint16
-	cursor    consoleCursor
-	p         processor.Processor
+	cursor consoleCursor
+	p      processor.Processor
 }
 
 func (m *Device) Install(p processor.Processor) error {
@@ -144,7 +143,7 @@ func blit32(pixels []byte, offset int, color uint32) {
 }
 
 func blinkTick() bool {
-	return ((applicationStart.UnixNano()/int64(time.Millisecond))/500)%2 == 0
+	return ((time.Since(applicationStart)/time.Millisecond)/500)%2 == 0
 }
 
 func (m *Device) blitChar(ch, attrib byte, x, y int) {
@@ -290,7 +289,8 @@ func (m *Device) startRenderLoop() error {
 							}
 
 							if blink {
-								x, y := int(m.cursor.x), int(m.cursor.y)
+								x := int(m.cursor.position) % numCol
+								y := int(m.cursor.position) / numCol
 								attr := (m.mem[numCol*2*y+x*2+1] & 0x70) | 0xF
 								m.blitChar('_', attr, x*8, y*8)
 							}
@@ -392,19 +392,11 @@ func (m *Device) Out(port uint16, data byte) {
 			m.cursor.visible = data&0x20 != 0
 		case 0xE:
 			m.cursor.update = true
-			m.cursorPos = (m.cursorPos & 0x00FF) | (uint16(data) << 8)
+			m.cursor.position = (m.cursor.position & 0x00FF) | (uint16(data) << 8)
 		case 0xF:
 			m.cursor.update = true
-			m.cursorPos = (m.cursorPos & 0xFF00) | uint16(data)
+			m.cursor.position = (m.cursor.position & 0xFF00) | uint16(data)
 		}
-
-		var numCol uint16 = 80
-		if m.modeCtrlReg&1 == 0 {
-			numCol = 40
-		}
-
-		m.cursor.x = byte(m.cursorPos % numCol)
-		m.cursor.y = byte(m.cursorPos / numCol)
 	case 0x3D8:
 		fallthrough
 	case 0x3B8:
