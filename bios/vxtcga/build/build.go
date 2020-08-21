@@ -29,8 +29,8 @@ import (
 )
 
 var (
-	outputFile = "../../bios/vxtvga/vxtvga.bin"
-	inputFile  = "../../bios/vxtvga/vxtvga.asm"
+	outputFile = "../vxtcga.bin"
+	inputFile  = "../vxtcga.asm"
 )
 
 func init() {
@@ -43,7 +43,7 @@ func main() {
 	log.Print("Building: " + inputFile)
 
 	var out bytes.Buffer
-	cmd := exec.Command("nasm", "-o", outputFile, inputFile)
+	cmd := exec.Command("nasm", "-o", outputFile, "-l", outputFile+".lst", inputFile)
 	cmd.Stderr = &out
 
 	if cmd.Run() != nil {
