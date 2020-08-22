@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package cga
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -30,13 +29,12 @@ import (
 
 	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
 const memorySize = 0x4000
-
-var atiBiosCompat bool
 
 var applicationStart = time.Now()
 
@@ -97,7 +95,7 @@ func (m *Device) Install(p processor.Processor) error {
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	if atiBiosCompat {
+	if video.ATIBiosCompat {
 		if err := p.InstallInterruptHandler(0x10, m); err != nil {
 			return err
 		}
@@ -352,7 +350,7 @@ func (m *Device) HandleInterrupt(int) error {
 }
 
 func (m *Device) In(port uint16) byte {
-	if atiBiosCompat {
+	if video.ATIBiosCompat {
 		// Force CGA
 		addr := memory.NewPointer(0x40, 0x10)
 		m.p.WriteWord(addr, (m.p.ReadWord(addr)&0xFFCF)|0x20)
@@ -418,8 +416,4 @@ func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 	m.dirtyMemory = true
 	m.mem[(addr-m.memoryBase)&0x3FFF] = data
 	m.lock.Unlock()
-}
-
-func init() {
-	flag.BoolVar(&atiBiosCompat, "ati", atiBiosCompat, "ATI video BIOS compatibility")
 }

@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/gdamore/tcell"
 )
@@ -94,10 +95,7 @@ type Device struct {
 	p        processor.Processor
 }
 
-var (
-	mdaCompat,
-	atiBiosCompat bool
-)
+var mdaCompat bool
 
 func (m *Device) Install(p processor.Processor) error {
 	m.p = p
@@ -110,7 +108,7 @@ func (m *Device) Install(p processor.Processor) error {
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	if atiBiosCompat {
+	if video.ATIBiosCompat {
 		if err := p.InstallInterruptHandler(0x10, m); err != nil {
 			return err
 		}
@@ -388,5 +386,4 @@ func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 
 func init() {
 	flag.BoolVar(&mdaCompat, "strict-mda", false, "Strict MDA emulation")
-	flag.BoolVar(&atiBiosCompat, "ati", false, "ATI video BIOS compatibility")
 }

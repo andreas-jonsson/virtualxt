@@ -1,5 +1,3 @@
-// +build !sdl
-
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
 
@@ -17,22 +15,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package emulator
+package video
 
-import (
-	"flag"
+import "flag"
 
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/mda"
-)
+var ATIBiosCompat bool
 
-func Start() {
-	flag.Parse()
-	emuLoop()
-}
-
-var mdaVideo = true
-
-func defaultVideoDevice() peripheral.Peripheral {
-	return &mda.Device{}
+func init() {
+	flag.BoolVar(&ATIBiosCompat, "ati", false, "ATI video BIOS compatibility")
 }

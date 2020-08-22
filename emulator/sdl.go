@@ -24,7 +24,7 @@ import (
 	"os"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/cga"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/cga"
 	"github.com/veandco/go-sdl2/sdl"
 )
 

@@ -30,12 +30,12 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/debug"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/disk"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/keyboard"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/mda"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pic"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pit"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/ram"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/rom"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/speaker"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/mda"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
 )
 
