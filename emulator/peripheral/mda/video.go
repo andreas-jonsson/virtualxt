@@ -94,11 +94,10 @@ type Device struct {
 	p        processor.Processor
 }
 
-var mdaCompat bool
-
-func init() {
-	flag.BoolVar(&mdaCompat, "strict-mda", false, "Strict MDA emulation")
-}
+var (
+	mdaCompat,
+	atiBiosCompat bool
+)
 
 func (m *Device) Install(p processor.Processor) error {
 	m.p = p
@@ -111,8 +110,10 @@ func (m *Device) Install(p processor.Processor) error {
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	if err := p.InstallInterruptHandler(0x10, m); err != nil {
-		return err
+	if atiBiosCompat {
+		if err := p.InstallInterruptHandler(0x10, m); err != nil {
+			return err
+		}
 	}
 	if err := p.InstallMemoryDevice(m, memoryBase, memoryBase+memorySize); err != nil {
 		return err
@@ -383,4 +384,9 @@ func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 	m.dirtyMemory = true
 	m.mem[(addr-memoryBase)&0xFFF] = data
 	m.lock.Unlock()
+}
+
+func init() {
+	flag.BoolVar(&mdaCompat, "strict-mda", false, "Strict MDA emulation")
+	flag.BoolVar(&atiBiosCompat, "ati", false, "ATI video BIOS compatibility")
 }
