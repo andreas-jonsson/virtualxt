@@ -75,15 +75,17 @@ func (m *Device) startEventLoop() {
 							dialog.AskToQuit()
 						case *sdl.KeyboardEvent:
 							m.sdlProcessKey(ev)
-						case *sdl.WindowEvent:
-							if ev.Type == sdl.WINDOWEVENT_MAXIMIZED {
-								w, err := sdl.GetWindowFromID(ev.WindowID)
-								if err != nil {
-									continue
+						/*
+							case *sdl.WindowEvent:
+								if ev.Event == sdl.WINDOWEVENT_MAXIMIZED {
+									w, err := sdl.GetWindowFromID(ev.WindowID)
+									if err != nil {
+										continue
+									}
+									w.SetFullscreen(sdl.WINDOW_FULLSCREEN_DESKTOP)
+									sdl.SetRelativeMouseMode(true)
 								}
-								w.SetFullscreen(sdl.WINDOW_FULLSCREEN_DESKTOP)
-								sdl.SetRelativeMouseMode(true)
-							}
+						*/
 						case *sdl.MouseMotionEvent:
 							if initMouse() {
 								_, _, state := sdl.GetMouseState()
