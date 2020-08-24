@@ -34,6 +34,7 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pit"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/ram"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/rom"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/smouse"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/speaker"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/mda"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
@@ -147,6 +148,10 @@ func emuLoop() {
 		video,              // Video Device
 		&speaker.Device{},  // PC Speaker
 		&keyboard.Device{}, // Keyboard Controller
+		&smouse.Device{ // Microsoft Serial Mouse (COM1)
+			BasePort: 0x3F8,
+			IRQ:      4,
+		},
 	}
 	if debug.EnableDebug {
 		peripherals = append(peripherals, &debug.Device{})

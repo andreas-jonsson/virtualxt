@@ -33,10 +33,12 @@ type Device struct {
 	events   chan Scancode
 	quitChan chan struct{}
 	ticker   *time.Ticker
+	cpu      processor.Processor
 	pic      processor.InterruptController
 }
 
 func (m *Device) Install(p processor.Processor) error {
+	m.cpu = p
 	m.pic = p.GetInterruptController()
 	m.ticker = time.NewTicker(time.Millisecond * 10)
 	m.events = make(chan Scancode, MaxEvents)
