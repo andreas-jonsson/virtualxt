@@ -72,7 +72,7 @@ func (m *Device) Install(p processor.Processor) error {
 
 		m.spec = &sdl.AudioSpec{
 			Freq:     frequency,
-			Format:   sdl.AUDIO_S8,
+			Format:   sdl.AUDIO_U8,
 			Channels: 1,
 			Samples:  nextPow(uint16((frequency / 1000) * latency)),
 		}
