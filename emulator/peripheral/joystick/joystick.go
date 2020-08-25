@@ -15,31 +15,21 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package ram
+package joystick
 
 import (
-	"crypto/rand"
-
-	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
-const Size = 0x100000 // 1MB
-
 type Device struct {
-	Clear bool
-	mem   [Size]byte
 }
 
 func (m *Device) Install(p processor.Processor) error {
-	if !m.Clear {
-		rand.Read(m.mem[:]) // Scramble memory.
-	}
-	return p.InstallMemoryDevice(m, 0x0, Size-1)
+	return p.InstallIODeviceAt(m, 0x201)
 }
 
 func (m *Device) Name() string {
-	return "RAM"
+	return "Game Port Joystick"
 }
 
 func (m *Device) Reset() {
@@ -49,10 +39,9 @@ func (m *Device) Step(int) error {
 	return nil
 }
 
-func (m *Device) ReadByte(addr memory.Pointer) byte {
-	return m.mem[addr]
+func (m *Device) In(port uint16) byte {
+	return 0
 }
 
-func (m *Device) WriteByte(addr memory.Pointer, data byte) {
-	m.mem[addr] = data
+func (m *Device) Out(port uint16, data byte) {
 }
