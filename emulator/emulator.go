@@ -131,6 +131,8 @@ func emuLoop() {
 	}
 	debug.MuteLogging(mdaVideo)
 
+	spkr := &speaker.Device{}
+
 	peripherals := []peripheral.Peripheral{
 		&ram.Device{}, // RAM (needs to go first since it maps the full memory range)
 		&rom.Device{
@@ -147,7 +149,7 @@ func emuLoop() {
 		&pit.Device{},      // Programmable Interval Timer
 		dc,                 // Disk Controller
 		video,              // Video Device
-		&speaker.Device{},  // PC Speaker
+		spkr,               // PC Speaker
 		&keyboard.Device{}, // Keyboard Controller
 		&joystick.Device{}, // Game Port Joystick
 		&smouse.Device{ // Microsoft Serial Mouse (COM1)
@@ -159,10 +161,11 @@ func emuLoop() {
 		peripherals = append(peripherals, &debug.Device{})
 	}
 
-	var limitSpeed int64 = 0
-	if limitMIPS != 0 {
-		limitSpeed = 1000000000 / int64(1000000*limitMIPS)
+	var doLimit float64 = limitMIPS
+	if doLimit == 0 {
+		doLimit = 0.33
 	}
+	limitSpeed := 1000000000 / int64(1000000*doLimit)
 
 	p := cpu.NewCPU(peripherals)
 	defer p.Close()
@@ -184,7 +187,7 @@ func emuLoop() {
 			log.Print(err)
 			return
 		}
-		if limitSpeed == 0 {
+		if limitMIPS == 0 && spkr.TurboSwitch() {
 			continue
 		}
 		cycles += int64(c)

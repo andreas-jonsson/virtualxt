@@ -49,8 +49,8 @@ type Device struct {
 	sampleCount int
 	sampleIndex uint64
 
-	enabled bool
-	port    byte
+	enabled, turbo bool
+	port           byte
 }
 
 func nextPow(v uint16) uint16 {
@@ -98,6 +98,10 @@ func (m *Device) Install(p processor.Processor) error {
 
 	m.cpu = p
 	return p.InstallIODeviceAt(m, 0x61)
+}
+
+func (m *Device) TurboSwitch() bool {
+	return m.turbo
 }
 
 func (m *Device) Name() string {
@@ -163,7 +167,9 @@ func (m *Device) In(port uint16) byte {
 }
 
 func (m *Device) Out(_ uint16, data byte) {
+	m.turbo = data&4 != 0
 	m.port = data
+
 	if b := data&3 == 3; b != m.enabled {
 		m.enabled = b
 		sdl.Do(func() {
