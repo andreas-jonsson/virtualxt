@@ -128,7 +128,7 @@ func emuLoop() {
 	if mdaVideo {
 		video = &mda.Device{}
 	}
-	debug.SetTCPLogging(mdaVideo)
+	debug.MuteLogging(mdaVideo)
 
 	peripherals := []peripheral.Peripheral{
 		&ram.Device{}, // RAM (needs to go first since it maps the full memory range)

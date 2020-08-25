@@ -24,13 +24,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
-	"net"
 	"os"
 	"os/signal"
-	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
@@ -38,66 +37,62 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
-var (
-	EnableDebug, traceInstructions, debugBreak bool
-	tcpDebug                                   net.Conn
-)
-
 var ErrQuit = errors.New("QUIT!")
 
 var (
-	internalLogger = &Logger{}
-	Log            = log.New(internalLogger, "", 0)
+	EnableDebug bool
+	Stream      io.ReadWriter = &ioStream{}
+	Log                       = log.New(Stream, "", 0)
 )
 
-type Logger struct {
-	sync.RWMutex
+var (
+	traceInstructions,
+	debugBreak bool
+)
+
+type ioStream struct {
 }
 
-func (l *Logger) Write(p []byte) (n int, err error) {
-	l.Lock()
-	if tcpDebug != nil {
-		p = bytes.ReplaceAll(p, []byte("<<<!\n"), []byte{})
-		p = bytes.ReplaceAll(p, []byte{0xA}, []byte{0xA, 0xD})
-		n, err = tcpDebug.Write(p)
-		if err != nil {
-			tcpDebug = nil
-		}
+func (s *ioStream) Read(p []byte) (n int, err error) {
+	return os.Stdin.Read(p)
+}
+
+var magicSeq = []byte("<<<!\n")
+
+func (s *ioStream) Write(p []byte) (n int, err error) {
+	if bytes.HasSuffix(p, magicSeq) {
+		n, err := os.Stdout.Write(p[:len(p)-5])
+		return n + 5, err
 	}
-	l.Unlock()
-	return
+	return os.Stdout.Write(p)
 }
 
 func init() {
 	flag.BoolVar(&traceInstructions, "trace", false, "Trace instruction execution")
-	flag.BoolVar(&EnableDebug, "debug", false, "Enable telnet debugger")
+	flag.BoolVar(&EnableDebug, "debug", false, "Enable debugger")
 	flag.BoolVar(&debugBreak, "break", false, "Break on startup")
 }
 
 func readLine() string {
-	internalLogger.RLock()
-	defer internalLogger.RUnlock()
-
-	for tcpDebug == nil {
-		internalLogger.RUnlock()
-		runtime.Gosched()
-		internalLogger.RLock()
-	}
-
-	scanner := bufio.NewScanner(tcpDebug)
+	scanner := bufio.NewScanner(Stream)
 	for scanner.Scan() {
 		return scanner.Text()
 	}
 	if err := scanner.Err(); err != nil {
-		tcpDebug = nil
+		log.Print(err)
 	}
 	return ""
 }
 
-func SetTCPLogging(b bool) {
+func MuteLogging(b bool) {
 	if b {
-		log.SetOutput(internalLogger)
+		log.SetOutput(ioutil.Discard)
+		return
 	}
+	log.SetOutput(Stream)
+
+	// TODO: Is this a bug? We should not need to set this.
+	log.SetFlags(0)
 }
 
 type Device struct {
@@ -130,19 +125,6 @@ func (m *Device) Install(p processor.Processor) error {
 	if err := p.InstallMemoryDevice(m, 0x0, 0xFFFFF); err != nil {
 		return err
 	}
-
-	go func() {
-		ln, _ := net.Listen("tcp", ":23")
-		for {
-			conn, _ := ln.Accept()
-			internalLogger.Lock()
-			tcpDebug = conn
-			internalLogger.Unlock()
-
-			name, _ := os.Hostname()
-			log.Print("Connected to: ", name)
-		}
-	}()
 
 	m.p = p
 	m.r = p.GetRegisters()
@@ -235,7 +217,7 @@ func toASCII(b byte) string {
 }
 
 func (m *Device) renderVideo() {
-	p := memory.Pointer(0xB0000)
+	p := memory.Pointer(0xB8000) // Assume CGA!
 	for i := 0; i < 25*2; i += 2 {
 		log.Print("| <<<!")
 		for j := 0; j < 80*2; j += 2 {
@@ -490,12 +472,4 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
-}
-
-func (m *Device) Close() error {
-	if tcpDebug != nil {
-		tcpDebug.Close()
-		tcpDebug = nil
-	}
-	return nil
 }
