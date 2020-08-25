@@ -73,13 +73,17 @@ func MainMenu() error {
 		})
 	}
 
-	buttons = append(buttons, sdl.MessageBoxButtonData{
-		ButtonID: 3,
-		Text:     "Configure",
-	}, sdl.MessageBoxButtonData{
-		ButtonID: 4,
-		Text:     "Help",
-	})
+	buttons = append(buttons,
+		/*
+			sdl.MessageBoxButtonData{
+				ButtonID: 3,
+				Text:     "Configure",
+			},
+		*/
+		sdl.MessageBoxButtonData{
+			ButtonID: 4,
+			Text:     "Help",
+		})
 
 	mbd := sdl.MessageBoxData{
 		Flags:   sdl.MESSAGEBOX_INFORMATION,

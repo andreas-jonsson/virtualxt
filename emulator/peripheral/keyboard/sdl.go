@@ -131,10 +131,6 @@ func (m *Device) startEventLoop() {
 }
 
 func (m *Device) sdlProcessKey(ev *sdl.KeyboardEvent) {
-	if !sdl.GetRelativeMouseMode() {
-		return
-	}
-
 	w, err := sdl.GetWindowFromID(ev.WindowID)
 	if err != nil {
 		log.Printf("Could not find window: 0x%X", ev.WindowID)
@@ -162,7 +158,9 @@ func (m *Device) sdlProcessKey(ev *sdl.KeyboardEvent) {
 		if keyUp {
 			scan |= KeyUpMask
 		}
-		m.pushEvent(scan)
+		if sdl.GetRelativeMouseMode() {
+			m.pushEvent(scan)
+		}
 	} else {
 		log.Printf("Invalid key \"%s\"", sdl.GetKeyName(ev.Keysym.Sym))
 	}
