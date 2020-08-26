@@ -46,9 +46,9 @@ type pitChannel struct {
 }
 
 type Device struct {
-	pic                         processor.InterruptController
-	channels                    [3]pitChannel
-	ticks, deviceTicks, tickGap int64
+	pic                processor.InterruptController
+	channels           [3]pitChannel
+	ticks, deviceTicks int64
 }
 
 func (m *Device) Install(p processor.Processor) error {
@@ -61,32 +61,43 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
-	*m = Device{pic: m.pic}
+	*m = Device{pic: m.pic, ticks: time.Now().UnixNano() / 1000}
 }
 
-const hostFrequency int64 = 1000000
-
 func (m *Device) Step(int) error {
+	// ticks in microseconds
 	ticks := time.Now().UnixNano() / 1000
-	if m.channels[0].enabled && ticks >= (m.ticks+m.tickGap) {
-		m.ticks = ticks
-		m.pic.IRQ(0)
+
+	if ch := &m.channels[0]; ch.enabled && ch.frequency > 0 {
+		next := 1000000 / int64(ch.frequency)
+		if ticks >= (m.ticks + next) {
+			m.ticks = ticks
+			m.pic.IRQ(0)
+		}
 	}
 
-	tickGap := hostFrequency / 119318
-	if ticks >= (m.deviceTicks + tickGap) {
+	const (
+		step = 10
+		next = 1000000 / (1193182 / step)
+	)
+
+	if ticks >= (m.deviceTicks + next) {
 		for _, ch := range m.channels {
 			if ch.enabled {
-				if ch.counter < 10 {
+				if ch.counter < step {
 					ch.counter = ch.data
 				} else {
-					ch.counter -= 10
+					ch.counter -= step
 				}
 			}
 		}
 		m.deviceTicks = ticks
 	}
 	return nil
+}
+
+func (m *Device) GetFrequency(channel int) float64 {
+	return m.channels[channel].frequency
 }
 
 func (m *Device) In(port uint16) byte {
@@ -135,9 +146,7 @@ func (m *Device) Out(port uint16, data byte) {
 		if ch.mode == modeToggle {
 			ch.toggle = !ch.toggle
 		}
-
-		m.tickGap = int64(float64(hostFrequency) / float64(1193182.0/float64(ch.effective)))
-		ch.frequency = float64(uint32((1193182.0/float64(ch.effective))*1000.0)) / 1000.0
+		ch.frequency = 1193182 / float64(ch.effective)
 	case 0x43: // Mode/Command register.
 		ch := &m.channels[data>>6]
 		if ch.mode = byte((data >> 4) & 3); ch.mode == modeToggle {

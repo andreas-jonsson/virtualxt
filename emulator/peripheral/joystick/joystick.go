@@ -1,5 +1,3 @@
-// +build !sdl
-
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
 
@@ -17,32 +15,33 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package dialog
+package joystick
 
 import (
-	"fmt"
-	"sync/atomic"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
-func MainMenu() error {
-	atomic.StoreInt32(&mainMenuWasOpen, 1)
+type Device struct {
+}
+
+func (m *Device) Install(p processor.Processor) error {
+	return p.InstallIODeviceAt(m, 0x201)
+}
+
+func (m *Device) Name() string {
+	return "Game Port Joystick"
+}
+
+func (m *Device) Reset() {
+}
+
+func (m *Device) Step(int) error {
 	return nil
 }
 
-func EjectFloppy() error {
-	return nil
+func (m *Device) In(port uint16) byte {
+	return 0
 }
 
-func MountFloppyImage(file string) error {
-	return nil
-}
-
-func ShowErrorMessage(msg string) error {
-	fmt.Println(msg)
-	return nil
-}
-
-func AskToQuit() bool {
-	atomic.StoreInt32(&quitFlag, 1)
-	return true
+func (m *Device) Out(port uint16, data byte) {
 }

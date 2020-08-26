@@ -8,11 +8,10 @@ mkdir -p $APP_DIR/bios $APP_DIR/boot
 
 cp virtualxt $APP_DIR/
 cp bios/pcxtbios.bin $APP_DIR/bios/
+cp bios/vxtcga.bin $APP_DIR/bios/
 cp boot/freedos.img $APP_DIR/boot/
 cp doc/icon/icon.png $APP_DIR/virtualxt-icon.png
 cp -r doc/manual $APP_DIR
-
-curl -L -o $APP_DIR/bios/ati_ega_wonder_800_plus.bin "https://github.com/BaRRaKudaRain/PCem-ROMs/raw/master/ATI%20EGA%20Wonder%20800%2B%20N1.00.BIN"
 
 curl -L -o apptool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
 chmod +x apptool.AppImage

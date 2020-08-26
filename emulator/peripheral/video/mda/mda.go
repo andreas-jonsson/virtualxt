@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/gdamore/tcell"
 )
@@ -96,10 +97,6 @@ type Device struct {
 
 var mdaCompat bool
 
-func init() {
-	flag.BoolVar(&mdaCompat, "strict-mda", false, "Strict MDA emulation")
-}
-
 func (m *Device) Install(p processor.Processor) error {
 	m.p = p
 	m.cursor.visible = true
@@ -111,8 +108,10 @@ func (m *Device) Install(p processor.Processor) error {
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	if err := p.InstallInterruptHandler(0x10, m); err != nil {
-		return err
+	if video.ATIBiosCompat {
+		if err := p.InstallInterruptHandler(0x10, m); err != nil {
+			return err
+		}
 	}
 	if err := p.InstallMemoryDevice(m, memoryBase, memoryBase+memorySize); err != nil {
 		return err
@@ -383,4 +382,8 @@ func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 	m.dirtyMemory = true
 	m.mem[(addr-memoryBase)&0xFFF] = data
 	m.lock.Unlock()
+}
+
+func init() {
+	flag.BoolVar(&mdaCompat, "strict-mda", false, "Strict MDA emulation")
 }

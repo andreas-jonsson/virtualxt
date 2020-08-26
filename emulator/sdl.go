@@ -24,13 +24,19 @@ import (
 	"os"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/cga"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/cga"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
 func Start() {
 	flag.Parse()
-	sdl.Main(emuLoop)
+	sdl.Main(func() {
+		if err := sdl.Init(0); err != nil {
+			panic(err)
+		}
+		emuLoop()
+		sdl.Quit()
+	})
 	os.Exit(0) // Calling Exit is required!
 }
 

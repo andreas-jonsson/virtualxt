@@ -1,11 +1,7 @@
 *.dump
 *.lst
 /*.bin
+
 virtualxt.exe
 coverage.txt
 rsrc.syso
-
-boot/freedos.img
-boot/boot-basic.img
-boot/boot-os.img
-boot/boot-rogue.img

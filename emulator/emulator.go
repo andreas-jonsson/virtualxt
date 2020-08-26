@@ -29,18 +29,21 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/debug"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/disk"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/joystick"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/keyboard"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/mda"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pic"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pit"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/ram"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/rom"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/smouse"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/speaker"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/mda"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
 )
 
 var (
 	biosImage  = "bios/pcxtbios.bin"
-	vbiosImage = "bios/ati_ega_wonder_800_plus.bin"
+	vbiosImage = "bios/vxtcga.bin"
 )
 
 var (
@@ -117,19 +120,25 @@ func emuLoop() {
 		return
 	}
 
+	if !checkBootsector(dc) {
+		dialog.ShowErrorMessage("The selected disk is not bootable!")
+		return
+	}
+
 	video := defaultVideoDevice()
 	if mdaVideo {
 		video = &mda.Device{}
 	}
-	debug.SetTCPLogging(mdaVideo)
+	debug.MuteLogging(mdaVideo)
+
+	spkr := &speaker.Device{}
 
 	peripherals := []peripheral.Peripheral{
 		&ram.Device{}, // RAM (needs to go first since it maps the full memory range)
 		&rom.Device{
 			RomName: "BIOS",
-			//Base:    memory.NewPointer(0xF000, 0),
-			Base:   memory.NewPointer(0xFE00, 0),
-			Reader: bios,
+			Base:    memory.NewPointer(0xFE00, 0),
+			Reader:  bios,
 		},
 		&rom.Device{
 			RomName: "Video BIOS",
@@ -140,25 +149,31 @@ func emuLoop() {
 		&pit.Device{},      // Programmable Interval Timer
 		dc,                 // Disk Controller
 		video,              // Video Device
+		spkr,               // PC Speaker
 		&keyboard.Device{}, // Keyboard Controller
+		&joystick.Device{}, // Game Port Joystick
+		&smouse.Device{ // Microsoft Serial Mouse (COM1)
+			BasePort: 0x3F8,
+			IRQ:      4,
+		},
 	}
 	if debug.EnableDebug {
 		peripherals = append(peripherals, &debug.Device{})
 	}
 
-	var limitSpeed int64 = 0
-	if limitMIPS != 0 {
-		limitSpeed = 1000000000 / int64(1000000*limitMIPS)
+	var doLimit float64 = limitMIPS
+	if doLimit == 0 {
+		doLimit = 0.33
 	}
+	limitSpeed := 1000000000 / int64(1000000*doLimit)
 
 	p := cpu.NewCPU(peripherals)
+	defer p.Close()
+
 	p.SetV20Support(v20cpu)
-
 	p.Reset()
-	//p.IP = 0xFFF0
-	//p.CS = 0xF000
 
-	for {
+	for !dialog.ShutdownRequested() {
 		var cycles int64
 		t := time.Now().UnixNano()
 
@@ -172,7 +187,7 @@ func emuLoop() {
 			log.Print(err)
 			return
 		}
-		if limitSpeed == 0 {
+		if limitMIPS == 0 && spkr.TurboSwitch() {
 			continue
 		}
 		cycles += int64(c)
@@ -185,4 +200,12 @@ func emuLoop() {
 			goto wait
 		}
 	}
+}
+
+func checkBootsector(dc *disk.Device) bool {
+	fp := dialog.DriveImages[dc.BootDrive].Fp
+	var sector [512]byte
+	fp.ReadAt(sector[:], 0)
+	fp.Seek(0, os.SEEK_SET)
+	return sector[511] == 0xAA && sector[510] == 0x55
 }

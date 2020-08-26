@@ -23,7 +23,7 @@ import (
 	"flag"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/mda"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/mda"
 )
 
 func Start() {

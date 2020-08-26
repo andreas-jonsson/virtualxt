@@ -73,13 +73,17 @@ func MainMenu() error {
 		})
 	}
 
-	buttons = append(buttons, sdl.MessageBoxButtonData{
-		ButtonID: 3,
-		Text:     "Configure",
-	}, sdl.MessageBoxButtonData{
-		ButtonID: 4,
-		Text:     "Help",
-	})
+	buttons = append(buttons,
+		/*
+			sdl.MessageBoxButtonData{
+				ButtonID: 3,
+				Text:     "Configure",
+			},
+		*/
+		sdl.MessageBoxButtonData{
+			ButtonID: 4,
+			Text:     "Help",
+		})
 
 	mbd := sdl.MessageBoxData{
 		Flags:   sdl.MESSAGEBOX_INFORMATION,
@@ -246,5 +250,9 @@ func AskToQuit() bool {
 	}
 
 	id, err := sdl.ShowMessageBox(&mbd)
-	return err != nil || id == 1
+	quit := err != nil || id == 1
+	if quit {
+		atomic.StoreInt32(&quitFlag, 1)
+	}
+	return quit
 }

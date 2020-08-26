@@ -35,7 +35,6 @@ func (m *Device) Install(p processor.Processor) error {
 	if !m.Clear {
 		rand.Read(m.mem[:]) // Scramble memory.
 	}
-
 	return p.InstallMemoryDevice(m, 0x0, Size-1)
 }
 

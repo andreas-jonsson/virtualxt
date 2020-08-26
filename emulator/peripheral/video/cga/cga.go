@@ -29,6 +29,7 @@ import (
 
 	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -58,7 +59,7 @@ var cgaColor = []uint32{
 
 type consoleCursor struct {
 	update, visible bool
-	x, y            byte
+	position        uint16
 }
 
 type Device struct {
@@ -81,21 +82,23 @@ type Device struct {
 	windowTitleTicker  *time.Ticker
 	atomicCycleCounter int32
 
-	cursorPos uint16
-	cursor    consoleCursor
-	p         processor.Processor
+	cursor consoleCursor
+	p      processor.Processor
 }
 
 func (m *Device) Install(p processor.Processor) error {
 	m.p = p
 	m.memoryBase = 0xB8000
 	m.windowTitleTicker = time.NewTicker(time.Second)
+	m.quitChan = make(chan struct{})
 
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	if err := p.InstallInterruptHandler(0x10, m); err != nil {
-		return err
+	if video.ATIBiosCompat {
+		if err := p.InstallInterruptHandler(0x10, m); err != nil {
+			return err
+		}
 	}
 	if err := p.InstallMemoryDevice(m, 0xB8000, 0xB8000+memorySize); err != nil {
 		return err
@@ -107,7 +110,7 @@ func (m *Device) Install(p processor.Processor) error {
 }
 
 func (m *Device) Name() string {
-	return "CGA/HGA compatible device"
+	return "VirtualXT CGA/HGA compatible device"
 }
 
 func (m *Device) Reset() {
@@ -122,7 +125,11 @@ func (m *Device) Step(cycles int) error {
 }
 
 func (m *Device) Close() error {
-	// TODO!
+	m.quitChan <- struct{}{}
+	<-m.quitChan
+	sdl.Do(func() {
+		sdl.QuitSubSystem(sdl.INIT_VIDEO)
+	})
 	return nil
 }
 
@@ -134,7 +141,7 @@ func blit32(pixels []byte, offset int, color uint32) {
 }
 
 func blinkTick() bool {
-	return ((applicationStart.UnixNano()/int64(time.Millisecond))/500)%2 == 0
+	return ((time.Since(applicationStart)/time.Millisecond)/500)%2 == 0
 }
 
 func (m *Device) blitChar(ch, attrib byte, x, y int) {
@@ -172,6 +179,10 @@ func (m *Device) blitChar(ch, attrib byte, x, y int) {
 func (m *Device) startRenderLoop() error {
 	var err error
 	sdl.Do(func() {
+		if err = sdl.InitSubSystem(sdl.INIT_VIDEO); err != nil {
+			return
+		}
+
 		sdl.SetHint(sdl.HINT_RENDER_SCALE_QUALITY, "0")
 		sdl.SetHint(sdl.HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1")
 		if m.window, m.renderer, err = sdl.CreateWindowAndRenderer(640, 480, sdl.WINDOW_RESIZABLE); err != nil {
@@ -191,95 +202,105 @@ func (m *Device) startRenderLoop() error {
 	}
 
 	go func() {
-		for range time.Tick(time.Second / 60) {
-			sdl.Do(func() {
-				m.lock.RLock()
-				defer m.lock.RUnlock()
+		ticker := time.NewTicker(time.Second / 60)
+		defer ticker.Stop()
 
-				select {
-				case <-m.windowTitleTicker.C:
-					hlp := " (Press F12 for menu)"
-					if dialog.MainMenuWasOpen() || time.Since(applicationStart) > time.Second*10 {
-						hlp = ""
+		for {
+			select {
+			case <-m.quitChan:
+				close(m.quitChan)
+				return
+			case <-ticker.C:
+				sdl.Do(func() {
+					m.lock.RLock()
+					defer m.lock.RUnlock()
+
+					select {
+					case <-m.windowTitleTicker.C:
+						hlp := " (Press F12 for menu)"
+						if dialog.MainMenuWasOpen() || time.Since(applicationStart) > time.Second*10 {
+							hlp = ""
+						}
+						numCycles := float64(atomic.SwapInt32(&m.atomicCycleCounter, 0))
+						m.window.SetTitle(fmt.Sprintf("VirtualXT - %.2f MIPS%s", numCycles/1000000, hlp))
+					default:
 					}
-					numCycles := float64(atomic.SwapInt32(&m.atomicCycleCounter, 0))
-					m.window.SetTitle(fmt.Sprintf("VirtualXT - %.2f MIPS%s", numCycles/1000000, hlp))
-				default:
-				}
 
-				blink := blinkTick()
-				if m.dirtyMemory || m.cursor.update || blink {
-					m.renderer.Clear()
+					blink := blinkTick()
+					if m.dirtyMemory || m.cursor.update || blink {
+						m.renderer.Clear()
 
-					// In graphics mode?
-					if m.modeCtrlReg&2 != 0 {
-						dst := m.surface.Pixels()
+						// In graphics mode?
+						if m.modeCtrlReg&2 != 0 {
+							dst := m.surface.Pixels()
 
-						// Is in high-resolution mode?
-						if m.modeCtrlReg&0x10 != 0 {
-							for y := 0; y < 200; y++ {
-								for x := 0; x < 640; x++ {
-									addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 3))
-									pixel := (m.mem[(m.memoryBase+addr)-0xB8000] >> (7 - (x & 7))) & 1
-									col := cgaColor[pixel*15]
-									offset := (y*640 + x) * 4
-									blit32(dst, offset, col)
+							// Is in high-resolution mode?
+							if m.modeCtrlReg&0x10 != 0 {
+								for y := 0; y < 200; y++ {
+									for x := 0; x < 640; x++ {
+										addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 3))
+										pixel := (m.mem[(m.memoryBase+addr)-0xB8000] >> (7 - (x & 7))) & 1
+										col := cgaColor[pixel*15]
+										offset := (y*640 + x) * 4
+										blit32(dst, offset, col)
+									}
+								}
+							} else {
+								palette := (m.palReg >> 5) & 1
+								intensity := ((m.palReg >> 4) & 1) << 3
+
+								for y := 0; y < 200; y++ {
+									for x := 0; x < 320; x++ {
+										addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 2))
+										pixel := m.mem[(m.memoryBase+addr)-0xB8000]
+
+										switch x & 3 {
+										case 0:
+											pixel = (pixel >> 6) & 3
+										case 1:
+											pixel = (pixel >> 4) & 3
+										case 2:
+											pixel = (pixel >> 2) & 3
+										case 3:
+											pixel = pixel & 3
+										}
+
+										col := cgaColor[pixel*2+palette+intensity]
+										offset := (y*640 + x*2) * 4
+										blit32(dst, offset, col)
+										blit32(dst, offset+4, col)
+									}
 								}
 							}
 						} else {
-							palette := (m.palReg >> 5) & 1
-							intensity := ((m.palReg >> 4) & 1) << 3
+							numCol := 80
+							if m.modeCtrlReg&1 == 0 {
+								numCol = 40
+							}
 
-							for y := 0; y < 200; y++ {
-								for x := 0; x < 320; x++ {
-									addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 2))
-									pixel := m.mem[(m.memoryBase+addr)-0xB8000]
+							numChar := numCol * 25
+							for i := 0; i < numChar*2; i += 2 {
+								txt := (int(m.memoryBase) + i) - 0xB8000
+								ch := m.mem[txt]
+								idx := i / 2
+								m.blitChar(ch, m.mem[txt+1], (idx%numCol)*8, (idx/numCol)*8)
+							}
 
-									switch x & 3 {
-									case 0:
-										pixel = (pixel >> 6) & 3
-									case 1:
-										pixel = (pixel >> 4) & 3
-									case 2:
-										pixel = (pixel >> 2) & 3
-									case 3:
-										pixel = pixel & 3
-									}
-
-									col := cgaColor[pixel*2+palette+intensity]
-									offset := (y*640 + x*2) * 4
-									blit32(dst, offset, col)
-									blit32(dst, offset+4, col)
-								}
+							if blink {
+								x := int(m.cursor.position) % numCol
+								y := int(m.cursor.position) / numCol
+								attr := (m.mem[numCol*2*y+x*2+1] & 0x70) | 0xF
+								m.blitChar('_', attr, x*8, y*8)
 							}
 						}
-					} else {
-						numCol := 80
-						if m.modeCtrlReg&1 == 0 {
-							numCol = 40
-						}
 
-						numChar := numCol * 25
-						for i := 0; i < numChar*2; i += 2 {
-							txt := (int(m.memoryBase) + i) - 0xB8000
-							ch := m.mem[txt]
-							idx := i / 2
-							m.blitChar(ch, m.mem[txt+1], (idx%numCol)*8, (idx/numCol)*8)
-						}
-
-						if blink {
-							x, y := int(m.cursor.x), int(m.cursor.y)
-							attr := (m.mem[numCol*2*y+x*2+1] & 0x70) | 0xF
-							m.blitChar('_', attr, x*8, y*8)
-						}
+						m.texture.Update(nil, m.surface.Pixels(), int(m.surface.Pitch))
 					}
 
-					m.texture.Update(nil, m.surface.Pixels(), int(m.surface.Pitch))
-				}
-
-				m.renderer.Copy(m.texture, nil, nil)
-				m.renderer.Present()
-			})
+					m.renderer.Copy(m.texture, nil, nil)
+					m.renderer.Present()
+				})
+			}
 		}
 	}()
 
@@ -290,6 +311,8 @@ func (m *Device) HandleInterrupt(int) error {
 	r := m.p.GetRegisters()
 	switch r.AH() {
 	case 0:
+		m.lock.Lock()
+
 		videoMode := r.AL() & 0x7F
 		log.Printf("Set video mode: 0x%X", videoMode)
 
@@ -310,23 +333,31 @@ func (m *Device) HandleInterrupt(int) error {
 			numCol = 80
 		}
 
-		m.p.WriteByte(memory.NewPointer(0x40, 0x49), videoMode)
-		m.p.WriteWord(memory.NewPointer(0x40, 0x4A), numCol)
-
 		// TODO: Fix this for all modes.
 		for i := 0; i < 80*25*2; i += 2 {
 			m.mem[i] = 0
 			m.mem[i+1] = 7
 		}
+
+		// We must unlock before we can use the CPU interface.
+		m.lock.Unlock()
+
+		m.p.WriteByte(memory.NewPointer(0x40, 0x49), videoMode)
+		m.p.WriteWord(memory.NewPointer(0x40, 0x4A), numCol)
 		return nil
 	}
 	return processor.ErrInterruptNotHandled
 }
 
 func (m *Device) In(port uint16) byte {
-	// Force CGA
-	addr := memory.NewPointer(0x40, 0x10)
-	m.p.WriteWord(addr, (m.p.ReadWord(addr)&0xFFCF)|0x20)
+	if video.ATIBiosCompat {
+		// Force CGA
+		addr := memory.NewPointer(0x40, 0x10)
+		m.p.WriteWord(addr, (m.p.ReadWord(addr)&0xFFCF)|0x20)
+	}
+
+	m.lock.Lock()
+	defer m.lock.Unlock()
 
 	switch port {
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
@@ -341,6 +372,9 @@ func (m *Device) In(port uint16) byte {
 }
 
 func (m *Device) Out(port uint16, data byte) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	switch port {
 	case 0x3B0, 0x3B2, 0x3B4, 0x3B6:
 		fallthrough // Don't think we should need this.
@@ -349,8 +383,6 @@ func (m *Device) Out(port uint16, data byte) {
 	case 0x3B1, 0x3B3, 0x3B5, 0x3B7:
 		fallthrough // Don't think we should need this.
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
-		m.lock.Lock()
-
 		m.crtReg[m.crtAddr] = data
 		switch m.crtAddr {
 		case 0xA:
@@ -358,21 +390,11 @@ func (m *Device) Out(port uint16, data byte) {
 			m.cursor.visible = data&0x20 != 0
 		case 0xE:
 			m.cursor.update = true
-			m.cursorPos = (m.cursorPos & 0x00FF) | (uint16(data) << 8)
+			m.cursor.position = (m.cursor.position & 0x00FF) | (uint16(data) << 8)
 		case 0xF:
 			m.cursor.update = true
-			m.cursorPos = (m.cursorPos & 0xFF00) | uint16(data)
+			m.cursor.position = (m.cursor.position & 0xFF00) | uint16(data)
 		}
-
-		var numCol uint16 = 80
-		if m.modeCtrlReg&1 == 0 {
-			numCol = 40
-		}
-
-		m.cursor.x = byte(m.cursorPos % numCol)
-		m.cursor.y = byte(m.cursorPos / numCol)
-
-		m.lock.Unlock()
 	case 0x3D8:
 		fallthrough
 	case 0x3B8:

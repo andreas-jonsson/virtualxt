@@ -1,5 +1,3 @@
-// +build !sdl
-
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
 
@@ -17,32 +15,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package dialog
+package video
 
-import (
-	"fmt"
-	"sync/atomic"
-)
+import "flag"
 
-func MainMenu() error {
-	atomic.StoreInt32(&mainMenuWasOpen, 1)
-	return nil
-}
+var ATIBiosCompat bool
 
-func EjectFloppy() error {
-	return nil
-}
-
-func MountFloppyImage(file string) error {
-	return nil
-}
-
-func ShowErrorMessage(msg string) error {
-	fmt.Println(msg)
-	return nil
-}
-
-func AskToQuit() bool {
-	atomic.StoreInt32(&quitFlag, 1)
-	return true
+func init() {
+	flag.BoolVar(&ATIBiosCompat, "ati", false, "ATI video BIOS compatibility")
 }

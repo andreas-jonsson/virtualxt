@@ -11,6 +11,7 @@ matrix:
         apt:
           packages:
             - libsdl2-dev
+            - nasm
 
       install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
@@ -30,6 +31,7 @@ matrix:
           packages:
             - sdl2
             - rpl
+            - nasm
 
       install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip
@@ -45,9 +47,10 @@ matrix:
 
       install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip
-        - curl -L -o sdl.tar.gz https://www.libsdl.org/release/SDL2-devel-2.0.10-mingw.tar.gz
-        - 7z x sdl.tar.gz && 7z x sdl.tar
+        - curl -L -o nasm.zip https://www.nasm.us/pub/nasm/releasebuilds/2.15.03/win64/nasm-2.15.03-win64.zip && unzip nasm.zip
+        - curl -L -o sdl.tar.gz https://www.libsdl.org/release/SDL2-devel-2.0.10-mingw.tar.gz && 7z x sdl.tar.gz && 7z x sdl.tar
 
+        - export PATH=${TRAVIS_BUILD_DIR}/nasm-2.15.03:$PATH
         - export C_INCLUDE_PATH=${TRAVIS_BUILD_DIR}/SDL2-2.0.10/x86_64-w64-mingw32/include
         - export LIBRARY_PATH=${TRAVIS_BUILD_DIR}/SDL2-2.0.10/x86_64-w64-mingw32/lib
 
@@ -79,7 +82,7 @@ before_install:
 before_script:
   - export FULL_VERSION=${VXT_VERSION}.${TRAVIS_BUILD_ID}
   - go generate ./...
-  - go test -race -coverprofile coverage.txt -covermode atomic ./...
+  - go test -race -coverprofile coverage.txt -covermode atomic -tags sdl ./...
   - bash <(curl -s https://codecov.io/bash)
 
 deploy:
