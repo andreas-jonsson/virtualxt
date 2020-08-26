@@ -37,7 +37,7 @@ func Start() {
 		emuLoop()
 		sdl.Quit()
 	})
-	os.Exit(0) // Callig Exit is required!
+	os.Exit(0) // Calling Exit is required!
 }
 
 var mdaVideo = false
