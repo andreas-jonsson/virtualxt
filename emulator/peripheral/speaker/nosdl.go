@@ -34,6 +34,10 @@ func (m *Device) Name() string {
 	return "NULL AUDIO"
 }
 
+func (m *Device) TurboSwitch() bool {
+	return true
+}
+
 func (m *Device) Reset() {
 }
 
