@@ -101,7 +101,7 @@ func (m *Device) startEventLoop() {
 						case *sdl.MouseButtonEvent:
 							if ev.Type == sdl.MOUSEBUTTONDOWN {
 								state := uint32(ev.Button)
-								if state&sdl.ButtonMMask() != 0 {
+								if state == sdl.BUTTON_MIDDLE {
 									sdl.SetRelativeMouseMode(false)
 									continue
 								}
@@ -109,10 +109,10 @@ func (m *Device) startEventLoop() {
 
 								if initMouse() {
 									var buttons byte
-									if state&sdl.ButtonLMask() != 0 {
+									if state == sdl.BUTTON_LEFT {
 										buttons = 2
 									}
-									if state&sdl.ButtonRMask() != 0 {
+									if state == sdl.BUTTON_RIGHT {
 										buttons |= 1
 									}
 									mouse.PushEvent(buttons, 0, 0)

@@ -289,8 +289,10 @@ func (m *Device) startRenderLoop() error {
 							if blink {
 								x := int(m.cursor.position) % numCol
 								y := int(m.cursor.position) / numCol
-								attr := (m.mem[numCol*2*y+x*2+1] & 0x70) | 0xF
-								m.blitChar('_', attr, x*8, y*8)
+								if x < 80 && y < 25 {
+									attr := (m.mem[numCol*2*y+x*2+1] & 0x70) | 0xF
+									m.blitChar('_', attr, x*8, y*8)
+								}
 							}
 						}
 
