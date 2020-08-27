@@ -8,5 +8,6 @@ cp -n $HERE/../Resources/boot/freedos.img $HOME/.virtualxt/boot/
 export VXT_DEFAULT_BIOS_PATH=$HERE/../Resources/bios/pcxtbios.bin
 export VXT_DEFAULT_VIDEO_BIOS_PATH=$HERE/../Resources/bios/vxtcga.bin
 export VXT_DEFAULT_FLOPPY_IMAGE=$HOME/.virtualxt/boot/freedos.img
+export VXT_DEFAULT_MANUAL_INDEX=$HERE/../Resources/manual/index.md.html
 
 exec "${HERE}/virtualxt" "$@"

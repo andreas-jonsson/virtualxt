@@ -150,7 +150,7 @@ func emuLoop() {
 		video,              // Video Device
 		spkr,               // PC Speaker
 		&keyboard.Device{}, // Keyboard Controller
-		//&joystick.Device{}, // Game Port Joystick
+		//&joystick.Device{}, // Game Port Joysticks
 		&smouse.Device{ // Microsoft Serial Mouse (COM1)
 			BasePort: 0x3F8,
 			IRQ:      4,
