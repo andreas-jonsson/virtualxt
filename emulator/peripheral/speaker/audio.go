@@ -21,6 +21,7 @@ package speaker
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
@@ -167,9 +168,12 @@ func (m *Device) In(port uint16) byte {
 }
 
 func (m *Device) Out(_ uint16, data byte) {
-	m.turbo = data&4 != 0
 	m.port = data
-
+	turbo := data&4 != 0
+	if m.turbo != turbo {
+		m.turbo = turbo
+		log.Print("Turbo switch: ", turbo)
+	}
 	if b := data&3 == 3; b != m.enabled {
 		m.enabled = b
 		sdl.Do(func() {

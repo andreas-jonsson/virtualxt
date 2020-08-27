@@ -158,9 +158,7 @@ func (m *Device) sdlProcessKey(ev *sdl.KeyboardEvent) {
 		if keyUp {
 			scan |= KeyUpMask
 		}
-		if sdl.GetRelativeMouseMode() {
-			m.pushEvent(scan)
-		}
+		m.pushEvent(scan)
 	} else {
 		log.Printf("Invalid key \"%s\"", sdl.GetKeyName(ev.Keysym.Sym))
 	}
