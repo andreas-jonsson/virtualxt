@@ -2,10 +2,6 @@
 name = "VirtualXT - FreeDOS"
 path = "VirtualXT-x86_64.AppImage"
 
-#[[actions]]
-#name = "Boot Floppy Image"
-#path = "VirtualXT-x86_64.AppImage"
-
 [[actions]]
 name = "manual"
 path = "VirtualXT-x86_64.AppImage"

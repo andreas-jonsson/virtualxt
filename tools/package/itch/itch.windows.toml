@@ -2,10 +2,6 @@
 name = "VirtualXT - FreeDOS"
 path = "virtualxt.exe"
 
-#[[actions]]
-#name = "Boot Floppy Image"
-#path = "virtualxt.exe"
-
 [[actions]]
 name = "manual"
 path = "manual/index.md.html"
