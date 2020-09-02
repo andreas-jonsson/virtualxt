@@ -38,18 +38,20 @@ func main() {
 	cmd := exec.Command("git", "rev-parse", "HEAD")
 	res, err := cmd.Output()
 	if err != nil {
-		log.Print("Could not parse Git hash: ", err)
+		log.Print("could not parse Git hash: ", err)
 	}
 
+	defaultVersion := "0.0.1.0"
 	version := os.Getenv(*ver)
 	if version == "" {
-		version = "0.0.1.0"
-		log.Printf("%s is not set. Defaulting to %s\n", *ver, version)
+		version = defaultVersion
+		log.Printf("%s is not set. Defaulting to %s", *ver, version)
 	}
 
 	parts := strings.SplitN(version, ".", 4)
 	if len(parts) != 4 {
-		log.Panicf("invalid version format: %s\n", version)
+		log.Print("invalid version format: ", version)
+		version = defaultVersion
 	}
 
 	const (
