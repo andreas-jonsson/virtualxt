@@ -52,6 +52,7 @@ func main() {
 	if len(parts) != 4 {
 		log.Print("invalid version format: ", version)
 		version = defaultVersion
+		parts = strings.Split(version, ".")
 	}
 
 	const (
