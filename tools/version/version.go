@@ -38,7 +38,7 @@ func main() {
 	cmd := exec.Command("git", "rev-parse", "HEAD")
 	res, err := cmd.Output()
 	if err != nil {
-		log.Panicln(err)
+		log.Print("Could not parse Git hash: ", err)
 	}
 
 	version := os.Getenv(*ver)
