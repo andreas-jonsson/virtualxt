@@ -20,6 +20,32 @@ matrix:
         - go build -tags sdl,static -ldflags "-s -w"
         - ./tools/package/itch/package.linux.sh
 
+    ################ Linux Snap Build ################
+
+    - name: Linux (snap)
+      #if: branch = release OR branch = edge
+      if: branch = master
+      os: linux
+      dist: bionic
+      sudo: required
+
+      addons:
+        snaps:
+          - name: multipass
+          - name: snapcraft
+            confinement: classic
+
+      install:
+        - export PUSH_SNAP=1
+
+      script:
+        - sudo chown $USER:$USER /var/snap/multipass/common/multipass_socket
+
+        #- echo $SNAPCRAFT_LOGIN_FILE | base64 --decode --ignore-garbage > snapcraft.login
+        #- snapcraft login --with snapcraft.login
+
+        - snapcraft
+
     ################ OSX Build ################
 
     - name: OSX
