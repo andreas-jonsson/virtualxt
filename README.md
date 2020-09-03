@@ -21,7 +21,12 @@ library of old application and games.
 The emulator is implemented in Go and should compile with only the standard Go [toolchain](https://golang.org/dl/) installed. Although in that case you are limited to textmode only.
 If you want graphics and sound you need to link with the SDL2 library by passing the build tag ```sdl```.
 
-You can find pre-built binaries at [virtualxt.org](https://virtualxt.org).
+You can find pre-built binaries at [virtualxt.org](https://virtualxt.org). OSX and Linux users can also download VirtualXT using [Homebrew](https://brew.sh).
+
+```
+brew tap andreas-jonsson/virtualxt
+brew install virtualxt
+```
 
 ### Screenshots
 
