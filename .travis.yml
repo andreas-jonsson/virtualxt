@@ -78,6 +78,7 @@ before_install:
 before_script:
   - export FULL_VERSION=${VXT_VERSION}.${TRAVIS_BUILD_ID}
   - go generate ./...
+  - cd bios/pcxtbios/build && go run build.go && cd ${TRAVIS_BUILD_DIR}
   - go test -race -coverprofile coverage.txt -covermode atomic -tags sdl ./...
   - bash <(curl -s https://codecov.io/bash)
 

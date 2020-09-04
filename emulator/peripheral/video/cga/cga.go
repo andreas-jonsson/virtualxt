@@ -72,7 +72,7 @@ type Device struct {
 	crtReg      [0x100]byte
 
 	crtAddr, modeCtrlReg,
-	palReg, refresh byte
+	colorCtrlReg, refresh byte
 
 	window   *sdl.Window
 	renderer *sdl.Renderer
@@ -114,7 +114,7 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
-	m.palReg = 0x20
+	m.colorCtrlReg = 0x20
 	m.modeCtrlReg = 1
 	m.cursor.visible = true
 }
@@ -246,8 +246,9 @@ func (m *Device) startRenderLoop() error {
 									}
 								}
 							} else {
-								palette := (m.palReg >> 5) & 1
-								intensity := ((m.palReg >> 4) & 1) << 3
+								palette := (m.colorCtrlReg >> 5) & 1
+								intensity := ((m.colorCtrlReg >> 4) & 1) << 3
+								background := m.colorCtrlReg & 0xF
 
 								for y := 0; y < 200; y++ {
 									for x := 0; x < 320; x++ {
@@ -265,7 +266,11 @@ func (m *Device) startRenderLoop() error {
 											pixel = pixel & 3
 										}
 
-										col := cgaColor[pixel*2+palette+intensity]
+										col := cgaColor[background]
+										if pixel != 0 {
+											col = cgaColor[pixel*2+palette+intensity]
+										}
+
 										offset := (y*640 + x*2) * 4
 										blit32(dst, offset, col)
 										blit32(dst, offset+4, col)
@@ -368,7 +373,7 @@ func (m *Device) In(port uint16) byte {
 		m.refresh ^= 0x9
 		return m.refresh
 	case 0x3B9:
-		return m.palReg
+		return m.colorCtrlReg
 	}
 	return 0
 }
@@ -402,7 +407,7 @@ func (m *Device) Out(port uint16, data byte) {
 	case 0x3B8:
 		m.modeCtrlReg = data
 	case 0x3B9:
-		m.palReg = data
+		m.colorCtrlReg = data
 	}
 }
 
