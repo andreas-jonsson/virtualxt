@@ -51,7 +51,7 @@ func main() {
 
 	fp, err := os.OpenFile(outputFile, os.O_RDWR, 0644)
 	if err != nil {
-		log.Print(out.String())
+		log.Print(err)
 		os.Exit(-1)
 	}
 	defer fp.Close()

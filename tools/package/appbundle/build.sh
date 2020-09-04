@@ -7,6 +7,7 @@ cp -r "$TRAVIS_BUILD_DIR/tools/package/appbundle/virtualxt-appbundle" $APP_DIR
 mkdir -p $APP_DIR/Contents/MacOS $APP_DIR/Contents/Resources/bios $APP_DIR/Contents/Resources/boot
 
 cp virtualxt $APP_DIR/Contents/MacOS/
+cp bios/vxtbios.bin $APP_DIR/Contents/Resources/bios/
 cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
 cp bios/vxtcga.bin $APP_DIR/Contents/Resources/bios/
 cp boot/freedos.img $APP_DIR/Contents/Resources/boot/

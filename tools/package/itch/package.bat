@@ -6,6 +6,7 @@ mkdir %PACKAGE_DEST%\bios %PACKAGE_DEST%\boot
 
 copy virtualxt.exe %PACKAGE_DEST%
 xcopy /S /Y /I doc\manual %PACKAGE_DEST%\manual
+copy bios\vxtbios.bin %PACKAGE_DEST%\bios
 copy bios\pcxtbios.bin %PACKAGE_DEST%\bios
 copy bios\vxtcga.bin %PACKAGE_DEST%\bios
 copy boot\freedos.img %PACKAGE_DEST%\boot

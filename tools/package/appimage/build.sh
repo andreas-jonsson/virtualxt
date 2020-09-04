@@ -7,6 +7,7 @@ cp -r "$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage" $APP_DIR
 mkdir -p $APP_DIR/bios $APP_DIR/boot
 
 cp virtualxt $APP_DIR/
+cp bios/vxtbios.bin $APP_DIR/bios/
 cp bios/pcxtbios.bin $APP_DIR/bios/
 cp bios/vxtcga.bin $APP_DIR/bios/
 cp boot/freedos.img $APP_DIR/boot/

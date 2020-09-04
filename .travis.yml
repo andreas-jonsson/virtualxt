@@ -65,7 +65,7 @@ go:
   - "1.15.x"
 
 env:
-  - VXT_VERSION=0.5.1
+  - VXT_VERSION=0.5.2
 
 notifications:
   email:

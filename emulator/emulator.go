@@ -41,8 +41,8 @@ import (
 )
 
 var (
-	biosImage  = "bios/pcxtbios.bin"
-	vbiosImage = "bios/vxtcga.bin"
+	biosImage  = "bios/vxtbios.bin"
+	vbiosImage = ""
 )
 
 var (
@@ -83,13 +83,6 @@ func emuLoop() {
 		return
 	}
 	defer bios.Close()
-
-	videoBios, err := os.Open(vbiosImage)
-	if err != nil {
-		dialog.ShowErrorMessage(err.Error())
-		return
-	}
-	defer videoBios.Close()
 
 	dc := &disk.Device{BootDrive: 0xFF}
 	dialog.FloppyController = dc
@@ -139,11 +132,6 @@ func emuLoop() {
 			Base:    memory.NewPointer(0xFE00, 0),
 			Reader:  bios,
 		},
-		&rom.Device{
-			RomName: "Video BIOS",
-			Base:    memory.NewPointer(0xC000, 0),
-			Reader:  videoBios,
-		},
 		&pic.Device{},      // Programmable Interrupt Controller
 		&pit.Device{},      // Programmable Interval Timer
 		dc,                 // Disk Controller
@@ -158,6 +146,20 @@ func emuLoop() {
 	}
 	if debug.EnableDebug {
 		peripherals = append(peripherals, &debug.Device{})
+	}
+	if vbiosImage != "" {
+		videoBios, err := os.Open(vbiosImage)
+		if err != nil {
+			dialog.ShowErrorMessage(err.Error())
+			return
+		}
+		defer videoBios.Close()
+
+		peripherals = append(peripherals, &rom.Device{
+			RomName: "Video BIOS",
+			Base:    memory.NewPointer(0xC000, 0),
+			Reader:  videoBios,
+		})
 	}
 
 	var doLimit float64 = limitMIPS

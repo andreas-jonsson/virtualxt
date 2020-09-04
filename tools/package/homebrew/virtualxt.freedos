@@ -6,8 +6,7 @@ DATA=$HERE/../share/virtualxt
 mkdir -p $HOME/.virtualxt/boot
 cp -n $DATA/freedos.img $HOME/.virtualxt/boot/
 
-export VXT_DEFAULT_BIOS_PATH=$DATA/pcxtbios.bin
-export VXT_DEFAULT_VIDEO_BIOS_PATH=$DATA/vxtcga.bin
+export VXT_DEFAULT_BIOS_PATH=$DATA/vxtbios.bin
 export VXT_DEFAULT_FLOPPY_IMAGE=$HOME/.virtualxt/boot/freedos.img
 export VXT_DEFAULT_MANUAL_INDEX=$DATA/manual/index.md.html
 
