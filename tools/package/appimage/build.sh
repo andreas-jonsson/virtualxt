@@ -10,7 +10,7 @@ cp virtualxt $APP_DIR/
 cp bios/vxtbios.bin $APP_DIR/bios/
 cp bios/pcxtbios.bin $APP_DIR/bios/
 cp bios/vxtcga.bin $APP_DIR/bios/
-cp boot/freedos.img $APP_DIR/boot/
+cp boot/freedos_hd.img $APP_DIR/boot/
 cp doc/icon/icon.png $APP_DIR/virtualxt-icon.png
 cp -r doc/manual $APP_DIR
 

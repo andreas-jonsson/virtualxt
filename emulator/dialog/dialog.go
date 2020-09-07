@@ -39,7 +39,10 @@ var (
 	quitFlag int32
 )
 
-var defaultFloppyImage = "boot/freedos.img"
+var (
+	defaultFloppyImage = ""
+	defaultHdImage     = "boot/freedos_hd.img"
+)
 
 var DriveImages [0x100]struct {
 	Name string
@@ -50,10 +53,13 @@ func init() {
 	if p, ok := os.LookupEnv("VXT_DEFAULT_FLOPPY_IMAGE"); ok {
 		defaultFloppyImage = p
 	}
+	if p, ok := os.LookupEnv("VXT_DEFAULT_HD_IMAGE"); ok {
+		defaultHdImage = p
+	}
 
 	flag.StringVar(&DriveImages[0x0].Name, "a", defaultFloppyImage, "Mount image as floppy A")
 	flag.StringVar(&DriveImages[0x1].Name, "b", "", "Mount image as floppy B")
-	flag.StringVar(&DriveImages[0x80].Name, "c", "", "Mount image as haddrive C")
+	flag.StringVar(&DriveImages[0x80].Name, "c", defaultHdImage, "Mount image as haddrive C")
 	flag.StringVar(&DriveImages[0x81].Name, "d", "", "Mount image as haddrive D")
 }
 

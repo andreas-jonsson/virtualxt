@@ -3,10 +3,10 @@
 HERE="$(dirname "$(readlink -f "$0")")"
 
 mkdir -p $HOME/.virtualxt/boot
-cp -n $HERE/boot/freedos.img $HOME/.virtualxt/boot/
+cp -n $HERE/boot/freedos_hd.img $HOME/.virtualxt/boot/
 
 export VXT_DEFAULT_BIOS_PATH=$HERE/bios/vxtbios.bin
-export VXT_DEFAULT_FLOPPY_IMAGE=$HOME/.virtualxt/boot/freedos.img
+export VXT_DEFAULT_HD_IMAGE=$HOME/.virtualxt/boot/freedos_hd.img
 export VXT_DEFAULT_MANUAL_INDEX=$HERE/manual/index.md.html
 
 exec "$HERE/virtualxt" "$@"

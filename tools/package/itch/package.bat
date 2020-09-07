@@ -9,5 +9,5 @@ xcopy /S /Y /I doc\manual %PACKAGE_DEST%\manual
 copy bios\vxtbios.bin %PACKAGE_DEST%\bios
 copy bios\pcxtbios.bin %PACKAGE_DEST%\bios
 copy bios\vxtcga.bin %PACKAGE_DEST%\bios
-copy boot\freedos.img %PACKAGE_DEST%\boot
+copy boot\freedos_hd.img %PACKAGE_DEST%\boot
 copy tools\package\itch\itch.windows.toml %PACKAGE_DEST%\.itch.toml

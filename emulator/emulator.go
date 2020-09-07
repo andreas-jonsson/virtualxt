@@ -19,6 +19,7 @@ package emulator
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"runtime"
@@ -29,6 +30,8 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/debug"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/disk"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/dma"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/joystick"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/keyboard"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pic"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pit"
@@ -43,6 +46,11 @@ import (
 var (
 	biosImage  = "bios/vxtbios.bin"
 	vbiosImage = ""
+)
+
+var (
+	genFd, genHd string
+	genHdSize    = 10
 )
 
 var (
@@ -66,6 +74,10 @@ func init() {
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")
 	flag.StringVar(&vbiosImage, "vbios", vbiosImage, "Path to EGA/VGA BIOS image")
 
+	flag.StringVar(&genFd, "gen-fd", "", "Create a blank 1.44MB floppy image.")
+	flag.StringVar(&genHd, "gen-hd", "", "Create a blank 10MB hadrddrive image.")
+	flag.IntVar(&genHdSize, "gen-hd-size", genHdSize, "Set size of the generated harddrive image in megabytes.")
+
 	if !mdaVideo {
 		flag.BoolVar(&mdaVideo, "mda", false, "Emulate MDA video in termainal mode")
 	}
@@ -74,6 +86,10 @@ func init() {
 func emuLoop() {
 	if man {
 		dialog.OpenManual()
+		return
+	}
+
+	if genImage() {
 		return
 	}
 
@@ -134,11 +150,12 @@ func emuLoop() {
 		},
 		&pic.Device{},      // Programmable Interrupt Controller
 		&pit.Device{},      // Programmable Interval Timer
+		&dma.Device{},      // DMA Controller
 		dc,                 // Disk Controller
 		video,              // Video Device
 		spkr,               // PC Speaker
 		&keyboard.Device{}, // Keyboard Controller
-		//&joystick.Device{}, // Game Port Joysticks
+		&joystick.Device{}, // Game Port Joysticks
 		&smouse.Device{ // Microsoft Serial Mouse (COM1)
 			BasePort: 0x3F8,
 			IRQ:      4,
@@ -209,4 +226,44 @@ func checkBootsector(dc *disk.Device) bool {
 	fp.ReadAt(sector[:], 0)
 	fp.Seek(0, os.SEEK_SET)
 	return sector[511] == 0xAA && sector[510] == 0x55
+}
+
+func genImage() bool {
+	if genHdSize < 10 {
+		genHdSize = 10
+	} else if genHdSize > 500 {
+		genHdSize = 500
+	}
+
+	if genFd != "" {
+		fd, err := os.Create(genFd)
+		if err == nil {
+			defer fd.Close()
+			var buffer [0x168000]byte
+			_, err = fd.Write(buffer[:])
+		}
+		if err != nil {
+			fmt.Print(err)
+		}
+		return true
+	}
+
+	if genHd != "" {
+		hd, err := os.Create(genHd)
+		if err == nil {
+			defer hd.Close()
+			var buffer [0x100000]byte
+			for i := 0; i < genHdSize; i++ {
+				if _, err = hd.Write(buffer[:]); err != nil {
+					break
+				}
+			}
+		}
+		if err != nil {
+			fmt.Print(err)
+		}
+		return true
+	}
+
+	return false
 }

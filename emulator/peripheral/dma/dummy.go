@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package joystick
+package dma
 
 import (
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
@@ -25,11 +25,12 @@ type Device struct {
 }
 
 func (m *Device) Install(p processor.Processor) error {
-	return p.InstallIODeviceAt(m, 0x201)
+	p.InstallIODevice(m, 0x80, 0x8F)
+	return p.InstallIODevice(m, 0xC0, 0xDF)
 }
 
 func (m *Device) Name() string {
-	return "Dummy joystick"
+	return "Dummy DMA Controller (Intel 8237)"
 }
 
 func (m *Device) Reset() {
@@ -40,7 +41,7 @@ func (m *Device) Step(int) error {
 }
 
 func (m *Device) In(port uint16) byte {
-	return 0
+	return 0xFF
 }
 
 func (m *Device) Out(port uint16, data byte) {

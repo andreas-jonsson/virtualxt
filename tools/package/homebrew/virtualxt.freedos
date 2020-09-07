@@ -4,10 +4,10 @@ HERE="$(cd "$(dirname "$0")" && pwd -P)"
 DATA=$HERE/../share/virtualxt
 
 mkdir -p $HOME/.virtualxt/boot
-cp -n $DATA/freedos.img $HOME/.virtualxt/boot/
+cp -n $DATA/freedos_hd.img $HOME/.virtualxt/boot/
 
 export VXT_DEFAULT_BIOS_PATH=$DATA/vxtbios.bin
-export VXT_DEFAULT_FLOPPY_IMAGE=$HOME/.virtualxt/boot/freedos.img
+export VXT_DEFAULT_HD_IMAGE=$HOME/.virtualxt/boot/freedos_hd.img
 export VXT_DEFAULT_MANUAL_INDEX=$DATA/manual/index.md.html
 
 exec "$HERE/virtualxt" "$@"
