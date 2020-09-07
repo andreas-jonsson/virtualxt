@@ -21,7 +21,6 @@ package cga
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -29,12 +28,14 @@ import (
 
 	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-const memorySize = 0x4000
+const (
+	memorySize = 0x4000
+	memoryBase = 0xB8000
+)
 
 var applicationStart = time.Now()
 
@@ -67,7 +68,6 @@ type Device struct {
 	quitChan chan struct{}
 
 	dirtyMemory bool
-	memoryBase  memory.Pointer
 	mem         [memorySize]byte
 	crtReg      [0x100]byte
 
@@ -88,19 +88,13 @@ type Device struct {
 
 func (m *Device) Install(p processor.Processor) error {
 	m.p = p
-	m.memoryBase = 0xB8000
 	m.windowTitleTicker = time.NewTicker(time.Second)
 	m.quitChan = make(chan struct{})
 
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	if video.ATIBiosCompat {
-		if err := p.InstallInterruptHandler(0x10, m); err != nil {
-			return err
-		}
-	}
-	if err := p.InstallMemoryDevice(m, 0xB8000, 0xB8000+memorySize); err != nil {
+	if err := p.InstallMemoryDevice(m, memoryBase, memoryBase+memorySize); err != nil {
 		return err
 	}
 	if err := p.InstallIODevice(m, 0x3B0, 0x3DF); err != nil {
@@ -110,7 +104,7 @@ func (m *Device) Install(p processor.Processor) error {
 }
 
 func (m *Device) Name() string {
-	return "VirtualXT CGA/HGA compatible device"
+	return "Color Graphics Adapter"
 }
 
 func (m *Device) Reset() {
@@ -228,6 +222,8 @@ func (m *Device) startRenderLoop() error {
 
 					blink := blinkTick()
 					if m.dirtyMemory || m.cursor.update || blink {
+						backgroundColor := cgaColor[m.colorCtrlReg&0xF]
+						m.renderer.SetDrawColor(byte(backgroundColor&0xFF0000), byte(backgroundColor&0x00FF00), byte(backgroundColor&0x0000FF), 0xFF)
 						m.renderer.Clear()
 
 						// In graphics mode?
@@ -238,8 +234,8 @@ func (m *Device) startRenderLoop() error {
 							if m.modeCtrlReg&0x10 != 0 {
 								for y := 0; y < 200; y++ {
 									for x := 0; x < 640; x++ {
-										addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 3))
-										pixel := (m.mem[(m.memoryBase+addr)-0xB8000] >> (7 - (x & 7))) & 1
+										addr := (y>>1)*80 + (y&1)*8192 + (x >> 3)
+										pixel := (m.mem[addr] >> (7 - (x & 7))) & 1
 										col := cgaColor[pixel*15]
 										offset := (y*640 + x) * 4
 										blit32(dst, offset, col)
@@ -248,12 +244,11 @@ func (m *Device) startRenderLoop() error {
 							} else {
 								palette := (m.colorCtrlReg >> 5) & 1
 								intensity := ((m.colorCtrlReg >> 4) & 1) << 3
-								background := m.colorCtrlReg & 0xF
 
 								for y := 0; y < 200; y++ {
 									for x := 0; x < 320; x++ {
-										addr := memory.Pointer((y>>1)*80 + (y&1)*8192 + (x >> 2))
-										pixel := m.mem[(m.memoryBase+addr)-0xB8000]
+										addr := (y>>1)*80 + (y&1)*8192 + (x >> 2)
+										pixel := m.mem[addr]
 
 										switch x & 3 {
 										case 0:
@@ -266,7 +261,7 @@ func (m *Device) startRenderLoop() error {
 											pixel = pixel & 3
 										}
 
-										col := cgaColor[background]
+										col := backgroundColor
 										if pixel != 0 {
 											col = cgaColor[pixel*2+palette+intensity]
 										}
@@ -283,19 +278,20 @@ func (m *Device) startRenderLoop() error {
 								numCol = 40
 							}
 
+							videoPage := int(m.crtReg[0xC]<<8) + int(m.crtReg[0xD])
 							numChar := numCol * 25
+
 							for i := 0; i < numChar*2; i += 2 {
-								txt := (int(m.memoryBase) + i) - 0xB8000
-								ch := m.mem[txt]
+								ch := m.mem[videoPage+i]
 								idx := i / 2
-								m.blitChar(ch, m.mem[txt+1], (idx%numCol)*8, (idx/numCol)*8)
+								m.blitChar(ch, m.mem[videoPage+i+1], (idx%numCol)*8, (idx/numCol)*8)
 							}
 
 							if blink {
 								x := int(m.cursor.position) % numCol
 								y := int(m.cursor.position) / numCol
 								if x < 80 && y < 25 {
-									attr := (m.mem[numCol*2*y+x*2+1] & 0x70) | 0xF
+									attr := (m.mem[videoPage+(numCol*2*y+x*2+1)] & 0x70) | 0xF
 									m.blitChar('_', attr, x*8, y*8)
 								}
 							}
@@ -314,62 +310,14 @@ func (m *Device) startRenderLoop() error {
 	return nil
 }
 
-func (m *Device) HandleInterrupt(int) error {
-	r := m.p.GetRegisters()
-	switch r.AH() {
-	case 0:
-		m.lock.Lock()
-
-		videoMode := r.AL() & 0x7F
-		log.Printf("Set video mode: 0x%X", videoMode)
-
-		var numCol uint16
-		m.modeCtrlReg &= 0x20
-
-		switch {
-		case videoMode == 0 || videoMode == 1:
-			numCol = 40
-		case videoMode == 2 || videoMode == 3:
-			m.modeCtrlReg |= 1
-			numCol = 80
-		case videoMode == 4 || videoMode == 5:
-			m.modeCtrlReg |= 2
-			numCol = 40
-		case videoMode == 6:
-			m.modeCtrlReg |= 0x12
-			numCol = 80
-		}
-
-		// TODO: Fix this for all modes.
-		for i := 0; i < 80*25*2; i += 2 {
-			m.mem[i] = 0
-			m.mem[i+1] = 7
-		}
-
-		// We must unlock before we can use the CPU interface.
-		m.lock.Unlock()
-
-		m.p.WriteByte(memory.NewPointer(0x40, 0x49), videoMode)
-		m.p.WriteWord(memory.NewPointer(0x40, 0x4A), numCol)
-		return nil
-	}
-	return processor.ErrInterruptNotHandled
-}
-
 func (m *Device) In(port uint16) byte {
-	if video.ATIBiosCompat {
-		// Force CGA
-		addr := memory.NewPointer(0x40, 0x10)
-		m.p.WriteWord(addr, (m.p.ReadWord(addr)&0xFFCF)|0x20)
-	}
-
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	switch port {
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
 		return m.crtReg[m.crtAddr]
-	case 0x3BA, 0x3DA:
+	case 0x3DA:
 		m.refresh ^= 0x9
 		return m.refresh
 	case 0x3B9:
@@ -383,12 +331,8 @@ func (m *Device) Out(port uint16, data byte) {
 	defer m.lock.Unlock()
 
 	switch port {
-	case 0x3B0, 0x3B2, 0x3B4, 0x3B6:
-		fallthrough // Don't think we should need this.
 	case 0x3D0, 0x3D2, 0x3D4, 0x3D6:
 		m.crtAddr = data
-	case 0x3B1, 0x3B3, 0x3B5, 0x3B7:
-		fallthrough // Don't think we should need this.
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
 		m.crtReg[m.crtAddr] = data
 		switch m.crtAddr {
@@ -403,8 +347,6 @@ func (m *Device) Out(port uint16, data byte) {
 			m.cursor.position = (m.cursor.position & 0xFF00) | uint16(data)
 		}
 	case 0x3D8:
-		fallthrough
-	case 0x3B8:
 		m.modeCtrlReg = data
 	case 0x3B9:
 		m.colorCtrlReg = data
@@ -413,7 +355,7 @@ func (m *Device) Out(port uint16, data byte) {
 
 func (m *Device) ReadByte(addr memory.Pointer) byte {
 	m.lock.RLock()
-	v := m.mem[(addr-m.memoryBase)&0x3FFF]
+	v := m.mem[(addr-memoryBase)&0x3FFF]
 	m.lock.RUnlock()
 	return v
 }
@@ -421,6 +363,6 @@ func (m *Device) ReadByte(addr memory.Pointer) byte {
 func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 	m.lock.Lock()
 	m.dirtyMemory = true
-	m.mem[(addr-m.memoryBase)&0x3FFF] = data
+	m.mem[(addr-memoryBase)&0x3FFF] = data
 	m.lock.Unlock()
 }

@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/gdamore/tcell"
 )
@@ -108,11 +107,6 @@ func (m *Device) Install(p processor.Processor) error {
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	if video.ATIBiosCompat {
-		if err := p.InstallInterruptHandler(0x10, m); err != nil {
-			return err
-		}
-	}
 	if err := p.InstallMemoryDevice(m, memoryBase, memoryBase+memorySize); err != nil {
 		return err
 	}
@@ -279,30 +273,6 @@ func (m *Device) startRenderLoop() error {
 	}()
 
 	return nil
-}
-
-func (m *Device) HandleInterrupt(int) error {
-	r := m.p.GetRegisters()
-	switch r.AH() {
-	case 0:
-		videoMode := r.AL() & 0x7F
-		log.Printf("Set video mode: 0x%X", videoMode)
-
-		videoMode = 3
-		if mdaCompat {
-			videoMode = 7
-		}
-
-		m.p.WriteByte(memory.NewPointer(0x40, 0x49), videoMode)
-		m.p.WriteWord(memory.NewPointer(0x40, 0x4A), 80)
-
-		for i := 0; i < 80*25*2; i += 2 {
-			m.mem[i] = 0
-			m.mem[i+1] = 7
-		}
-		return nil
-	}
-	return processor.ErrInterruptNotHandled
 }
 
 func (m *Device) In(port uint16) byte {
