@@ -143,6 +143,9 @@ func (m *Device) Step(cycles int) error {
 	toneHz := m.pit.GetFrequency(2)
 	squareWavePeriod := uint64(float64(m.spec.Freq) / toneHz)
 	halfSquareWavePeriod := squareWavePeriod / 2
+	if halfSquareWavePeriod == 0 {
+		return nil
+	}
 
 	var ptr int
 	for i := 0; i < m.sampleCount; i++ {
