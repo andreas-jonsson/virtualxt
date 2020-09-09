@@ -280,7 +280,7 @@ func genImage() bool {
 func printLogo() {
 	fmt.Print(logo)
 	fmt.Println("v" + version.Current.String())
-	fmt.Println(version.Copyright + "\n")
+	fmt.Println(" ───────═════ " + version.Copyright + " ══════───────\n")
 }
 
 var logo = `
