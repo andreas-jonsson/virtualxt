@@ -34,7 +34,8 @@ type Device struct {
 	BasePort uint16
 	IRQ      int
 
-	lock sync.Mutex
+	lock    sync.Mutex
+	sendIRQ bool
 
 	registers [8]byte
 	buffer    bytes.Buffer
@@ -54,6 +55,7 @@ func (m *Device) Reset() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	m.sendIRQ = false
 	m.buffer.Reset()
 	for i := range m.registers {
 		m.registers[i] = 0
@@ -61,6 +63,16 @@ func (m *Device) Reset() {
 }
 
 func (m *Device) Step(int) error {
+	var sendIRQ bool
+
+	m.lock.Lock()
+	sendIRQ = m.sendIRQ
+	m.sendIRQ = false
+	m.lock.Unlock()
+
+	if sendIRQ {
+		m.pic.IRQ(m.IRQ)
+	}
 	return nil
 }
 
@@ -69,9 +81,7 @@ func (m *Device) pushData(data byte) {
 	if ln == maxBufferSize {
 		return
 	}
-	if ln == 0 {
-		m.pic.IRQ(m.IRQ)
-	}
+	m.sendIRQ = ln == 0
 	m.buffer.WriteByte(data)
 }
 

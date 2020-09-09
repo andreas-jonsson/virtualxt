@@ -77,7 +77,14 @@ func (p *CPU) SetV20Support(b bool) {
 }
 
 func (p *CPU) installPeripherals() {
+	log.Print("\nPeripherals")
 	for _, d := range p.peripherals {
+		log.Print(" |- ", d.Name())
+	}
+	log.Println("")
+
+	for _, d := range p.peripherals {
+		log.Print("Installing ", d.Name(), "...")
 		if err := d.Install(p); err != nil {
 			log.Print("Failed to install peripheral: ", err)
 		}
@@ -85,6 +92,7 @@ func (p *CPU) installPeripherals() {
 			p.pic = pic
 		}
 	}
+
 	if p.pic == nil {
 		log.Print("No interrupt controller detected!")
 	}

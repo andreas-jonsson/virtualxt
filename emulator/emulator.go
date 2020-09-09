@@ -41,6 +41,7 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/speaker"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/mda"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
+	"github.com/andreas-jonsson/virtualxt/version"
 )
 
 var (
@@ -54,8 +55,8 @@ var (
 )
 
 var (
-	limitMIPS   float64
-	v20cpu, man bool
+	limitMIPS        float64
+	v20cpu, man, ver bool
 )
 
 func init() {
@@ -69,14 +70,15 @@ func init() {
 
 	flag.BoolVar(&v20cpu, "v20", false, "Emulate NEC V20 CPU")
 	flag.BoolVar(&man, "m", false, "Open manual")
+	flag.BoolVar(&ver, "v", false, "Print version information")
 
 	flag.Float64Var(&limitMIPS, "mips", 0, "Limit CPU speed")
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")
 	flag.StringVar(&vbiosImage, "vbios", vbiosImage, "Path to EGA/VGA BIOS image")
 
-	flag.StringVar(&genFd, "gen-fd", "", "Create a blank 1.44MB floppy image.")
-	flag.StringVar(&genHd, "gen-hd", "", "Create a blank 10MB hadrddrive image.")
-	flag.IntVar(&genHdSize, "gen-hd-size", genHdSize, "Set size of the generated harddrive image in megabytes.")
+	flag.StringVar(&genFd, "gen-fd", "", "Create a blank 1.44MB floppy image")
+	flag.StringVar(&genHd, "gen-hd", "", "Create a blank 10MB hadrddrive image")
+	flag.IntVar(&genHdSize, "gen-hd-size", genHdSize, "Set size of the generated harddrive image in megabytes")
 
 	if !mdaVideo {
 		flag.BoolVar(&mdaVideo, "mda", false, "Emulate MDA video in termainal mode")
@@ -89,9 +91,16 @@ func emuLoop() {
 		return
 	}
 
+	if ver {
+		fmt.Printf("%s (%s)\n", version.Current.FullString(), version.Hash)
+		return
+	}
+
 	if genImage() {
 		return
 	}
+
+	printLogo()
 
 	bios, err := os.Open(biosImage)
 	if err != nil {
@@ -267,3 +276,17 @@ func genImage() bool {
 
 	return false
 }
+
+func printLogo() {
+	fmt.Print(logo)
+	fmt.Println("v" + version.Current.String())
+	fmt.Println(version.Copyright + "\n")
+}
+
+var logo = `
+██╗   ██╗██╗██████╗ ████████╗██╗   ██╗ █████╗ ██╗     ██╗  ██╗████████╗
+██║   ██║██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██║     ╚██╗██╔╝╚══██╔══╝
+██║   ██║██║██████╔╝   ██║   ██║   ██║███████║██║      ╚███╔╝    ██║   
+╚██╗ ██╔╝██║██╔══██╗   ██║   ██║   ██║██╔══██║██║      ██╔██╗    ██║   
+ ╚████╔╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗██╔╝ ██╗   ██║   
+  ╚═══╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝`

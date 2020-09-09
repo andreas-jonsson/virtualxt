@@ -108,9 +108,11 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
+	m.lock.Lock()
 	m.colorCtrlReg = 0x20
 	m.modeCtrlReg = 1
 	m.cursor.visible = true
+	m.lock.Unlock()
 }
 
 func (m *Device) Step(cycles int) error {
