@@ -111,7 +111,8 @@ func (m *Device) Name() string {
 
 func (m *Device) Reset() {
 	m.sampleIndex = 0
-	m.port = 0
+	m.port = 4
+	m.turbo = true
 	m.enabled = false
 
 	sdl.Do(func() {

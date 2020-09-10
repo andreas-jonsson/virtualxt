@@ -19,12 +19,19 @@ package smouse
 
 import (
 	"bytes"
-	"sync"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
-const maxBufferSize = 16
+const (
+	maxBufferSize = 16
+	maxNumEvents  = 128
+)
+
+type mouseEvent struct {
+	buttons    byte
+	xrel, yrel int8
+}
 
 type SerialMouse interface {
 	PushEvent(buttons byte, xrel, yrel int8)
@@ -34,16 +41,15 @@ type Device struct {
 	BasePort uint16
 	IRQ      int
 
-	lock    sync.Mutex
-	sendIRQ bool
-
 	registers [8]byte
+	events    chan mouseEvent
 	buffer    bytes.Buffer
 	pic       processor.InterruptController
 }
 
 func (m *Device) Install(p processor.Processor) error {
 	m.pic = p.GetInterruptController()
+	m.events = make(chan mouseEvent, maxNumEvents)
 	return p.InstallIODevice(m, m.BasePort, m.BasePort+7)
 }
 
@@ -52,10 +58,6 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	m.sendIRQ = false
 	m.buffer.Reset()
 	for i := range m.registers {
 		m.registers[i] = 0
@@ -63,17 +65,24 @@ func (m *Device) Reset() {
 }
 
 func (m *Device) Step(int) error {
-	var sendIRQ bool
+	for {
+		select {
+		case ev := <-m.events:
+			var upper byte
+			if ev.xrel < 0 {
+				upper = 0x3
+			}
+			if ev.yrel < 0 {
+				upper |= 0xC
+			}
 
-	m.lock.Lock()
-	sendIRQ = m.sendIRQ
-	m.sendIRQ = false
-	m.lock.Unlock()
-
-	if sendIRQ {
-		m.pic.IRQ(m.IRQ)
+			m.pushData(0x40 | ((ev.buttons & 3) << 4) | upper)
+			m.pushData(byte(ev.xrel & 0x3F))
+			m.pushData(byte(ev.yrel & 0x3F))
+		default:
+			return nil
+		}
 	}
-	return nil
 }
 
 func (m *Device) pushData(data byte) {
@@ -81,31 +90,20 @@ func (m *Device) pushData(data byte) {
 	if ln == maxBufferSize {
 		return
 	}
-	m.sendIRQ = ln == 0
+	if ln == 0 {
+		m.pic.IRQ(m.IRQ)
+	}
 	m.buffer.WriteByte(data)
 }
 
 func (m *Device) PushEvent(buttons byte, xrel, yrel int8) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	var upper byte
-	if xrel < 0 {
-		upper = 0x3
+	select {
+	case m.events <- mouseEvent{buttons, xrel, yrel}:
+	default:
 	}
-	if yrel < 0 {
-		upper |= 0xC
-	}
-
-	m.pushData(0x40 | ((buttons & 3) << 4) | upper)
-	m.pushData(byte(xrel & 0x3F))
-	m.pushData(byte(yrel & 0x3F))
 }
 
 func (m *Device) In(port uint16) byte {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
 	reg := port & 7
 	switch reg {
 	case 0: // Serial Data Register
@@ -127,9 +125,6 @@ func (m *Device) In(port uint16) byte {
 }
 
 func (m *Device) Out(port uint16, data byte) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
 	reg := port & 7
 	rval := m.registers[reg]
 	m.registers[reg] = data
