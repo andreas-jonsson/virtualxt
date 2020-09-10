@@ -196,7 +196,7 @@ func (m *Device) startRenderLoop() error {
 	}
 
 	go func() {
-		ticker := time.NewTicker(time.Second / 60)
+		ticker := time.NewTicker(time.Second / 30)
 		defer ticker.Stop()
 
 		for {
