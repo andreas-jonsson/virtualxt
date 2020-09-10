@@ -32,7 +32,7 @@ type NullDevice struct {
 }
 
 func (m *NullDevice) Install(p processor.Processor) error {
-	return nil
+	return p.InstallIODeviceAt(m, 0x61)
 }
 
 func (m *NullDevice) Name() string {
