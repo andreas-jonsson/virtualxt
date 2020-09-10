@@ -23,26 +23,7 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 )
 
-type Stats struct {
-	NumInterrupts   uint32
-	NumInstructions uint64
-	RX, TX          uint64
-	NOP             uint64
-}
-
-var (
-	ErrCPUHalt             = errors.New("CPU HALT")
-	ErrInterruptNotHandled = errors.New("interrupt not handled")
-)
-
-type Debug interface {
-	Break()
-	GetStats() Stats
-}
-
-type InterruptHandler interface {
-	HandleInterrupt(n int) error
-}
+var ErrCPUHalt = errors.New("CPU HALT")
 
 type InterruptController interface {
 	GetInterrupt() (int, error)
@@ -63,6 +44,7 @@ type Processor interface {
 	WriteWord(addr memory.Pointer, data uint16)
 
 	GetRegisters() *Registers
+	GetInterruptController() InterruptController
 	GetMappedMemoryDevice(addr memory.Pointer) memory.Memory
 	GetMappedIODevice(port uint16) memory.IO
 
@@ -70,7 +52,4 @@ type Processor interface {
 	InstallMemoryDeviceAt(device memory.Memory, addr ...memory.Pointer) error
 	InstallIODevice(device memory.IO, from, to uint16) error
 	InstallIODeviceAt(device memory.IO, port ...uint16) error
-
-	GetInterruptController() InterruptController
-	InstallInterruptHandler(num int, handler InterruptHandler) error
 }

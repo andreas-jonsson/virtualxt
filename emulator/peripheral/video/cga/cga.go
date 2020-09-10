@@ -58,11 +58,6 @@ var cgaColor = []uint32{
 	0xFFFFFF,
 }
 
-type consoleCursor struct {
-	update, visible bool
-	position        uint16
-}
-
 type Device struct {
 	lock     sync.RWMutex
 	quitChan chan struct{}
@@ -74,6 +69,9 @@ type Device struct {
 	crtAddr, modeCtrlReg,
 	colorCtrlReg, refresh byte
 
+	cursorVisible  bool
+	cursorPosition uint16
+
 	window   *sdl.Window
 	renderer *sdl.Renderer
 	surface  *sdl.Surface
@@ -82,8 +80,7 @@ type Device struct {
 	windowTitleTicker  *time.Ticker
 	atomicCycleCounter int32
 
-	cursor consoleCursor
-	p      processor.Processor
+	p processor.Processor
 }
 
 func (m *Device) Install(p processor.Processor) error {
@@ -111,7 +108,8 @@ func (m *Device) Reset() {
 	m.lock.Lock()
 	m.colorCtrlReg = 0x20
 	m.modeCtrlReg = 1
-	m.cursor.visible = true
+	m.cursorVisible = true
+	m.cursorPosition = 0
 	m.lock.Unlock()
 }
 
@@ -223,7 +221,7 @@ func (m *Device) startRenderLoop() error {
 					}
 
 					blink := blinkTick()
-					if m.dirtyMemory || m.cursor.update || blink {
+					if m.dirtyMemory || blink {
 						backgroundColor := cgaColor[m.colorCtrlReg&0xF]
 						m.renderer.SetDrawColor(byte(backgroundColor&0xFF0000), byte(backgroundColor&0x00FF00), byte(backgroundColor&0x0000FF), 0xFF)
 						m.renderer.Clear()
@@ -289,9 +287,9 @@ func (m *Device) startRenderLoop() error {
 								m.blitChar(ch, m.mem[videoPage+i+1], (idx%numCol)*8, (idx/numCol)*8)
 							}
 
-							if blink {
-								x := int(m.cursor.position) % numCol
-								y := int(m.cursor.position) / numCol
+							if blink && m.cursorVisible {
+								x := int(m.cursorPosition) % numCol
+								y := int(m.cursorPosition) / numCol
 								if x < 80 && y < 25 {
 									attr := (m.mem[videoPage+(numCol*2*y+x*2+1)] & 0x70) | 0xF
 									m.blitChar('_', attr, x*8, y*8)
@@ -332,6 +330,9 @@ func (m *Device) Out(port uint16, data byte) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	// We likely need to redraw the screen.
+	m.dirtyMemory = true
+
 	switch port {
 	case 0x3D0, 0x3D2, 0x3D4, 0x3D6:
 		m.crtAddr = data
@@ -339,14 +340,11 @@ func (m *Device) Out(port uint16, data byte) {
 		m.crtReg[m.crtAddr] = data
 		switch m.crtAddr {
 		case 0xA:
-			m.cursor.update = true
-			m.cursor.visible = data&0x20 != 0
+			m.cursorVisible = data&0x20 == 0
 		case 0xE:
-			m.cursor.update = true
-			m.cursor.position = (m.cursor.position & 0x00FF) | (uint16(data) << 8)
+			m.cursorPosition = (m.cursorPosition & 0x00FF) | (uint16(data) << 8)
 		case 0xF:
-			m.cursor.update = true
-			m.cursor.position = (m.cursor.position & 0xFF00) | uint16(data)
+			m.cursorPosition = (m.cursorPosition & 0xFF00) | uint16(data)
 		}
 	case 0x3D8:
 		m.modeCtrlReg = data
