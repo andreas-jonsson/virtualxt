@@ -19,28 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package speaker
 
-import (
-	"github.com/andreas-jonsson/virtualxt/emulator/processor"
-)
-
 type Device struct {
-}
-
-func (m *Device) Install(p processor.Processor) error {
-	return nil
-}
-
-func (m *Device) Name() string {
-	return "NULL AUDIO"
-}
-
-func (m *Device) TurboSwitch() bool {
-	return true
-}
-
-func (m *Device) Reset() {
-}
-
-func (m *Device) Step(cycles int) error {
-	return nil
+	NullDevice
 }

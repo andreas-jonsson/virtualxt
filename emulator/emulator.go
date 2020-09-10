@@ -55,8 +55,9 @@ var (
 )
 
 var (
-	limitMIPS        float64
-	v20cpu, man, ver bool
+	limitMIPS float64
+	v20cpu, noAudio,
+	man, ver bool
 )
 
 func init() {
@@ -71,6 +72,7 @@ func init() {
 	flag.BoolVar(&v20cpu, "v20", false, "Emulate NEC V20 CPU")
 	flag.BoolVar(&man, "m", false, "Open manual")
 	flag.BoolVar(&ver, "v", false, "Print version information")
+	flag.BoolVar(&noAudio, "no-audio", false, "Disable audio")
 
 	flag.Float64Var(&limitMIPS, "mips", 0, "Limit CPU speed")
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")
@@ -148,7 +150,10 @@ func emuLoop() {
 	}
 	debug.MuteLogging(mdaVideo)
 
-	spkr := &speaker.Device{}
+	var spkr speaker.AudioDevice = &speaker.NullDevice{}
+	if !noAudio {
+		spkr = &speaker.Device{}
+	}
 
 	peripherals := []peripheral.Peripheral{
 		&ram.Device{}, // RAM (needs to go first since it maps the full memory range)
