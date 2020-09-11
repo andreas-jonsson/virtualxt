@@ -1,4 +1,4 @@
-// +build !network,!windows
+// +build !network
 
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
