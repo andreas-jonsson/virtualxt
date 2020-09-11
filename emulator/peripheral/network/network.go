@@ -31,17 +31,20 @@ import (
 )
 
 type Device struct {
-	cpu processor.Processor
+	cpu      processor.Processor
+	quitChan chan struct{}
 
 	netInterface *pcap.Interface
 	handle       *pcap.Handle
 
 	canRecv bool
 	pkgLen  int
+	packets chan []byte
 	buffer  bytes.Buffer
 }
 
 func (m *Device) Install(p processor.Processor) error {
+	m.cpu = p
 	devices, err := pcap.FindAllDevs()
 	if err != nil {
 		return err
@@ -77,13 +80,13 @@ func (m *Device) Install(p processor.Processor) error {
 	}
 
 	log.Print("Selected network device: ", m.netInterface.Description)
-	m.handle, err = pcap.OpenLive(m.netInterface.Name, int32(math.MaxUint16), true, pcap.BlockForever)
+	m.handle, err = pcap.OpenLive(m.netInterface.Name, int32(math.MaxUint16), true, 10*time.Microsecond) //pcap.BlockForever)
 	if err != nil {
 		return err
 	}
 	log.Print("Packet capture is active!")
 
-	m.cpu = p
+	m.startCapture()
 	return p.InstallInterruptHandler(0xFC, m)
 }
 
@@ -96,32 +99,53 @@ func (m *Device) Reset() {
 }
 
 func (m *Device) Close() {
+	m.quitChan <- struct{}{}
+	<-m.quitChan
+
 	if m.handle != nil {
 		m.handle.Close()
 	}
 }
 
-var ti = time.NewTicker(10 * time.Millisecond)
+func (m *Device) startCapture() {
+	m.packets = make(chan []byte, 1)
+	m.quitChan = make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case <-m.quitChan:
+				close(m.quitChan)
+				return
+			default:
+				data, ci, err := m.handle.ReadPacketData()
+				if err == nil && ci.Length > 0 {
+					select {
+					case m.packets <- data[:ci.Length]:
+					case <-m.quitChan:
+						close(m.quitChan)
+						return
+					}
+				}
+			}
+		}
+	}()
+}
+
+var ti = time.NewTicker(1 * time.Millisecond)
 
 func (m *Device) Step(cycles int) error {
 	select {
-	case <-ti.C:
+	case data := <-m.packets:
+		m.canRecv = false
+		m.pkgLen = len(data)
+
+		for i := 0; i < m.pkgLen; i++ {
+			m.cpu.WriteByte(memory.NewAddress(0xD000, 0).AddInt(i).Pointer(), data[i])
+		}
+		m.cpu.GetInterruptController().IRQ(6)
 	default:
-		return nil
 	}
-
-	data, ci, err := m.handle.ReadPacketData()
-	if err != nil || ci.Length == 0 {
-		return nil
-	}
-
-	for i := 0; i < ci.Length; i++ {
-		m.cpu.WriteByte(memory.NewAddress(0xD000, 0).AddInt(i).Pointer(), data[i])
-	}
-
-	m.canRecv = false
-	m.pkgLen = ci.Length
-	m.cpu.GetInterruptController().IRQ(6)
 	return nil
 }
 

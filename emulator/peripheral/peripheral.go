@@ -31,3 +31,21 @@ type Peripheral interface {
 type PeripheralCloser interface {
 	Close() error
 }
+
+type NullDevice struct {
+}
+
+func (*NullDevice) Install(processor.Processor) error {
+	return nil
+}
+
+func (*NullDevice) Name() string {
+	return "Null Device"
+}
+
+func (*NullDevice) Reset() {
+}
+
+func (*NullDevice) Step(int) error {
+	return nil
+}

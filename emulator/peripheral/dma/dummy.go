@@ -18,26 +18,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package dma
 
 import (
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
 type Device struct {
+	peripheral.NullDevice
 }
 
 func (m *Device) Install(p processor.Processor) error {
 	p.InstallIODevice(m, 0x80, 0x8F)
 	return p.InstallIODevice(m, 0xC0, 0xDF)
-}
-
-func (m *Device) Name() string {
-	return "Dummy DMA Controller (Intel 8237)"
-}
-
-func (m *Device) Reset() {
-}
-
-func (m *Device) Step(int) error {
-	return nil
 }
 
 func (m *Device) In(port uint16) byte {

@@ -19,24 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package joystick
 
-import (
-	"github.com/andreas-jonsson/virtualxt/emulator/processor"
-)
+import "github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 
 type Device struct {
-}
-
-func (m *Device) Install(p processor.Processor) error {
-	return nil
-}
-
-func (m *Device) Name() string {
-	return "NULL JOYSTICK"
-}
-
-func (m *Device) Reset() {
-}
-
-func (m *Device) Step(cycles int) error {
-	return nil
+	peripheral.NullDevice
 }
