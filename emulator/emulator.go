@@ -33,6 +33,7 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/dma"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/joystick"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/keyboard"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/network"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pic"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/pit"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/ram"
@@ -56,7 +57,7 @@ var (
 
 var (
 	limitMIPS float64
-	v20cpu, noAudio,
+	v20cpu, noAudio, enableNet,
 	man, ver bool
 )
 
@@ -72,6 +73,7 @@ func init() {
 	flag.BoolVar(&v20cpu, "v20", false, "Emulate NEC V20 CPU")
 	flag.BoolVar(&man, "m", false, "Open manual")
 	flag.BoolVar(&ver, "v", false, "Print version information")
+	flag.BoolVar(&enableNet, "network", false, "Enable network support")
 	flag.BoolVar(&noAudio, "no-audio", false, "Disable audio")
 
 	flag.Float64Var(&limitMIPS, "mips", 0, "Limit CPU speed")
@@ -175,8 +177,8 @@ func emuLoop() {
 			IRQ:      4,
 		},
 	}
-	if debug.EnableDebug {
-		peripherals = append(peripherals, &debug.Device{})
+	if enableNet {
+		peripherals = append(peripherals, &network.Device{})
 	}
 	if vbiosImage != "" {
 		videoBios, err := os.Open(vbiosImage)
@@ -191,6 +193,9 @@ func emuLoop() {
 			Base:    memory.NewPointer(0xC000, 0),
 			Reader:  videoBios,
 		})
+	}
+	if debug.EnableDebug { // Add this last so it can find other devices.
+		peripherals = append(peripherals, &debug.Device{})
 	}
 
 	var doLimit float64 = limitMIPS
