@@ -1,4 +1,4 @@
-// +build network
+// +build pcap
 
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
@@ -21,6 +21,7 @@ package network
 
 import (
 	"bytes"
+	"flag"
 	"log"
 	"math"
 	"time"
@@ -29,6 +30,8 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/google/gopacket/pcap"
 )
+
+var enabled bool
 
 type Device struct {
 	cpu      processor.Processor
@@ -44,6 +47,10 @@ type Device struct {
 }
 
 func (m *Device) Install(p processor.Processor) error {
+	if !enabled {
+		return nil
+	}
+
 	m.cpu = p
 	devices, err := pcap.FindAllDevs()
 	if err != nil {
@@ -53,7 +60,7 @@ func (m *Device) Install(p processor.Processor) error {
 	log.Print("Detected network devices:")
 	for i := range devices {
 		dev := &devices[i]
-		log.Printf(" |- %s (%s)", dev.Description, dev.Name)
+		log.Printf(" |- %s (%s)", dev.Name, dev.Description)
 
 		var candidate *pcap.Interface
 		for _, addr := range dev.Addresses {
@@ -79,8 +86,8 @@ func (m *Device) Install(p processor.Processor) error {
 		return nil
 	}
 
-	log.Print("Selected network device: ", m.netInterface.Description)
-	m.handle, err = pcap.OpenLive(m.netInterface.Name, int32(math.MaxUint16), true, 10*time.Microsecond) //pcap.BlockForever)
+	log.Printf("Selected network device: %s (%s)", m.netInterface.Name, m.netInterface.Description)
+	m.handle, err = pcap.OpenLive(m.netInterface.Name, int32(math.MaxUint16), true, pcap.BlockForever)
 	if err != nil {
 		return err
 	}
@@ -182,4 +189,8 @@ func (m *Device) HandleInterrupt(int) error {
 		m.canRecv = false
 	}
 	return nil
+}
+
+func init() {
+	flag.BoolVar(&enabled, "network", enabled, "Enable network support")
 }

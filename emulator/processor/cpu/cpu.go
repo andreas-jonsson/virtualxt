@@ -21,6 +21,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
@@ -86,7 +87,7 @@ func (p *CPU) installPeripherals() {
 	for _, d := range p.peripherals {
 		log.Print("Installing ", d.Name(), "...")
 		if err := d.Install(p); err != nil {
-			log.Print("Failed to install peripheral: ", err)
+			dialog.ShowErrorMessage(err.Error())
 		}
 		if pic, ok := d.(processor.InterruptController); ok {
 			p.pic = pic

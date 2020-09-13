@@ -57,7 +57,7 @@ var (
 
 var (
 	limitMIPS float64
-	v20cpu, noAudio, enableNet,
+	v20cpu, noAudio,
 	man, ver bool
 )
 
@@ -73,7 +73,6 @@ func init() {
 	flag.BoolVar(&v20cpu, "v20", false, "Emulate NEC V20 CPU")
 	flag.BoolVar(&man, "m", false, "Open manual")
 	flag.BoolVar(&ver, "v", false, "Print version information")
-	flag.BoolVar(&enableNet, "network", false, "Enable network support")
 	flag.BoolVar(&noAudio, "no-audio", false, "Disable audio")
 
 	flag.Float64Var(&limitMIPS, "mips", 0, "Limit CPU speed")
@@ -172,13 +171,11 @@ func emuLoop() {
 		spkr,               // PC Speaker
 		&keyboard.Device{}, // Keyboard Controller
 		&joystick.Device{}, // Game Port Joysticks
+		&network.Device{},  // Network Adapter
 		&smouse.Device{ // Microsoft Serial Mouse (COM1)
 			BasePort: 0x3F8,
 			IRQ:      4,
 		},
-	}
-	if enableNet {
-		peripherals = append(peripherals, &network.Device{})
 	}
 	if vbiosImage != "" {
 		videoBios, err := os.Open(vbiosImage)
