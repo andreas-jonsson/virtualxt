@@ -24,7 +24,6 @@ import (
 	"flag"
 	"log"
 	"math"
-	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
@@ -117,33 +116,29 @@ func (m *Device) Close() {
 }
 
 func (m *Device) startCapture() {
-	m.packets = make(chan []byte, 1)
+	m.packets = make(chan []byte)
 	m.quitChan = make(chan struct{})
 
 	go func() {
 		for {
-			select {
-			case <-m.quitChan:
-				close(m.quitChan)
-				return
-			default:
-				data, ci, err := m.handle.ReadPacketData()
-				if err == nil && ci.Length > 0 {
-					select {
-					case m.packets <- data[:ci.Length]:
-					case <-m.quitChan:
-						close(m.quitChan)
-						return
-					}
+			data, ci, err := m.handle.ReadPacketData()
+			if err == nil && ci.Length > 0 {
+				select {
+				case m.packets <- data[:ci.Length]:
+				case <-m.quitChan:
+					close(m.quitChan)
+					return
 				}
 			}
 		}
 	}()
 }
 
-var ti = time.NewTicker(1 * time.Millisecond)
-
 func (m *Device) Step(cycles int) error {
+	if !m.canRecv {
+		return nil
+	}
+
 	select {
 	case data := <-m.packets:
 		m.canRecv = false
@@ -155,6 +150,7 @@ func (m *Device) Step(cycles int) error {
 		m.cpu.GetInterruptController().IRQ(6)
 	default:
 	}
+
 	return nil
 }
 
