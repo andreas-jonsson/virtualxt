@@ -23,7 +23,7 @@ import (
 	"flag"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/mda"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/cgatext"
 )
 
 func Start() {
@@ -31,8 +31,8 @@ func Start() {
 	emuLoop()
 }
 
-var mdaVideo = true
+var cgaText = true
 
 func defaultVideoDevice() peripheral.Peripheral {
-	return &mda.Device{}
+	return &cgatext.Device{}
 }

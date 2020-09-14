@@ -15,10 +15,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package mda
+package cgatext
 
 import (
-	"flag"
 	"log"
 	"math/rand"
 	"os"
@@ -31,16 +30,9 @@ import (
 )
 
 const (
-	memorySize     = 0x1000
-	currentPalette = 0
+	memorySize = 0x4000
+	memoryBase = 0xB8000
 )
-
-var memoryBase memory.Pointer = 0xB8000
-
-var mdaPalettes = [][4]tcell.Color{
-	{tcell.ColorBlack, tcell.ColorGray, tcell.ColorSilver, tcell.ColorWhite},
-	{tcell.ColorBlack, tcell.ColorOlive, tcell.ColorGreen, tcell.ColorLightGreen},
-}
 
 var cgaPalette = [16]tcell.Color{
 	tcell.ColorBlack,
@@ -84,6 +76,7 @@ type Device struct {
 	crtReg      [0x100]byte
 
 	crtAddr, modeCtrlReg,
+	colorCtrlReg, oldColorCtrlReg,
 	refresh byte
 
 	cursorPos uint16
@@ -94,15 +87,9 @@ type Device struct {
 	p        processor.Processor
 }
 
-var mdaCompat bool
-
 func (m *Device) Install(p processor.Processor) error {
 	m.p = p
 	m.cursor.visible = true
-
-	if mdaCompat {
-		memoryBase = 0xB0000
-	}
 
 	// Scramble memory.
 	rand.Read(m.mem[:])
@@ -117,10 +104,17 @@ func (m *Device) Install(p processor.Processor) error {
 }
 
 func (m *Device) Name() string {
-	return "MDA/CGA compatible device"
+	return "CGA textmode compatible device"
 }
 
 func (m *Device) Reset() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	m.colorCtrlReg = 0x20
+	m.modeCtrlReg = 1
+	m.cursorPos = 0
+	m.cursor = consoleCursor{}
 }
 
 func (m *Device) Step(int) error {
@@ -134,41 +128,8 @@ func (m *Device) Close() error {
 }
 
 func (m *Device) createStyleFromAttrib(attr byte) tcell.Style {
-	// Reference: https://www.seasip.info/VintagePC/mda.html
-
-	p := mdaPalettes[currentPalette]
-	s := tcell.StyleDefault
-
 	blinkEnabled := m.modeCtrlReg&0x20 != 0
-
-	if !mdaCompat {
-		return tcell.StyleDefault.Blink(blinkEnabled && attr&0x80 != 0).Background(cgaPalette[attr&0x70>>4]).Foreground(cgaPalette[attr&0xF])
-	}
-
-	switch attr {
-	case 0x0, 0x8, 0x80, 0x88:
-		return s.Foreground(p[0]).Background(p[0])
-	case 0x70:
-		return s.Foreground(p[0]).Background(p[2])
-	case 0x78:
-		return s.Foreground(p[1]).Background(p[2])
-	case 0xF0:
-		if blinkEnabled {
-			return s.Foreground(p[0]).Background(p[2]).Blink(true)
-		}
-		return s.Foreground(p[0]).Background(p[3])
-	case 0xF8:
-		if blinkEnabled {
-			return s.Foreground(p[1]).Background(p[2]).Blink(true)
-		}
-		return s.Foreground(p[1]).Background(p[3])
-	default:
-		s = s.Foreground(p[2]).Background(p[0])
-		if attr&8 != 0 {
-			s = s.Foreground(p[3])
-		}
-		return s.Blink(blinkEnabled && attr&0x80 != 0).Underline(attr&7 != 7)
-	}
+	return tcell.StyleDefault.Blink(blinkEnabled && attr&0x80 != 0).Background(cgaPalette[attr&0x70>>4]).Foreground(cgaPalette[attr&0xF])
 }
 
 func toUnicode(ch byte) rune {
@@ -230,27 +191,26 @@ func (m *Device) startRenderLoop() error {
 				case redrawEvent:
 					m.lock.Lock()
 
-					const numColumns = 80
-					//reverse := tcell.StyleDefault.Reverse(true)
+					if bg := m.colorCtrlReg & 0xF; bg != m.oldColorCtrlReg {
+						m.oldColorCtrlReg = bg
+						s.Fill(' ', tcell.StyleDefault.Background(cgaPalette[bg]))
+					}
 
+					const numColumns = 80
 					for y := 0; y < 25; y++ {
 						for x := 0; x < numColumns; x++ {
 							offset := y*numColumns*2 + x*2
 							s.SetCell(x, y, m.createStyleFromAttrib(m.mem[offset+1]), toUnicode(m.mem[offset]))
 						}
-						//s.SetCell(numColumns, y, reverse, ' ')
-					}
-					for x := 0; x <= numColumns; x++ {
-						//s.SetCell(x, 25, reverse, ' ')
 					}
 
 					if m.cursor.update {
-						//if m.cursor.visible {
-						s.ShowCursor(int(m.cursor.x), int(m.cursor.y))
-						//} else {
-						//	s.HideCursor()
-						//}
 						m.cursor.update = false
+						if m.cursor.visible {
+							s.ShowCursor(int(m.cursor.x), int(m.cursor.y))
+						} else {
+							s.HideCursor()
+						}
 					}
 
 					m.dirtyMemory = false
@@ -276,48 +236,34 @@ func (m *Device) startRenderLoop() error {
 }
 
 func (m *Device) In(port uint16) byte {
-	if !mdaCompat {
-		addr := memory.NewPointer(0x40, 0x10)
-		m.p.WriteWord(addr, (m.p.ReadWord(addr)&0xFFCF)|0x20)
-	}
+	m.lock.Lock()
+	defer m.lock.Unlock()
 
 	switch port {
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
-		if mdaCompat {
-			return 0
-		}
-		fallthrough
-	case 0x3B1, 0x3B3, 0x3B5, 0x3B7:
 		return m.crtReg[m.crtAddr]
-	case 0x3BA, 0x3DA:
+	case 0x3DA:
 		m.refresh ^= 0x9
 		return m.refresh
+	case 0x3B9:
+		return m.colorCtrlReg
 	}
 	return 0
 }
 
 func (m *Device) Out(port uint16, data byte) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	switch port {
 	case 0x3D0, 0x3D2, 0x3D4, 0x3D6:
-		if mdaCompat {
-			return
-		}
-		fallthrough
-	case 0x3B0, 0x3B2, 0x3B4, 0x3B6:
 		m.crtAddr = data
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
-		if mdaCompat {
-			return
-		}
-		fallthrough
-	case 0x3B1, 0x3B3, 0x3B5, 0x3B7:
-		m.lock.Lock()
-
 		m.crtReg[m.crtAddr] = data
 		switch m.crtAddr {
 		case 0xA:
 			m.cursor.update = true
-			m.cursor.visible = data&0x20 != 0
+			m.cursor.visible = data&0x20 == 0
 		case 0xE:
 			m.cursor.update = true
 			m.cursorPos = (m.cursorPos & 0x00FF) | (uint16(data) << 8)
@@ -328,21 +274,16 @@ func (m *Device) Out(port uint16, data byte) {
 
 		m.cursor.x = byte(m.cursorPos % 80)
 		m.cursor.y = byte(m.cursorPos / 80)
-
-		m.lock.Unlock()
 	case 0x3D8:
-		if mdaCompat {
-			return
-		}
-		fallthrough
-	case 0x3B8:
 		m.modeCtrlReg = data
+	case 0x3B9:
+		m.colorCtrlReg = data
 	}
 }
 
 func (m *Device) ReadByte(addr memory.Pointer) byte {
 	m.lock.RLock()
-	v := m.mem[(addr-memoryBase)&0xFFF]
+	v := m.mem[(addr-memoryBase)&0x3FFF]
 	m.lock.RUnlock()
 	return v
 }
@@ -350,10 +291,6 @@ func (m *Device) ReadByte(addr memory.Pointer) byte {
 func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 	m.lock.Lock()
 	m.dirtyMemory = true
-	m.mem[(addr-memoryBase)&0xFFF] = data
+	m.mem[(addr-memoryBase)&0x3FFF] = data
 	m.lock.Unlock()
-}
-
-func init() {
-	flag.BoolVar(&mdaCompat, "strict-mda", false, "Strict MDA emulation")
 }

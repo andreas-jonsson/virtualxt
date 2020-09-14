@@ -40,7 +40,7 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/rom"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/smouse"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/speaker"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/mda"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/cgatext"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
 	"github.com/andreas-jonsson/virtualxt/version"
 )
@@ -83,8 +83,8 @@ func init() {
 	flag.StringVar(&genHd, "gen-hd", "", "Create a blank 10MB hadrddrive image")
 	flag.IntVar(&genHdSize, "gen-hd-size", genHdSize, "Set size of the generated harddrive image in megabytes")
 
-	if !mdaVideo {
-		flag.BoolVar(&mdaVideo, "mda", false, "Emulate MDA video in termainal mode")
+	if !cgaText {
+		flag.BoolVar(&cgaText, "text", false, "CGA textmode runing in termainal")
 	}
 }
 
@@ -146,10 +146,10 @@ func emuLoop() {
 	}
 
 	video := defaultVideoDevice()
-	if mdaVideo {
-		video = &mda.Device{}
+	if cgaText {
+		video = &cgatext.Device{}
 	}
-	debug.MuteLogging(mdaVideo)
+	debug.MuteLogging(cgaText)
 
 	var spkr speaker.AudioDevice = &speaker.NullDevice{}
 	if !noAudio {

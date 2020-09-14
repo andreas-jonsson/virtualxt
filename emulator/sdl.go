@@ -40,7 +40,7 @@ func Start() {
 	os.Exit(0) // Calling Exit is required!
 }
 
-var mdaVideo = false
+var cgaText = false
 
 func defaultVideoDevice() peripheral.Peripheral {
 	return &cga.Device{}
