@@ -8,7 +8,6 @@ mkdir -p $APP_DIR/usr/lib/x86_64-linux-gnu $APP_DIR/bios $APP_DIR/boot
 
 # Required for network support.
 cp /usr/lib/x86_64-linux-gnu/libpcap.so* $APP_DIR/usr/lib/x86_64-linux-gnu/
-ls -al $APP_DIR/usr/lib/x86_64-linux-gnu/
 
 cp virtualxt $APP_DIR/
 cp bios/vxtbios.bin $APP_DIR/bios/
