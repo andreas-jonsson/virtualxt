@@ -147,7 +147,7 @@ func WindowsInstallNpcap() {
 			return
 		}
 
-		if err := exec.Command("cmd", "/c", "start", filepath.Join(filepath.Dir(ep), "npcap-installer.exe")).Start(); err != nil {
+		if err := exec.Command(filepath.Join(filepath.Dir(ep), "npcap-installer.exe")).Start(); err != nil {
 			log.Print(err)
 			return
 		}

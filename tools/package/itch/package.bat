@@ -12,4 +12,5 @@ copy bios\vxtcga.bin %PACKAGE_DEST%\bios
 copy boot\freedos_hd.img %PACKAGE_DEST%\boot
 copy tools\package\itch\itch.windows.toml %PACKAGE_DEST%\.itch.toml
 
+copy tools\package\windows\virtualxt.exe.manifest %PACKAGE_DEST%
 curl -L -o %PACKAGE_DEST%\npcap-installer.exe "https://nmap.org/npcap/dist/npcap-0.9997.exe"
