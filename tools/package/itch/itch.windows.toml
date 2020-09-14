@@ -3,7 +3,7 @@ name = "VirtualXT - FreeDOS"
 path = "virtualxt.exe"
 
 [[actions]]
-name = "VirtualXT - FreeDOS (Network)"
+name = "VirtualXT - FreeDOS (Ethernet)"
 path = "virtualxt-net.bat"
 
 [[actions]]
