@@ -3,5 +3,9 @@ name = "VirtualXT - FreeDOS"
 path = "virtualxt.exe"
 
 [[actions]]
+name = "VirtualXT - FreeDOS (Network)"
+path = "virtualxt-net.bat"
+
+[[actions]]
 name = "manual"
 path = "manual/index.md.html"
