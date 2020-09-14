@@ -4,7 +4,10 @@ APP_DIR="$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage-build"
 rm -rf $APP_DIR VirtualXT-x86_64.AppImage
 
 cp -r "$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage" $APP_DIR
-mkdir -p $APP_DIR/bios $APP_DIR/boot
+mkdir -p $APP_DIR/usr/lib/x86_64-linux-gnu $APP_DIR/bios $APP_DIR/boot
+
+# Required for network support.
+cp /usr/lib/x86_64-linux-gnu/libpcap.so $APP_DIR/usr/lib/x86_64-linux-gnu/
 
 cp virtualxt $APP_DIR/
 cp bios/vxtbios.bin $APP_DIR/bios/

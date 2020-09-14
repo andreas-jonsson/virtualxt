@@ -1,6 +1,14 @@
 #!/bin/sh
 
 HERE="$(dirname "$(readlink -f "$0")")"
+LIBS_PATH="$HERE/usr/lib:$HERE/usr/lib/x86_64-linux-gnu"
+
+if [ -z "$LD_LIBRARY_PATH" ]; then
+  LD_LIBRARY_PATH="$LIBS_PATH"
+else
+  LD_LIBRARY_PATH="$LIBS_PATH:$LD_LIBRARY_PATH"
+fi
+export LD_LIBRARY_PATH
 
 mkdir -p $HOME/.virtualxt/boot
 cp -n $HERE/boot/freedos_hd.img $HOME/.virtualxt/boot/
