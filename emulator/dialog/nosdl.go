@@ -37,6 +37,9 @@ func MountFloppyImage(file string) error {
 	return nil
 }
 
+func WindowsInstallNpcap() {
+}
+
 func ShowErrorMessage(msg string) error {
 	fmt.Println(msg)
 	return nil

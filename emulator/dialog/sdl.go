@@ -21,7 +21,9 @@ package dialog
 
 import (
 	"errors"
+	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -111,6 +113,47 @@ func MainMenu() error {
 		}
 	} else {
 		return err
+	}
+}
+
+func WindowsInstallNpcap() {
+	if runtime.GOOS == "windows" {
+		mbd := sdl.MessageBoxData{
+			Flags:   sdl.MESSAGEBOX_ERROR,
+			Title:   "Network Error",
+			Message: "Npcap is needed for ethernet emulation. Do you want to install it now?",
+			Buttons: sortButtons([]sdl.MessageBoxButtonData{
+				{
+					Flags:    sdl.MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT,
+					ButtonID: 0,
+					Text:     "No",
+				},
+				{
+					Flags:    sdl.MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT,
+					ButtonID: 1,
+					Text:     "Yes",
+				},
+			}),
+		}
+
+		id, err := sdl.ShowMessageBox(&mbd)
+		if err != nil || id == 0 {
+			return
+		}
+
+		ep, err := os.Executable()
+		if err != nil {
+			log.Print(err)
+			return
+		}
+
+		if err := exec.Command(filepath.Join(filepath.Dir(ep), "npcap-installer.exe")).Start(); err != nil {
+			log.Print(err)
+			return
+		}
+
+		// Perhaps do application restart here?
+		os.Exit(0)
 	}
 }
 
