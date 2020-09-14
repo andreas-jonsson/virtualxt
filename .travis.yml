@@ -11,12 +11,13 @@ matrix:
         apt:
           packages:
             - libsdl2-dev
+            - libpcap-dev
 
       install:
         - curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip
 
       script:
-        - go build -tags sdl,static -ldflags "-s -w"
+        - go build -tags sdl,pcap,static -ldflags "-s -w"
         - ./tools/package/itch/package.linux.sh
 
     ################ OSX Build ################
