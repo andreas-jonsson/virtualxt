@@ -255,6 +255,8 @@ func (m *Device) Out(port uint16, data byte) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	m.dirtyMemory = true
+
 	switch port {
 	case 0x3D0, 0x3D2, 0x3D4, 0x3D6:
 		m.crtAddr = data
