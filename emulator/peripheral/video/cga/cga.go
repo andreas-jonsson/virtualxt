@@ -140,13 +140,22 @@ func blinkTick() bool {
 
 func (m *Device) blitChar(ch, attrib byte, x, y int) {
 	pixels := m.surface.Pixels()
-	bgColor := cgaColor[(attrib&0x70)>>4]
-	blink := attrib&0x80 != 0 && m.modeCtrlReg&0x20 != 0
-	fgColor := cgaColor[attrib&0xF]
+	bgColorIndex := (attrib & 0x70) >> 4
+	fgColorIndex := attrib & 0xF
 
-	if blink && blinkTick() {
-		fgColor = bgColor
+	if attrib&0x80 != 0 {
+		if m.modeCtrlReg&0x20 != 0 {
+			if blinkTick() {
+				fgColorIndex = bgColorIndex
+			}
+		} else {
+			// High intensity!
+			bgColorIndex += 8
+		}
 	}
+
+	bgColor := cgaColor[bgColorIndex]
+	fgColor := cgaColor[fgColorIndex]
 
 	charWidth := 1
 	if m.modeCtrlReg&1 == 0 {

@@ -129,7 +129,13 @@ func (m *Device) Close() error {
 
 func (m *Device) createStyleFromAttrib(attr byte) tcell.Style {
 	blinkEnabled := m.modeCtrlReg&0x20 != 0
-	return tcell.StyleDefault.Blink(blinkEnabled && attr&0x80 != 0).Background(cgaPalette[attr&0x70>>4]).Foreground(cgaPalette[attr&0xF])
+	blinkAttrib := attr&0x80 != 0
+	bgColorIndex := (attr & 0x70) >> 4
+
+	if blinkAttrib && !blinkEnabled {
+		bgColorIndex += 8
+	}
+	return tcell.StyleDefault.Blink(blinkEnabled && blinkAttrib).Background(cgaPalette[bgColorIndex]).Foreground(cgaPalette[attr&0xF])
 }
 
 func toUnicode(ch byte) rune {
