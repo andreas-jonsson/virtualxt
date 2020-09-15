@@ -31,8 +31,6 @@ import (
 	"github.com/google/gopacket/pcap"
 )
 
-var enabled bool
-
 type Device struct {
 	cpu      processor.Processor
 	quitChan chan struct{}
@@ -188,6 +186,8 @@ func (m *Device) HandleInterrupt(int) error {
 	}
 	return nil
 }
+
+var enabled bool
 
 func init() {
 	flag.BoolVar(&enabled, "network", enabled, "Enable network support")

@@ -24,7 +24,6 @@ References:
 package pit
 
 import (
-	"log"
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
@@ -112,8 +111,6 @@ func (m *Device) In(port uint16) byte {
 		ret = ch.counter & 0xFF
 	} else if ch.mode == modeHighByte || (ch.mode == modeToggle && ch.toggle) {
 		ret = ch.counter >> 8
-	} else {
-		log.Print("PIT mode not handled!")
 	}
 
 	if ch.mode == modeLatchCount || ch.mode == modeToggle {
@@ -133,8 +130,6 @@ func (m *Device) Out(port uint16, data byte) {
 			ch.data = (ch.data & 0xFF00) | data16
 		} else if ch.mode == modeHighByte || (ch.mode == modeToggle && ch.toggle) {
 			ch.data = (ch.data & 0x00FF) | (data16 << 8)
-		} else {
-			log.Print("PIT mode not handled!")
 		}
 
 		if ch.data == 0 {

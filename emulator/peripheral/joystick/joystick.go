@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package joystick
 
 import (
+	"flag"
 	"log"
 	"math"
 	"sync"
@@ -45,6 +46,10 @@ type Device struct {
 }
 
 func (m *Device) Install(p processor.Processor) error {
+	if !enabled {
+		return nil
+	}
+
 	var err error
 	sdl.Do(func() {
 		if err = sdl.InitSubSystem(sdl.INIT_JOYSTICK); err != nil {
@@ -177,4 +182,10 @@ func (m *Device) Out(port uint16, data byte) {
 		}
 	}
 	m.lock.RUnlock()
+}
+
+var enabled bool
+
+func init() {
+	flag.BoolVar(&enabled, "joystick", enabled, "Enable joystick support")
 }
