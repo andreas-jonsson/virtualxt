@@ -41,6 +41,7 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/smouse"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/speaker"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/cgatext"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
 	"github.com/andreas-jonsson/virtualxt/version"
 )
@@ -217,7 +218,7 @@ func emuLoop() {
 
 	step:
 		c, err := p.Step()
-		if err != nil {
+		if err != nil && err != processor.ErrCPUHalt {
 			log.Print(err)
 			return
 		}

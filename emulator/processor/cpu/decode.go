@@ -30,10 +30,12 @@ type instructionState struct {
 	opcode, modRegRM,
 	repeatMode byte
 
-	isWide, rmToReg bool
-	decodeAt        uint16
-	segOverride     *uint16
-	cycleCount      int
+	isWide, rmToReg,
+	halted bool
+
+	decodeAt    uint16
+	segOverride *uint16
+	cycleCount  int
 }
 
 func (p *CPU) getReg() byte {
@@ -288,6 +290,8 @@ func (p *CPU) divisionByZero() {
 func (p *CPU) doInterrupt(n int) {
 	p.stats.NumInterrupts++
 
+	p.halted = false
+
 	if handler := p.interceptors[n]; handler != nil {
 		if err := handler.HandleInterrupt(n); err == nil {
 			p.TF, p.IF = false, false
@@ -320,6 +324,10 @@ func (p *CPU) Step() (int, error) {
 		if n, err := p.pic.GetInterrupt(); err == nil {
 			p.doInterrupt(n)
 		}
+	}
+
+	if p.halted {
+		return 0, processor.ErrCPUHalt
 	}
 
 	p.parseOpcode()
@@ -665,6 +673,7 @@ func (p *CPU) execute() error {
 			addr := p.rmLocation().getAddress()
 
 			if idx < signExtend32(p.ReadWord(addr.Pointer())) || idx > signExtend32(p.ReadWord(addr.AddInt(2).Pointer())) {
+				p.IP = p.decodeAt
 				p.doInterrupt(5)
 			}
 		} else {
@@ -1048,8 +1057,7 @@ func (p *CPU) execute() error {
 	// 0xFx
 
 	case 0xF4: // HLT
-		p.IP--
-		return processor.ErrCPUHalt
+		p.halted = true
 	case 0xF5: // CMC
 		p.CF = !p.CF
 	case 0xF6: // _ALU2 r/m8,d8
