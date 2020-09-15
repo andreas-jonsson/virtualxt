@@ -104,7 +104,7 @@ func (m *Device) Reset() {
 	m.canRecv = false
 }
 
-func (m *Device) Close() {
+func (m *Device) Close() error {
 	if !enabled {
 		return nil
 	}
@@ -115,6 +115,7 @@ func (m *Device) Close() {
 	if m.handle != nil {
 		m.handle.Close()
 	}
+	return nil
 }
 
 func (m *Device) startCapture() {
