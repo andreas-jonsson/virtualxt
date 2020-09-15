@@ -19,6 +19,7 @@ package smouse
 
 import (
 	"bytes"
+	"flag"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
@@ -48,6 +49,9 @@ type Device struct {
 }
 
 func (m *Device) Install(p processor.Processor) error {
+	if !enabled {
+		return nil
+	}
 	m.pic = p.GetInterruptController()
 	m.events = make(chan mouseEvent, maxNumEvents)
 	return p.InstallIODevice(m, m.BasePort, m.BasePort+7)
@@ -135,4 +139,10 @@ func (m *Device) Out(port uint16, data byte) {
 			m.pushData('M')
 		}
 	}
+}
+
+var enabled = true
+
+func init() {
+	flag.BoolVar(&enabled, "mouse", enabled, "Enable mouse support")
 }

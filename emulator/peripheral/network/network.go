@@ -105,6 +105,10 @@ func (m *Device) Reset() {
 }
 
 func (m *Device) Close() {
+	if !enabled {
+		return nil
+	}
+
 	m.quitChan <- struct{}{}
 	<-m.quitChan
 

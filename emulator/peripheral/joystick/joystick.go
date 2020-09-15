@@ -89,6 +89,9 @@ func (m *Device) Step(int) error {
 }
 
 func (m *Device) Close() error {
+	if !enabled {
+		return nil
+	}
 	m.quitChan <- struct{}{}
 	<-m.quitChan
 	return nil
