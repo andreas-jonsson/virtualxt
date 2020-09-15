@@ -20,8 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package speaker
 
 import (
-	"errors"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
@@ -39,19 +39,20 @@ type pitInterface interface {
 }
 
 type Device struct {
-	cpu    processor.Processor
-	pit    pitInterface
-	ticker *time.Ticker
+	cpu processor.Processor
+	pit pitInterface
 
 	deviceID sdl.AudioDeviceID
 	spec     *sdl.AudioSpec
 
-	soundBuffer []byte
-	sampleCount int
 	sampleIndex uint64
+	toneHz      float64
 
 	enabled, turbo bool
 	port           byte
+
+	lock     sync.Mutex
+	quitChan chan struct{}
 }
 
 func nextPow(v uint16) uint16 {
@@ -88,16 +89,8 @@ func (m *Device) Install(p processor.Processor) error {
 		return err
 	}
 
-	numSamples := int(m.spec.Samples)
-	m.ticker = time.NewTicker(time.Second / time.Duration(int(m.spec.Freq)/numSamples))
-
-	bytesPerSample := int(m.spec.Channels)
-	bytesToWrite := numSamples * bytesPerSample
-
-	m.soundBuffer = make([]byte, bytesToWrite)
-	m.sampleCount = bytesToWrite / bytesPerSample
-
 	m.cpu = p
+	m.startUpdateLoop()
 	return p.InstallIODeviceAt(m, 0x61)
 }
 
@@ -110,7 +103,11 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	m.sampleIndex = 0
+	m.toneHz = 0
 	m.port = 4
 	m.turbo = true
 	m.enabled = false
@@ -121,49 +118,76 @@ func (m *Device) Reset() {
 	})
 }
 
-func (m *Device) Step(cycles int) error {
+func (m *Device) startUpdateLoop() {
+	m.quitChan = make(chan struct{})
+
 	if m.pit == nil {
 		var ok bool
 		if m.pit, ok = m.cpu.GetMappedIODevice(0x40).(pitInterface); !ok {
-			return errors.New("could not find PIT")
+			log.Print("could not find PIT")
+			return
 		}
 	}
 
-	if !m.enabled {
-		return nil
-	}
+	go func() {
+		numSamples := int(m.spec.Samples)
+		bytesPerSample := int(m.spec.Channels)
+		bytesToWrite := numSamples * bytesPerSample
 
-	if m.sampleIndex > 0 {
-		select {
-		case <-m.ticker.C:
-		default:
-			return nil
+		soundBuffer := make([]byte, bytesToWrite)
+		sampleCount := bytesToWrite / bytesPerSample
+
+		ticker := time.NewTicker(time.Second / time.Duration(int(m.spec.Freq)/numSamples))
+		defer ticker.Stop()
+
+	loop:
+		for {
+			select {
+			case <-m.quitChan:
+				close(m.quitChan)
+				return
+			case <-ticker.C:
+				m.lock.Lock()
+
+				if !m.enabled || m.toneHz == 0 {
+					m.lock.Unlock()
+					continue loop
+				}
+
+				squareWavePeriod := uint64(float64(m.spec.Freq) / m.toneHz)
+				halfSquareWavePeriod := squareWavePeriod / 2
+				if halfSquareWavePeriod == 0 {
+					m.lock.Unlock()
+					continue loop
+				}
+
+				var ptr int
+				for i := 0; i < sampleCount; i++ {
+					var sampleValue int8 = -toneVolume
+					if m.sampleIndex++; (m.sampleIndex/halfSquareWavePeriod)%2 != 0 {
+						sampleValue = toneVolume
+					}
+
+					for j := 0; j < int(m.spec.Channels); j++ {
+						soundBuffer[ptr] = byte(sampleValue)
+						ptr++
+					}
+				}
+
+				m.lock.Unlock()
+
+				sdl.Do(func() {
+					sdl.QueueAudio(m.deviceID, soundBuffer)
+				})
+			}
 		}
-	}
+	}()
+}
 
-	toneHz := m.pit.GetFrequency(2)
-	squareWavePeriod := uint64(float64(m.spec.Freq) / toneHz)
-	halfSquareWavePeriod := squareWavePeriod / 2
-	if halfSquareWavePeriod == 0 {
-		return nil
-	}
-
-	var ptr int
-	for i := 0; i < m.sampleCount; i++ {
-		var sampleValue int8 = -toneVolume
-		if m.sampleIndex++; (m.sampleIndex/halfSquareWavePeriod)%2 != 0 {
-			sampleValue = toneVolume
-		}
-
-		for j := 0; j < int(m.spec.Channels); j++ {
-			m.soundBuffer[ptr] = byte(sampleValue)
-			ptr++
-		}
-	}
-
-	sdl.Do(func() {
-		sdl.QueueAudio(m.deviceID, m.soundBuffer)
-	})
+func (m *Device) Step(cycles int) error {
+	m.lock.Lock()
+	m.toneHz = m.pit.GetFrequency(2)
+	m.lock.Unlock()
 	return nil
 }
 
@@ -172,12 +196,17 @@ func (m *Device) In(port uint16) byte {
 }
 
 func (m *Device) Out(_ uint16, data byte) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	m.port = data
 	turbo := data&4 != 0
+
 	if m.turbo != turbo {
 		m.turbo = turbo
 		log.Print("Turbo switch: ", turbo)
 	}
+
 	if b := data&3 == 3; b != m.enabled {
 		m.enabled = b
 		sdl.Do(func() {
@@ -189,7 +218,9 @@ func (m *Device) Out(_ uint16, data byte) {
 }
 
 func (m *Device) Close() error {
-	m.ticker.Stop()
+	m.quitChan <- struct{}{}
+	<-m.quitChan
+
 	sdl.Do(func() {
 		sdl.CloseAudioDevice(m.deviceID)
 		sdl.QuitSubSystem(sdl.INIT_AUDIO)
