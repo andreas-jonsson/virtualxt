@@ -93,7 +93,7 @@ func (m *Device) Install(p processor.Processor) error {
 	log.Print("Packet capture is active!")
 
 	m.startCapture()
-	return p.InstallInterruptHandler(0xFC, m)
+	return p.InstallInterruptHandler(m, 0xFC)
 }
 
 func (m *Device) Name() string {

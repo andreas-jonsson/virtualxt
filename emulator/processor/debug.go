@@ -37,5 +37,5 @@ type InterruptHandler interface {
 type Debug interface {
 	Break()
 	GetStats() Stats
-	InstallInterruptHandler(num int, handler InterruptHandler) error
+	InstallInterruptHandler(handler InterruptHandler, num ...int) error
 }

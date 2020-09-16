@@ -41,7 +41,8 @@ type Device struct {
 	cpu    processor.Processor
 	lock   sync.Mutex
 	buffer [512]byte
-	numHD  byte
+
+	numHD, numHDBDA byte
 
 	disks    [0x100]diskDrive
 	lookupAH [0x100]byte
@@ -53,13 +54,7 @@ func (m *Device) Install(p processor.Processor) error {
 	if err := p.InstallIODevice(m, 0x03F0, 0x03F7); err != nil {
 		return err
 	}
-	if err := p.InstallInterruptHandler(0x13, m); err != nil {
-		return err
-	}
-	if err := p.InstallInterruptHandler(0x19, m); err != nil {
-		return err
-	}
-	return p.InstallInterruptHandler(0xFD, m)
+	return p.InstallInterruptHandler(m, 0x13, 0x19, 0xFD)
 }
 
 func (m *Device) Name() string {
@@ -67,6 +62,12 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	m.numHDBDA = m.numHD
+	m.cpu.WriteByte(memory.NewPointer(0x40, 0x75), m.numHD)
+
 	for i := range m.lookupAH {
 		m.lookupAH[i] = 0
 	}
@@ -76,6 +77,13 @@ func (m *Device) Reset() {
 }
 
 func (m *Device) Step(int) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if m.numHDBDA != m.numHD {
+		m.numHDBDA = m.numHD
+		m.cpu.WriteByte(memory.NewPointer(0x40, 0x75), m.numHD)
+	}
 	return nil
 }
 
@@ -119,27 +127,32 @@ func (m *Device) Insert(dnum byte, disk io.ReadWriteSeeker) error {
 	}
 
 	if d.isHD = dnum >= 0x80; d.isHD {
-		d.sectors = 63
 		d.heads = 16
+		d.sectors = 63
 		d.cylinders = uint16(d.fileSize / (uint32(d.sectors) * uint32(d.heads) * 512))
 		m.numHD++
 	} else {
-		d.sectors = 18
-		d.heads = 2
-		d.cylinders = 80
-
 		switch {
 		case d.fileSize <= 1228800:
+			d.cylinders = 80
+			d.heads = 2
 			d.sectors = 15
 		case d.fileSize <= 737280:
+			d.cylinders = 80
+			d.heads = 2
 			d.sectors = 9
 		case d.fileSize <= 368640:
-			d.sectors = 9
 			d.cylinders = 40
-		case d.fileSize <= 163840:
+			d.heads = 2
 			d.sectors = 9
+		case d.fileSize <= 163840:
 			d.cylinders = 40
 			d.heads = 1
+			d.sectors = 8
+		default:
+			d.cylinders = 80
+			d.heads = 2
+			d.sectors = 18
 		}
 	}
 
@@ -155,13 +168,13 @@ func (m *Device) bootstrap() {
 
 	r := m.cpu.GetRegisters()
 	r.SetDL(m.BootDrive)
-	r.SetAL(m.executeOperation(true, d, memory.NewPointer(0x07C0, 0x0), 0, 1, 0, 1))
+	r.SetAL(m.executeOperation(true, d, memory.NewAddress(0x07C0, 0x0), 0, 1, 0, 1))
 
 	r.CS = 0
 	r.IP = 0x7C00
 }
 
-func (m *Device) executeOperation(readOp bool, disc *diskDrive, dst memory.Pointer, cylinders uint16, sectors, heads, count byte) byte {
+func (m *Device) executeOperation(readOp bool, disc *diskDrive, dst memory.Address, cylinders uint16, sectors, heads, count byte) byte {
 	if sectors == 0 {
 		return 0
 	}
@@ -174,19 +187,19 @@ func (m *Device) executeOperation(readOp bool, disc *diskDrive, dst memory.Point
 	var numSectors byte
 	for numSectors < count {
 		if readOp {
-			if n, _ := disc.rws.Read(m.buffer[:]); n != 512 {
+			if _, err := io.ReadFull(disc.rws, m.buffer[:]); err != nil {
 				break
 			}
 			for _, v := range m.buffer {
-				m.cpu.WriteByte(dst, v)
-				dst++
+				m.cpu.WriteByte(dst.Pointer(), v)
+				dst = dst.AddInt(1)
 			}
 		} else {
 			for i := range m.buffer {
-				m.buffer[i] = m.cpu.ReadByte(dst)
-				dst++
+				m.buffer[i] = m.cpu.ReadByte(dst.Pointer())
+				dst = dst.AddInt(1)
 			}
-			if n, _ := disc.rws.Write(m.buffer[:]); n != 512 {
+			if n, err := disc.rws.Write(m.buffer[:]); n != 512 || err != nil {
 				break
 			}
 		}
@@ -201,7 +214,7 @@ func (m *Device) executeAndSet(readOp bool) {
 		r.SetAH(1)
 		r.CF = true
 	} else {
-		r.SetAL(m.executeOperation(readOp, d, memory.NewPointer(r.ES, r.BX), uint16(r.CH())+uint16(r.CL()/64)*256, r.CL()&0x3F, r.DH(), r.AL()))
+		r.SetAL(m.executeOperation(readOp, d, memory.NewAddress(r.ES, r.BX), uint16(r.CH())+uint16(r.CL()/64)*256, r.CL()&0x3F, r.DH(), r.AL()))
 		r.SetAH(0)
 		r.CF = false
 	}

@@ -184,11 +184,13 @@ func (p *CPU) WriteWord(addr memory.Pointer, data uint16) {
 	p.WriteByte(addr+1, byte(data>>8))
 }
 
-func (p *CPU) InstallInterruptHandler(num int, handler processor.InterruptHandler) error {
-	if num > 0xFF {
-		return errors.New("invalid interrupt number")
+func (p *CPU) InstallInterruptHandler(handler processor.InterruptHandler, num ...int) error {
+	for _, n := range num {
+		if n > 0xFF || n < 0x0 {
+			return errors.New("invalid interrupt number")
+		}
+		p.interceptors[n] = handler
 	}
-	p.interceptors[num] = handler
 	return nil
 }
 
