@@ -2,7 +2,10 @@
 *.lst
 /*.bin
 
+tools/validator/clib/validator.h
+tools/validator/clib/validator.a
+tools/validator/clib/validator.dll
+
 virtualxt.exe
 coverage.txt
 rsrc.syso
-tools/validator/clib/validator.h
