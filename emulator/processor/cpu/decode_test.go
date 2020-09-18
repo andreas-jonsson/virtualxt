@@ -40,7 +40,7 @@ func loadBin(t *testing.T, name string) []byte {
 }
 
 func runTest(t *testing.T, progName string) *CPU {
-	p := NewCPU([]peripheral.Peripheral{
+	p, errs := NewCPU([]peripheral.Peripheral{
 		&ram.Device{Clear: true},
 		&rom.Device{
 			RomName: fmt.Sprintf("TEST: %s.bin", progName),
@@ -51,6 +51,10 @@ func runTest(t *testing.T, progName string) *CPU {
 		//&debug.Device{},
 	})
 	defer p.Close()
+
+	for _, err := range errs {
+		t.Error(err)
+	}
 
 	// Tests are written for 80186+ machines.
 	p.SetV20Support(true)
