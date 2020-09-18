@@ -43,6 +43,7 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/cgatext"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
 	"github.com/andreas-jonsson/virtualxt/version"
 )
 
@@ -52,8 +53,9 @@ var (
 )
 
 var (
-	genFd, genHd string
-	genHdSize    = 10
+	genFd, genHd,
+	validatorOutput string
+	genHdSize = 10
 )
 
 var (
@@ -83,6 +85,8 @@ func init() {
 	flag.StringVar(&genFd, "gen-fd", "", "Create a blank 1.44MB floppy image")
 	flag.StringVar(&genHd, "gen-hd", "", "Create a blank 10MB hadrddrive image")
 	flag.IntVar(&genHdSize, "gen-hd-size", genHdSize, "Set size of the generated harddrive image in megabytes")
+
+	flag.StringVar(&validatorOutput, "validator", validatorOutput, "Set CPU validator output")
 
 	if !cgaText {
 		flag.BoolVar(&cgaText, "text", false, "CGA textmode runing in termainal")
@@ -202,8 +206,15 @@ func emuLoop() {
 	}
 	limitSpeed := 1000000000 / int64(1000000*doLimit)
 
-	p := cpu.NewCPU(peripherals)
+	validator.Initialize(validatorOutput)
+	defer validator.Shutdown()
+
+	p, errs := cpu.NewCPU(peripherals)
 	defer p.Close()
+
+	for _, err := range errs {
+		dialog.ShowErrorMessage(err.Error())
+	}
 
 	p.SetV20Support(v20cpu)
 	p.Reset()

@@ -21,10 +21,10 @@ import (
 	"errors"
 	"log"
 
-	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
 )
 
 const MaxPeripherals = 32
@@ -47,7 +47,7 @@ type CPU struct {
 	memPeripherals [MaxPeripherals]memory.Memory
 }
 
-func NewCPU(peripherals []peripheral.Peripheral) *CPU {
+func NewCPU(peripherals []peripheral.Peripheral) (*CPU, []error) {
 	p := &CPU{peripherals: peripherals}
 
 	dummyIO := &memory.DummyIO{}
@@ -68,16 +68,16 @@ func NewCPU(peripherals []peripheral.Peripheral) *CPU {
 			p.memPeripherals[i] = dev
 		}
 	}
-
-	p.installPeripherals()
-	return p
+	return p, p.installPeripherals()
 }
 
 func (p *CPU) SetV20Support(b bool) {
 	p.isV20 = b
 }
 
-func (p *CPU) installPeripherals() {
+func (p *CPU) installPeripherals() []error {
+	var errs []error
+
 	log.Print("\nPeripherals")
 	for _, d := range p.peripherals {
 		log.Print(" |- ", d.Name())
@@ -87,7 +87,7 @@ func (p *CPU) installPeripherals() {
 	for _, d := range p.peripherals {
 		log.Print("Installing ", d.Name(), "...")
 		if err := d.Install(p); err != nil {
-			dialog.ShowErrorMessage(err.Error())
+			errs = append(errs, err)
 		}
 		if pic, ok := d.(processor.InterruptController); ok {
 			p.pic = pic
@@ -95,8 +95,9 @@ func (p *CPU) installPeripherals() {
 	}
 
 	if p.pic == nil {
-		log.Print("No interrupt controller detected!")
+		errs = append(errs, errors.New("No interrupt controller detected!"))
 	}
+	return errs
 }
 
 func (p *CPU) Close() {
@@ -166,13 +167,16 @@ func (p *CPU) OutWord(port uint16, data uint16) {
 func (p *CPU) ReadByte(addr memory.Pointer) byte {
 	p.stats.RX++
 	addr &= 0xFFFFF
-	return p.GetMappedMemoryDevice(addr).ReadByte(addr)
+	data := p.GetMappedMemoryDevice(addr).ReadByte(addr)
+	validator.ReadByte(uint32(addr), data)
+	return data
 }
 
 func (p *CPU) WriteByte(addr memory.Pointer, data byte) {
 	p.stats.TX++
 	addr &= 0xFFFFF
 	p.GetMappedMemoryDevice(addr).WriteByte(addr, data)
+	validator.WriteByte(uint32(addr), data)
 }
 
 func (p *CPU) ReadWord(addr memory.Pointer) uint16 {

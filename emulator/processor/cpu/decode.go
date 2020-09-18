@@ -22,6 +22,7 @@ import (
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
 )
 
 var zero16 uint16
@@ -289,6 +290,7 @@ func (p *CPU) divisionByZero() {
 
 func (p *CPU) doInterrupt(n int) {
 	p.stats.NumInterrupts++
+	validator.Discard()
 
 	p.halted = false
 
@@ -336,9 +338,11 @@ func (p *CPU) Step() (int, error) {
 		return p.cycleCount, err
 	}
 
+	validator.Begin(p.opcode, p.Registers)
 	if err := p.execute(); err != nil {
 		return p.cycleCount, err
 	}
+	validator.End(p.Registers)
 
 	for _, d := range p.peripherals {
 		if err := d.Step(p.cycleCount); err != nil {

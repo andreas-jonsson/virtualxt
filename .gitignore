@@ -5,3 +5,4 @@
 virtualxt.exe
 coverage.txt
 rsrc.syso
+tools/validator/clib/validator.h
