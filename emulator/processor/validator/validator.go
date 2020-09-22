@@ -46,46 +46,6 @@ var (
 	quitChan     chan struct{}
 )
 
-type Event struct {
-	Opcode        byte
-	Regs          [2]processor.Registers
-	Reads, Writes [10]MemOp
-}
-
-type MemOp struct {
-	Addr uint32
-	Data byte
-}
-
-var emptyMemOp = MemOp{math.MaxUint32, 0}
-
-var EmptyEvent = Event{
-	Reads: [10]MemOp{
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-	},
-	Writes: [10]MemOp{
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-		emptyMemOp,
-	},
-}
-
 func Initialize(output string) {
 	if outputFile = output; output == "" {
 		return
