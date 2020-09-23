@@ -115,6 +115,7 @@ func (m *Device) Reset() {
 	m.currentScanline = 0
 	m.colorCtrlReg = 0x20
 	m.modeCtrlReg = 1
+	m.statusReg = 0
 	m.cursorVisible = true
 	m.cursorPosition = 0
 	m.lock.Unlock()
@@ -136,7 +137,7 @@ func (m *Device) Step(cycles int) error {
 		} else {
 			m.statusReg = 0
 		}
-		m.statusReg |= byte(m.currentScanline & 1)
+		m.statusReg |= 1
 	}
 	return nil
 }
@@ -351,7 +352,9 @@ func (m *Device) In(port uint16) byte {
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
 		return m.crtReg[m.crtAddr]
 	case 0x3DA:
-		return m.statusReg
+		status := m.statusReg
+		m.statusReg &= 0xFE
+		return status
 	case 0x3D9:
 		return m.colorCtrlReg
 	}

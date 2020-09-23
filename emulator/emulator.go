@@ -23,6 +23,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
@@ -54,7 +55,8 @@ var (
 
 var (
 	genFd, genHd,
-	validatorOutput string
+	validatorOutput,
+	cpuProfile string
 	genHdSize = 10
 )
 
@@ -87,6 +89,7 @@ func init() {
 	flag.IntVar(&genHdSize, "gen-hd-size", genHdSize, "Set size of the generated harddrive image in megabytes")
 
 	flag.StringVar(&validatorOutput, "validator", validatorOutput, "Set CPU validator output")
+	flag.StringVar(&cpuProfile, "cpu-profile", cpuProfile, "Set CPU profile output")
 
 	if !cgaText {
 		flag.BoolVar(&cgaText, "text", false, "CGA textmode runing in termainal")
@@ -218,6 +221,15 @@ func emuLoop() {
 
 	p.SetV20Support(v20cpu)
 	p.Reset()
+
+	if cpuProfile != "" {
+		if f, err := os.Create(cpuProfile); err != nil {
+			log.Print(err)
+		} else {
+			pprof.StartCPUProfile(f)
+			defer pprof.StopCPUProfile()
+		}
+	}
 
 	for !dialog.ShutdownRequested() {
 		var cycles int64

@@ -45,8 +45,8 @@ type Device struct {
 	deviceID sdl.AudioDeviceID
 	spec     *sdl.AudioSpec
 
-	sampleIndex uint64
-	toneHz      float64
+	sampleIndex          uint64
+	toneHz, toneHzBuffer float64
 
 	enabled, turbo bool
 	port           byte
@@ -108,6 +108,7 @@ func (m *Device) Reset() {
 
 	m.sampleIndex = 0
 	m.toneHz = 0
+	m.toneHzBuffer = 0
 	m.port = 4
 	m.turbo = true
 	m.enabled = false
@@ -185,9 +186,12 @@ func (m *Device) startUpdateLoop() {
 }
 
 func (m *Device) Step(cycles int) error {
-	m.lock.Lock()
-	m.toneHz = m.pit.GetFrequency(2)
-	m.lock.Unlock()
+	if toneHz := m.pit.GetFrequency(2); toneHz != m.toneHzBuffer {
+		m.lock.Lock()
+		m.toneHzBuffer = toneHz
+		m.toneHz = toneHz
+		m.lock.Unlock()
+	}
 	return nil
 }
 

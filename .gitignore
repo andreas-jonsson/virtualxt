@@ -1,6 +1,6 @@
 *.dump
 *.lst
-/*.bin
+*.prof
 
 tools/validator/clib/validator.h
 tools/validator/clib/validator.a

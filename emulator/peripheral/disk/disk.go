@@ -41,8 +41,7 @@ type Device struct {
 	cpu    processor.Processor
 	lock   sync.Mutex
 	buffer [512]byte
-
-	numHD, numHDBDA byte
+	numHD  byte
 
 	disks    [0x100]diskDrive
 	lookupAH [0x100]byte
@@ -65,7 +64,6 @@ func (m *Device) Reset() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	m.numHDBDA = m.numHD
 	m.cpu.WriteByte(memory.NewPointer(0x40, 0x75), m.numHD)
 
 	for i := range m.lookupAH {
@@ -77,13 +75,6 @@ func (m *Device) Reset() {
 }
 
 func (m *Device) Step(int) error {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	if m.numHDBDA != m.numHD {
-		m.numHDBDA = m.numHD
-		m.cpu.WriteByte(memory.NewPointer(0x40, 0x75), m.numHD)
-	}
 	return nil
 }
 
