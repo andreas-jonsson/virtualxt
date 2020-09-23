@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package version
 
 var (
-	Current = Version{ 0, 6, 0, "" }
+	Current = Version{ 0, 6, 1, "" }
 	Copyright = "Copyright (C) 2019-2020 Andreas T Jonsson"
-	Hash = "279c97c5d238781cbb67a017a1abcc6f9798248d"
+	Hash = "0e265750c0d749f4323a2b3b901fd26603591f65"
 )
