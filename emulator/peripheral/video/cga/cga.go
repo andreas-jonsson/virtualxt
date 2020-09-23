@@ -33,8 +33,9 @@ import (
 )
 
 const (
-	memorySize = 0x4000
-	memoryBase = 0xB8000
+	memorySize     = 0x4000
+	memoryBase     = 0xB8000
+	scanlineTiming = 31469
 )
 
 var applicationStart = time.Now()
@@ -67,7 +68,10 @@ type Device struct {
 	crtReg      [0x100]byte
 
 	crtAddr, modeCtrlReg,
-	colorCtrlReg, refresh byte
+	colorCtrlReg, statusReg byte
+
+	lastScanline    int64
+	currentScanline int
 
 	cursorVisible  bool
 	cursorPosition uint16
@@ -91,10 +95,11 @@ func (m *Device) Install(p processor.Processor) error {
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	if err := p.InstallMemoryDevice(m, memoryBase, memoryBase+memorySize); err != nil {
+	// 16k of RAM at address 0B8000h for its frame buffer. The address is incompletely decoded; the frame buffer is repeated at 0BC000h.
+	if err := p.InstallMemoryDevice(m, memoryBase, memoryBase+memorySize*2); err != nil {
 		return err
 	}
-	if err := p.InstallIODevice(m, 0x3B0, 0x3DF); err != nil {
+	if err := p.InstallIODevice(m, 0x3D0, 0x3DF); err != nil {
 		return err
 	}
 	return m.startRenderLoop()
@@ -106,6 +111,8 @@ func (m *Device) Name() string {
 
 func (m *Device) Reset() {
 	m.lock.Lock()
+	m.lastScanline = time.Now().UnixNano()
+	m.currentScanline = 0
 	m.colorCtrlReg = 0x20
 	m.modeCtrlReg = 1
 	m.cursorVisible = true
@@ -115,6 +122,22 @@ func (m *Device) Reset() {
 
 func (m *Device) Step(cycles int) error {
 	atomic.AddInt32(&m.atomicCycleCounter, int32(cycles))
+
+	t := time.Now().UnixNano()
+	d := t - m.lastScanline
+	scanlines := d / scanlineTiming
+
+	if scanlines > 0 {
+		offset := d % scanlineTiming
+		m.lastScanline = t - offset
+
+		if m.currentScanline = (m.currentScanline + int(scanlines)) % 525; m.currentScanline > 479 {
+			m.statusReg = 8
+		} else {
+			m.statusReg = 0
+		}
+		m.statusReg |= byte(m.currentScanline & 1)
+	}
 	return nil
 }
 
@@ -327,9 +350,8 @@ func (m *Device) In(port uint16) byte {
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
 		return m.crtReg[m.crtAddr]
 	case 0x3DA:
-		m.refresh ^= 0x9
-		return m.refresh
-	case 0x3B9:
+		return m.statusReg
+	case 0x3D9:
 		return m.colorCtrlReg
 	}
 	return 0
@@ -357,14 +379,14 @@ func (m *Device) Out(port uint16, data byte) {
 		}
 	case 0x3D8:
 		m.modeCtrlReg = data
-	case 0x3B9:
+	case 0x3D9:
 		m.colorCtrlReg = data
 	}
 }
 
 func (m *Device) ReadByte(addr memory.Pointer) byte {
 	m.lock.RLock()
-	v := m.mem[(addr-memoryBase)&0x3FFF]
+	v := m.mem[(addr-memoryBase)&(memorySize-1)]
 	m.lock.RUnlock()
 	return v
 }
@@ -372,6 +394,6 @@ func (m *Device) ReadByte(addr memory.Pointer) byte {
 func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 	m.lock.Lock()
 	m.dirtyMemory = true
-	m.mem[(addr-memoryBase)&0x3FFF] = data
+	m.mem[(addr-memoryBase)&(memorySize-1)] = data
 	m.lock.Unlock()
 }

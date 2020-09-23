@@ -94,10 +94,10 @@ func (m *Device) Install(p processor.Processor) error {
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	if err := p.InstallMemoryDevice(m, memoryBase, memoryBase+memorySize); err != nil {
+	if err := p.InstallMemoryDevice(m, memoryBase, memoryBase+memorySize*2); err != nil {
 		return err
 	}
-	if err := p.InstallIODevice(m, 0x3B0, 0x3DF); err != nil {
+	if err := p.InstallIODevice(m, 0x3D0, 0x3DF); err != nil {
 		return err
 	}
 	return m.startRenderLoop()
@@ -249,9 +249,10 @@ func (m *Device) In(port uint16) byte {
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
 		return m.crtReg[m.crtAddr]
 	case 0x3DA:
+		// Don't bother with timing for this device.
 		m.refresh ^= 0x9
 		return m.refresh
-	case 0x3B9:
+	case 0x3D9:
 		return m.colorCtrlReg
 	}
 	return 0
@@ -284,14 +285,14 @@ func (m *Device) Out(port uint16, data byte) {
 		m.cursor.y = byte(m.cursorPos / 80)
 	case 0x3D8:
 		m.modeCtrlReg = data
-	case 0x3B9:
+	case 0x3D9:
 		m.colorCtrlReg = data
 	}
 }
 
 func (m *Device) ReadByte(addr memory.Pointer) byte {
 	m.lock.RLock()
-	v := m.mem[(addr-memoryBase)&0x3FFF]
+	v := m.mem[(addr-memoryBase)&(memorySize-1)]
 	m.lock.RUnlock()
 	return v
 }
@@ -299,6 +300,6 @@ func (m *Device) ReadByte(addr memory.Pointer) byte {
 func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 	m.lock.Lock()
 	m.dirtyMemory = true
-	m.mem[(addr-memoryBase)&0x3FFF] = data
+	m.mem[(addr-memoryBase)&(memorySize-1)] = data
 	m.lock.Unlock()
 }
