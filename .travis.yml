@@ -89,4 +89,4 @@ deploy:
   script: bash tools/package/itch/push.sh
   on:
     all_branches: true
-    condition: $TRAVIS_BRANCH =~ ^(edge|release)$ && $TRAVIS_OS_NAME != OSX
+    condition: $TRAVIS_BRANCH =~ ^(edge|release)$ && $TRAVIS_OS_NAME != osx
