@@ -63,7 +63,7 @@ type Device struct {
 	lock     sync.RWMutex
 	quitChan chan struct{}
 
-	dirtyMemory bool
+	dirtyMemory int32
 	mem         [memorySize]byte
 	crtReg      [0x100]byte
 
@@ -238,9 +238,6 @@ func (m *Device) startRenderLoop() error {
 				return
 			case <-ticker.C:
 				sdl.Do(func() {
-					m.lock.RLock()
-					defer m.lock.RUnlock()
-
 					select {
 					case <-m.windowTitleTicker.C:
 						hlp := " (Press F12 for menu)"
@@ -252,8 +249,10 @@ func (m *Device) startRenderLoop() error {
 					default:
 					}
 
-					blink := blinkTick()
-					if m.dirtyMemory || blink {
+					if blink := blinkTick(); blink || atomic.LoadInt32(&m.dirtyMemory) != 0 {
+						m.lock.RLock()
+						atomic.StoreInt32(&m.dirtyMemory, 0)
+
 						backgroundColor := cgaColor[m.colorCtrlReg&0xF]
 						m.renderer.SetDrawColor(byte(backgroundColor&0xFF0000), byte(backgroundColor&0x00FF00), byte(backgroundColor&0x0000FF), 0xFF)
 						m.renderer.Clear()
@@ -329,6 +328,8 @@ func (m *Device) startRenderLoop() error {
 							}
 						}
 
+						m.lock.RUnlock()
+
 						m.texture.Update(nil, m.surface.Pixels(), int(m.surface.Pitch))
 					}
 
@@ -343,8 +344,8 @@ func (m *Device) startRenderLoop() error {
 }
 
 func (m *Device) In(port uint16) byte {
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.lock.RLock()
+	defer m.lock.RUnlock()
 
 	switch port {
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
@@ -359,10 +360,9 @@ func (m *Device) In(port uint16) byte {
 
 func (m *Device) Out(port uint16, data byte) {
 	m.lock.Lock()
-	defer m.lock.Unlock()
 
 	// We likely need to redraw the screen.
-	m.dirtyMemory = true
+	atomic.StoreInt32(&m.dirtyMemory, 1)
 
 	switch port {
 	case 0x3D0, 0x3D2, 0x3D4, 0x3D6:
@@ -382,6 +382,8 @@ func (m *Device) Out(port uint16, data byte) {
 	case 0x3D9:
 		m.colorCtrlReg = data
 	}
+
+	m.lock.Unlock()
 }
 
 func (m *Device) ReadByte(addr memory.Pointer) byte {
@@ -393,7 +395,7 @@ func (m *Device) ReadByte(addr memory.Pointer) byte {
 
 func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 	m.lock.Lock()
-	m.dirtyMemory = true
+	atomic.StoreInt32(&m.dirtyMemory, 1)
 	m.mem[(addr-memoryBase)&(memorySize-1)] = data
 	m.lock.Unlock()
 }
