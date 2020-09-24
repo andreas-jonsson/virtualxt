@@ -185,7 +185,7 @@ func (m *Device) startUpdateLoop() {
 	}()
 }
 
-func (m *Device) Step(cycles int) error {
+func (m *Device) Step(int) error {
 	if toneHz := m.pit.GetFrequency(2); toneHz != m.toneHzBuffer {
 		m.lock.Lock()
 		m.toneHzBuffer = toneHz

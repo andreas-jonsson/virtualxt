@@ -80,7 +80,7 @@ func init() {
 	flag.BoolVar(&ver, "v", false, "Print version information")
 	flag.BoolVar(&noAudio, "no-audio", false, "Disable audio")
 
-	flag.Float64Var(&limitMIPS, "mips", 0, "Limit CPU speed")
+	flag.Float64Var(&limitMIPS, "mips", 3, "Limit CPU speed (0 for no limit)")
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")
 	flag.StringVar(&vbiosImage, "vbios", vbiosImage, "Path to EGA/VGA BIOS image")
 
