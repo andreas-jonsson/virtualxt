@@ -6,6 +6,7 @@ tools/validator/clib/validator.h
 tools/validator/clib/validator.a
 tools/validator/clib/validator.dll
 tools/validator/clib/validator.lib
+*_validator.json
 
 virtualxt.exe
 coverage.txt

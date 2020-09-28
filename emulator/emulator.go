@@ -203,13 +203,23 @@ func emuLoop() {
 		peripherals = append(peripherals, &debug.Device{})
 	}
 
+	if cpuProfile != "" {
+		if f, err := os.Create(cpuProfile); err != nil {
+			log.Print(err)
+		} else {
+			limitMIPS = 0
+			pprof.StartCPUProfile(f)
+			defer pprof.StopCPUProfile()
+		}
+	}
+
 	var doLimit float64 = limitMIPS
 	if doLimit == 0 {
 		doLimit = 0.33
 	}
 	limitSpeed := 1000000000 / int64(1000000*doLimit)
 
-	validator.Initialize(validatorOutput)
+	validator.Initialize(validatorOutput, validator.DefulatQueueSize, validator.DefaultBufferSize)
 	defer validator.Shutdown()
 
 	p, errs := cpu.NewCPU(peripherals)
@@ -221,15 +231,6 @@ func emuLoop() {
 
 	p.SetV20Support(v20cpu)
 	p.Reset()
-
-	if cpuProfile != "" {
-		if f, err := os.Create(cpuProfile); err != nil {
-			log.Print(err)
-		} else {
-			pprof.StartCPUProfile(f)
-			defer pprof.StopCPUProfile()
-		}
-	}
 
 	for !dialog.ShutdownRequested() {
 		var cycles int64

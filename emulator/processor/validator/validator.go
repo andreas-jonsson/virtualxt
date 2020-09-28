@@ -32,11 +32,6 @@ import (
 
 const Enabled = true
 
-const (
-	queueSize  = 1024            // 1KB
-	bufferSize = 0x100000 * 1024 // 1GB
-)
-
 var outputFile string
 
 var (
@@ -46,7 +41,7 @@ var (
 	quitChan     chan struct{}
 )
 
-func Initialize(output string) {
+func Initialize(output string, queueSize, bufferSize int) {
 	if outputFile = output; output == "" {
 		return
 	}
@@ -60,10 +55,11 @@ func Initialize(output string) {
 	}
 
 	go func() {
-		defer func() { quitChan <- struct{}{} }()
-		defer fp.Close()
-
 		var buffer bytes.Buffer
+
+		defer fp.Close()
+		defer func() { io.Copy(fp, &buffer); quitChan <- struct{}{} }()
+
 		enc := json.NewEncoder(&buffer)
 
 		for ev := range outputChan {

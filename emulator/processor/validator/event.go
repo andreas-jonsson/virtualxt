@@ -23,6 +23,11 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
+const (
+	DefulatQueueSize  = 1024            // 1KB
+	DefaultBufferSize = 0x100000 * 1024 // 1GB
+)
+
 type Event struct {
 	Opcode        byte
 	Regs          [2]processor.Registers

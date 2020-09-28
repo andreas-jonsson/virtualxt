@@ -29,6 +29,7 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/ram"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/rom"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
 )
 
 func loadBin(t *testing.T, name string) []byte {
@@ -40,6 +41,9 @@ func loadBin(t *testing.T, name string) []byte {
 }
 
 func runTest(t *testing.T, progName string) *CPU {
+	validator.Initialize(progName+"_validator.json", validator.DefulatQueueSize, validator.DefaultBufferSize)
+	defer validator.Shutdown()
+
 	p, errs := NewCPU([]peripheral.Peripheral{
 		&ram.Device{Clear: true},
 		&rom.Device{
@@ -55,6 +59,8 @@ func runTest(t *testing.T, progName string) *CPU {
 	for _, err := range errs {
 		t.Error(err)
 	}
+
+	//debug.EnableDebug = true
 
 	// Tests are written for 80186+ machines.
 	p.SetV20Support(true)

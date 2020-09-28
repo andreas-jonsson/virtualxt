@@ -25,7 +25,7 @@ import (
 
 const Enabled = false
 
-func Initialize(string)               {}
+func Initialize(string, int, int)     {}
 func Begin(byte, processor.Registers) {}
 func End(processor.Registers)         {}
 func Discard()                        {}
