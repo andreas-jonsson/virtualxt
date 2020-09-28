@@ -27,8 +27,8 @@ import (
 )
 
 //export Initialize
-func Initialize(output *C.char) {
-	validator.Initialize(C.GoString(output))
+func Initialize(output *C.char, queueSize, bufferSize C.int) {
+	validator.Initialize(C.GoString(output), int(queueSize), int(bufferSize))
 }
 
 //export Begin

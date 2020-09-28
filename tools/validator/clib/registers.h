@@ -20,6 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdbool.h>
 
+#define DefulatQueueSize  0x400      // 1KB
+#define DefaultBufferSize 0x40000000 // 1GB
+
 struct Registers {
   unsigned short AX;
   unsigned short CX;
