@@ -27,6 +27,12 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+type drawEvent struct {
+	buffer     *bytes.Buffer
+	blink      bool
+	bg, cx, cy int
+}
+
 var cgaPalette = [16]tcell.Color{
 	tcell.ColorBlack,
 	tcell.ColorNavy,
@@ -48,7 +54,11 @@ var cgaPalette = [16]tcell.Color{
 
 func (p *tcellPlatform) initializeTcellEvents() error {
 	go func() {
+		currentCX, currentCY := -1, -1
+		currentMX, currentMY := 0, 0
+		currentBG := -1
 		s := p.screen
+
 		for {
 			ev := s.PollEvent()
 			switch ev := ev.(type) {
@@ -64,44 +74,51 @@ func (p *tcellPlatform) initializeTcellEvents() error {
 				p.pushKeyEvent(ev)
 			case *tcell.EventResize:
 				s.Sync()
+			case *tcell.EventMouse:
+				p.Lock()
+				if h := p.mouseHandler; h != nil {
+					btn := ev.Buttons()
+
+					var buttons byte
+					if btn&tcell.Button1 != 0 {
+						buttons = 2
+					}
+					if btn&tcell.Button3 != 0 {
+						buttons |= 1
+					}
+
+					mx, my := ev.Position()
+					h(buttons, int8(mx-currentMX)*4, int8(my-currentMY)*8)
+					currentMX, currentMY = mx, my
+				}
+				p.Unlock()
 			case *tcell.EventInterrupt:
-				switch data := ev.Data().(type) {
-				//case quitEvent:
-				//close(p.quitChan)
-				//return
-				case *bytes.Buffer:
+				if data, ok := ev.Data().(drawEvent); ok {
 					p.Lock()
 
-					/*
-						if bg := m.colorCtrlReg & 0xF; bg != m.oldColorCtrlReg {
-							m.oldColorCtrlReg = bg
-							s.Fill(' ', tcell.StyleDefault.Background(cgaPalette[bg]))
-						}
-					*/
+					if currentBG != data.bg {
+						currentBG = data.bg
+						s.Fill(' ', tcell.StyleDefault.Background(cgaPalette[data.bg&0xF]))
+					}
 
+					buf := data.buffer
 					numColumns := 80
-					if data.Len() < 80*25*2 {
+					if buf.Len() < 80*25*2 {
 						numColumns = 40
 					}
 
-					mem := data.Bytes()
+					mem := buf.Bytes()
 					for y := 0; y < 25; y++ {
 						for x := 0; x < numColumns; x++ {
 							offset := y*numColumns*2 + x*2
-							s.SetCell(x, y, p.createStyleFromAttrib(mem[offset+1]), codePage437[mem[offset]])
+							s.SetCell(x, y, p.createStyleFromAttrib(mem[offset+1], data.blink), codePage437[mem[offset]])
 						}
 					}
 
-					/*
-						if m.cursor.update {
-							m.cursor.update = false
-							if m.cursor.visible {
-								s.ShowCursor(int(m.cursor.x), int(m.cursor.y))
-							} else {
-								s.HideCursor()
-							}
-						}
-					*/
+					if currentCX != data.cx || currentCY != data.cy {
+						currentCX, currentCY = data.cx, data.cy
+						s.ShowCursor(data.cx, data.cy)
+					}
 
 					s.Show()
 					p.Unlock()
@@ -112,15 +129,14 @@ func (p *tcellPlatform) initializeTcellEvents() error {
 	return nil
 }
 
-func (p *tcellPlatform) createStyleFromAttrib(attr byte) tcell.Style {
-	blinkEnabled := true //m.modeCtrlReg&0x20 != 0
+func (p *tcellPlatform) createStyleFromAttrib(attr byte, blink bool) tcell.Style {
 	blinkAttrib := attr&0x80 != 0
 	bgColorIndex := (attr & 0x70) >> 4
 
-	if blinkAttrib && !blinkEnabled {
+	if blinkAttrib && !blink {
 		bgColorIndex += 8
 	}
-	return tcell.StyleDefault.Blink(blinkEnabled && blinkAttrib).Background(cgaPalette[bgColorIndex]).Foreground(cgaPalette[attr&0xF])
+	return tcell.StyleDefault.Blink(blink && blinkAttrib).Background(cgaPalette[bgColorIndex]).Foreground(cgaPalette[attr&0xF])
 }
 
 func (p *tcellPlatform) pushKeyEvent(ev *tcell.EventKey) {

@@ -60,13 +60,13 @@ func shutdownVideo(p *sdlPlatform) {
 	})
 }
 
-func (p *sdlPlatform) RenderGraphics(_ VideoMode, backBuffer []byte) {
+func (p *sdlPlatform) RenderGraphics(backBuffer []byte, r, g, b byte) {
 	if len(backBuffer) != 640*200*4 {
 		log.Panic("invalid back buffer size")
 	}
 
 	sdl.Do(func() {
-		//p.renderer.SetDrawColor(p.cgaBGColor[0], p.cgaBGColor[1], p.cgaBGColor[2], 0xFF)
+		p.renderer.SetDrawColor(r, g, b, 0xFF)
 		p.renderer.Clear()
 
 		p.texture.Update(nil, backBuffer, 640*4)
@@ -76,7 +76,7 @@ func (p *sdlPlatform) RenderGraphics(_ VideoMode, backBuffer []byte) {
 	})
 }
 
-func (p *sdlPlatform) RenderText(mem []byte) {
+func (p *sdlPlatform) RenderText([]byte, bool, int, int, int) {
 	// Not supported for the SDL platform.
 }
 

@@ -1,5 +1,3 @@
-// +build sdl
-
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
 
@@ -225,7 +223,8 @@ func (m *Device) renderLoop() {
 			default:
 			}
 
-			if blink := blinkTick(); blink || atomic.LoadInt32(&m.dirtyMemory) != 0 {
+			dirtyMemory := atomic.LoadInt32(&m.dirtyMemory) != 0
+			if blink := blinkTick(); blink || dirtyMemory {
 				m.lock.RLock()
 				atomic.StoreInt32(&m.dirtyMemory, 0)
 
@@ -234,9 +233,9 @@ func (m *Device) renderLoop() {
 					numCol = 40
 				}
 
-				backgroundColor := cgaColor[m.colorCtrlReg&0xF]
-				//m.renderer.SetDrawColor(byte(backgroundColor&0xFF0000), byte(backgroundColor&0x00FF00), byte(backgroundColor&0x0000FF), 0xFF)
-				//m.renderer.Clear()
+				backgroundColorIndex := m.colorCtrlReg & 0xF
+				backgroundColor := cgaColor[backgroundColorIndex]
+				bgRComponent, bgGComponent, bgBComponent := byte(backgroundColor&0xFF0000), byte(backgroundColor&0x00FF00), byte(backgroundColor&0x0000FF)
 
 				// In graphics mode?
 				if m.modeCtrlReg&2 != 0 {
@@ -286,10 +285,18 @@ func (m *Device) renderLoop() {
 					}
 
 					m.lock.RUnlock()
-					p.RenderGraphics(0, dst)
+					p.RenderGraphics(dst, bgRComponent, bgGComponent, bgBComponent)
 				} else if cliMode {
-					// We need to render before unlock.
-					p.RenderText(m.mem[:numCol*25*2])
+					if dirtyMemory {
+						cx, cy := -1, -1
+						if m.cursorVisible {
+							cx = int(m.cursorPosition) % numCol
+							cy = int(m.cursorPosition) / numCol
+						}
+
+						// We need to render before unlock.
+						p.RenderText(m.mem[:numCol*25*2], m.modeCtrlReg&0x20 != 0, int(backgroundColorIndex), cx, cy)
+					}
 					m.lock.RUnlock()
 				} else {
 					videoPage := int(m.crtReg[0xC]<<8) + int(m.crtReg[0xD])
@@ -311,7 +318,7 @@ func (m *Device) renderLoop() {
 					}
 
 					m.lock.RUnlock()
-					p.RenderGraphics(0, m.surface)
+					p.RenderGraphics(m.surface, bgRComponent, bgGComponent, bgBComponent)
 				}
 			}
 		}

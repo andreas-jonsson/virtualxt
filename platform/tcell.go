@@ -19,6 +19,7 @@ package platform
 
 import (
 	"bytes"
+	"flag"
 	"log"
 	"sync"
 
@@ -38,6 +39,10 @@ type tcellPlatform struct {
 var tcellPlatformInstance tcellPlatform
 
 func tcellStart(mainLoop func(Platform), configs ...Config) {
+	// Default to max speed in CLI mode.
+	flag.Set("mips", "0")
+	flag.Parse()
+
 	for _, cfg := range configs {
 		if err := cfg(&tcellPlatformInstance); err != nil {
 			log.Fatal(err)
@@ -59,8 +64,8 @@ func tcellStart(mainLoop func(Platform), configs ...Config) {
 	}
 	defer s.Fini()
 
-	s.ShowCursor(0, 0)
-	s.DisableMouse()
+	s.ShowCursor(-1, -1)
+	s.EnableMouse()
 	s.Clear()
 
 	if err := tcellPlatformInstance.initializeTcellEvents(); err != nil {
@@ -73,15 +78,16 @@ func (p *tcellPlatform) HasAudio() bool {
 	return false
 }
 
-func (p *tcellPlatform) RenderGraphics(VideoMode, []byte) {
+func (p *tcellPlatform) RenderGraphics([]byte, byte, byte, byte) {
+	// Not supported for the Tcell platform.
 }
 
-func (p *tcellPlatform) RenderText(mem []byte) {
+func (p *tcellPlatform) RenderText(mem []byte, blink bool, bg, cx, cy int) {
 	p.Lock()
 	p.buffer.Reset()
 	p.buffer.Write(mem)
 	p.Unlock()
-	p.screen.PostEvent(tcell.NewEventInterrupt(&p.buffer))
+	p.screen.PostEvent(tcell.NewEventInterrupt(drawEvent{&p.buffer, blink, bg, cx, cy}))
 }
 
 func (p *tcellPlatform) SetTitle(title string) {

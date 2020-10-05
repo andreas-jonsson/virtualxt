@@ -27,6 +27,7 @@ import (
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/cga"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/debug"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/disk"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/dma"
@@ -39,7 +40,6 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/rom"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/smouse"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/speaker"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/cga"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"

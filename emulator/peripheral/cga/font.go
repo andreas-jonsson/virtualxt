@@ -1,5 +1,3 @@
-// +build sdl
-
 package cga
 
 var cgaFont = []byte{

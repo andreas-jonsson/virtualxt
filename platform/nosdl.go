@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package platform
 
+import "flag"
+
 func ConfigWithWindowSize(w, h int) Config {
 	return func(internalPlatform) error {
 		return nil
@@ -34,5 +36,7 @@ func ConfigWithFullscreen(p internalPlatform) error {
 }
 
 func Start(mainLoop func(Platform), configs ...Config) {
+	flag.Set("text", "true")
+	flag.Parse()
 	tcellStart(mainLoop, configs...)
 }

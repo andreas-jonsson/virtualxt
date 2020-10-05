@@ -41,8 +41,6 @@ type sdlPlatform struct {
 	audioSpec     *sdl.AudioSpec
 	audioDeviceID sdl.AudioDeviceID
 
-	cgaBGColor [3]byte
-
 	window   *sdl.Window
 	renderer *sdl.Renderer
 	texture  *sdl.Texture

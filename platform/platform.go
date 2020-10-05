@@ -21,17 +21,6 @@ type internalPlatform interface{}
 
 type Config func(internalPlatform) error
 
-type VideoMode int
-
-const (
-	VideoModeBW40 VideoMode = iota
-	VideoModeCO40
-	VideoModeBW80
-	VideoModeCO80
-	VideoModeCGA320
-	VideoModeCGA640
-)
-
 type AudioSpec struct {
 	Freq,
 	Channels,
@@ -40,8 +29,8 @@ type AudioSpec struct {
 
 type Platform interface {
 	HasAudio() bool
-	RenderGraphics(vm VideoMode, backBuffer []byte)
-	RenderText(mem []byte)
+	RenderGraphics(backBuffer []byte, r, g, b byte)
+	RenderText(mem []byte, blink bool, bg, cx, cy int)
 	SetTitle(title string)
 	QueueAudio(soundBuffer []byte)
 	AudioSpec() AudioSpec
