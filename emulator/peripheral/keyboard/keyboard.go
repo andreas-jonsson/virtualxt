@@ -18,10 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package keyboard
 
 import (
-	"errors"
+	"log"
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/platform"
 )
 
 const MaxEvents = 64
@@ -29,25 +30,23 @@ const MaxEvents = 64
 type Device struct {
 	dataPort, commandPort byte
 
-	state    Scancode
-	events   chan Scancode
-	quitChan chan struct{}
-	ticker   *time.Ticker
-	cpu      processor.Processor
-	pic      processor.InterruptController
+	state  platform.Scancode
+	events chan platform.Scancode
+	ticker *time.Ticker
+	cpu    processor.Processor
+	pic    processor.InterruptController
 }
 
 func (m *Device) Install(p processor.Processor) error {
 	m.cpu = p
 	m.pic = p.GetInterruptController()
 	m.ticker = time.NewTicker(time.Millisecond * 10)
-	m.events = make(chan Scancode, MaxEvents)
-	m.quitChan = make(chan struct{})
+	m.events = make(chan platform.Scancode, MaxEvents)
 
 	if err := p.InstallIODeviceAt(m, 0x60, 0x62, 0x64); err != nil {
 		return err
 	}
-	m.startEventLoop()
+	platform.Instance.SetKeyboardHandler(m.eventHandler)
 	return nil
 }
 
@@ -56,6 +55,7 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
+
 	m.dataPort = 0
 	m.commandPort = 0
 	for {
@@ -80,12 +80,11 @@ func (m *Device) checkEvents() bool {
 	return false
 }
 
-func (m *Device) pushEvent(ev Scancode) error {
+func (m *Device) eventHandler(ev platform.Scancode) {
 	select {
 	case m.events <- ev:
-		return nil
 	default:
-		return errors.New("event queue is full")
+		log.Print("Event queue is full!")
 	}
 }
 
@@ -100,8 +99,6 @@ func (m *Device) Step(int) error {
 
 func (m *Device) Close() error {
 	m.ticker.Stop()
-	m.quitChan <- struct{}{}
-	<-m.quitChan
 	return nil
 }
 
@@ -120,94 +117,3 @@ func (m *Device) In(port uint16) byte {
 
 func (m *Device) Out(port uint16, data byte) {
 }
-
-type Scancode byte
-
-const KeyUpMask Scancode = 0x80
-
-const (
-	ScanInvalid Scancode = iota
-	ScanEscape
-	Scan1
-	Scan2
-	Scan3
-	Scan4
-	Scan5
-	Scan6
-	Scan7
-	Scan8
-	Scan9
-	Scan0
-	ScanMinus
-	ScanEqual
-	ScanBackspace
-	ScanTab
-	ScanQ
-	ScanW
-	ScanE
-	ScanR
-	ScanT
-	ScanY
-	ScanU
-	ScanI
-	ScanO
-	ScanP
-	ScanLBracket
-	ScanRBracket
-	ScanEnter
-	ScanControl
-	ScanA
-	ScanS
-	ScanD
-	ScanF
-	ScanG
-	ScanH
-	ScanJ
-	ScanK
-	ScanL
-	ScanSemicolon
-	ScanQuote
-	ScanBackquote
-	ScanLShift
-	ScanBackslash
-	ScanZ
-	ScanX
-	ScanC
-	ScanV
-	ScanB
-	ScanN
-	ScanM
-	ScanComma
-	ScanPeriod
-	ScanSlash
-	ScanRShift
-	ScanPrint
-	ScanAlt
-	ScanSpace
-	ScanCapslock
-	ScanF1
-	ScanF2
-	ScanF3
-	ScanF4
-	ScanF5
-	ScanF6
-	ScanF7
-	ScanF8
-	ScanF9
-	ScanF10
-	ScanNumlock
-	ScanScrlock
-	ScanKPHome
-	ScanKPUp
-	ScanKPPageup
-	ScanKPMinus
-	ScanKPLeft
-	ScanKP5
-	ScanKPRight
-	ScanKPPlus
-	ScanKPEnd
-	ScanKPDown
-	ScanKPPagedown
-	ScanKPInsert
-	ScanKPDelete
-)

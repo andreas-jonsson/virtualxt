@@ -1,3 +1,5 @@
+// +build !sdl
+
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
 
@@ -15,28 +17,35 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package cgatext
+package dialog
 
 import (
-	"testing"
+	"fmt"
+	"sync/atomic"
 )
 
-func TestCodePage(t *testing.T) {
-	t.Run("ASCII", func(t *testing.T) {
-		for i := 32; i < 127; i++ {
-			if codePage437[i] != rune(i) {
-				t.Errorf("codePage437[%d] != rune(%d)", i, i)
-			}
-		}
-	})
+func MainMenu() error {
+	atomic.StoreInt32(&mainMenuWasOpen, 1)
+	return nil
+}
 
-	t.Run("Duplicates", func(t *testing.T) {
-		for i := 0; i < 256; i++ {
-			for j := 0; j < 256; j++ {
-				if codePage437[i] == codePage437[j] && i != j {
-					t.Errorf("codePage437[%d] == codePage437[%d]", i, j)
-				}
-			}
-		}
-	})
+func EjectFloppy() error {
+	return nil
+}
+
+func MountFloppyImage(file string) error {
+	return nil
+}
+
+func WindowsInstallNpcap() {
+}
+
+func ShowErrorMessage(msg string) error {
+	fmt.Println(msg)
+	return nil
+}
+
+func AskToQuit() bool {
+	Quit()
+	return true
 }

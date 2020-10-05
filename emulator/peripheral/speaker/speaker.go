@@ -1,5 +1,3 @@
-// +build sdl
-
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
 
@@ -25,7 +23,7 @@ import (
 	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
-	"github.com/veandco/go-sdl2/sdl"
+	"github.com/andreas-jonsson/virtualxt/platform"
 )
 
 const (
@@ -39,11 +37,9 @@ type pitInterface interface {
 }
 
 type Device struct {
-	cpu processor.Processor
-	pit pitInterface
-
-	deviceID sdl.AudioDeviceID
-	spec     *sdl.AudioSpec
+	cpu   processor.Processor
+	pit   pitInterface
+	pInst platform.Platform
 
 	sampleIndex          uint64
 	toneHz, toneHzBuffer float64
@@ -66,29 +62,7 @@ func nextPow(v uint16) uint16 {
 }
 
 func (m *Device) Install(p processor.Processor) error {
-	var err error
-	sdl.Do(func() {
-		if err = sdl.InitSubSystem(sdl.INIT_AUDIO); err != nil {
-			return
-		}
-
-		m.spec = &sdl.AudioSpec{
-			Freq:     frequency,
-			Format:   sdl.AUDIO_U8,
-			Channels: 1,
-			Samples:  nextPow(uint16((frequency / 1000) * latency)),
-		}
-
-		var have sdl.AudioSpec
-		if m.deviceID, err = sdl.OpenAudioDevice("", false, m.spec, &have, sdl.AUDIO_ALLOW_FREQUENCY_CHANGE|sdl.AUDIO_ALLOW_CHANNELS_CHANGE); err == nil {
-			m.spec = &have
-			sdl.PauseAudioDevice(m.deviceID, true)
-		}
-	})
-	if err != nil {
-		return err
-	}
-
+	m.pInst = platform.Instance
 	m.cpu = p
 	m.startUpdateLoop()
 	return p.InstallIODeviceAt(m, 0x61)
@@ -113,10 +87,7 @@ func (m *Device) Reset() {
 	m.turbo = true
 	m.enabled = false
 
-	sdl.Do(func() {
-		sdl.PauseAudioDevice(m.deviceID, true)
-		sdl.ClearQueuedAudio(m.deviceID)
-	})
+	m.pInst.EnableAudio(false)
 }
 
 func (m *Device) startUpdateLoop() {
@@ -131,14 +102,21 @@ func (m *Device) startUpdateLoop() {
 	}
 
 	go func() {
-		numSamples := int(m.spec.Samples)
-		bytesPerSample := int(m.spec.Channels)
+		if !m.pInst.HasAudio() {
+			<-m.quitChan
+			close(m.quitChan)
+			return
+		}
+
+		spec := m.pInst.AudioSpec()
+		numSamples := spec.Samples
+		bytesPerSample := spec.Channels
 		bytesToWrite := numSamples * bytesPerSample
 
 		soundBuffer := make([]byte, bytesToWrite)
 		sampleCount := bytesToWrite / bytesPerSample
 
-		ticker := time.NewTicker(time.Second / time.Duration(int(m.spec.Freq)/numSamples))
+		ticker := time.NewTicker(time.Second / time.Duration(spec.Freq/numSamples))
 		defer ticker.Stop()
 
 	loop:
@@ -155,7 +133,7 @@ func (m *Device) startUpdateLoop() {
 					continue loop
 				}
 
-				squareWavePeriod := uint64(float64(m.spec.Freq) / m.toneHz)
+				squareWavePeriod := uint64(float64(spec.Freq) / m.toneHz)
 				halfSquareWavePeriod := squareWavePeriod / 2
 				if halfSquareWavePeriod == 0 {
 					m.lock.Unlock()
@@ -169,7 +147,7 @@ func (m *Device) startUpdateLoop() {
 						sampleValue = toneVolume
 					}
 
-					for j := 0; j < int(m.spec.Channels); j++ {
+					for j := 0; j < spec.Channels; j++ {
 						soundBuffer[ptr] = byte(sampleValue)
 						ptr++
 					}
@@ -177,9 +155,7 @@ func (m *Device) startUpdateLoop() {
 
 				m.lock.Unlock()
 
-				sdl.Do(func() {
-					sdl.QueueAudio(m.deviceID, soundBuffer)
-				})
+				m.pInst.QueueAudio(soundBuffer)
 			}
 		}
 	}()
@@ -213,21 +189,13 @@ func (m *Device) Out(_ uint16, data byte) {
 
 	if b := data&3 == 3; b != m.enabled {
 		m.enabled = b
-		sdl.Do(func() {
-			sdl.ClearQueuedAudio(m.deviceID)
-			sdl.PauseAudioDevice(m.deviceID, !b)
-			m.sampleIndex = 0
-		})
+		m.sampleIndex = 0
+		m.pInst.EnableAudio(b)
 	}
 }
 
 func (m *Device) Close() error {
 	m.quitChan <- struct{}{}
 	<-m.quitChan
-
-	sdl.Do(func() {
-		sdl.CloseAudioDevice(m.deviceID)
-		sdl.QuitSubSystem(sdl.INIT_AUDIO)
-	})
 	return nil
 }

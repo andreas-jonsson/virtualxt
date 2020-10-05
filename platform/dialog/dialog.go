@@ -104,3 +104,7 @@ func RestartRequested() bool {
 func ShutdownRequested() bool {
 	return atomic.LoadInt32(&quitFlag) != 0
 }
+
+func Quit() {
+	atomic.StoreInt32(&quitFlag, 1)
+}

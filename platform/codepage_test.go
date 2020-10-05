@@ -1,5 +1,3 @@
-// +build !sdl
-
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
 
@@ -17,22 +15,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package emulator
+package platform
 
 import (
-	"flag"
-
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/cgatext"
+	"testing"
 )
 
-func Start() {
-	flag.Parse()
-	emuLoop()
-}
+func TestCodePage(t *testing.T) {
+	t.Run("ASCII", func(t *testing.T) {
+		for i := 32; i < 127; i++ {
+			if codePage437[i] != rune(i) {
+				t.Errorf("codePage437[%d] != rune(%d)", i, i)
+			}
+		}
+	})
 
-var cgaText = true
-
-func defaultVideoDevice() peripheral.Peripheral {
-	return &cgatext.Device{}
+	t.Run("Duplicates", func(t *testing.T) {
+		for i := 0; i < 256; i++ {
+			for j := 0; j < 256; j++ {
+				if codePage437[i] == codePage437[j] && i != j {
+					t.Errorf("codePage437[%d] == codePage437[%d]", i, j)
+				}
+			}
+		}
+	})
 }

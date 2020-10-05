@@ -295,7 +295,7 @@ func AskToQuit() bool {
 	id, err := sdl.ShowMessageBox(&mbd)
 	quit := err != nil || id == 1
 	if quit {
-		atomic.StoreInt32(&quitFlag, 1)
+		Quit()
 	}
 	return quit
 }

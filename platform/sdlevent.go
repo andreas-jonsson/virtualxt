@@ -17,54 +17,39 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package keyboard
+package platform
 
 import (
 	"log"
 	"time"
 
-	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/smouse"
+	"github.com/andreas-jonsson/virtualxt/platform/dialog"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-func (m *Device) startEventLoop() {
+func (p *sdlPlatform) initializeSDLEvents() error {
+	var err error
 	sdl.Do(func() {
-		if err := sdl.InitSubSystem(sdl.INIT_EVENTS); err != nil {
-			log.Print(err)
+		if err = sdl.InitSubSystem(sdl.INIT_EVENTS); err != nil {
 			return
 		}
 		sdl.EventState(sdl.DROPFILE, sdl.ENABLE)
 	})
+	if err != nil {
+		return err
+	}
+
+	p.quitChan = make(chan struct{})
+	registerCleanup(p, shutdownSDLEvents)
 
 	go func() {
-		var mouse smouse.SerialMouse
-
-		initMouse := func() bool {
-			if mouse == nil {
-				// TODO: Fix this!
-				var (
-					ok   bool
-					base uint16 = 0x3F8
-				)
-				if mouse, ok = m.cpu.GetMappedIODevice(base).(smouse.SerialMouse); !ok {
-					log.Printf("Could not find serial mouse at base address: 0x%X", base)
-					return false
-				}
-			}
-			return sdl.GetRelativeMouseMode()
-		}
-
 		ticker := time.NewTicker(time.Second / 30)
 		defer ticker.Stop()
 
 		for {
 			select {
-			case <-m.quitChan:
-				sdl.Do(func() {
-					sdl.QuitSubSystem(sdl.INIT_EVENTS)
-				})
-				close(m.quitChan)
+			case <-p.quitChan:
+				close(p.quitChan)
 				return
 			case <-ticker.C:
 				sdl.Do(func() {
@@ -74,20 +59,16 @@ func (m *Device) startEventLoop() {
 							sdl.SetRelativeMouseMode(false)
 							dialog.AskToQuit()
 						case *sdl.KeyboardEvent:
-							m.sdlProcessKey(ev)
+							p.sdlProcessKey(ev)
 						/*
 							case *sdl.WindowEvent:
 								if ev.Event == sdl.WINDOWEVENT_MAXIMIZED {
-									w, err := sdl.GetWindowFromID(ev.WindowID)
-									if err != nil {
-										continue
-									}
-									w.SetFullscreen(sdl.WINDOW_FULLSCREEN_DESKTOP)
+									p.window.SetFullscreen(sdl.WINDOW_FULLSCREEN_DESKTOP)
 									sdl.SetRelativeMouseMode(true)
 								}
 						*/
 						case *sdl.MouseMotionEvent:
-							if initMouse() {
+							if p.mouseHandler != nil && sdl.GetRelativeMouseMode() {
 								_, _, state := sdl.GetMouseState()
 								var buttons byte
 								if state&sdl.ButtonLMask() != 0 {
@@ -96,7 +77,7 @@ func (m *Device) startEventLoop() {
 								if state&sdl.ButtonRMask() != 0 {
 									buttons |= 1
 								}
-								mouse.PushEvent(buttons, int8(ev.XRel), int8(ev.YRel))
+								p.mouseHandler(buttons, int8(ev.XRel), int8(ev.YRel))
 							}
 						case *sdl.MouseButtonEvent:
 							if ev.Type == sdl.MOUSEBUTTONDOWN {
@@ -107,7 +88,7 @@ func (m *Device) startEventLoop() {
 								}
 								sdl.SetRelativeMouseMode(true)
 
-								if initMouse() {
+								if p.mouseHandler != nil {
 									var buttons byte
 									if state == sdl.BUTTON_LEFT {
 										buttons = 2
@@ -115,7 +96,7 @@ func (m *Device) startEventLoop() {
 									if state == sdl.BUTTON_RIGHT {
 										buttons |= 1
 									}
-									mouse.PushEvent(buttons, 0, 0)
+									p.mouseHandler(buttons, 0, 0)
 								}
 							}
 						case *sdl.DropEvent:
@@ -128,40 +109,55 @@ func (m *Device) startEventLoop() {
 			}
 		}
 	}()
+	return nil
 }
 
-func (m *Device) sdlProcessKey(ev *sdl.KeyboardEvent) {
-	w, err := sdl.GetWindowFromID(ev.WindowID)
-	if err != nil {
-		log.Printf("Could not find window: 0x%X", ev.WindowID)
-		return
-	}
+func shutdownSDLEvents(p *sdlPlatform) {
+	p.quitChan <- struct{}{}
+	<-p.quitChan
+	sdl.Do(func() {
+		sdl.QuitSubSystem(sdl.INIT_EVENTS)
+	})
+}
 
+func (p *sdlPlatform) sdlProcessKey(ev *sdl.KeyboardEvent) {
 	keyUp := ev.Type == sdl.KEYUP
 	if ev.Keysym.Scancode == sdl.SCANCODE_F11 {
 		if keyUp {
-			if (w.GetFlags() & sdl.WINDOW_FULLSCREEN) != 0 {
-				w.SetFullscreen(0)
+			if (p.window.GetFlags() & sdl.WINDOW_FULLSCREEN) != 0 {
+				p.window.SetFullscreen(0)
 				sdl.SetRelativeMouseMode(false)
 			} else {
-				w.SetFullscreen(sdl.WINDOW_FULLSCREEN_DESKTOP)
+				p.window.SetFullscreen(sdl.WINDOW_FULLSCREEN_DESKTOP)
 				sdl.SetRelativeMouseMode(true)
 			}
 		}
 	} else if ev.Keysym.Scancode == sdl.SCANCODE_F12 {
 		if keyUp {
-			w.SetFullscreen(0)
+			p.window.SetFullscreen(0)
 			sdl.SetRelativeMouseMode(false)
 			dialog.MainMenu()
 		}
-	} else if scan := sdlScanToXTScan(ev.Keysym.Scancode); scan != ScanInvalid {
+	} else if scan := sdlScanToXTScan(ev.Keysym.Scancode); scan != ScanInvalid && p.keyboardHandler != nil {
 		if keyUp {
 			scan |= KeyUpMask
 		}
-		m.pushEvent(scan)
+		p.keyboardHandler(scan)
 	} else {
 		log.Printf("Invalid key \"%s\"", sdl.GetKeyName(ev.Keysym.Sym))
 	}
+}
+
+func (p *sdlPlatform) SetKeyboardHandler(h func(Scancode)) {
+	sdl.Do(func() {
+		p.keyboardHandler = h
+	})
+}
+
+func (p *sdlPlatform) SetMouseHandler(h func(byte, int8, int8)) {
+	sdl.Do(func() {
+		p.mouseHandler = h
+	})
 }
 
 func sdlScanToXTScan(scan sdl.Scancode) Scancode {

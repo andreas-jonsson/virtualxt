@@ -19,14 +19,12 @@ package emulator
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"runtime"
 	"runtime/pprof"
 	"time"
 
-	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/debug"
@@ -41,11 +39,12 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/rom"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/smouse"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/speaker"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/cgatext"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video/cga"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
-	"github.com/andreas-jonsson/virtualxt/version"
+	"github.com/andreas-jonsson/virtualxt/platform"
+	"github.com/andreas-jonsson/virtualxt/platform/dialog"
 )
 
 var (
@@ -54,16 +53,13 @@ var (
 )
 
 var (
-	genFd, genHd,
 	validatorOutput,
 	cpuProfile string
-	genHdSize = 10
 )
 
 var (
 	limitMIPS float64
-	v20cpu, noAudio,
-	man, ver bool
+	v20cpu    bool
 )
 
 func init() {
@@ -76,43 +72,16 @@ func init() {
 	}
 
 	flag.BoolVar(&v20cpu, "v20", false, "Emulate NEC V20 CPU")
-	flag.BoolVar(&man, "m", false, "Open manual")
-	flag.BoolVar(&ver, "v", false, "Print version information")
-	flag.BoolVar(&noAudio, "no-audio", false, "Disable audio")
 
 	flag.Float64Var(&limitMIPS, "mips", 3, "Limit CPU speed (0 for no limit)")
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")
 	flag.StringVar(&vbiosImage, "vbios", vbiosImage, "Path to EGA/VGA BIOS image")
 
-	flag.StringVar(&genFd, "gen-fd", "", "Create a blank 1.44MB floppy image")
-	flag.StringVar(&genHd, "gen-hd", "", "Create a blank 10MB hadrddrive image")
-	flag.IntVar(&genHdSize, "gen-hd-size", genHdSize, "Set size of the generated harddrive image in megabytes")
-
 	flag.StringVar(&validatorOutput, "validator", validatorOutput, "Set CPU validator output")
 	flag.StringVar(&cpuProfile, "cpu-profile", cpuProfile, "Set CPU profile output")
-
-	if !cgaText {
-		flag.BoolVar(&cgaText, "text", false, "CGA textmode runing in termainal")
-	}
 }
 
-func emuLoop() {
-	if man {
-		dialog.OpenManual()
-		return
-	}
-
-	if ver {
-		fmt.Printf("%s (%s)\n", version.Current.FullString(), version.Hash)
-		return
-	}
-
-	if genImage() {
-		return
-	}
-
-	printLogo()
-
+func Start(s platform.Platform) {
 	bios, err := os.Open(biosImage)
 	if err != nil {
 		dialog.ShowErrorMessage(err.Error())
@@ -153,17 +122,11 @@ func emuLoop() {
 		return
 	}
 
-	video := defaultVideoDevice()
-	if cgaText {
-		video = &cgatext.Device{}
-	}
-	debug.MuteLogging(cgaText)
-
-	var spkr speaker.AudioDevice = &speaker.NullDevice{}
-	if !noAudio {
-		spkr = &speaker.Device{}
+	if f := flag.Lookup("text"); f != nil && f.Value.(flag.Getter).Get().(bool) {
+		debug.MuteLogging(true)
 	}
 
+	spkr := &speaker.Device{}
 	peripherals := []peripheral.Peripheral{
 		&ram.Device{}, // RAM (needs to go first since it maps the full memory range)
 		&rom.Device{
@@ -175,7 +138,7 @@ func emuLoop() {
 		&pit.Device{},      // Programmable Interval Timer
 		&dma.Device{},      // DMA Controller
 		dc,                 // Disk Controller
-		video,              // Video Device
+		&cga.Device{},      // Video Device
 		spkr,               // PC Speaker
 		&keyboard.Device{}, // Keyboard Controller
 		&joystick.Device{}, // Game Port Joysticks
@@ -268,57 +231,3 @@ func checkBootsector(dc *disk.Device) bool {
 	fp.Seek(0, os.SEEK_SET)
 	return sector[511] == 0xAA && sector[510] == 0x55
 }
-
-func genImage() bool {
-	if genHdSize < 10 {
-		genHdSize = 10
-	} else if genHdSize > 500 {
-		genHdSize = 500
-	}
-
-	if genFd != "" {
-		fd, err := os.Create(genFd)
-		if err == nil {
-			defer fd.Close()
-			var buffer [0x168000]byte
-			_, err = fd.Write(buffer[:])
-		}
-		if err != nil {
-			fmt.Print(err)
-		}
-		return true
-	}
-
-	if genHd != "" {
-		hd, err := os.Create(genHd)
-		if err == nil {
-			defer hd.Close()
-			var buffer [0x100000]byte
-			for i := 0; i < genHdSize; i++ {
-				if _, err = hd.Write(buffer[:]); err != nil {
-					break
-				}
-			}
-		}
-		if err != nil {
-			fmt.Print(err)
-		}
-		return true
-	}
-
-	return false
-}
-
-func printLogo() {
-	fmt.Print(logo)
-	fmt.Println("v" + version.Current.String())
-	fmt.Println(" ───────═════ " + version.Copyright + " ══════───────\n")
-}
-
-var logo = `
-██╗   ██╗██╗██████╗ ████████╗██╗   ██╗ █████╗ ██╗     ██╗  ██╗████████╗
-██║   ██║██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██║     ╚██╗██╔╝╚══██╔══╝
-██║   ██║██║██████╔╝   ██║   ██║   ██║███████║██║      ╚███╔╝    ██║   
-╚██╗ ██╔╝██║██╔══██╗   ██║   ██║   ██║██╔══██║██║      ██╔██╗    ██║   
- ╚████╔╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗██╔╝ ██╗   ██║   
-  ╚═══╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝`

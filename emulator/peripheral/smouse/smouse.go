@@ -22,6 +22,7 @@ import (
 	"flag"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/platform"
 )
 
 const (
@@ -32,10 +33,6 @@ const (
 type mouseEvent struct {
 	buttons    byte
 	xrel, yrel int8
-}
-
-type SerialMouse interface {
-	PushEvent(buttons byte, xrel, yrel int8)
 }
 
 type Device struct {
@@ -52,8 +49,11 @@ func (m *Device) Install(p processor.Processor) error {
 	if !enabled {
 		return nil
 	}
+
 	m.pic = p.GetInterruptController()
 	m.events = make(chan mouseEvent, maxNumEvents)
+
+	platform.Instance.SetMouseHandler(m.eventHandler)
 	return p.InstallIODevice(m, m.BasePort, m.BasePort+7)
 }
 
@@ -100,7 +100,7 @@ func (m *Device) pushData(data byte) {
 	m.buffer.WriteByte(data)
 }
 
-func (m *Device) PushEvent(buttons byte, xrel, yrel int8) {
+func (m *Device) eventHandler(buttons byte, xrel, yrel int8) {
 	select {
 	case m.events <- mouseEvent{buttons, xrel, yrel}:
 	default:

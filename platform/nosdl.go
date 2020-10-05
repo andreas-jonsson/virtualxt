@@ -17,35 +17,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package dialog
+package platform
 
-import (
-	"fmt"
-	"sync/atomic"
-)
+func ConfigWithWindowSize(w, h int) Config {
+	return func(internalPlatform) error {
+		return nil
+	}
+}
 
-func MainMenu() error {
-	atomic.StoreInt32(&mainMenuWasOpen, 1)
+func ConfigWithAudio(p internalPlatform) error {
 	return nil
 }
 
-func EjectFloppy() error {
+func ConfigWithFullscreen(p internalPlatform) error {
 	return nil
 }
 
-func MountFloppyImage(file string) error {
-	return nil
-}
-
-func WindowsInstallNpcap() {
-}
-
-func ShowErrorMessage(msg string) error {
-	fmt.Println(msg)
-	return nil
-}
-
-func AskToQuit() bool {
-	atomic.StoreInt32(&quitFlag, 1)
-	return true
+func Start(mainLoop func(Platform), configs ...Config) {
+	tcellStart(mainLoop, configs...)
 }

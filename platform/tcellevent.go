@@ -15,37 +15,137 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package keyboard
+package platform
 
 import (
-	"errors"
+	"bytes"
+	"log"
+	"os"
 	"time"
 
+	"github.com/andreas-jonsson/virtualxt/platform/dialog"
 	"github.com/gdamore/tcell"
 )
 
-func (m *Device) SendKeyEvent(ev interface{}) error {
-	switch t := ev.(type) {
-	case *tcell.EventKey:
-		deviceEvent := createEventFromTCELL(t)
-		if deviceEvent == ScanInvalid {
-			return errors.New("unknown key")
-		}
+var cgaPalette = [16]tcell.Color{
+	tcell.ColorBlack,
+	tcell.ColorNavy,
+	tcell.ColorGreen,
+	tcell.ColorTeal,
+	tcell.ColorMaroon,
+	tcell.ColorPurple,
+	tcell.ColorOlive,
+	tcell.ColorSilver,
+	tcell.ColorGray,
+	tcell.ColorBlue,
+	tcell.ColorLime,
+	tcell.ColorAqua,
+	tcell.ColorRed,
+	tcell.ColorFuchsia,
+	tcell.ColorYellow,
+	tcell.ColorWhite,
+}
 
-		if err := m.pushEvent(deviceEvent); err != nil {
-			return err
-		}
+func (p *tcellPlatform) initializeTcellEvents() error {
+	go func() {
+		s := p.screen
+		for {
+			ev := s.PollEvent()
+			switch ev := ev.(type) {
+			case *tcell.EventKey:
+				if ev.Key() == tcell.KeyF12 {
+					dialog.Quit()
+					go func() {
+						time.Sleep(3 * time.Second)
+						os.Exit(-1)
+					}()
+					return
+				}
+				p.pushKeyEvent(ev)
+			case *tcell.EventResize:
+				s.Sync()
+			case *tcell.EventInterrupt:
+				switch data := ev.Data().(type) {
+				//case quitEvent:
+				//close(p.quitChan)
+				//return
+				case *bytes.Buffer:
+					p.Lock()
 
-		go func() {
-			deviceEvent |= KeyUpMask
-			time.Sleep(10 * time.Millisecond)
-			for m.pushEvent(deviceEvent) != nil {
+					/*
+						if bg := m.colorCtrlReg & 0xF; bg != m.oldColorCtrlReg {
+							m.oldColorCtrlReg = bg
+							s.Fill(' ', tcell.StyleDefault.Background(cgaPalette[bg]))
+						}
+					*/
+
+					numColumns := 80
+					if data.Len() < 80*25*2 {
+						numColumns = 40
+					}
+
+					mem := data.Bytes()
+					for y := 0; y < 25; y++ {
+						for x := 0; x < numColumns; x++ {
+							offset := y*numColumns*2 + x*2
+							s.SetCell(x, y, p.createStyleFromAttrib(mem[offset+1]), codePage437[mem[offset]])
+						}
+					}
+
+					/*
+						if m.cursor.update {
+							m.cursor.update = false
+							if m.cursor.visible {
+								s.ShowCursor(int(m.cursor.x), int(m.cursor.y))
+							} else {
+								s.HideCursor()
+							}
+						}
+					*/
+
+					s.Show()
+					p.Unlock()
+				}
 			}
-		}()
-	default:
-		return errors.New("unknown event type")
-	}
+		}
+	}()
 	return nil
+}
+
+func (p *tcellPlatform) createStyleFromAttrib(attr byte) tcell.Style {
+	blinkEnabled := true //m.modeCtrlReg&0x20 != 0
+	blinkAttrib := attr&0x80 != 0
+	bgColorIndex := (attr & 0x70) >> 4
+
+	if blinkAttrib && !blinkEnabled {
+		bgColorIndex += 8
+	}
+	return tcell.StyleDefault.Blink(blinkEnabled && blinkAttrib).Background(cgaPalette[bgColorIndex]).Foreground(cgaPalette[attr&0xF])
+}
+
+func (p *tcellPlatform) pushKeyEvent(ev *tcell.EventKey) {
+	deviceEvent := createEventFromTCELL(ev)
+	if deviceEvent == ScanInvalid {
+		log.Print("Unknown key!")
+		return
+	}
+
+	p.Lock()
+	defer p.Unlock()
+
+	if p.keyboardHandler == nil {
+		return
+	}
+	p.keyboardHandler(deviceEvent)
+
+	go func() {
+		p.Lock()
+		defer p.Unlock()
+
+		deviceEvent |= KeyUpMask
+		time.Sleep(10 * time.Millisecond)
+		p.keyboardHandler(deviceEvent)
+	}()
 }
 
 func createEventFromTCELL(ev *tcell.EventKey) Scancode {

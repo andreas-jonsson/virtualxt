@@ -25,9 +25,9 @@ import (
 	"log"
 	"math"
 
-	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/platform/dialog"
 	"github.com/google/gopacket/pcap"
 )
 

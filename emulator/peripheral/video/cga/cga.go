@@ -20,16 +20,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package cga
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/andreas-jonsson/virtualxt/emulator/dialog"
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
-	"github.com/veandco/go-sdl2/sdl"
+	"github.com/andreas-jonsson/virtualxt/platform"
+	"github.com/andreas-jonsson/virtualxt/platform/dialog"
 )
 
 const (
@@ -75,11 +76,7 @@ type Device struct {
 
 	cursorVisible  bool
 	cursorPosition uint16
-
-	window   *sdl.Window
-	renderer *sdl.Renderer
-	surface  *sdl.Surface
-	texture  *sdl.Texture
+	surface        []byte
 
 	windowTitleTicker  *time.Ticker
 	atomicCycleCounter int32
@@ -102,7 +99,10 @@ func (m *Device) Install(p processor.Processor) error {
 	if err := p.InstallIODevice(m, 0x3D0, 0x3DF); err != nil {
 		return err
 	}
-	return m.startRenderLoop()
+
+	m.surface = make([]byte, 640*200*4)
+	go m.renderLoop()
+	return nil
 }
 
 func (m *Device) Name() string {
@@ -145,9 +145,6 @@ func (m *Device) Step(cycles int) error {
 func (m *Device) Close() error {
 	m.quitChan <- struct{}{}
 	<-m.quitChan
-	sdl.Do(func() {
-		sdl.QuitSubSystem(sdl.INIT_VIDEO)
-	})
 	return nil
 }
 
@@ -163,7 +160,7 @@ func blinkTick() bool {
 }
 
 func (m *Device) blitChar(ch, attrib byte, x, y int) {
-	pixels := m.surface.Pixels()
+	pixels := m.surface
 	bgColorIndex := (attrib & 0x70) >> 4
 	fgColorIndex := attrib & 0xF
 
@@ -194,7 +191,7 @@ func (m *Device) blitChar(ch, attrib byte, x, y int) {
 			if glyphLine&mask == 0 {
 				col = bgColor
 			}
-			offset := (int(m.surface.W)*(y+i) + x*charWidth + j*charWidth) * 4
+			offset := (640*(y+i) + x*charWidth + j*charWidth) * 4
 			blit32(pixels, offset, col)
 			if charWidth == 2 { // 40 columns?
 				blit32(pixels, offset+4, col)
@@ -203,145 +200,122 @@ func (m *Device) blitChar(ch, attrib byte, x, y int) {
 	}
 }
 
-func (m *Device) startRenderLoop() error {
-	var err error
-	sdl.Do(func() {
-		if err = sdl.InitSubSystem(sdl.INIT_VIDEO); err != nil {
-			return
-		}
+func (m *Device) renderLoop() {
+	p := platform.Instance
+	textFlag := flag.Lookup("text")
+	cliMode := textFlag != nil && textFlag.Value.(flag.Getter).Get().(bool)
 
-		sdl.SetHint(sdl.HINT_RENDER_SCALE_QUALITY, "0")
-		sdl.SetHint(sdl.HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1")
-		if m.window, m.renderer, err = sdl.CreateWindowAndRenderer(640, 480, sdl.WINDOW_RESIZABLE); err != nil {
-			return
-		}
-		m.window.SetTitle("VirtualXT")
-		if m.surface, err = sdl.CreateRGBSurface(0, 640, 200, 32, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF); err != nil {
-			return
-		}
-		if m.texture, err = m.renderer.CreateTexture(sdl.PIXELFORMAT_ABGR8888, sdl.TEXTUREACCESS_STREAMING, 640, 200); err != nil {
-			return
-		}
-		err = m.renderer.SetLogicalSize(640, 480)
-	})
-	if err != nil {
-		return err
-	}
+	ticker := time.NewTicker(time.Second / 30)
+	defer ticker.Stop()
 
-	go func() {
-		ticker := time.NewTicker(time.Second / 30)
-		defer ticker.Stop()
-
-		for {
+	for {
+		select {
+		case <-m.quitChan:
+			close(m.quitChan)
+			return
+		case <-ticker.C:
 			select {
-			case <-m.quitChan:
-				close(m.quitChan)
-				return
-			case <-ticker.C:
-				sdl.Do(func() {
-					select {
-					case <-m.windowTitleTicker.C:
-						hlp := " (Press F12 for menu)"
-						if dialog.MainMenuWasOpen() || time.Since(applicationStart) > time.Second*10 {
-							hlp = ""
-						}
-						numCycles := float64(atomic.SwapInt32(&m.atomicCycleCounter, 0))
-						m.window.SetTitle(fmt.Sprintf("VirtualXT - %.2f MIPS%s", numCycles/1000000, hlp))
-					default:
-					}
+			case <-m.windowTitleTicker.C:
+				hlp := " (Press F12 for menu)"
+				if dialog.MainMenuWasOpen() || time.Since(applicationStart) > time.Second*10 {
+					hlp = ""
+				}
+				numCycles := float64(atomic.SwapInt32(&m.atomicCycleCounter, 0))
+				p.SetTitle(fmt.Sprintf("VirtualXT - %.2f MIPS%s", numCycles/1000000, hlp))
+			default:
+			}
 
-					if blink := blinkTick(); blink || atomic.LoadInt32(&m.dirtyMemory) != 0 {
-						m.lock.RLock()
-						atomic.StoreInt32(&m.dirtyMemory, 0)
+			if blink := blinkTick(); blink || atomic.LoadInt32(&m.dirtyMemory) != 0 {
+				m.lock.RLock()
+				atomic.StoreInt32(&m.dirtyMemory, 0)
 
-						backgroundColor := cgaColor[m.colorCtrlReg&0xF]
-						m.renderer.SetDrawColor(byte(backgroundColor&0xFF0000), byte(backgroundColor&0x00FF00), byte(backgroundColor&0x0000FF), 0xFF)
-						m.renderer.Clear()
+				numCol := 80
+				if m.modeCtrlReg&1 == 0 {
+					numCol = 40
+				}
 
-						// In graphics mode?
-						if m.modeCtrlReg&2 != 0 {
-							dst := m.surface.Pixels()
+				backgroundColor := cgaColor[m.colorCtrlReg&0xF]
+				//m.renderer.SetDrawColor(byte(backgroundColor&0xFF0000), byte(backgroundColor&0x00FF00), byte(backgroundColor&0x0000FF), 0xFF)
+				//m.renderer.Clear()
 
-							// Is in high-resolution mode?
-							if m.modeCtrlReg&0x10 != 0 {
-								for y := 0; y < 200; y++ {
-									for x := 0; x < 640; x++ {
-										addr := (y>>1)*80 + (y&1)*8192 + (x >> 3)
-										pixel := (m.mem[addr] >> (7 - (x & 7))) & 1
-										col := cgaColor[pixel*15]
-										offset := (y*640 + x) * 4
-										blit32(dst, offset, col)
-									}
-								}
-							} else {
-								palette := (m.colorCtrlReg >> 5) & 1
-								intensity := ((m.colorCtrlReg >> 4) & 1) << 3
+				// In graphics mode?
+				if m.modeCtrlReg&2 != 0 {
+					dst := m.surface
 
-								for y := 0; y < 200; y++ {
-									for x := 0; x < 320; x++ {
-										addr := (y>>1)*80 + (y&1)*8192 + (x >> 2)
-										pixel := m.mem[addr]
-
-										switch x & 3 {
-										case 0:
-											pixel = (pixel >> 6) & 3
-										case 1:
-											pixel = (pixel >> 4) & 3
-										case 2:
-											pixel = (pixel >> 2) & 3
-										case 3:
-											pixel = pixel & 3
-										}
-
-										col := backgroundColor
-										if pixel != 0 {
-											col = cgaColor[pixel*2+palette+intensity]
-										}
-
-										offset := (y*640 + x*2) * 4
-										blit32(dst, offset, col)
-										blit32(dst, offset+4, col)
-									}
-								}
-							}
-						} else {
-							numCol := 80
-							if m.modeCtrlReg&1 == 0 {
-								numCol = 40
-							}
-
-							videoPage := int(m.crtReg[0xC]<<8) + int(m.crtReg[0xD])
-							numChar := numCol * 25
-
-							for i := 0; i < numChar*2; i += 2 {
-								ch := m.mem[videoPage+i]
-								idx := i / 2
-								m.blitChar(ch, m.mem[videoPage+i+1], (idx%numCol)*8, (idx/numCol)*8)
-							}
-
-							if blink && m.cursorVisible {
-								x := int(m.cursorPosition) % numCol
-								y := int(m.cursorPosition) / numCol
-								if x < 80 && y < 25 {
-									attr := (m.mem[videoPage+(numCol*2*y+x*2+1)] & 0x70) | 0xF
-									m.blitChar('_', attr, x*8, y*8)
-								}
+					// Is in high-resolution mode?
+					if m.modeCtrlReg&0x10 != 0 {
+						for y := 0; y < 200; y++ {
+							for x := 0; x < 640; x++ {
+								addr := (y>>1)*80 + (y&1)*8192 + (x >> 3)
+								pixel := (m.mem[addr] >> (7 - (x & 7))) & 1
+								col := cgaColor[pixel*15]
+								offset := (y*640 + x) * 4
+								blit32(dst, offset, col)
 							}
 						}
+					} else {
+						palette := (m.colorCtrlReg >> 5) & 1
+						intensity := ((m.colorCtrlReg >> 4) & 1) << 3
 
-						m.lock.RUnlock()
+						for y := 0; y < 200; y++ {
+							for x := 0; x < 320; x++ {
+								addr := (y>>1)*80 + (y&1)*8192 + (x >> 2)
+								pixel := m.mem[addr]
 
-						m.texture.Update(nil, m.surface.Pixels(), int(m.surface.Pitch))
+								switch x & 3 {
+								case 0:
+									pixel = (pixel >> 6) & 3
+								case 1:
+									pixel = (pixel >> 4) & 3
+								case 2:
+									pixel = (pixel >> 2) & 3
+								case 3:
+									pixel = pixel & 3
+								}
+
+								col := backgroundColor
+								if pixel != 0 {
+									col = cgaColor[pixel*2+palette+intensity]
+								}
+
+								offset := (y*640 + x*2) * 4
+								blit32(dst, offset, col)
+								blit32(dst, offset+4, col)
+							}
+						}
 					}
 
-					m.renderer.Copy(m.texture, nil, nil)
-					m.renderer.Present()
-				})
+					m.lock.RUnlock()
+					p.RenderGraphics(0, dst)
+				} else if cliMode {
+					// We need to render before unlock.
+					p.RenderText(m.mem[:numCol*25*2])
+					m.lock.RUnlock()
+				} else {
+					videoPage := int(m.crtReg[0xC]<<8) + int(m.crtReg[0xD])
+					numChar := numCol * 25
+
+					for i := 0; i < numChar*2; i += 2 {
+						ch := m.mem[videoPage+i]
+						idx := i / 2
+						m.blitChar(ch, m.mem[videoPage+i+1], (idx%numCol)*8, (idx/numCol)*8)
+					}
+
+					if blink && m.cursorVisible {
+						x := int(m.cursorPosition) % numCol
+						y := int(m.cursorPosition) / numCol
+						if x < 80 && y < 25 {
+							attr := (m.mem[videoPage+(numCol*2*y+x*2+1)] & 0x70) | 0xF
+							m.blitChar('_', attr, x*8, y*8)
+						}
+					}
+
+					m.lock.RUnlock()
+					p.RenderGraphics(0, m.surface)
+				}
 			}
 		}
-	}()
-
-	return nil
+	}
 }
 
 func (m *Device) In(port uint16) byte {
