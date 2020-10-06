@@ -17,6 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package platform
 
+import (
+	"io"
+	"os"
+
+	"github.com/andreas-jonsson/virtualxt/platform/dialog"
+)
+
 type internalPlatform interface{}
 
 type Config func(internalPlatform) error
@@ -27,7 +34,21 @@ type AudioSpec struct {
 	Samples int
 }
 
+type File interface {
+	io.ReadWriteSeeker
+	io.ReaderAt
+	io.Closer
+}
+
+type FileSystem interface {
+	Create(name string) (File, error)
+	Open(name string) (File, error)
+	OpenFile(name string, flag int, perm os.FileMode) (File, error)
+}
+
 type Platform interface {
+	FileSystem
+
 	HasAudio() bool
 	RenderGraphics(backBuffer []byte, r, g, b byte)
 	RenderText(mem []byte, blink bool, bg, cx, cy int)
@@ -40,6 +61,13 @@ type Platform interface {
 }
 
 var Instance Platform
+
+func setDialogFileSystem(fs FileSystem) {
+	dialog.OpenFileFunc = func(name string, flag int, perm os.FileMode) (dialog.File, error) {
+		fp, err := fs.OpenFile(name, flag, perm)
+		return fp.(dialog.File), err
+	}
+}
 
 type Scancode byte
 

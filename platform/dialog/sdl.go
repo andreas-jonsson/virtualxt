@@ -253,7 +253,7 @@ func MountFloppyImage(file string) error {
 		driveId := byte(2 - id)
 		oldFp := DriveImages[driveId].Fp
 
-		if DriveImages[driveId].Fp, err = os.OpenFile(file, os.O_RDWR, 0644); err != nil {
+		if DriveImages[driveId].Fp, err = OpenFileFunc(file, os.O_RDWR, 0644); err != nil {
 			DriveImages[driveId].Fp = oldFp
 			sdl.ShowSimpleMessageBox(sdl.MESSAGEBOX_ERROR, "Error", err.Error(), nil)
 			return err
@@ -263,6 +263,7 @@ func MountFloppyImage(file string) error {
 		} else if oldFp != nil {
 			oldFp.Close()
 		}
+		DriveImages[driveId].Name = file
 		return nil
 	} else {
 		return err

@@ -8,6 +8,10 @@ tools/validator/clib/validator.dll
 tools/validator/clib/validator.lib
 *_validator.json
 
+tools/wasm/**/*.wasm
+tools/wasm/**/*.bin
+tools/wasm/**/*.img
+
 virtualxt.exe
 coverage.txt
 rsrc.syso

@@ -1,3 +1,5 @@
+// +build !js
+
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
 
@@ -21,6 +23,7 @@ import (
 	"bytes"
 	"flag"
 	"log"
+	"os"
 	"sync"
 
 	"github.com/gdamore/tcell"
@@ -57,6 +60,7 @@ func tcellStart(mainLoop func(Platform), configs ...Config) {
 	}
 
 	Instance = &tcellPlatformInstance
+	setDialogFileSystem(Instance)
 	s := tcellPlatformInstance.screen
 
 	if err = s.Init(); err != nil {
@@ -74,12 +78,24 @@ func tcellStart(mainLoop func(Platform), configs ...Config) {
 	mainLoop(Instance)
 }
 
+func (*tcellPlatform) Open(name string) (File, error) {
+	return os.Open(name)
+}
+
+func (*tcellPlatform) Create(name string) (File, error) {
+	return os.Create(name)
+}
+
+func (*tcellPlatform) OpenFile(name string, flag int, perm os.FileMode) (File, error) {
+	return os.OpenFile(name, flag, perm)
+}
+
 func (p *tcellPlatform) HasAudio() bool {
 	return false
 }
 
 func (p *tcellPlatform) RenderGraphics([]byte, byte, byte, byte) {
-	// Not supported for the Tcell platform.
+	panic("not implemented")
 }
 
 func (p *tcellPlatform) RenderText(mem []byte, blink bool, bg, cx, cy int) {

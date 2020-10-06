@@ -26,12 +26,21 @@ import (
 	"sync/atomic"
 )
 
+type File interface {
+	io.ReadWriteSeeker
+	io.ReaderAt
+	io.Closer
+}
+
 type DiskController interface {
 	Eject(dnum byte) (io.ReadWriteSeeker, error)
 	Replace(dnum byte, disk io.ReadWriteSeeker) error
 }
 
-var FloppyController DiskController
+var (
+	OpenFileFunc     func(name string, flag int, perm os.FileMode) (File, error)
+	FloppyController DiskController
+)
 
 var (
 	mainMenuWasOpen,
@@ -46,7 +55,7 @@ var (
 
 var DriveImages [0x100]struct {
 	Name string
-	Fp   *os.File
+	Fp   File
 }
 
 func init() {

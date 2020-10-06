@@ -19,6 +19,8 @@ package cpu
 
 import (
 	"log"
+	"runtime"
+	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
@@ -1499,6 +1501,11 @@ func (p *CPU) doRepeat() error {
 
 			if primitive && ((p.repeatMode == 0xF2 && p.ZF) || (p.repeatMode == 0xF3 && !p.ZF)) {
 				break
+			}
+
+			// This is to prevent the JS backend from deadlocking.
+			if runtime.GOOS == "js" && p.CX%1000 == 0 {
+				time.Sleep(time.Nanosecond)
 			}
 		}
 	} else {

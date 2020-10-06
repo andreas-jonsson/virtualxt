@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>VirtualXT</title>
+	</head>
+	<body>
+		<script src="wasm_exec.js"></script>
+		<script>
+			window.onload = function() {
+				if (!WebAssembly.instantiateStreaming) {
+					WebAssembly.instantiateStreaming = async (resp, importObject) => {
+						const source = await (await resp).arrayBuffer();
+						return await WebAssembly.instantiate(source, importObject);
+					};
+				}
+
+				const go = new Go();
+				WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), go.importObject).then(async (result) => {
+					await go.run(result.instance)
+				});
+			}
+		</script>
+		<canvas id="virtualxt-canvas" width="640" height="200"></canvas>
+	</body>
+</html>

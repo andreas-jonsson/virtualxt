@@ -1,4 +1,4 @@
-// +build !sdl,!js
+// +build ignore
 
 /*
 Copyright (C) 2019-2020 Andreas T Jonsson
@@ -17,26 +17,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package platform
+package main
 
-import "flag"
+import (
+	"flag"
+	"fmt"
+	"net/http"
+)
 
-func ConfigWithWindowSize(w, h int) Config {
-	return func(internalPlatform) error {
-		return nil
-	}
-}
-
-func ConfigWithAudio(p internalPlatform) error {
-	return nil
-}
-
-func ConfigWithFullscreen(p internalPlatform) error {
-	return nil
-}
-
-func Start(mainLoop func(Platform), configs ...Config) {
-	flag.Set("text", "true")
+func main() {
+	root := flag.String("root", "", "Server root")
+	port := flag.Int("port", 8080, "Server port")
 	flag.Parse()
-	tcellStart(mainLoop, configs...)
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), http.FileServer(http.Dir(*root))); err != nil {
+		panic(err)
+	}
 }

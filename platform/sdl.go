@@ -162,6 +162,8 @@ func Start(mainLoop func(Platform), configs ...Config) {
 		}()
 
 		Instance = p
+		setDialogFileSystem(p)
+
 		if err := p.initializeVideo(); err != nil {
 			errHandle(err)
 		}
@@ -171,6 +173,18 @@ func Start(mainLoop func(Platform), configs ...Config) {
 		mainLoop(p)
 	})
 	os.Exit(0) // Calling Exit is required!
+}
+
+func (*sdlPlatform) Open(name string) (File, error) {
+	return os.Open(name)
+}
+
+func (*sdlPlatform) Create(name string) (File, error) {
+	return os.Create(name)
+}
+
+func (*sdlPlatform) OpenFile(name string, flag int, perm os.FileMode) (File, error) {
+	return os.OpenFile(name, flag, perm)
 }
 
 func (p *sdlPlatform) HasAudio() bool {

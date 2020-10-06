@@ -82,7 +82,7 @@ func init() {
 }
 
 func Start(s platform.Platform) {
-	bios, err := os.Open(biosImage)
+	bios, err := s.Open(biosImage)
 	if err != nil {
 		dialog.ShowErrorMessage(err.Error())
 		return
@@ -102,7 +102,7 @@ func Start(s platform.Platform) {
 			}
 
 			var err error
-			if dialog.DriveImages[i].Fp, err = os.OpenFile(name, os.O_RDWR, 0644); err != nil {
+			if dialog.DriveImages[i].Fp, err = s.OpenFile(name, os.O_RDWR, 0644); err != nil {
 				dialog.ShowErrorMessage(err.Error())
 			} else if err = dc.Insert(byte(i), dialog.DriveImages[i].Fp); err != nil {
 				dialog.ShowErrorMessage(err.Error())
@@ -128,7 +128,9 @@ func Start(s platform.Platform) {
 
 	spkr := &speaker.Device{}
 	peripherals := []peripheral.Peripheral{
-		&ram.Device{}, // RAM (needs to go first since it maps the full memory range)
+		&ram.Device{ // RAM (needs to go first since it maps the full memory range)
+			Clear: runtime.GOOS == "js", // A bug in the JS backend does not allow us to scramble that memory.
+		},
 		&rom.Device{
 			RomName: "BIOS",
 			Base:    memory.NewPointer(0xFE00, 0),
@@ -149,7 +151,7 @@ func Start(s platform.Platform) {
 		},
 	}
 	if vbiosImage != "" {
-		videoBios, err := os.Open(vbiosImage)
+		videoBios, err := s.Open(vbiosImage)
 		if err != nil {
 			dialog.ShowErrorMessage(err.Error())
 			return
@@ -167,7 +169,7 @@ func Start(s platform.Platform) {
 	}
 
 	if cpuProfile != "" {
-		if f, err := os.Create(cpuProfile); err != nil {
+		if f, err := s.Create(cpuProfile); err != nil {
 			log.Print(err)
 		} else {
 			limitMIPS = 0
@@ -209,10 +211,18 @@ func Start(s platform.Platform) {
 			log.Print(err)
 			return
 		}
-		if limitMIPS == 0 && spkr.TurboSwitch() {
+		cycles += int64(c)
+
+		if runtime.GOOS == "js" {
+			// This is to prevent the JS backend from deadlocking.
+			if cycles > 1000 {
+				time.Sleep(time.Nanosecond)
+				continue
+			}
+			goto step
+		} else if limitMIPS == 0 && spkr.TurboSwitch() {
 			continue
 		}
-		cycles += int64(c)
 
 	wait:
 		if n := time.Now().UnixNano() - t; n <= 0 {

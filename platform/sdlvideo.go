@@ -77,7 +77,7 @@ func (p *sdlPlatform) RenderGraphics(backBuffer []byte, r, g, b byte) {
 }
 
 func (p *sdlPlatform) RenderText([]byte, bool, int, int, int) {
-	// Not supported for the SDL platform.
+	panic("not implemented")
 }
 
 func (p *sdlPlatform) SetTitle(title string) {

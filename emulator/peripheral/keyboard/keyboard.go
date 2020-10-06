@@ -33,12 +33,10 @@ type Device struct {
 	state  platform.Scancode
 	events chan platform.Scancode
 	ticker *time.Ticker
-	cpu    processor.Processor
 	pic    processor.InterruptController
 }
 
 func (m *Device) Install(p processor.Processor) error {
-	m.cpu = p
 	m.pic = p.GetInterruptController()
 	m.ticker = time.NewTicker(time.Millisecond * 10)
 	m.events = make(chan platform.Scancode, MaxEvents)
@@ -55,7 +53,6 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
-
 	m.dataPort = 0
 	m.commandPort = 0
 	for {
