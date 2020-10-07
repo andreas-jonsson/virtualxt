@@ -25,21 +25,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall/js"
-	"time"
 
-	"github.com/andreas-jonsson/virtualxt/platform/dialog"
 	"github.com/spf13/afero"
 )
-
-func init() {
-	go func() {
-		for {
-			log.Print("ping!")
-			time.Sleep(time.Second * 3)
-		}
-	}()
-}
 
 type jsPlatform struct {
 	canvas, context js.Value
@@ -75,8 +65,6 @@ func Start(mainLoop func(Platform), configs ...Config) {
 	}
 
 	document := js.Global().Get("document")
-	//body := document.Get("body")
-
 	canvas := document.Call("getElementById", "virtualxt-canvas")
 	if canvas.IsNull() {
 		log.Fatal("Could not find \"virtualxt-canvas\"")
@@ -95,38 +83,49 @@ func Start(mainLoop func(Platform), configs ...Config) {
 
 	jsPlatformInstance.context = canvas.Call("getContext", "2d")
 
-	/*
-		body.Call("appendChild", document.Call("createElement", "br"))
-
-		fsButton := document.Call("createElement", "input")
-		body.Call("appendChild", fsButton)
-
-		fsButton.Set("type", "button")
-		fsButton.Set("id", "fsButton")
-		fsButton.Set("value", "Fullscreen")
-		fsButton.Set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
-			if _, err := s.ToggleFullscreen(); err != nil {
-				log.Println(err)
-			}
-			return nil
-		}))
-	*/
-
 	document.Set("onkeydown", js.FuncOf(func(_ js.Value, e []js.Value) interface{} {
-		/*
-			key := e[0].Get("key").String()
-			select {
-			case s.events <- &sys.KeyboardEvent{
-				Key:  keyMapping[key],
-				Type: sys.KeyboardDown,
-				Name: key,
-			}:
-			default:
+		a := e[0]
+		if h := jsPlatformInstance.keyboardHandler; h != nil {
+			if s := toScancode(a.Get("key").String()); s != ScanInvalid {
+				a.Call("preventDefault")
+				h(s)
 			}
-		*/
-		dialog.Quit()
+		}
 		return nil
 	}))
+
+	document.Set("onkeyup", js.FuncOf(func(_ js.Value, e []js.Value) interface{} {
+		a := e[0]
+		if h := jsPlatformInstance.keyboardHandler; h != nil {
+			if s := toScancode(a.Get("key").String()); s != ScanInvalid {
+				a.Call("preventDefault")
+				h(s | KeyUpMask)
+			}
+		}
+		return nil
+	}))
+
+	jsMouseHandler := js.FuncOf(func(_ js.Value, e []js.Value) interface{} {
+		a := e[0]
+		if h := jsPlatformInstance.mouseHandler; h != nil {
+			x, y := a.Get("movementX").Int(), a.Get("movementY").Int()
+			state := byte(a.Get("buttons").Int())
+
+			var buttons byte
+			if state&1 != 0 {
+				buttons = 2
+			}
+			if state&2 != 0 {
+				buttons |= 1
+			}
+			h(buttons, int8(x), int8(y))
+		}
+		return nil
+	})
+
+	canvas.Set("onmousemove", jsMouseHandler)
+	canvas.Set("onmouseup", jsMouseHandler)
+	canvas.Set("onmousedown", jsMouseHandler)
 
 	Instance = &jsPlatformInstance
 	setDialogFileSystem(Instance)
@@ -197,6 +196,7 @@ func (p *jsPlatform) RenderText([]byte, bool, int, int, int) {
 }
 
 func (p *jsPlatform) SetTitle(title string) {
+	js.Global().Get("document").Set("title", title)
 }
 
 func (p *jsPlatform) QueueAudio(soundBuffer []byte) {
@@ -215,4 +215,184 @@ func (p *jsPlatform) SetKeyboardHandler(h func(Scancode)) {
 
 func (p *jsPlatform) SetMouseHandler(h func(byte, int8, int8)) {
 	p.mouseHandler = h
+}
+
+func toScancode(key string) Scancode {
+	switch strings.ToLower(key) {
+	case "escape":
+		return ScanEscape
+	case "1":
+		return Scan1
+	case "2":
+		return Scan2
+	case "3":
+		return Scan3
+	case "4":
+		return Scan4
+	case "5":
+		return Scan5
+	case "6":
+		return Scan6
+	case "7":
+		return Scan7
+	case "8":
+		return Scan8
+	case "9":
+		return Scan9
+	case "0":
+		return Scan0
+	//case "-":
+	//	return ScanMinus
+	//case "=":
+	//	return ScanEqual
+	case "backspace":
+		return ScanBackspace
+	case "tab":
+		return ScanTab
+	case "q":
+		return ScanQ
+	case "w":
+		return ScanW
+	case "e":
+		return ScanE
+	case "r":
+		return ScanR
+	case "t":
+		return ScanT
+	case "y":
+		return ScanY
+	case "u":
+		return ScanU
+	case "i":
+		return ScanI
+	case "o":
+		return ScanO
+	case "p":
+		return ScanP
+		/*
+			case sdl.SCANCODE_LEFTBRACKET:
+				return ScanLBracket
+			case sdl.SCANCODE_RIGHTBRACKET:
+				return ScanRBracket
+		*/
+	case "enter":
+		return ScanEnter
+	case "control":
+		return ScanControl
+	case "a":
+		return ScanA
+	case "s":
+		return ScanS
+	case "d":
+		return ScanD
+	case "f":
+		return ScanF
+	case "g":
+		return ScanG
+	case "h":
+		return ScanH
+	case "j":
+		return ScanJ
+	case "k":
+		return ScanK
+	case "l":
+		return ScanL
+	//case ";":
+	//	return ScanSemicolon
+	/*
+		case sdl.SCANCODE_APOSTROPHE:
+			return ScanQuote
+		case sdl.SCANCODE_GRAVE:
+			return ScanBackquote
+		case sdl.SCANCODE_LSHIFT:
+			return ScanLShift
+	*/
+	//case "/":
+	//	return ScanBackslash
+	case "z":
+		return ScanZ
+	case "x":
+		return ScanX
+	case "c":
+		return ScanC
+	case "v":
+		return ScanV
+	case "b":
+		return ScanB
+	case "n":
+		return ScanN
+	case "m":
+		return ScanM
+	case ",":
+		return ScanComma
+	case ".":
+		return ScanPeriod
+	//case "\\":
+	//	return ScanSlash
+	case "shift":
+		return ScanRShift
+	//case sdl.SCANCODE_PRINTSCREEN:
+	//	return ScanPrint
+	case "alt", "altgraph":
+		return ScanAlt
+	case " ":
+		return ScanSpace
+	/*
+		case sdl.SCANCODE_CAPSLOCK:
+			return ScanCapslock
+		case sdl.SCANCODE_F1:
+			return ScanF1
+		case sdl.SCANCODE_F2:
+			return ScanF2
+		case sdl.SCANCODE_F3:
+			return ScanF3
+		case sdl.SCANCODE_F4:
+			return ScanF4
+		case sdl.SCANCODE_F5:
+			return ScanF5
+		case sdl.SCANCODE_F6:
+			return ScanF6
+		case sdl.SCANCODE_F7:
+			return ScanF7
+		case sdl.SCANCODE_F8:
+			return ScanF8
+		case sdl.SCANCODE_F9:
+			return ScanF9
+		case sdl.SCANCODE_F10:
+			return ScanF10
+		case sdl.SCANCODE_NUMLOCKCLEAR:
+			return ScanNumlock
+		case sdl.SCANCODE_SCROLLLOCK:
+			return ScanScrlock
+	*/
+	case "home":
+		return ScanKPHome
+	case "arrowup":
+		return ScanKPUp
+	case "pageup":
+		return ScanKPPageup
+	//case sdl.SCANCODE_KP_MINUS:
+	//	return ScanKPMinus
+	case "arrowleft":
+		return ScanKPLeft
+	case "clear":
+		return ScanKP5
+	case "arrowright":
+		return ScanKPRight
+	//case "+":
+	//	return ScanKPPlus
+	case "end":
+		return ScanKPEnd
+	case "arrowdown":
+		return ScanKPDown
+	case "pagedown":
+		return ScanKPPagedown
+	case "insert":
+		return ScanKPInsert
+	case "delete":
+		return ScanKPDelete
+	default:
+		log.Print("Invalid key: ", key)
+		return ScanInvalid
+	}
 }
