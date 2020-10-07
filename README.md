@@ -8,7 +8,7 @@ VirtualXT is a IBM PC/XT (8088/V20) emulator that runs on modern hardware and op
 It is designed to be simple and lightweight yet still capable enough to run a large
 library of old application and games.
 
-### Features
+## Features
 
 * Intel 8088 or NEC V20 CPU
 * 1MB RAM
@@ -20,7 +20,7 @@ library of old application and games.
 * Ethernet adapter
 * PC speaker
 
-### Build
+## Build
 
 The emulator is implemented in Go and should compile with only the standard Go [toolchain](https://golang.org/dl/) installed. Although in that case you are limited to textmode only.
 If you want graphics and sound you need to link with the SDL2 library by passing the build tag ```sdl```.
@@ -32,7 +32,7 @@ brew tap andreas-jonsson/virtualxt
 brew install virtualxt
 ```
 
-### Screenshots
+## Screenshots
 
 ![bios screenshot](doc/screenshots/bios.PNG)
 
