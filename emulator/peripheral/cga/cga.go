@@ -72,7 +72,8 @@ type Device struct {
 	lastScanline    int64
 	currentScanline int
 
-	cursorVisible  bool
+	cursorVisible,
+	prevCursorState bool
 	cursorPosition uint16
 	surface        []byte
 
@@ -223,10 +224,13 @@ func (m *Device) renderLoop() {
 			default:
 			}
 
+			blink := blinkTick()
 			dirtyMemory := atomic.LoadInt32(&m.dirtyMemory) != 0
-			if blink := blinkTick(); blink || dirtyMemory {
+
+			if dirtyMemory || m.prevCursorState != blink {
 				m.lock.RLock()
 				atomic.StoreInt32(&m.dirtyMemory, 0)
+				m.prevCursorState = blink
 
 				numCol := 80
 				if m.modeCtrlReg&1 == 0 {
