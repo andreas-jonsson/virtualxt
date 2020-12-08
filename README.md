@@ -13,7 +13,7 @@ library of old application and games.
 * Intel 8088 or NEC V20 CPU
 * 1MB RAM
 * CGA graphics adapter
-* Turbo XT BIOS 3.1 + VXTCGA
+* Turbo XT BIOS 3.1 + VXTX
 * Keyboard controller with 83-key XT-style keyboard
 * Serial port with Microsoft 2-button mouse
 * Floppy and hard disk controller
