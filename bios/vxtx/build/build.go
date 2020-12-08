@@ -27,8 +27,8 @@ import (
 )
 
 var (
-	outputFile = "../../vxtcga.bin"
-	inputFile  = "../vxtcga.asm"
+	outputFile = "../../vxtx.bin"
+	inputFile  = "../vxtx.asm"
 )
 
 func init() {

@@ -50,10 +50,8 @@ type Device struct {
 
 func (m *Device) Install(p processor.Processor) error {
 	m.cpu = p
-	if err := p.InstallIODevice(m, 0x03F0, 0x03F7); err != nil {
-		return err
-	}
-	return p.InstallInterruptHandler(m, 0x13, 0x19, 0xFD)
+	// IO 0xB0, 0xB1 to interrupt 0x19, 0x13
+	return p.InstallIODeviceAt(m, 0xB0, 0xB1)
 }
 
 func (m *Device) Name() string {
@@ -159,10 +157,7 @@ func (m *Device) bootstrap() {
 
 	r := m.cpu.GetRegisters()
 	r.SetDL(m.BootDrive)
-	r.SetAL(m.executeOperation(true, d, memory.NewAddress(0x07C0, 0x0), 0, 1, 0, 1))
-
-	r.CS = 0
-	r.IP = 0x7C00
+	r.SetAL(m.executeOperation(true, d, memory.NewAddress(0x0, 0x7C00), 0, 1, 0, 1))
 }
 
 func (m *Device) executeOperation(readOp bool, disc *diskDrive, dst memory.Address, cylinders uint16, sectors, heads, count byte) byte {
@@ -211,67 +206,64 @@ func (m *Device) executeAndSet(readOp bool) {
 	}
 }
 
-func (m *Device) HandleInterrupt(n int) error {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	if n == 0x19 {
-		m.bootstrap()
-		return nil
-	}
-
-	r := m.cpu.GetRegisters()
-	ah, dl := r.AH(), r.DL()
-
-	switch ah {
-	case 0: // Reset
-		r.SetAH(0)
-		r.CF = false
-	case 1: // Return status
-		r.SetAH(m.lookupAH[dl])
-		r.CF = m.lookupCF[dl]
-		return nil
-	case 2: // Read sector
-		m.executeAndSet(true)
-	case 3: // Write sector
-		m.executeAndSet(false)
-	case 4, 5: // Format track
-		r.CF = false
-		r.SetAH(0)
-	case 8: // Drive parameters
-		if d := &m.disks[dl]; !d.present {
-			r.CF = true
-			r.SetAH(0xAA)
-		} else {
-			r.CF = false
-			r.SetAH(0)
-			r.SetCH(byte(d.cylinders - 1))
-			r.SetCL(byte((d.sectors & 0x3F) + (d.cylinders/256)*64))
-			r.SetDH(byte(d.heads - 1))
-			if dl < 0x80 {
-				r.SetBL(4)
-				r.SetDL(2)
-			} else {
-				r.SetDL(m.numHD)
-			}
-		}
-	default:
-		r.CF = true
-	}
-
-	ah, dl = r.AH(), r.DL()
-	if dl&0x80 != 0 {
-		m.cpu.WriteByte(memory.NewPointer(0x40, 0x74), ah)
-	}
-
-	m.lookupAH[dl] = ah
-	m.lookupCF[dl] = r.CF
-	return nil
-}
-
-func (m *Device) In(port uint16) byte {
+func (m *Device) In(uint16) byte {
 	return 0xFF
 }
 
-func (m *Device) Out(port uint16, data byte) {
+func (m *Device) Out(port uint16, _ byte) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	switch port {
+	case 0xB0:
+		m.bootstrap()
+	case 0xB1:
+		r := m.cpu.GetRegisters()
+		ah, dl := r.AH(), r.DL()
+
+		switch ah {
+		case 0: // Reset
+			r.SetAH(0)
+			r.CF = false
+		case 1: // Return status
+			r.SetAH(m.lookupAH[dl])
+			r.CF = m.lookupCF[dl]
+			return
+		case 2: // Read sector
+			m.executeAndSet(true)
+		case 3: // Write sector
+			m.executeAndSet(false)
+		case 4, 5: // Format track
+			r.CF = false
+			r.SetAH(0)
+		case 8: // Drive parameters
+			if d := &m.disks[dl]; !d.present {
+				r.CF = true
+				r.SetAH(0xAA)
+			} else {
+				r.CF = false
+				r.SetAH(0)
+				r.SetCH(byte(d.cylinders - 1))
+				r.SetCL(byte((d.sectors & 0x3F) + (d.cylinders/256)*64))
+				r.SetDH(byte(d.heads - 1))
+				if dl < 0x80 {
+					r.SetBL(4)
+					r.SetDL(2)
+				} else {
+					r.SetDL(m.numHD)
+				}
+			}
+		default:
+			r.CF = true
+		}
+
+		ah, dl = r.AH(), r.DL()
+		if dl&0x80 != 0 {
+			m.cpu.WriteByte(memory.NewPointer(0x40, 0x74), ah)
+		}
+
+		m.lookupAH[dl] = ah
+		m.lookupCF[dl] = r.CF
+	default:
+	}
 }

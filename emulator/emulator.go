@@ -49,6 +49,7 @@ import (
 
 var (
 	biosImage  = "bios/vxtbios.bin"
+	vxtxImage  = "bios/vxtx.bin"
 	vbiosImage = ""
 )
 
@@ -67,6 +68,10 @@ func init() {
 		biosImage = p
 	}
 
+	if p, ok := os.LookupEnv("VXT_DEFAULT_VXTX_BIOS_PATH"); ok {
+		vxtxImage = p
+	}
+
 	if p, ok := os.LookupEnv("VXT_DEFAULT_VIDEO_BIOS_PATH"); ok {
 		vbiosImage = p
 	}
@@ -75,6 +80,7 @@ func init() {
 
 	flag.Float64Var(&limitMIPS, "mips", 3, "Limit CPU speed (0 for no limit)")
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")
+	flag.StringVar(&vxtxImage, "vxtx", vxtxImage, "Path to VirtualXT BIOS extension image")
 	flag.StringVar(&vbiosImage, "vbios", vbiosImage, "Path to EGA/VGA BIOS image")
 
 	flag.StringVar(&validatorOutput, "validator", validatorOutput, "Set CPU validator output")
@@ -149,6 +155,20 @@ func Start(s platform.Platform) {
 			BasePort: 0x3F8,
 			IRQ:      4,
 		},
+	}
+	if vxtxImage != "" {
+		vxtxBios, err := s.Open(vxtxImage)
+		if err != nil {
+			dialog.ShowErrorMessage(err.Error())
+			return
+		}
+		defer vxtxBios.Close()
+
+		peripherals = append(peripherals, &rom.Device{
+			RomName: "VirtualXT BIOS Extension",
+			Base:    memory.NewPointer(0xE000, 0),
+			Reader:  vxtxBios,
+		})
 	}
 	if vbiosImage != "" {
 		videoBios, err := s.Open(vbiosImage)
