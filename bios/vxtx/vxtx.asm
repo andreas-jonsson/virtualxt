@@ -51,6 +51,18 @@ int_13_handler:
     iret
 
 int_19_handler:
+
+    ; Install network handler during bootstrap
+
+    in al, 0xB2 
+    cmp al, 0
+    jne no_network
+
+    mov word [INT_FC_OFFSET], int_fc_handler
+    mov [INT_FC_SEGMENT], cs
+
+  no_network:
+
     push bp
     mov bp, sp
     mov word [bp+4], 0
@@ -58,6 +70,11 @@ int_19_handler:
     pop bp
 
     out 0xB0, al
+
+    iret
+
+int_fc_handler:
+    out 0xB2, al
     iret
 
 install_handlers:
@@ -85,6 +102,9 @@ INT_13_SEGMENT equ 0x4E
 
 INT_19_OFFSET  equ 0x64
 INT_19_SEGMENT equ 0x66
+
+INT_FC_OFFSET  equ 0x3F0
+INT_FC_SEGMENT equ 0x3F2
 
 db 'VXTX - VirtualXT BIOS Extensions', 0xA
 db 'This work is licensed under the zlib license.', 0

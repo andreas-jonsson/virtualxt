@@ -96,7 +96,7 @@ func (m *Device) Install(p processor.Processor) error {
 	log.Print("Packet capture is active!")
 
 	m.startCapture()
-	return p.InstallInterruptHandler(m, 0xFC)
+	return p.InstallIODeviceAt(m, 0xB2)
 }
 
 func (m *Device) Name() string {
@@ -160,7 +160,11 @@ func (m *Device) Step(cycles int) error {
 	return nil
 }
 
-func (m *Device) HandleInterrupt(int) error {
+func (m *Device) In(uint16) byte {
+	return 0 // Must return 0 to indicate that we have a network card.
+}
+
+func (m *Device) Out(uint16, byte) {
 	/*
 		This is the API of Fake86's packet driver.
 
@@ -192,7 +196,6 @@ func (m *Device) HandleInterrupt(int) error {
 	case 4:
 		m.canRecv = false
 	}
-	return nil
 }
 
 var enabled bool
