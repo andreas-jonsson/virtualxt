@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
@@ -96,7 +97,7 @@ func runBenchmark(b *testing.B, progName string) {
 	p, errs := NewCPU([]peripheral.Peripheral{
 		&ram.Device{Clear: true},
 		&rom.Device{
-			RomName: fmt.Sprintf("TEST: %s.bin", progName),
+			RomName: fmt.Sprintf("BENCHMARK: %s.bin", progName),
 			Base:    memory.NewPointer(0xF000, 0),
 			Reader:  bytes.NewReader(bin),
 		},
@@ -113,19 +114,30 @@ func runBenchmark(b *testing.B, progName string) {
 	// Tests are written for 80186+ machines.
 	p.SetV20Support(true)
 
+	var (
+		cycles int64
+		start  = time.Now()
+	)
+
 	for i := 0; i < b.N; i++ {
 		p.Reset()
 		p.IP = 0xFFF0
 		p.CS = 0xF000
 
 		for {
-			if _, err := p.Step(); err != nil {
+			c, err := p.Step()
+			if err != nil {
 				if err != processor.ErrCPUHalt {
 					b.Fatal(err)
 				}
 				break
 			}
+			cycles += int64(c)
 		}
+	}
+
+	if s := time.Since(start).Seconds(); s > 0 {
+		b.Logf("MIPS: %.2f, CYCLES: %v (%v), LOOPS: %v", (float64(cycles)/s)/1000000, cycles, cycles/int64(b.N), b.N)
 	}
 }
 

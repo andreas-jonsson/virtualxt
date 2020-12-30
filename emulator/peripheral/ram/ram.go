@@ -46,6 +46,11 @@ func (m *Device) Name() string {
 }
 
 func (m *Device) Reset() {
+	if m.Clear {
+		for i := range m.mem {
+			m.mem[i] = 0
+		}
+	}
 }
 
 func (m *Device) Step(int) error {

@@ -130,6 +130,10 @@ func (p *CPU) GetInterruptController() processor.InterruptController {
 func (p *CPU) Reset() {
 	log.Print("CPU reset!")
 
+	p.halted = false
+	p.trap = false
+	p.instructionState = instructionState{}
+
 	p.Registers = processor.Registers{CS: 0xFFFF}
 	for _, d := range p.peripherals {
 		d.Reset()
