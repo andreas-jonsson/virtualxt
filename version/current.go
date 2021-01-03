@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019-2020 Andreas T Jonsson
+Copyright (c) 2019-2021 Andreas T Jonsson
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -21,7 +21,7 @@ freely, subject to the following restrictions:
 package version
 
 var (
-	Current = Version{ 0, 6, 1, "" }
-	Copyright = "Copyright (c) 2019-2020 Andreas T Jonsson"
-	Hash = "d9162a8b0eee9a1e5eb9037706ec3294bcba13ba"
+	Current   = Version{0, 6, 1, ""}
+	Copyright = "Copyright (c) 2019-2021 Andreas T Jonsson"
+	Hash      = "d9162a8b0eee9a1e5eb9037706ec3294bcba13ba"
 )
