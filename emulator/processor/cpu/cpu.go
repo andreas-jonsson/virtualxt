@@ -35,6 +35,7 @@ const MaxPeripherals = 32
 type CPU struct {
 	processor.Registers
 	instructionState
+	memMapLookup
 
 	isV20, trap bool
 
@@ -45,9 +46,6 @@ type CPU struct {
 
 	iomap         [0x10000]byte
 	ioPeripherals [MaxPeripherals]memory.IO
-
-	mmap           [0x100000]byte
-	memPeripherals [MaxPeripherals]memory.Memory
 }
 
 func NewCPU(peripherals []peripheral.Peripheral) (*CPU, []error) {
@@ -58,17 +56,9 @@ func NewCPU(peripherals []peripheral.Peripheral) (*CPU, []error) {
 		p.ioPeripherals[i] = dummyIO
 	}
 
-	dummyMem := &memory.DummyMemory{}
-	for i := range p.memPeripherals[:] {
-		p.memPeripherals[i] = dummyMem
-	}
-
 	for i := 1; i <= len(peripherals); i++ {
 		if dev, ok := peripherals[i-1].(memory.IO); ok {
 			p.ioPeripherals[i] = dev
-		}
-		if dev, ok := peripherals[i-1].(memory.Memory); ok {
-			p.memPeripherals[i] = dev
 		}
 	}
 	return p, p.installPeripherals()
@@ -80,6 +70,9 @@ func (p *CPU) SetV20Support(b bool) {
 
 func (p *CPU) installPeripherals() []error {
 	var errs []error
+	if err := p.initializeMemMap(p.peripherals); err != nil {
+		errs = append(errs, err)
+	}
 
 	log.Print("\nPeripherals")
 	for _, d := range p.peripherals {
@@ -138,10 +131,6 @@ func (p *CPU) Reset() {
 	for _, d := range p.peripherals {
 		d.Reset()
 	}
-}
-
-func (p *CPU) GetMappedMemoryDevice(addr memory.Pointer) memory.Memory {
-	return p.memPeripherals[p.mmap[addr]]
 }
 
 func (p *CPU) GetMappedIODevice(port uint16) memory.IO {
@@ -205,28 +194,6 @@ func (p *CPU) InstallInterruptHandler(handler processor.InterruptHandler, num ..
 	return nil
 }
 
-func (p *CPU) InstallMemoryDevice(device memory.Memory, from, to memory.Pointer) error {
-	for i, d := range p.memPeripherals[:] {
-		if d == device {
-			for from <= to {
-				p.mmap[from] = byte(i)
-				from++
-			}
-			return nil
-		}
-	}
-	return errors.New("could not find peripheral")
-}
-
-func (p *CPU) InstallMemoryDeviceAt(device memory.Memory, addr ...memory.Pointer) error {
-	for _, a := range addr {
-		if err := p.InstallMemoryDevice(device, a, a); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (p *CPU) InstallIODevice(device memory.IO, from, to uint16) error {
 	for i, d := range p.ioPeripherals[:] {
 		if d == device {
@@ -243,6 +210,15 @@ func (p *CPU) InstallIODevice(device memory.IO, from, to uint16) error {
 func (p *CPU) InstallIODeviceAt(device memory.IO, port ...uint16) error {
 	for _, a := range port {
 		if err := p.InstallIODevice(device, a, a); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *CPU) InstallMemoryDeviceAt(device memory.Memory, addr ...memory.Pointer) error {
+	for _, a := range addr {
+		if err := p.InstallMemoryDevice(device, a, a); err != nil {
 			return err
 		}
 	}
