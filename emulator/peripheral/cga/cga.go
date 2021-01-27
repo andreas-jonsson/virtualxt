@@ -95,7 +95,7 @@ func (m *Device) Install(p processor.Processor) error {
 	rand.Read(m.mem[:])
 
 	// 16k of RAM at address 0B8000h for its frame buffer. The address is incompletely decoded; the frame buffer is repeated at 0BC000h.
-	if err := p.InstallMemoryDevice(m, memoryBase, memoryBase+memorySize*2); err != nil {
+	if err := p.InstallMemoryDevice(m, memoryBase, (memoryBase+memorySize*2)-1); err != nil {
 		return err
 	}
 	if err := p.InstallIODevice(m, 0x3D0, 0x3DF); err != nil {
