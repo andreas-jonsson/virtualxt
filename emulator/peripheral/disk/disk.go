@@ -203,7 +203,7 @@ func (m *Device) executeAndSet(readOp bool) {
 		r.SetAH(1)
 		r.CF = true
 	} else {
-		r.SetAL(m.executeOperation(readOp, d, memory.NewAddress(r.ES, r.BX), uint16(r.CH())+uint16(r.CL()/64)*256, r.CL()&0x3F, r.DH(), r.AL()))
+		r.SetAL(m.executeOperation(readOp, d, memory.NewAddress(r.ES(), r.BX()), uint16(r.CH())+uint16(r.CL()/64)*256, r.CL()&0x3F, r.DH(), r.AL()))
 		r.SetAH(0)
 		r.CF = false
 	}

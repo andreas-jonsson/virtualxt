@@ -72,7 +72,7 @@ func runTest(t *testing.T, progName string) *CPU {
 
 	p.Reset()
 	p.IP = 0xFFF0
-	p.CS = 0xF000
+	p.SetCS(0xF000)
 
 	for {
 		if _, err := p.Step(); err != nil {
@@ -122,7 +122,7 @@ func runBenchmark(b *testing.B, progName string) {
 	for i := 0; i < b.N; i++ {
 		p.Reset()
 		p.IP = 0xFFF0
-		p.CS = 0xF000
+		p.SetCS(0xF000)
 
 		for {
 			c, err := p.Step()

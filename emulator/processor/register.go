@@ -20,10 +20,14 @@ freely, subject to the following restrictions:
 
 package processor
 
+import "log"
+
 type Registers struct {
-	AX, CX, DX, BX,
-	SP, BP, SI, DI,
-	ES, CS, SS, DS, IP uint16
+	ax, cx, dx, bx,
+	sp, bp, si, di,
+	es, cs, ss, ds uint16
+
+	IP uint16
 
 	CF, PF, AF, ZF,
 	SF, TF, IF, DF, OF bool
@@ -31,66 +35,204 @@ type Registers struct {
 	Debug bool
 }
 
+func (r *Registers) SegOverridePtr(op byte) *uint16 {
+	switch op {
+	case 0x26:
+		return &r.es
+	case 0x2E:
+		return &r.cs
+	case 0x36:
+		return &r.ss
+	case 0x3E:
+		return &r.ds
+	default:
+		return nil
+	}
+}
+
+func (r *Registers) Exchange(op byte) {
+	xchg := func(a, b *uint16) {
+		tmp := *a
+		*a = *b
+		*b = tmp
+	}
+
+	switch op {
+	case 0x91: // XCHG AX,CX
+		xchg(&r.ax, &r.cx)
+	case 0x92: // XCHG AX,DX
+		xchg(&r.ax, &r.dx)
+	case 0x93: // XCHG AX,BX
+		xchg(&r.ax, &r.bx)
+	case 0x94: // XCHG AX,SP
+		xchg(&r.ax, &r.sp)
+	case 0x95: // XCHG AX,BP
+		xchg(&r.ax, &r.bp)
+	case 0x96: // XCHG AX,SI
+		xchg(&r.ax, &r.si)
+	case 0x97: // XCHG AX,DI
+		xchg(&r.ax, &r.di)
+	default:
+		log.Panic("invalid operation: ", op)
+	}
+}
+
 func (r *Registers) AL() byte {
-	return byte(r.AX & 0xFF)
+	return byte(r.ax & 0xFF)
 }
 
 func (r *Registers) AH() byte {
-	return byte(r.AX >> 8)
+	return byte(r.ax >> 8)
+}
+
+func (r *Registers) AX() uint16 {
+	return r.ax
 }
 
 func (r *Registers) SetAL(v byte) {
-	r.AX = r.AX&0xFF00 | uint16(v)
+	r.ax = r.ax&0xFF00 | uint16(v)
 }
 
 func (r *Registers) SetAH(v byte) {
-	r.AX = r.AX&0xFF | uint16(v)<<8
+	r.ax = r.ax&0xFF | uint16(v)<<8
+}
+
+func (r *Registers) SetAX(v uint16) {
+	r.ax = v
 }
 
 func (r *Registers) BL() byte {
-	return byte(r.BX & 0xFF)
+	return byte(r.bx & 0xFF)
 }
 
 func (r *Registers) BH() byte {
-	return byte(r.BX >> 8)
+	return byte(r.bx >> 8)
+}
+
+func (r *Registers) BX() uint16 {
+	return r.bx
 }
 
 func (r *Registers) SetBL(v byte) {
-	r.BX = r.BX&0xFF00 | uint16(v)
+	r.bx = r.bx&0xFF00 | uint16(v)
 }
 
 func (r *Registers) SetBH(v byte) {
-	r.BX = r.BX&0xFF | uint16(v)<<8
+	r.bx = r.bx&0xFF | uint16(v)<<8
+}
+
+func (r *Registers) SetBX(v uint16) {
+	r.bx = v
 }
 
 func (r *Registers) CL() byte {
-	return byte(r.CX & 0xFF)
+	return byte(r.cx & 0xFF)
 }
 
 func (r *Registers) CH() byte {
-	return byte(r.CX >> 8)
+	return byte(r.cx >> 8)
+}
+
+func (r *Registers) CX() uint16 {
+	return r.cx
 }
 
 func (r *Registers) SetCL(v byte) {
-	r.CX = r.CX&0xFF00 | uint16(v)
+	r.cx = r.cx&0xFF00 | uint16(v)
 }
 
 func (r *Registers) SetCH(v byte) {
-	r.CX = r.CX&0xFF | uint16(v)<<8
+	r.cx = r.cx&0xFF | uint16(v)<<8
+}
+
+func (r *Registers) SetCX(v uint16) {
+	r.cx = v
 }
 
 func (r *Registers) DL() byte {
-	return byte(r.DX & 0xFF)
+	return byte(r.dx & 0xFF)
 }
 
 func (r *Registers) DH() byte {
-	return byte(r.DX >> 8)
+	return byte(r.dx >> 8)
+}
+
+func (r *Registers) DX() uint16 {
+	return r.dx
 }
 
 func (r *Registers) SetDL(v byte) {
-	r.DX = r.DX&0xFF00 | uint16(v)
+	r.dx = r.dx&0xFF00 | uint16(v)
 }
 
 func (r *Registers) SetDH(v byte) {
-	r.DX = r.DX&0xFF | uint16(v)<<8
+	r.dx = r.dx&0xFF | uint16(v)<<8
+}
+
+func (r *Registers) SetDX(v uint16) {
+	r.dx = v
+}
+
+func (r *Registers) SP() uint16 {
+	return r.sp
+}
+
+func (r *Registers) SetSP(v uint16) {
+	r.sp = v
+}
+
+func (r *Registers) BP() uint16 {
+	return r.bp
+}
+
+func (r *Registers) SetBP(v uint16) {
+	r.bp = v
+}
+
+func (r *Registers) SI() uint16 {
+	return r.si
+}
+
+func (r *Registers) SetSI(v uint16) {
+	r.si = v
+}
+
+func (r *Registers) DI() uint16 {
+	return r.di
+}
+
+func (r *Registers) SetDI(v uint16) {
+	r.di = v
+}
+
+func (r *Registers) ES() uint16 {
+	return r.es
+}
+
+func (r *Registers) SetES(v uint16) {
+	r.es = v
+}
+
+func (r *Registers) CS() uint16 {
+	return r.cs
+}
+
+func (r *Registers) SetCS(v uint16) {
+	r.cs = v
+}
+
+func (r *Registers) SS() uint16 {
+	return r.ss
+}
+
+func (r *Registers) SetSS(v uint16) {
+	r.ss = v
+}
+
+func (r *Registers) DS() uint16 {
+	return r.ds
+}
+
+func (r *Registers) SetDS(v uint16) {
+	r.ds = v
 }

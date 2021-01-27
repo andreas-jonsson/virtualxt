@@ -92,32 +92,32 @@ func (addr dataLocation) readWord(p *CPU) uint16 {
 	if addr&registerLocation != 0 {
 		switch addr & 0x7 {
 		case 0:
-			return p.AX
+			return p.AX()
 		case 1:
-			return p.CX
+			return p.CX()
 		case 2:
-			return p.DX
+			return p.DX()
 		case 3:
-			return p.BX
+			return p.BX()
 		case 4:
-			return p.SP
+			return p.SP()
 		case 5:
-			return p.BP
+			return p.BP()
 		case 6:
-			return p.SI
+			return p.SI()
 		case 7:
-			return p.DI
+			return p.DI()
 		}
 	} else if addr&segmentLocation != 0 {
 		switch addr & 0x7 {
 		case 0:
-			return p.ES
+			return p.ES()
 		case 1:
-			return p.CS
+			return p.CS()
 		case 2:
-			return p.SS
+			return p.SS()
 		case 3:
-			return p.DS
+			return p.DS()
 		default:
 			panic("invalid data location")
 		}
@@ -129,33 +129,33 @@ func (addr dataLocation) writeWord(p *CPU, data uint16) {
 	if addr&registerLocation != 0 {
 		switch addr & 0x7 {
 		case 0:
-			p.AX = data
+			p.SetAX(data)
 		case 1:
-			p.CX = data
+			p.SetCX(data)
 		case 2:
-			p.DX = data
+			p.SetDX(data)
 		case 3:
-			p.BX = data
+			p.SetBX(data)
 		case 4:
-			p.SP = data
+			p.SetSP(data)
 		case 5:
-			p.BP = data
+			p.SetBP(data)
 		case 6:
-			p.SI = data
+			p.SetSI(data)
 		case 7:
-			p.DI = data
+			p.SetDI(data)
 		}
 		return
 	} else if addr&segmentLocation != 0 {
 		switch addr & 0x7 {
 		case 0:
-			p.ES = data
+			p.SetES(data)
 		case 1:
-			p.CS = data
+			p.SetCS(data)
 		case 2:
-			p.SS = data
+			p.SetSS(data)
 		case 3:
-			p.DS = data
+			p.SetDS(data)
 		default:
 			panic("invalid data location")
 		}
@@ -173,28 +173,30 @@ var modRMLookup = [208]func(*CPU) dataLocation{
 	// 0x0x
 
 	// DS:[BX+SI]
-	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.BX+p.SI)) },
+	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.BX()+p.SI())) },
 
 	// DS:[BX+DI]
-	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.BX+p.DI)) },
+	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.BX()+p.DI())) },
 
 	// SS:[BP+SI]
-	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.SS), p.BP+p.SI)) },
+	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.SS()), p.BP()+p.SI())) },
 
 	// SS:[BP+DI]
-	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.SS), p.BP+p.DI)) },
+	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.SS()), p.BP()+p.DI())) },
 
 	// DS:[SI]
-	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.SI)) },
+	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.SI())) },
 
 	// DS:[DI]
-	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.DI)) },
+	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.DI())) },
 
 	// DS:[a16]
-	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.readOpcodeImm16())) },
+	func(p *CPU) dataLocation {
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.readOpcodeImm16()))
+	},
 
 	// DS:[BX]
-	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.BX)) },
+	func(p *CPU) dataLocation { return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.BX())) },
 
 	nil, nil, nil, nil, nil, nil, nil, nil,
 
@@ -209,49 +211,49 @@ var modRMLookup = [208]func(*CPU) dataLocation{
 	// DS:[BX+SI+rel8]
 	func(p *CPU) dataLocation {
 		diff := int8(p.readOpcodeStream())
-		return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.BX+p.SI+uint16(diff)))
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.BX()+p.SI()+uint16(diff)))
 	},
 
 	// DS:[BX+DI+rel8]
 	func(p *CPU) dataLocation {
 		diff := int8(p.readOpcodeStream())
-		return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.BX+p.DI+uint16(diff)))
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.BX()+p.DI()+uint16(diff)))
 	},
 
 	// SS:[BP+SI+rel8]
 	func(p *CPU) dataLocation {
 		diff := int8(p.readOpcodeStream())
-		return dataLocation(memory.NewAddress(p.getSeg(p.SS), p.BP+p.SI+uint16(diff)))
+		return dataLocation(memory.NewAddress(p.getSeg(p.SS()), p.BP()+p.SI()+uint16(diff)))
 	},
 
 	// SS:[BP+DI+rel8]
 	func(p *CPU) dataLocation {
 		diff := int8(p.readOpcodeStream())
-		return dataLocation(memory.NewAddress(p.getSeg(p.SS), p.BP+p.DI+uint16(diff)))
+		return dataLocation(memory.NewAddress(p.getSeg(p.SS()), p.BP()+p.DI()+uint16(diff)))
 	},
 
 	// DS:[SI+rel8]
 	func(p *CPU) dataLocation {
 		diff := int8(p.readOpcodeStream())
-		return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.SI+uint16(diff)))
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.SI()+uint16(diff)))
 	},
 
 	// DS:[DI+rel8]
 	func(p *CPU) dataLocation {
 		diff := int8(p.readOpcodeStream())
-		return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.DI+uint16(diff)))
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.DI()+uint16(diff)))
 	},
 
 	// SS:[BP+rel8]
 	func(p *CPU) dataLocation {
 		diff := int8(p.readOpcodeStream())
-		return dataLocation(memory.NewAddress(p.getSeg(p.SS), p.BP+uint16(diff)))
+		return dataLocation(memory.NewAddress(p.getSeg(p.SS()), p.BP()+uint16(diff)))
 	},
 
 	// DS:[BX+rel8]
 	func(p *CPU) dataLocation {
 		diff := int8(p.readOpcodeStream())
-		return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.BX+uint16(diff)))
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.BX()+uint16(diff)))
 	},
 
 	nil, nil, nil, nil, nil, nil, nil, nil,
@@ -266,42 +268,42 @@ var modRMLookup = [208]func(*CPU) dataLocation{
 
 	// DS:[BX+SI+rel16]
 	func(p *CPU) dataLocation {
-		return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.BX+p.SI+p.readOpcodeImm16()))
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.BX()+p.SI()+p.readOpcodeImm16()))
 	},
 
 	// DS:[BX+DI+rel16]
 	func(p *CPU) dataLocation {
-		return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.BX+p.DI+p.readOpcodeImm16()))
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.BX()+p.DI()+p.readOpcodeImm16()))
 	},
 
 	// SS:[BP+SI+rel16]
 	func(p *CPU) dataLocation {
-		return dataLocation(memory.NewAddress(p.getSeg(p.SS), p.BP+p.SI+p.readOpcodeImm16()))
+		return dataLocation(memory.NewAddress(p.getSeg(p.SS()), p.BP()+p.SI()+p.readOpcodeImm16()))
 	},
 
 	// SS:[BP+DI+rel16]
 	func(p *CPU) dataLocation {
-		return dataLocation(memory.NewAddress(p.getSeg(p.SS), p.BP+p.DI+p.readOpcodeImm16()))
+		return dataLocation(memory.NewAddress(p.getSeg(p.SS()), p.BP()+p.DI()+p.readOpcodeImm16()))
 	},
 
 	// DS:[SI+rel16]
 	func(p *CPU) dataLocation {
-		return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.SI+p.readOpcodeImm16()))
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.SI()+p.readOpcodeImm16()))
 	},
 
 	// DS:[DI+rel16]
 	func(p *CPU) dataLocation {
-		return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.DI+p.readOpcodeImm16()))
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.DI()+p.readOpcodeImm16()))
 	},
 
 	// SS:[BP+rel16]
 	func(p *CPU) dataLocation {
-		return dataLocation(memory.NewAddress(p.getSeg(p.SS), p.BP+p.readOpcodeImm16()))
+		return dataLocation(memory.NewAddress(p.getSeg(p.SS()), p.BP()+p.readOpcodeImm16()))
 	},
 
 	// DS:[BX+rel16]
 	func(p *CPU) dataLocation {
-		return dataLocation(memory.NewAddress(p.getSeg(p.DS), p.BX+p.readOpcodeImm16()))
+		return dataLocation(memory.NewAddress(p.getSeg(p.DS()), p.BX()+p.readOpcodeImm16()))
 	},
 
 	nil, nil, nil, nil, nil, nil, nil, nil,

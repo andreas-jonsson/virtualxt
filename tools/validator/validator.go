@@ -84,7 +84,7 @@ func equalAll(a, b *validator.Event) bool {
 
 func equalOpcodeAndLocation(a, b *validator.Event) bool {
 	ar, br := &a.Regs[0], &b.Regs[0]
-	return a.Opcode == b.Opcode && memory.NewPointer(ar.CS, ar.IP) == memory.NewPointer(br.CS, br.IP)
+	return a.Opcode == b.Opcode && memory.NewPointer(ar.CS(), ar.IP) == memory.NewPointer(br.CS(), br.IP)
 }
 
 func equalOpcodeLocationAndFirstRead(a, b *validator.Event) bool {
@@ -115,17 +115,17 @@ func equalInputData(a, b *validator.Event) bool {
 }
 
 func equalRegs(a, b *processor.Registers) bool {
-	return a.AX == b.AX &&
-		a.CX == b.CX &&
-		a.DX == b.DX &&
-		a.BX == b.BX &&
-		a.SP == b.SP &&
-		a.BP == b.BP &&
-		a.SI == b.SI &&
-		a.DI == b.DI &&
-		a.ES == b.ES &&
-		a.SS == b.SS &&
-		a.DS == b.DS
+	return a.AX() == b.AX() &&
+		a.CX() == b.CX() &&
+		a.DX() == b.DX() &&
+		a.BX() == b.BX() &&
+		a.SP() == b.SP() &&
+		a.BP() == b.BP() &&
+		a.SI() == b.SI() &&
+		a.DI() == b.DI() &&
+		a.ES() == b.ES() &&
+		a.SS() == b.SS() &&
+		a.DS() == b.DS()
 }
 
 func equalFlags(a, b *processor.Registers) bool {

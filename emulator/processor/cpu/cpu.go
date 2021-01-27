@@ -133,8 +133,9 @@ func (p *CPU) Reset() {
 	p.halted = false
 	p.trap = false
 	p.instructionState = instructionState{}
+	p.Registers = processor.Registers{}
 
-	p.Registers = processor.Registers{CS: 0xFFFF}
+	p.SetCS(0xFFFF)
 	for _, d := range p.peripherals {
 		d.Reset()
 	}
