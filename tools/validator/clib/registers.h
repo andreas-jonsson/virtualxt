@@ -26,30 +26,27 @@ freely, subject to the following restrictions:
 #define DefulatQueueSize  0x400      // 1KB
 #define DefaultBufferSize 0x40000000 // 1GB
 
-struct Registers {
-  unsigned short AX;
-  unsigned short CX;
-  unsigned short DX;
-  unsigned short BX;
-  unsigned short SP;
-  unsigned short BP;
-  unsigned short SI;
-  unsigned short DI;
-  unsigned short ES;
-  unsigned short CS;
-  unsigned short SS;
-  unsigned short DS;
-  unsigned short IP;
-
-  bool CF;
-  bool PF;
-  bool AF;
-  bool ZF;
-  bool SF;
-  bool TF;
-  bool IF;
-  bool DF;
-  bool OF;
+enum {
+	AL,
+	AH,
+	AX,
+	CL,
+	CH,
+	CX,
+	DL,
+	DH,
+	DX,
+	BL,
+	BH,
+	BX,
+	SP,
+	BP,
+	SI,
+	DI,
+	ES,
+	CS,
+	SS,
+	DS
 };
 
 #endif

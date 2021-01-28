@@ -29,8 +29,6 @@ import (
 	"log"
 	"math"
 	"os"
-
-	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
 const Enabled = true
@@ -81,7 +79,36 @@ func Initialize(output string, queueSize, bufferSize int) {
 	}()
 }
 
-func Begin(opcode byte, regs processor.Registers) {
+func pushReg(flags, reg byte, data uint16) {
+	if !inScope {
+		return
+	}
+	for i, op := range currentEvent.Regs {
+		if op.Flags == 0 {
+			currentEvent.Regs[i] = RegOp{flags, reg, data}
+			return
+		}
+	}
+	log.Panic("Reg limit!")
+}
+
+func ReadReg8(reg, data byte) {
+	pushReg(ReadReg, reg, uint16(data))
+}
+
+func WriteReg8(reg, data byte) {
+	pushReg(WriteReg, reg, uint16(data))
+}
+
+func ReadReg16(reg byte, data uint16) {
+	pushReg(ReadReg|WideReg, reg, data)
+}
+
+func WriteReg16(reg byte, data uint16) {
+	pushReg(WriteReg|WideReg, reg, data)
+}
+
+func Begin(opcode byte) {
 	if outputFile == "" {
 		return
 	}
@@ -89,17 +116,14 @@ func Begin(opcode byte, regs processor.Registers) {
 	inScope = true
 	currentEvent = EmptyEvent
 	currentEvent.Opcode = opcode
-	currentEvent.Regs[0] = regs
-
 }
 
-func End(regs processor.Registers) {
+func End() {
 	if !inScope {
 		return
 	}
 
 	inScope = false
-	currentEvent.Regs[1] = regs
 	outputChan <- currentEvent
 }
 

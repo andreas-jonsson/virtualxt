@@ -20,7 +20,11 @@ freely, subject to the following restrictions:
 
 package processor
 
-import "log"
+import (
+	"log"
+
+	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
+)
 
 type Registers struct {
 	ax, cx, dx, bx,
@@ -57,6 +61,8 @@ func (r *Registers) Exchange(op byte) {
 		*b = tmp
 	}
 
+	validator.Discard()
+
 	switch op {
 	case 0x91: // XCHG AX,CX
 		xchg(&r.ax, &r.cx)
@@ -78,161 +84,209 @@ func (r *Registers) Exchange(op byte) {
 }
 
 func (r *Registers) AL() byte {
-	return byte(r.ax & 0xFF)
+	v := byte(r.ax & 0xFF)
+	validator.ReadReg8(validator.AL, v)
+	return v
 }
 
 func (r *Registers) AH() byte {
-	return byte(r.ax >> 8)
+	v := byte(r.ax >> 8)
+	validator.ReadReg8(validator.AH, v)
+	return v
 }
 
 func (r *Registers) AX() uint16 {
+	validator.ReadReg16(validator.AX, r.ax)
 	return r.ax
 }
 
 func (r *Registers) SetAL(v byte) {
+	validator.WriteReg8(validator.AL, v)
 	r.ax = r.ax&0xFF00 | uint16(v)
 }
 
 func (r *Registers) SetAH(v byte) {
+	validator.WriteReg8(validator.AH, v)
 	r.ax = r.ax&0xFF | uint16(v)<<8
 }
 
 func (r *Registers) SetAX(v uint16) {
+	validator.WriteReg16(validator.AX, v)
 	r.ax = v
 }
 
 func (r *Registers) BL() byte {
-	return byte(r.bx & 0xFF)
+	v := byte(r.bx & 0xFF)
+	validator.ReadReg8(validator.BL, v)
+	return v
 }
 
 func (r *Registers) BH() byte {
-	return byte(r.bx >> 8)
+	v := byte(r.bx >> 8)
+	validator.ReadReg8(validator.BH, v)
+	return v
 }
 
 func (r *Registers) BX() uint16 {
+	validator.ReadReg16(validator.BX, r.bx)
 	return r.bx
 }
 
 func (r *Registers) SetBL(v byte) {
+	validator.WriteReg8(validator.BL, v)
 	r.bx = r.bx&0xFF00 | uint16(v)
 }
 
 func (r *Registers) SetBH(v byte) {
+	validator.WriteReg8(validator.BH, v)
 	r.bx = r.bx&0xFF | uint16(v)<<8
 }
 
 func (r *Registers) SetBX(v uint16) {
+	validator.WriteReg16(validator.BX, v)
 	r.bx = v
 }
 
 func (r *Registers) CL() byte {
-	return byte(r.cx & 0xFF)
+	v := byte(r.cx & 0xFF)
+	validator.ReadReg8(validator.CL, v)
+	return v
 }
 
 func (r *Registers) CH() byte {
-	return byte(r.cx >> 8)
+	v := byte(r.cx >> 8)
+	validator.ReadReg8(validator.CH, v)
+	return v
 }
 
 func (r *Registers) CX() uint16 {
+	validator.ReadReg16(validator.CX, r.cx)
 	return r.cx
 }
 
 func (r *Registers) SetCL(v byte) {
+	validator.WriteReg8(validator.CL, v)
 	r.cx = r.cx&0xFF00 | uint16(v)
 }
 
 func (r *Registers) SetCH(v byte) {
+	validator.WriteReg8(validator.CH, v)
 	r.cx = r.cx&0xFF | uint16(v)<<8
 }
 
 func (r *Registers) SetCX(v uint16) {
+	validator.WriteReg16(validator.CX, v)
 	r.cx = v
 }
 
 func (r *Registers) DL() byte {
-	return byte(r.dx & 0xFF)
+	v := byte(r.dx & 0xFF)
+	validator.ReadReg8(validator.DL, v)
+	return v
 }
 
 func (r *Registers) DH() byte {
-	return byte(r.dx >> 8)
+	v := byte(r.dx >> 8)
+	validator.ReadReg8(validator.DH, v)
+	return v
 }
 
 func (r *Registers) DX() uint16 {
+	validator.ReadReg16(validator.DX, r.dx)
 	return r.dx
 }
 
 func (r *Registers) SetDL(v byte) {
+	validator.WriteReg8(validator.DL, v)
 	r.dx = r.dx&0xFF00 | uint16(v)
 }
 
 func (r *Registers) SetDH(v byte) {
+	validator.WriteReg8(validator.DH, v)
 	r.dx = r.dx&0xFF | uint16(v)<<8
 }
 
 func (r *Registers) SetDX(v uint16) {
+	validator.WriteReg16(validator.DX, v)
 	r.dx = v
 }
 
 func (r *Registers) SP() uint16 {
+	validator.ReadReg16(validator.SP, r.sp)
 	return r.sp
 }
 
 func (r *Registers) SetSP(v uint16) {
+	validator.WriteReg16(validator.SP, v)
 	r.sp = v
 }
 
 func (r *Registers) BP() uint16 {
+	validator.ReadReg16(validator.BP, r.bp)
 	return r.bp
 }
 
 func (r *Registers) SetBP(v uint16) {
+	validator.WriteReg16(validator.BP, v)
 	r.bp = v
 }
 
 func (r *Registers) SI() uint16 {
+	validator.ReadReg16(validator.SI, r.si)
 	return r.si
 }
 
 func (r *Registers) SetSI(v uint16) {
+	validator.WriteReg16(validator.SI, v)
 	r.si = v
 }
 
 func (r *Registers) DI() uint16 {
+	validator.ReadReg16(validator.DI, r.di)
 	return r.di
 }
 
 func (r *Registers) SetDI(v uint16) {
+	validator.WriteReg16(validator.DI, v)
 	r.di = v
 }
 
 func (r *Registers) ES() uint16 {
+	validator.ReadReg16(validator.ES, r.es)
 	return r.es
 }
 
 func (r *Registers) SetES(v uint16) {
+	validator.WriteReg16(validator.ES, v)
 	r.es = v
 }
 
 func (r *Registers) CS() uint16 {
+	validator.ReadReg16(validator.CS, r.cs)
 	return r.cs
 }
 
 func (r *Registers) SetCS(v uint16) {
+	validator.WriteReg16(validator.CS, v)
 	r.cs = v
 }
 
 func (r *Registers) SS() uint16 {
+	validator.ReadReg16(validator.SS, r.ss)
 	return r.ss
 }
 
 func (r *Registers) SetSS(v uint16) {
+	validator.WriteReg16(validator.SS, v)
 	r.ss = v
 }
 
 func (r *Registers) DS() uint16 {
+	validator.ReadReg16(validator.DS, r.ds)
 	return r.ds
 }
 
 func (r *Registers) SetDS(v uint16) {
+	validator.WriteReg16(validator.DS, v)
 	r.ds = v
 }

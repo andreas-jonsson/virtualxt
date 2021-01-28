@@ -333,11 +333,11 @@ func (p *CPU) Step() (int, error) {
 		return p.cycleCount, err
 	}
 
-	validator.Begin(p.opcode, p.Registers)
+	validator.Begin(p.opcode)
 	if err := p.execute(); err != nil {
 		return p.cycleCount, err
 	}
-	validator.End(p.Registers)
+	validator.End()
 
 	for _, d := range p.peripherals {
 		if err := d.Step(p.cycleCount); err != nil {
