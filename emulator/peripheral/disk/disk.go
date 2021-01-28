@@ -28,6 +28,7 @@ import (
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
 )
 
 type diskDrive struct {
@@ -214,6 +215,8 @@ func (m *Device) In(uint16) byte {
 }
 
 func (m *Device) Out(port uint16, _ byte) {
+	validator.Discard()
+
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
