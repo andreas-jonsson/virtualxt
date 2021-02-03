@@ -20,108 +20,112 @@ freely, subject to the following restrictions:
 
 package cpu
 
+import (
+	"github.com/andreas-jonsson/virtualxt/emulator/processor"
+)
+
 func (p *CPU) rotSHR8(v byte) byte {
-	p.CF = v&1 != 0
+	p.SetBool(processor.Carry, v&1 != 0)
 	return v >> 1
 }
 
 func (p *CPU) rotSAR8(v byte) byte {
 	s := v & 0x80
-	p.CF = v&1 != 0
+	p.SetBool(processor.Carry, v&1 != 0)
 	return v>>1 | s
 }
 
 func (p *CPU) rotSHL8(v byte) byte {
-	p.CF = v&0x80 != 0
+	p.SetBool(processor.Carry, v&0x80 != 0)
 	return v << 1
 }
 
 func (p *CPU) rotROL8(v byte) byte {
 	s := v & 0x80
-	p.CF = s != 0
+	p.SetBool(processor.Carry, s != 0)
 	return v<<1 | s>>7
 }
 
 func (p *CPU) rotROR8(v byte) byte {
 	c := v & 1
-	p.CF = c != 0
+	p.SetBool(processor.Carry, c != 0)
 	return v>>1 | c<<7
 }
 
 func (p *CPU) rotRCL8(v byte) byte {
 	s := v & 0x80
 	v <<= 1
-	if p.CF {
+	if p.GetBool(processor.Carry) {
 		v |= 1
 	}
-	p.CF = s != 0
+	p.SetBool(processor.Carry, s != 0)
 	return v
 }
 
 func (p *CPU) rotRCR8(v byte) byte {
 	c := v & 1
 	v >>= 1
-	if p.CF {
+	if p.GetBool(processor.Carry) {
 		v |= 0x80
 	}
-	p.CF = c != 0
+	p.SetBool(processor.Carry, c != 0)
 	return v
 }
 
 func (p *CPU) rotSHR16(v uint16) uint16 {
-	p.CF = v&1 != 0
+	p.SetBool(processor.Carry, v&1 != 0)
 	return v >> 1
 }
 
 func (p *CPU) rotSAR16(v uint16) uint16 {
 	s := v & 0x8000
-	p.CF = v&1 != 0
+	p.SetBool(processor.Carry, v&1 != 0)
 	return v>>1 | s
 }
 
 func (p *CPU) rotSHL16(v uint16) uint16 {
-	p.CF = v&0x8000 != 0
+	p.SetBool(processor.Carry, v&0x8000 != 0)
 	return v << 1
 }
 
 func (p *CPU) rotROL16(v uint16) uint16 {
 	s := v & 0x8000
-	p.CF = s != 0
+	p.SetBool(processor.Carry, s != 0)
 	return v<<1 | s>>15
 }
 
 func (p *CPU) rotROR16(v uint16) uint16 {
 	c := v & 1
-	p.CF = c != 0
+	p.SetBool(processor.Carry, c != 0)
 	return v>>1 | c<<15
 }
 
 func (p *CPU) rotRCL16(v uint16) uint16 {
 	s := v & 0x8000
 	v <<= 1
-	if p.CF {
+	if p.GetBool(processor.Carry) {
 		v |= 1
 	}
-	p.CF = s != 0
+	p.SetBool(processor.Carry, s != 0)
 	return v
 }
 
 func (p *CPU) rotRCR16(v uint16) uint16 {
 	c := v & 1
 	v >>= 1
-	if p.CF {
+	if p.GetBool(processor.Carry) {
 		v |= 0x8000
 	}
-	p.CF = c != 0
+	p.SetBool(processor.Carry, c != 0)
 	return v
 }
 
 func (p *CPU) rotateOverflowLeft(num, sig byte) {
-	p.OF = b2ui32(p.CF)^uint32(sig) != 0
+	p.SetBool(processor.Overflow, uint32(p.Get(processor.Carry))^uint32(sig) != 0)
 }
 
 func (p *CPU) rotateOverflowRight(num, sig2 byte) {
-	p.OF = (sig2>>1)^(sig2&1) != 0
+	p.SetBool(processor.Overflow, (sig2>>1)^(sig2&1) != 0)
 }
 
 func (p *CPU) shiftOrRotate8(op, a, b byte) byte {
@@ -172,13 +176,13 @@ func (p *CPU) shiftOrRotate8(op, a, b byte) byte {
 	case 3:
 		p.rotateOverflowRight(b, byte(a>>6))
 	case 4:
-		p.OF = !(byte(b2ui16(p.CF)) == (a >> 7))
+		p.SetBool(processor.Overflow, !(byte(p.Get(processor.Carry)) == (a >> 7)))
 		p.updateFlagsSZP8(a)
 	case 5:
-		p.OF = (b == 1) && (org&0x80 != 0)
+		p.SetBool(processor.Overflow, (b == 1) && (org&0x80 != 0))
 		p.updateFlagsSZP8(a)
 	case 7:
-		p.OF = false
+		p.Clear(processor.Overflow)
 		p.updateFlagsSZP8(a)
 	}
 	return a
@@ -225,13 +229,13 @@ func (p *CPU) shiftOrRotate16(op byte, a uint16, b byte) uint16 {
 	case 3:
 		p.rotateOverflowRight(b, byte(a>>14))
 	case 4:
-		p.OF = !(b2ui16(p.CF) == (a >> 15))
+		p.SetBool(processor.Overflow, !(uint16(p.Get(processor.Carry)) == (a >> 15)))
 		p.updateFlagsSZP16(a)
 	case 5:
-		p.OF = (b == 1) && (org&0x8000 != 0)
+		p.SetBool(processor.Overflow, (b == 1) && (org&0x8000 != 0))
 		p.updateFlagsSZP16(a)
 	case 7:
-		p.OF = false
+		p.Clear(processor.Overflow)
 		p.updateFlagsSZP16(a)
 	}
 	return a

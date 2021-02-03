@@ -122,59 +122,6 @@ loop:
 	p.rmToReg = op&2 != 0
 }
 
-func (p *CPU) packFlags8() byte {
-	var flags byte = 0x2
-	if p.CF {
-		flags |= 0x001
-	}
-	if p.PF {
-		flags |= 0x004
-	}
-	if p.AF {
-		flags |= 0x010
-	}
-	if p.ZF {
-		flags |= 0x040
-	}
-	if p.SF {
-		flags |= 0x080
-	}
-	return flags
-}
-
-func (p *CPU) packFlags16() uint16 {
-	flags := uint16(p.packFlags8())
-	if p.TF {
-		flags |= 0x100
-	}
-	if p.IF {
-		flags |= 0x200
-	}
-	if p.DF {
-		flags |= 0x400
-	}
-	if p.OF {
-		flags |= 0x800
-	}
-	return flags
-}
-
-func (p *CPU) unpackFlags8(flags byte) {
-	p.CF = flags&0x001 != 0
-	p.PF = flags&0x004 != 0
-	p.AF = flags&0x010 != 0
-	p.ZF = flags&0x040 != 0
-	p.SF = flags&0x080 != 0
-}
-
-func (p *CPU) unpackFlags16(flags uint16) {
-	p.unpackFlags8(byte(flags & 0xFF))
-	p.TF = flags&0x100 != 0
-	p.IF = flags&0x200 != 0
-	p.DF = flags&0x400 != 0
-	p.OF = flags&0x800 != 0
-}
-
 func signExtend16(v byte) uint16 {
 	if v&0x80 != 0 {
 		return uint16(v) | 0xFF00
@@ -205,15 +152,15 @@ func (p *CPU) pop16() uint16 {
 }
 
 func (p *CPU) updateFlagsSZP8(res byte) {
-	p.SF = res&0x80 != 0
-	p.ZF = res == 0
-	p.PF = parityLookup[res]
+	p.SetBool(processor.Sign, res&0x80 != 0)
+	p.SetBool(processor.Zero, res == 0)
+	p.SetBool(processor.Parity, parityLookup[res])
 }
 
 func (p *CPU) updateFlagsSZP16(res uint16) {
-	p.SF = res&0x8000 != 0
-	p.ZF = res == 0
-	p.PF = parityLookup[res&0xFF]
+	p.SetBool(processor.Sign, res&0x8000 != 0)
+	p.SetBool(processor.Zero, res == 0)
+	p.SetBool(processor.Parity, parityLookup[res&0xFF])
 }
 
 func (p *CPU) getFlagsMask() (uint32, uint32) {
@@ -227,8 +174,7 @@ func (p *CPU) getFlagsMask() (uint32, uint32) {
 }
 
 func (p *CPU) clearFlagsOC() {
-	p.CF = false
-	p.OF = false
+	p.Clear(processor.Carry | processor.Overflow)
 }
 
 func (p *CPU) updateFlagsOSZPCLog8(res byte) {
@@ -243,32 +189,21 @@ func (p *CPU) updateFlagsOSZPCLog16(res uint16) {
 
 func (p *CPU) updateFlagsOACAdd(res, a, b uint32) {
 	maskC, maskO := p.getFlagsMask()
-	p.CF = res&maskC != 0
-	p.AF = ((a ^ b ^ res) & 0x10) == 0x10
-	p.OF = ((res ^ a) & (res ^ b) & maskO) == maskO
+	p.SetBool(processor.Carry, res&maskC != 0)
+	p.SetBool(processor.Adjust, ((a^b^res)&0x10) == 0x10)
+	p.SetBool(processor.Overflow, ((res^a)&(res^b)&maskO) == maskO)
 }
 
 func (p *CPU) updateFlagsOACSub(res, a, b uint32) {
 	maskC, maskO := p.getFlagsMask()
-	p.CF = res&maskC != 0
-	p.AF = ((a ^ b ^ res) & 0x10) != 0
-	p.OF = ((res ^ a) & (a ^ b) & maskO) != 0
+	p.SetBool(processor.Carry, res&maskC != 0)
+	p.SetBool(processor.Adjust, ((a^b^res)&0x10) != 0)
+	p.SetBool(processor.Overflow, ((res^a)&(a^b)&maskO) != 0)
 }
 
 func (p *CPU) updateFlagsOACSubCarry(res, a, b uint32) {
-	b += b2ui32(p.CF)
+	b += uint32(p.Get(processor.Carry)) // Just directly cast it to int.
 	p.updateFlagsOACSub(res, a, b)
-}
-
-func b2ui16(b bool) uint16 {
-	if b {
-		return 1
-	}
-	return 0
-}
-
-func b2ui32(b bool) uint32 {
-	return uint32(b2ui16(b))
 }
 
 func (p *CPU) getSeg(seg uint16) uint16 {
@@ -291,21 +226,21 @@ func (p *CPU) doInterrupt(n int) {
 
 	if handler := p.interceptors[n]; handler != nil {
 		if err := handler.HandleInterrupt(n); err == nil {
-			p.TF, p.IF = false, false
+			p.Clear(processor.Trap | processor.InterruptEnable)
 			return
 		} else if err != processor.ErrInterruptNotHandled {
 			log.Panic(err)
 		}
 	}
 
-	p.push16(p.packFlags16())
+	p.push16(p.Load())
 	p.push16(p.CS())
 	p.push16(p.IP)
 
 	offset := n * 4
 	p.SetCS(p.ReadWord(memory.Pointer(offset + 2)))
 	p.IP = p.ReadWord(memory.Pointer(offset))
-	p.TF, p.IF = false, false
+	p.Clear(processor.Trap | processor.InterruptEnable)
 }
 
 func (p *CPU) Step() (int, error) {
@@ -315,9 +250,9 @@ func (p *CPU) Step() (int, error) {
 	if p.trap {
 		p.doInterrupt(1)
 	}
-	p.trap = p.TF
+	p.trap = p.GetBool(processor.Trap)
 
-	if !p.trap && p.IF {
+	if !p.trap && p.GetBool(processor.InterruptEnable) {
 		if n, err := p.pic.GetInterrupt(); err == nil {
 			p.doInterrupt(n)
 		}
@@ -352,8 +287,10 @@ func (p *CPU) execute() error {
 	p.cycleCount++
 
 	op := p.opcode
-	carry := op > 0x0F && p.CF
-	carryOp := b2ui32(carry)
+	carryOp := uint32(0)
+	if carry := op > 0x0F && p.GetBool(processor.Carry); carry {
+		carryOp = 1
+	}
 
 	switch op {
 	case 0x00, 0x02, 0x10, 0x12: // ADD/ADC r/m8,r8
@@ -474,20 +411,20 @@ func (p *CPU) execute() error {
 		p.SetAX(uint16(res))
 		p.updateFlagsOSZPCLog16(uint16(res))
 	case 0x27: // DAA
-		if al := p.AL(); ((al & 0xF) > 9) || p.AF {
+		if al := p.AL(); ((al & 0xF) > 9) || p.GetBool(processor.Adjust) {
 			v := uint16(al) + 6
 			p.SetAL(byte(v & 0xFF))
-			p.CF = (v & 0xFF00) != 0
-			p.AF = true
+			p.SetBool(processor.Carry, (v&0xFF00) != 0)
+			p.Set(processor.Adjust)
 		} else {
-			p.AF = false
+			p.Clear(processor.Adjust)
 		}
 
-		if al := p.AL(); ((al & 0xF0) > 0x90) || p.CF {
+		if al := p.AL(); ((al & 0xF0) > 0x90) || p.GetBool(processor.Carry) {
 			p.SetAL(al + 0x60)
-			p.CF = true
+			p.Set(processor.Carry)
 		} else {
-			p.CF = false
+			p.Clear(processor.Carry)
 		}
 
 		al := p.AL()
@@ -520,20 +457,20 @@ func (p *CPU) execute() error {
 		p.updateFlagsSZP16(uint16(res))
 		p.updateFlagsOACSub(res, a, b)
 	case 0x2F: // DAS
-		if al := p.AL(); ((al & 15) > 9) || p.AF {
+		if al := p.AL(); ((al & 15) > 9) || p.GetBool(processor.Adjust) {
 			v := uint16(al) - 6
 			p.SetAL(byte(v & 0xFF))
-			p.CF = (v & 0xFF00) != 0
-			p.AF = true
+			p.SetBool(processor.Carry, (v&0xFF00) != 0)
+			p.Set(processor.Adjust)
 		} else {
-			p.AF = false
+			p.Clear(processor.Adjust)
 		}
 
-		if al := p.AL(); ((al & 0xF0) > 0x90) || p.CF {
+		if al := p.AL(); ((al & 0xF0) > 0x90) || p.GetBool(processor.Carry) {
 			p.SetAL(al - 0x60)
-			p.CF = true
+			p.Set(processor.Carry)
 		} else {
-			p.CF = false
+			p.Clear(processor.Carry)
 		}
 		p.updateFlagsSZP8(p.AL())
 
@@ -562,12 +499,12 @@ func (p *CPU) execute() error {
 		p.SetAX(uint16(res))
 		p.updateFlagsOSZPCLog16(uint16(res))
 	case 0x37: // AAA
-		if al := p.AL(); ((al & 0xF) > 9) || p.AF {
+		if al := p.AL(); ((al & 0xF) > 9) || p.GetBool(processor.Adjust) {
 			p.SetAL(al + 6)
 			p.SetAH(p.AH() + 1)
-			p.AF, p.CF = true, true
+			p.Set(processor.Adjust | processor.Carry)
 		} else {
-			p.AF, p.CF = false, false
+			p.Clear(processor.Adjust | processor.Carry)
 		}
 		al := p.AL() & 0xF
 		p.SetAL(al)
@@ -595,12 +532,12 @@ func (p *CPU) execute() error {
 		p.updateFlagsOACSub(res, a, b)
 		p.updateFlagsSZP16(uint16(res))
 	case 0x3F: // AAS
-		if al := p.AL(); ((al & 0xF) > 9) || p.AF {
+		if al := p.AL(); ((al & 0xF) > 9) || p.GetBool(processor.Adjust) {
 			p.SetAL(al - 6)
 			p.SetAH(p.AH() - 1)
-			p.AF, p.CF = true, true
+			p.Set(processor.Adjust | processor.Carry)
 		} else {
-			p.AF, p.CF = false, false
+			p.Clear(processor.Adjust | processor.Carry)
 		}
 		al := p.AL() & 0xF
 		p.SetAL(al)
@@ -614,20 +551,20 @@ func (p *CPU) execute() error {
 		res := a + 1
 		reg.writeWord(p, res)
 
-		cf := p.CF
+		cf := p.GetBool(processor.Carry)
 		p.updateFlagsOACAdd(uint32(res), uint32(a), 1)
 		p.updateFlagsSZP16(res)
-		p.CF = cf
+		p.SetBool(processor.Carry, cf)
 	case 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F: // DEC AX/CX/DX/BX/SP/BP/SI/DI
 		reg := dataLocation(op-0x40) | registerLocation
 		a := reg.readWord(p)
 		res := a - 1
 		reg.writeWord(p, res)
 
-		cf := p.CF
+		cf := p.GetBool(processor.Carry)
 		p.updateFlagsOACSub(uint32(res), uint32(a), 1)
 		p.updateFlagsSZP16(res)
-		p.CF = cf
+		p.SetBool(processor.Carry, cf)
 
 	// 0x5x
 
@@ -697,11 +634,11 @@ func (p *CPU) execute() error {
 			p.updateFlagsSZP16(res16)
 
 			if res16&0x8000 == 0x8000 {
-				p.CF = upper != 0xFFFF
+				p.SetBool(processor.Carry, upper != 0xFFFF)
 			} else {
-				p.CF = upper != 0x0
+				p.SetBool(processor.Carry, upper != 0x0)
 			}
-			p.OF = p.CF
+			p.SetBool(processor.Overflow, p.GetBool(processor.Carry))
 		} else {
 			p.invalidOpcode()
 		}
@@ -716,37 +653,37 @@ func (p *CPU) execute() error {
 	// 0x7x
 
 	case 0x70: // JO rel8
-		p.jmpRel8Cond(p.OF)
+		p.jmpRel8Cond(p.GetBool(processor.Overflow))
 	case 0x71: // JNO rel8
-		p.jmpRel8Cond(!p.OF)
+		p.jmpRel8Cond(!p.GetBool(processor.Overflow))
 	case 0x72: // JB/JNAE rel8
-		p.jmpRel8Cond(p.CF)
+		p.jmpRel8Cond(p.GetBool(processor.Carry))
 	case 0x73: // JNB/JAE rel8
-		p.jmpRel8Cond(!p.CF)
+		p.jmpRel8Cond(!p.GetBool(processor.Carry))
 	case 0x74: // JE/JZ rel8
-		p.jmpRel8Cond(p.ZF)
+		p.jmpRel8Cond(p.GetBool(processor.Zero))
 	case 0x75: // JNE/JNZ rel8
-		p.jmpRel8Cond(!p.ZF)
+		p.jmpRel8Cond(!p.GetBool(processor.Zero))
 	case 0x76: // JBE/JNA rel8
-		p.jmpRel8Cond(p.CF || p.ZF)
+		p.jmpRel8Cond(p.GetBool(processor.Carry | processor.Zero))
 	case 0x77: // JNBE/JA rel8
-		p.jmpRel8Cond(!p.CF && !p.ZF)
+		p.jmpRel8Cond(!p.GetBool(processor.Carry) && !p.GetBool(processor.Zero))
 	case 0x78: // JS rel8
-		p.jmpRel8Cond(p.SF)
+		p.jmpRel8Cond(p.GetBool(processor.Sign))
 	case 0x79: // JNS rel8
-		p.jmpRel8Cond(!p.SF)
+		p.jmpRel8Cond(!p.GetBool(processor.Sign))
 	case 0x7A: // JP/JPE rel8
-		p.jmpRel8Cond(p.PF)
+		p.jmpRel8Cond(p.GetBool(processor.Parity))
 	case 0x7B: // JNP/JPO rel8
-		p.jmpRel8Cond(!p.PF)
+		p.jmpRel8Cond(!p.GetBool(processor.Parity))
 	case 0x7C: // JL/JNGE rel8
-		p.jmpRel8Cond(p.SF != p.OF)
+		p.jmpRel8Cond(p.GetBool(processor.Sign) != p.GetBool(processor.Overflow))
 	case 0x7D: // JNL/JGE rel8
-		p.jmpRel8Cond(p.SF == p.OF)
+		p.jmpRel8Cond(p.GetBool(processor.Sign) == p.GetBool(processor.Overflow))
 	case 0x7E: // JLE/JNG rel8
-		p.jmpRel8Cond(p.SF != p.OF || p.ZF)
+		p.jmpRel8Cond(p.GetBool(processor.Sign) != p.GetBool(processor.Overflow) || p.GetBool(processor.Zero))
 	case 0x7F: // JNLE/JG rel8
-		p.jmpRel8Cond(!p.ZF && p.SF == p.OF)
+		p.jmpRel8Cond(!p.GetBool(processor.Zero) && p.GetBool(processor.Sign) == p.GetBool(processor.Overflow))
 
 	// 0x8x
 
@@ -818,13 +755,13 @@ func (p *CPU) execute() error {
 		p.SetCS(cs)
 	case 0x9B: // WAIT
 	case 0x9C: // PUSHF
-		p.push16(p.packFlags16())
+		p.push16(p.Load())
 	case 0x9D: // POPF
-		p.unpackFlags16(p.pop16())
+		p.Store(p.pop16())
 	case 0x9E: // SAHF
-		p.unpackFlags8(p.AH())
+		p.Store(uint16(p.AH()))
 	case 0x9F: // LAHF
-		p.SetAH(p.packFlags8())
+		p.SetAH(byte(p.Load()))
 
 	// 0xAx
 
@@ -947,13 +884,13 @@ func (p *CPU) execute() error {
 	case 0xCD: // INT d8
 		p.doInterrupt(int(p.readOpcodeStream()))
 	case 0xCE: // INTO
-		if p.OF {
+		if p.GetBool(processor.Overflow) {
 			p.doInterrupt(4)
 		}
 	case 0xCF: // IRET
 		p.IP = p.pop16()
 		p.SetCS(p.pop16())
-		p.unpackFlags16(p.pop16())
+		p.Store(p.pop16())
 
 	// 0xDx
 
@@ -987,7 +924,7 @@ func (p *CPU) execute() error {
 	case 0xD6: // *SALC
 		// This is XLAT on V20.
 		if !p.isV20 {
-			if p.CF {
+			if p.GetBool(processor.Carry) {
 				p.SetAL(0xFF)
 			} else {
 				p.SetAL(0)
@@ -1006,10 +943,10 @@ func (p *CPU) execute() error {
 
 	case 0xE0: // LOOPNZ/NE rel8
 		p.SetCX(p.CX() - 1)
-		p.jmpRel8Cond(p.CX() != 0 && !p.ZF)
+		p.jmpRel8Cond(p.CX() != 0 && !p.GetBool(processor.Zero))
 	case 0xE1: // LOOPZ/E rel8
 		p.SetCX(p.CX() - 1)
-		p.jmpRel8Cond(p.CX() != 0 && p.ZF)
+		p.jmpRel8Cond(p.CX() != 0 && p.GetBool(processor.Zero))
 	case 0xE2: // LOOP rel8
 		p.SetCX(p.CX() - 1)
 		p.jmpRel8Cond(p.CX() != 0)
@@ -1047,23 +984,23 @@ func (p *CPU) execute() error {
 	case 0xF4: // HLT
 		p.halted = true
 	case 0xF5: // CMC
-		p.CF = !p.CF
+		p.SetBool(processor.Carry, !p.GetBool(processor.Carry))
 	case 0xF6: // _ALU2 r/m8,d8
 		p.grp3a()
 	case 0xF7: // _ALU2 r/m16,d16
 		p.grp3b()
 	case 0xF8: // CLC
-		p.CF = false
+		p.Clear(processor.Carry)
 	case 0xF9: // STC
-		p.CF = true
+		p.Set(processor.Carry)
 	case 0xFA: // CLI
-		p.IF = false
+		p.Clear(processor.InterruptEnable)
 	case 0xFB: // STI
-		p.IF = true
+		p.Set(processor.InterruptEnable)
 	case 0xFC: // CLD
-		p.DF = false
+		p.Clear(processor.Direction)
 	case 0xFD: // STD
-		p.DF = true
+		p.Set(processor.Direction)
 	case 0xFE: // _MISC r/m8
 		p.grp4()
 	case 0xFF: // _MISC r/m16
@@ -1090,10 +1027,10 @@ func (p *CPU) grp1() {
 		res = a | b
 		p.clearFlagsOC()
 	case 2:
-		res = a + b + b2ui32(p.CF)
+		res = a + b + uint32(p.Get(processor.Carry))
 		p.updateFlagsOACAdd(res, a, b)
 	case 3:
-		res = a - (b + b2ui32(p.CF))
+		res = a - (b + uint32(p.Get(processor.Carry)))
 		p.updateFlagsOACSubCarry(res, a, b)
 	case 4:
 		res = a & b
@@ -1139,10 +1076,10 @@ func (p *CPU) grp1w() {
 		res = a | b
 		p.clearFlagsOC()
 	case 2:
-		res = a + b + b2ui32(p.CF)
+		res = a + b + uint32(p.Get(processor.Carry))
 		p.updateFlagsOACAdd(res, a, b)
 	case 3:
-		res = a - (b + b2ui32(p.CF))
+		res = a - (b + uint32(p.Get(processor.Carry)))
 		p.updateFlagsOACSubCarry(res, a, b)
 	case 4:
 		res = a & b
@@ -1276,28 +1213,28 @@ func (p *CPU) grp3a() {
 		operand.writeByte(p, byte(res))
 		p.updateFlagsOACSub(res, a, b)
 		p.updateFlagsSZP8(byte(res))
-		p.CF = b != 0
+		p.SetBool(processor.Carry, b != 0)
 	case 4:
 		a, b := uint32(p.AL()), uint32(operand.readByte(p))
 		res := a * b
 		p.SetAX(uint16(res & 0xFFFF))
 		p.updateFlagsSZP8(uint8(res))
-		p.CF = p.AH() != 0
-		p.OF = p.CF
+		p.SetBool(processor.Carry, p.AH() != 0)
+		p.SetBool(processor.Overflow, p.GetBool(processor.Carry))
 		if !p.isV20 {
-			p.ZF = false
+			p.Clear(processor.Zero)
 		}
 	case 5:
 		p.SetAX(signExtend16(p.AL()) * signExtend16(operand.readByte(p)))
 		p.updateFlagsSZP8(byte(p.AX()))
 		if p.AL()&0x80 == 0x80 {
-			p.CF = p.AH() != 0xFF
+			p.SetBool(processor.Carry, p.AH() != 0xFF)
 		} else {
-			p.CF = p.AH() != 0x0
+			p.SetBool(processor.Carry, p.AH() != 0x0)
 		}
-		p.OF = p.CF
+		p.SetBool(processor.Overflow, p.GetBool(processor.Carry))
 		if !p.isV20 {
-			p.ZF = false
+			p.Clear(processor.Zero)
 		}
 	case 6:
 		p.opDIV8(p.AX(), operand.readByte(p))
@@ -1325,17 +1262,17 @@ func (p *CPU) grp3b() {
 		operand.writeWord(p, uint16(res))
 		p.updateFlagsOACSub(res, a, b)
 		p.updateFlagsSZP16(uint16(res))
-		p.CF = b != 0
+		p.SetBool(processor.Carry, b != 0)
 	case 4:
 		a, b := uint32(p.AX()), uint32(operand.readWord(p))
 		res := a * b
 		p.SetDX(uint16(res >> 16))
 		p.SetAX(uint16(res & 0xFFFF))
 		p.updateFlagsSZP16(uint16(res))
-		p.CF = p.DX() != 0
-		p.OF = p.CF
+		p.SetBool(processor.Carry, p.DX() != 0)
+		p.SetBool(processor.Overflow, p.GetBool(processor.Carry))
 		if !p.isV20 {
-			p.ZF = false
+			p.Clear(processor.Zero)
 		}
 	case 5:
 		res := signExtend32(p.AX()) * signExtend32(operand.readWord(p))
@@ -1343,13 +1280,13 @@ func (p *CPU) grp3b() {
 		p.SetAX(uint16(res & 0xFFFF))
 		p.updateFlagsSZP16(uint16(res))
 		if p.AX()&0x8000 == 0x8000 {
-			p.CF = p.DX() != 0xFFFF
+			p.SetBool(processor.Carry, p.DX() != 0xFFFF)
 		} else {
-			p.CF = p.DX() != 0x0
+			p.SetBool(processor.Carry, p.DX() != 0x0)
 		}
-		p.OF = p.CF
+		p.SetBool(processor.Overflow, p.GetBool(processor.Carry))
 		if !p.isV20 {
-			p.ZF = false
+			p.Clear(processor.Zero)
 		}
 	case 6:
 		p.opDIV16((uint32(p.DX())<<16)|uint32(p.AX()), operand.readWord(p))
@@ -1364,7 +1301,7 @@ func (p *CPU) grp4() {
 	p.readModRegRM()
 	dest := p.rmLocation()
 	v := uint32(dest.readByte(p))
-	cf := p.CF
+	cf := p.GetBool(processor.Carry)
 
 	var res uint32
 	switch op := p.getReg(); op {
@@ -1381,14 +1318,14 @@ func (p *CPU) grp4() {
 
 	dest.writeByte(p, byte(res))
 	p.updateFlagsSZP8(byte(res))
-	p.CF = cf
+	p.SetBool(processor.Carry, cf)
 }
 
 func (p *CPU) grp5() {
 	p.readModRegRM()
 	dest := p.rmLocation()
 	v := uint32(dest.readWord(p))
-	cf := p.CF
+	cf := p.GetBool(processor.Carry)
 
 	var res uint32
 	switch op := p.getReg(); op {
@@ -1425,7 +1362,7 @@ func (p *CPU) grp5() {
 
 	dest.writeWord(p, uint16(res))
 	p.updateFlagsSZP16(uint16(res))
-	p.CF = cf
+	p.SetBool(processor.Carry, cf)
 }
 
 func (p *CPU) jmpRel8() uint16 {
@@ -1485,7 +1422,7 @@ func (p *CPU) doRepeat() error {
 			}
 			p.SetCX(p.CX() - 1)
 
-			if primitive && ((p.repeatMode == 0xF2 && p.ZF) || (p.repeatMode == 0xF3 && !p.ZF)) {
+			if primitive && ((p.repeatMode == 0xF2 && p.GetBool(processor.Zero)) || (p.repeatMode == 0xF3 && !p.GetBool(processor.Zero))) {
 				break
 			}
 
@@ -1508,7 +1445,7 @@ func (p *CPU) updateDI() {
 	if p.isWide {
 		n = 2
 	}
-	if p.DF {
+	if p.GetBool(processor.Direction) {
 		p.SetDI(p.DI() - n)
 	} else {
 		p.SetDI(p.DI() + n)
@@ -1520,7 +1457,7 @@ func (p *CPU) updateSI() {
 	if p.isWide {
 		n = 2
 	}
-	if p.DF {
+	if p.GetBool(processor.Direction) {
 		p.SetSI(p.SI() - n)
 	} else {
 		p.SetSI(p.SI() + n)

@@ -26,17 +26,70 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
 )
 
+const (
+	Carry           Flags = 0x001
+	Parity          Flags = 0x004
+	Adjust          Flags = 0x010
+	Zero            Flags = 0x040
+	Sign            Flags = 0x080
+	Trap            Flags = 0x100
+	InterruptEnable Flags = 0x200
+	Direction       Flags = 0x400
+	Overflow        Flags = 0x800
+)
+
+const AllFlags = Carry | Parity | Adjust | Zero | Sign | Trap | InterruptEnable | Direction | Overflow
+
+type Flags uint16
+
+func (r *Flags) Get(f Flags) Flags {
+	return *r & f
+}
+
+func (r *Flags) GetBool(f Flags) bool {
+	return r.Get(f) != 0
+}
+
+func (r *Flags) Set(f Flags) {
+	*r |= f
+}
+
+func (r *Flags) SetBool(f Flags, b bool) {
+	if b {
+		r.Set(f)
+		return
+	}
+	r.Clear(f)
+}
+
+func (r *Flags) Clear(f Flags) {
+	*r &= ^f
+}
+
+func (r *Flags) Store(f uint16) {
+	validator.Discard()
+	*r = (Flags(f) & AllFlags) | 0x2
+}
+
+func (r *Flags) Load() uint16 {
+	validator.Discard()
+	return uint16((*r & AllFlags) | 0x2)
+}
+
 type Registers struct {
 	ax, cx, dx, bx,
 	sp, bp, si, di,
 	es, cs, ss, ds uint16
 
-	IP uint16
+	Flags
 
-	CF, PF, AF, ZF,
-	SF, TF, IF, DF, OF bool
-
+	IP    uint16
 	Debug bool
+}
+
+func (r *Registers) Reset() {
+	*r = Registers{}
+	r.Flags.Store(0)
 }
 
 func (r *Registers) SegOverridePtr(op byte) *uint16 {

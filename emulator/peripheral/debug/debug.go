@@ -137,31 +137,31 @@ func (m *Device) Install(p processor.Processor) error {
 
 func (m *Device) getFlags() string {
 	s := [9]rune{'-', '-', '-', '-', '-', '-', '-', '-', '-'}
-	if m.r.CF {
+	if m.r.GetBool(processor.Carry) {
 		s[0] = 'C'
 	}
-	if m.r.PF {
+	if m.r.GetBool(processor.Parity) {
 		s[1] = 'P'
 	}
-	if m.r.AF {
+	if m.r.GetBool(processor.Adjust) {
 		s[2] = 'A'
 	}
-	if m.r.ZF {
+	if m.r.GetBool(processor.Zero) {
 		s[3] = 'Z'
 	}
-	if m.r.SF {
+	if m.r.GetBool(processor.Sign) {
 		s[4] = 'S'
 	}
-	if m.r.TF {
+	if m.r.GetBool(processor.Trap) {
 		s[5] = 'T'
 	}
-	if m.r.IF {
+	if m.r.GetBool(processor.InterruptEnable) {
 		s[6] = 'I'
 	}
-	if m.r.DF {
+	if m.r.GetBool(processor.Direction) {
 		s[7] = 'D'
 	}
-	if m.r.OF {
+	if m.r.GetBool(processor.Overflow) {
 		s[8] = 'O'
 	}
 	return "\n" + string(s[:]) + "\n"

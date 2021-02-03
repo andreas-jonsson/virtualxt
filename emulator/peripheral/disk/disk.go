@@ -202,11 +202,11 @@ func (m *Device) executeAndSet(readOp bool) {
 	r := m.cpu.GetRegisters()
 	if d := &m.disks[r.DL()]; !d.present {
 		r.SetAH(1)
-		r.CF = true
+		r.Set(processor.Carry)
 	} else {
 		r.SetAL(m.executeOperation(readOp, d, memory.NewAddress(r.ES(), r.BX()), uint16(r.CH())+uint16(r.CL()/64)*256, r.CL()&0x3F, r.DH(), r.AL()))
 		r.SetAH(0)
-		r.CF = false
+		r.Clear(processor.Carry)
 	}
 }
 
@@ -230,24 +230,24 @@ func (m *Device) Out(port uint16, _ byte) {
 		switch ah {
 		case 0: // Reset
 			r.SetAH(0)
-			r.CF = false
+			r.Clear(processor.Carry)
 		case 1: // Return status
 			r.SetAH(m.lookupAH[dl])
-			r.CF = m.lookupCF[dl]
+			r.SetBool(processor.Carry, m.lookupCF[dl])
 			return
 		case 2: // Read sector
 			m.executeAndSet(true)
 		case 3: // Write sector
 			m.executeAndSet(false)
 		case 4, 5: // Format track
-			r.CF = false
+			r.Clear(processor.Carry)
 			r.SetAH(0)
 		case 8: // Drive parameters
 			if d := &m.disks[dl]; !d.present {
-				r.CF = true
+				r.Set(processor.Carry)
 				r.SetAH(0xAA)
 			} else {
-				r.CF = false
+				r.Clear(processor.Carry)
 				r.SetAH(0)
 				r.SetCH(byte(d.cylinders - 1))
 				r.SetCL(byte((d.sectors & 0x3F) + (d.cylinders/256)*64))
@@ -260,7 +260,7 @@ func (m *Device) Out(port uint16, _ byte) {
 				}
 			}
 		default:
-			r.CF = true
+			r.Set(processor.Carry)
 		}
 
 		ah, dl = r.AH(), r.DL()
@@ -269,7 +269,7 @@ func (m *Device) Out(port uint16, _ byte) {
 		}
 
 		m.lookupAH[dl] = ah
-		m.lookupCF[dl] = r.CF
+		m.lookupCF[dl] = r.GetBool(processor.Carry)
 	default:
 	}
 }
