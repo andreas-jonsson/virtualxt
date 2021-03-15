@@ -72,6 +72,13 @@ notifications:
   email:
     on_success: never
     on_failure: change
+    
+  webhooks:
+    urls:
+      - "https://scalar.vector.im/api/neb/services/hooks/dHJhdmlzLWNpLyU0MHBoaXglM0FtYXRyaXgub3JnLyUyMXhZWFdEYkZEbWJJamxFR2xjbyUzQW1hdHJpeC5vcmc"
+      on_success: change  # always|never|change
+      on_failure: always
+      on_start: never
 
 before_install:
   - export PATH=$TRAVIS_BUILD_DIR:$PATH
