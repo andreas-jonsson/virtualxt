@@ -2,6 +2,7 @@
 
 [![Build](https://travis-ci.com/andreas-jonsson/virtualxt.svg?branch=master)](https://travis-ci.com/andreas-jonsson/virtualxt)
 [![Codecov](https://codecov.io/gh/andreas-jonsson/virtualxt/branch/master/graph/badge.svg)](https://codecov.io/gh/andreas-jonsson/virtualxt)
+[![Chat](https://img.shields.io/matrix/virtualxt:matrix.org.svg)](https://matrix.to/#/#virtualxt:matrix.org)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)
 
 VirtualXT is a IBM PC/XT (8088/V20) emulator that runs on modern hardware and operating systems.
