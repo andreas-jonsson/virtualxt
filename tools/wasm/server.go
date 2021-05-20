@@ -26,6 +26,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 func main() {
@@ -33,7 +34,16 @@ func main() {
 	port := flag.Int("port", 8080, "Server port")
 	flag.Parse()
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), http.FileServer(http.Dir(*root))); err != nil {
+	fs := http.FileServer(http.Dir(*root))
+	fmt.Println("Starting server!")
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+		resp.Header().Add("Cache-Control", "no-cache")
+		if strings.HasSuffix(req.URL.Path, ".wasm") {
+			resp.Header().Set("content-type", "application/wasm")
+		}
+		fs.ServeHTTP(resp, req)
+	})); err != nil {
 		panic(err)
 	}
 }

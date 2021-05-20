@@ -57,18 +57,18 @@ func (m *Device) GetInterrupt() (int, error) {
 	if has == 0 {
 		return 0, ErrNoInterrupts
 	}
-	for i := 0; i < 8; i++ {
+	for i := byte(0); i < 8; i++ {
 		if (has>>i)&1 != 0 {
 			m.requestReg ^= (1 << i)
 			m.serviceReg |= (1 << i)
-			return int(m.icw[2]) + i, nil
+			return int(m.icw[2]) + int(i), nil
 		}
 	}
 	return 0, nil
 }
 
 func (m *Device) IRQ(n int) {
-	m.requestReg |= byte(1 << n)
+	m.requestReg |= byte(1 << byte(n))
 }
 
 func (m *Device) In(port uint16) byte {
@@ -101,7 +101,7 @@ func (m *Device) Out(port uint16, data byte) {
 			}
 		}
 		if data&0x20 != 0 {
-			for i := 0; i < 8; i++ {
+			for i := byte(0); i < 8; i++ {
 				if (m.serviceReg>>i)&1 != 0 {
 					m.serviceReg ^= (1 << i)
 					if (i == 0) && (m.ticks > 0) {

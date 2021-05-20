@@ -187,13 +187,13 @@ func (m *Device) blitChar(ch, attrib byte, x, y int) {
 
 	for i := 0; i < 8; i++ {
 		glyphLine := cgaFont[int(ch)*8+i]
-		for j := 0; j < 8; j++ {
+		for j := byte(0); j < 8; j++ {
 			mask := byte(0x80 >> j)
 			col := fgColor
 			if glyphLine&mask == 0 {
 				col = bgColor
 			}
-			offset := (640*(y+i) + x*charWidth + j*charWidth) * 4
+			offset := (640*(y+i) + x*charWidth + int(j)*charWidth) * 4
 			blit32(pixels, offset, col)
 			if charWidth == 2 { // 40 columns?
 				blit32(pixels, offset+4, col)
@@ -253,7 +253,7 @@ func (m *Device) renderLoop() {
 						for y := 0; y < 200; y++ {
 							for x := 0; x < 640; x++ {
 								addr := (y>>1)*80 + (y&1)*8192 + (x >> 3)
-								pixel := (m.mem[addr] >> (7 - (x & 7))) & 1
+								pixel := (m.mem[addr] >> (7 - (uint(x) & 7))) & 1
 								col := cgaColor[pixel*15]
 								offset := (y*640 + x) * 4
 								blit32(dst, offset, col)
