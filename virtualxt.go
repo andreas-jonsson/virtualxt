@@ -40,6 +40,7 @@ var (
 	noAudio,
 	man,
 	ver bool
+	debugTest string
 )
 
 func init() {
@@ -52,6 +53,8 @@ func init() {
 	flag.IntVar(&genHdSize, "gen-hd-size", genHdSize, "Set size of the generated harddrive image in megabytes")
 
 	flag.Bool("text", false, "CGA textmode runing in termainal")
+
+	flag.StringVar(&debugTest, "debug-test", debugTest, "Run CPU test with internal debugger")
 }
 
 func main() {
@@ -69,6 +72,10 @@ func main() {
 
 	if genImage() {
 		return
+	}
+
+	if debugTest != "" {
+		emulator.StartDebugTest(debugTest)
 	}
 
 	var configs []platform.Config

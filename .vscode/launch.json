@@ -10,6 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
+            "buildFlags": "-tags 'sdl'",
             "args": [],
             //"args": ["-debug", "-break"],
             "env": {},

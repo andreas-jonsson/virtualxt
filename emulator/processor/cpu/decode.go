@@ -1107,21 +1107,25 @@ func (p *CPU) grp1() {
 	case 0:
 		res = a + b
 		p.updateFlagsOACAdd(res, a, b)
+		p.updateFlagsSZP8(byte(res))
 	case 1:
 		res = a | b
 		p.clearFlagsOC()
 	case 2:
 		res = a + b + b2ui32(p.CF)
 		p.updateFlagsOACAdd(res, a, b)
+		p.updateFlagsSZP8(byte(res))
 	case 3:
 		res = a - (b + b2ui32(p.CF))
 		p.updateFlagsOACSubCarry(res, a, b)
+		p.updateFlagsSZP8(byte(res))
 	case 4:
 		res = a & b
 		p.clearFlagsOC()
 	case 5:
 		res = a - b
 		p.updateFlagsOACSub(res, a, b)
+		p.updateFlagsSZP8(byte(res))
 	case 6:
 		res = a ^ b
 		p.clearFlagsOC()
@@ -1156,21 +1160,25 @@ func (p *CPU) grp1w() {
 	case 0:
 		res = a + b
 		p.updateFlagsOACAdd(res, a, b)
+		p.updateFlagsSZP16(uint16(res))
 	case 1:
 		res = a | b
 		p.clearFlagsOC()
 	case 2:
 		res = a + b + b2ui32(p.CF)
 		p.updateFlagsOACAdd(res, a, b)
+		p.updateFlagsSZP16(uint16(res))
 	case 3:
 		res = a - (b + b2ui32(p.CF))
 		p.updateFlagsOACSubCarry(res, a, b)
+		p.updateFlagsSZP16(uint16(res))
 	case 4:
 		res = a & b
 		p.clearFlagsOC()
 	case 5:
 		res = a - b
 		p.updateFlagsOACSub(res, a, b)
+		p.updateFlagsSZP16(uint16(res))
 	case 6:
 		res = a ^ b
 		p.clearFlagsOC()

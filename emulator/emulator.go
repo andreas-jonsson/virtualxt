@@ -21,7 +21,10 @@ freely, subject to the following restrictions:
 package emulator
 
 import (
+	"bytes"
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
@@ -253,6 +256,50 @@ func Start(s platform.Platform) {
 			goto step
 		} else if n < limitSpeed*cycles {
 			goto wait
+		}
+	}
+}
+
+func StartDebugTest(name string) {
+	bin, err := ioutil.ReadFile(name)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	p, errs := cpu.NewCPU([]peripheral.Peripheral{
+		&ram.Device{Clear: true},
+		&rom.Device{
+			RomName: fmt.Sprintf("TEST: %s.bin", name),
+			Base:    memory.NewPointer(0xF000, 0),
+			Reader:  bytes.NewReader(bin),
+		},
+		&pic.Device{},
+		&debug.Device{},
+	})
+	defer p.Close()
+
+	for _, err := range errs {
+		log.Fatal(err)
+	}
+
+	debug.EnableDebug = true
+
+	// Tests are written for 80186+ machines.
+	p.SetV20Support(true)
+
+	p.Reset()
+	p.IP = 0xFFF0
+	p.CS = 0xF000
+
+	for {
+		if _, err := p.Step(); err != nil {
+			if err != processor.ErrCPUHalt {
+				log.Fatal(err)
+			}
+			break
+		}
+		if p.Registers.Debug {
+			log.Fatal("CPU hit breakpoint!")
 		}
 	}
 }
