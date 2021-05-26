@@ -82,7 +82,7 @@ func init() {
 		vbiosImage = p
 	}
 
-	flag.BoolVar(&v20cpu, "v20", false, "Emulate NEC V20 CPU")
+	flag.BoolVar(&v20cpu, "v20", true, "Emulate NEC V20 CPU")
 
 	flag.Float64Var(&limitMIPS, "mips", 3, "Limit CPU speed (0 for no limit)")
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")

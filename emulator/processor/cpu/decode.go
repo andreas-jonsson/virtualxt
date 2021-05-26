@@ -110,10 +110,6 @@ loop:
 			p.segOverride = &p.DS
 		case 0xF0: // LOCK
 			// NOP...
-		case 0xF1:
-			//log.Printf("Unsupported instruction prefix: 0x%X", op)
-			//p.invalidOpcode()
-			//break loop
 		case 0xF2, 0xF3: // REPNE/REPNZ,REP/REPE/REPZ
 			p.repeatMode = op
 		default:
@@ -688,6 +684,12 @@ func (p *CPU) execute() error {
 		} else {
 			p.invalidOpcode()
 		}
+	case 0x68:
+		if p.isV20 {
+			p.push16(p.readOpcodeImm16())
+		} else {
+			p.invalidOpcode()
+		}
 	case 0x69, 0x6B: // IMUL r/m16,d8/d16 (80186)
 		if p.isV20 {
 			p.readModRegRM()
@@ -715,10 +717,37 @@ func (p *CPU) execute() error {
 		} else {
 			p.invalidOpcode()
 		}
-	case 0x68, 0x6A, 0x6C, 0x6D, 0x6E, 0x6F:
+	case 0x6A:
 		if p.isV20 {
-			log.Printf("opcode not implemented: 0x%X", op)
-			p.Break()
+			p.push16(uint16(p.readOpcodeStream()))
+		} else {
+			p.invalidOpcode()
+		}
+	case 0x6C:
+		if p.isV20 {
+			p.WriteByte(memory.NewPointer(p.getSeg(p.DS), p.SI), p.InByte(p.DX))
+			p.updateDISI()
+		} else {
+			p.invalidOpcode()
+		}
+	case 0x6D:
+		if p.isV20 {
+			p.WriteWord(memory.NewPointer(p.getSeg(p.DS), p.SI), p.InWord(p.DX))
+			p.updateDISI()
+		} else {
+			p.invalidOpcode()
+		}
+	case 0x6E:
+		if p.isV20 {
+			p.OutByte(p.DX, p.ReadByte(memory.NewPointer(p.getSeg(p.DS), p.SI)))
+			p.updateDISI()
+		} else {
+			p.invalidOpcode()
+		}
+	case 0x6F:
+		if p.isV20 {
+			p.OutWord(p.DX, p.ReadWord(memory.NewPointer(p.getSeg(p.DS), p.SI)))
+			p.updateDISI()
 		} else {
 			p.invalidOpcode()
 		}
@@ -952,9 +981,32 @@ func (p *CPU) execute() error {
 		p.readModRegRM()
 		p.rmLocation().writeWord(p, p.readOpcodeImm16())
 	case 0xC8: // ENTER (80186)
-		p.invalidOpcode()
+		if p.isV20 {
+			size := p.readOpcodeImm16()
+			level := p.readOpcodeStream()
+			p.push16(p.BP)
+			sp := p.SP
+
+			if level > 0 {
+				for i := 1; i < int(level); i++ {
+					p.BP -= 2
+					p.push16(p.BP)
+				}
+				p.push16(p.SP)
+			}
+
+			p.BP = sp
+			p.SP = sp - size
+		} else {
+			p.invalidOpcode()
+		}
 	case 0xC9: // LEAVE (80186)
-		p.invalidOpcode()
+		if p.isV20 {
+			p.SP = p.BP
+			p.BP = p.pop16()
+		} else {
+			p.invalidOpcode()
+		}
 	case 0xCA: // RETF d16
 		sp := p.readOpcodeImm16()
 		p.IP = p.pop16()
@@ -1488,7 +1540,7 @@ func (p *CPU) invalidOpcode() {
 func (p *CPU) isValidRepeat() (bool, bool) {
 	switch p.opcode {
 	case 0x6C, 0x6D, 0x6E, 0x6F:
-		if p.isV20 {
+		if !p.isV20 {
 			return false, false
 		}
 		fallthrough

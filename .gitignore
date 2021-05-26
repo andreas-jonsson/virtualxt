@@ -12,6 +12,8 @@ tools/wasm/**/*.wasm
 tools/wasm/**/*.bin
 tools/wasm/**/*.img
 
+tools/mount/freedos_hd
+
 virtualxt.exe
 coverage.txt
 rsrc.syso
