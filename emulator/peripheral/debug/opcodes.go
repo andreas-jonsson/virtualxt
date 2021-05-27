@@ -134,8 +134,15 @@ var instructionNames = map[byte]string{
 
 	0x60: "PUSHA (80186)",
 	0x61: "POPA (80186)",
+	0x62: "BOUND (80186)",
+	0x68: "PUSH d16 (80186)",
 	0x69: "IMUL r/m16,d8 (80186)",
+	0x6A: "PUSH d8 (80186)",
 	0x6B: "IMUL r/m16,d16 (80186)",
+	0x6C: "INSB (80186)",
+	0x6D: "INSW (80186)",
+	0x6E: "OUTSB (80186)",
+	0x6F: "OUTSW (80186)",
 
 	0x70: "JO rel8",
 	0x71: "JNO rel8",

@@ -684,7 +684,7 @@ func (p *CPU) execute() error {
 		} else {
 			p.invalidOpcode()
 		}
-	case 0x68:
+	case 0x68: // PUSH d16 (80186)
 		if p.isV20 {
 			p.push16(p.readOpcodeImm16())
 		} else {
@@ -717,34 +717,34 @@ func (p *CPU) execute() error {
 		} else {
 			p.invalidOpcode()
 		}
-	case 0x6A:
+	case 0x6A: // PUSH d8 (80186)
 		if p.isV20 {
 			p.push16(uint16(p.readOpcodeStream()))
 		} else {
 			p.invalidOpcode()
 		}
-	case 0x6C:
+	case 0x6C: // INSB (80186)
 		if p.isV20 {
 			p.WriteByte(memory.NewPointer(p.getSeg(p.DS), p.SI), p.InByte(p.DX))
 			p.updateDISI()
 		} else {
 			p.invalidOpcode()
 		}
-	case 0x6D:
+	case 0x6D: // INSW (80186)
 		if p.isV20 {
 			p.WriteWord(memory.NewPointer(p.getSeg(p.DS), p.SI), p.InWord(p.DX))
 			p.updateDISI()
 		} else {
 			p.invalidOpcode()
 		}
-	case 0x6E:
+	case 0x6E: // OUTSB (80186)
 		if p.isV20 {
 			p.OutByte(p.DX, p.ReadByte(memory.NewPointer(p.getSeg(p.DS), p.SI)))
 			p.updateDISI()
 		} else {
 			p.invalidOpcode()
 		}
-	case 0x6F:
+	case 0x6F: // OUTSW (80186)
 		if p.isV20 {
 			p.OutWord(p.DX, p.ReadWord(memory.NewPointer(p.getSeg(p.DS), p.SI)))
 			p.updateDISI()
@@ -1072,8 +1072,7 @@ func (p *CPU) execute() error {
 		p.SetAL(p.ReadByte(memory.NewPointer(p.getSeg(p.DS), p.BX+uint16(p.AL()))))
 	case 0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF: // ESC
 		p.readModRegRM()
-		_, src := p.parseOperands()
-		src.readByte(p)
+		p.parseOperands()
 
 	// 0xEx
 
