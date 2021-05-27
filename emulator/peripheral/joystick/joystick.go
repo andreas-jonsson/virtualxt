@@ -170,11 +170,11 @@ func (m *Device) In(port uint16) byte {
 	return data
 }
 
-func posToOhm(axis int16) float64 {
+func posToOhm(axis int) float64 {
 	return (float64(axis+1) / float64(math.MaxUint16)) * 60000
 }
 
-func axisTimeout(axis int16) float64 {
+func axisTimeout(axis int) float64 {
 	return (24.2 + 0.011*posToOhm(axis)) * 1000.0
 }
 
@@ -183,8 +183,8 @@ func (m *Device) Out(port uint16, data byte) {
 	m.lock.RLock()
 	for i := range m.sticks {
 		if stick := &m.sticks[i]; stick.attached {
-			stick.timeouts[0] = axisTimeout(stick.axis[0])
-			stick.timeouts[1] = axisTimeout(stick.axis[1])
+			stick.timeouts[0] = axisTimeout(int(stick.axis[0]) - math.MinInt16)
+			stick.timeouts[1] = axisTimeout(int(stick.axis[1]) - math.MinInt16)
 		}
 	}
 	m.lock.RUnlock()
