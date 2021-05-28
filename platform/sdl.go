@@ -40,6 +40,7 @@ type sdlPlatform struct {
 
 	sdlFlags, sdlWindowFlags uint32
 	windowSizeX, windowSizeY int32
+	backBufferX, backBufferY int
 
 	audioSpec     *sdl.AudioSpec
 	audioDeviceID sdl.AudioDeviceID

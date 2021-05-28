@@ -97,7 +97,11 @@ func (p *tcellPlatform) HasAudio() bool {
 	return false
 }
 
-func (p *tcellPlatform) RenderGraphics([]byte, byte, byte, byte) {
+func (p *tcellPlatform) RenderGraphics([]byte, int, int, byte, byte, byte) {
+	panic("not implemented")
+}
+
+func (p *tcellPlatform) RenderGraphics2([]byte, byte, byte, byte) {
 	panic("not implemented")
 }
 

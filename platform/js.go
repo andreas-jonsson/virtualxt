@@ -186,7 +186,16 @@ func (p *jsPlatform) HasAudio() bool {
 	return false
 }
 
-func (p *jsPlatform) RenderGraphics(backBuffer []byte, r, g, b byte) {
+func (p *jsPlatform) RenderGraphics(backBuffer []byte, x, y int, r, g, b byte) {
+	ln := len(backBuffer)
+	if ln != x*y*4 {
+		log.Panic("invalid back buffer size")
+	}
+
+	if ln != 640*200*4 {
+		log.Panic("unsupported graphics mode")
+	}
+
 	img := p.context.Call("getImageData", 0, 0, 640, 200)
 	data := img.Get("data")
 
