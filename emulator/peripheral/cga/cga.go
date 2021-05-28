@@ -35,8 +35,9 @@ import (
 )
 
 const (
-	memorySize     = 0x4000
-	memoryBase     = 0xB8000
+	memorySize     = 0x10000
+	memoryStart    = 0xB0000
+	cgaBase        = 0x8000
 	scanlineTiming = 31469
 )
 
@@ -72,6 +73,10 @@ type Device struct {
 	crtAddr, modeCtrlReg,
 	colorCtrlReg, statusReg byte
 
+	hgcEnable byte
+	hgcBase   int
+	hgcMode   bool
+
 	lastScanline    int64
 	currentScanline int
 
@@ -94,21 +99,23 @@ func (m *Device) Install(p processor.Processor) error {
 	// Scramble memory.
 	rand.Read(m.mem[:])
 
-	// 16k of RAM at address 0B8000h for its frame buffer. The address is incompletely decoded; the frame buffer is repeated at 0BC000h.
-	if err := p.InstallMemoryDevice(m, memoryBase, (memoryBase+memorySize*2)-1); err != nil {
+	if err := p.InstallMemoryDevice(m, memoryStart, (memoryStart+memorySize)-1); err != nil {
 		return err
 	}
 	if err := p.InstallIODevice(m, 0x3D0, 0x3DF); err != nil {
 		return err
 	}
+	if err := p.InstallIODevice(m, 0x3B0, 0x3BF); err != nil {
+		return err
+	}
 
-	m.surface = make([]byte, 640*200*4)
+	m.surface = make([]byte, 720*350*4)
 	go m.renderLoop()
 	return nil
 }
 
 func (m *Device) Name() string {
-	return "Color Graphics Adapter"
+	return "CGA/HGC Compatible Device"
 }
 
 func (m *Device) Reset() {
@@ -118,6 +125,9 @@ func (m *Device) Reset() {
 	m.colorCtrlReg = 0x20
 	m.modeCtrlReg = 1
 	m.statusReg = 0
+	m.hgcEnable = 0
+	m.hgcBase = 0
+	m.hgcMode = false
 	m.cursorVisible = true
 	m.cursorPosition = 0
 	m.lock.Unlock()
@@ -135,7 +145,7 @@ func (m *Device) Step(cycles int) error {
 		m.lastScanline = t - offset
 
 		if m.currentScanline = (m.currentScanline + int(scanlines)) % 525; m.currentScanline > 479 {
-			m.statusReg = 8
+			m.statusReg = 88
 		} else {
 			m.statusReg = 0
 		}
@@ -240,20 +250,36 @@ func (m *Device) renderLoop() {
 					numCol = 40
 				}
 
+				dst := m.surface
 				backgroundColorIndex := m.colorCtrlReg & 0xF
 				backgroundColor := cgaColor[backgroundColorIndex]
 				bgRComponent, bgGComponent, bgBComponent := byte(backgroundColor&0xFF0000), byte(backgroundColor&0x00FF00), byte(backgroundColor&0x0000FF)
 
-				// In graphics mode?
-				if m.modeCtrlReg&2 != 0 {
-					dst := m.surface
+				// In HGC graphics mode?
+				if m.hgcMode {
+					for y := 0; y < 348; y++ {
+						for x := 0; x < 720; x++ {
+							addr := ((y & 3) << 13) + (y>>2)*90 + (x >> 3)
+							pixel := (m.mem[m.hgcBase+addr] >> (7 - (uint(x) & 7))) & 1
+							col := cgaColor[pixel*15]
+							offset := (y*720 + x) * 4
+							blit32(dst, offset, col)
+						}
+					}
 
+					for i := 720 * 348; i < 720*350; i++ {
+						blit32(dst, i*4, cgaColor[0])
+					}
+
+					m.lock.RUnlock()
+					p.RenderGraphics(dst, 720, 350, bgRComponent, bgGComponent, bgBComponent)
+				} else if m.modeCtrlReg&2 != 0 { // In CGA graphics mode?
 					// Is in high-resolution mode?
 					if m.modeCtrlReg&0x10 != 0 {
 						for y := 0; y < 200; y++ {
 							for x := 0; x < 640; x++ {
 								addr := (y>>1)*80 + (y&1)*8192 + (x >> 3)
-								pixel := (m.mem[addr] >> (7 - (uint(x) & 7))) & 1
+								pixel := (m.mem[cgaBase+addr] >> (7 - (uint(x) & 7))) & 1
 								col := cgaColor[pixel*15]
 								offset := (y*640 + x) * 4
 								blit32(dst, offset, col)
@@ -266,7 +292,7 @@ func (m *Device) renderLoop() {
 						for y := 0; y < 200; y++ {
 							for x := 0; x < 320; x++ {
 								addr := (y>>1)*80 + (y&1)*8192 + (x >> 2)
-								pixel := m.mem[addr]
+								pixel := m.mem[cgaBase+addr]
 
 								switch x & 3 {
 								case 0:
@@ -292,7 +318,7 @@ func (m *Device) renderLoop() {
 					}
 
 					m.lock.RUnlock()
-					p.RenderGraphics(dst, bgRComponent, bgGComponent, bgBComponent)
+					p.RenderGraphics(dst[:640*200*4], 640, 200, bgRComponent, bgGComponent, bgBComponent)
 				} else if cliMode {
 					if dirtyMemory {
 						cx, cy := -1, -1
@@ -302,30 +328,30 @@ func (m *Device) renderLoop() {
 						}
 
 						// We need to render before unlock.
-						p.RenderText(m.mem[:numCol*25*2], m.modeCtrlReg&0x20 != 0, int(backgroundColorIndex), cx, cy)
+						p.RenderText(m.mem[cgaBase:cgaBase+numCol*25*2], m.modeCtrlReg&0x20 != 0, int(backgroundColorIndex), cx, cy)
 					}
 					m.lock.RUnlock()
 				} else {
-					videoPage := int(m.crtReg[0xC]<<8) + int(m.crtReg[0xD])
+					videoPage := (int(m.crtReg[0xC]) << 8) + int(m.crtReg[0xD])
 					numChar := numCol * 25
 
 					for i := 0; i < numChar*2; i += 2 {
-						ch := m.mem[videoPage+i]
+						ch := m.mem[cgaBase+videoPage+i]
 						idx := i / 2
-						m.blitChar(ch, m.mem[videoPage+i+1], (idx%numCol)*8, (idx/numCol)*8)
+						m.blitChar(ch, m.mem[cgaBase+videoPage+i+1], (idx%numCol)*8, (idx/numCol)*8)
 					}
 
 					if blink && m.cursorVisible {
 						x := int(m.cursorPosition) % numCol
 						y := int(m.cursorPosition) / numCol
 						if x < 80 && y < 25 {
-							attr := (m.mem[videoPage+(numCol*2*y+x*2+1)] & 0x70) | 0xF
+							attr := (m.mem[cgaBase+videoPage+(numCol*2*y+x*2+1)] & 0x70) | 0xF
 							m.blitChar('_', attr, x*8, y*8)
 						}
 					}
 
 					m.lock.RUnlock()
-					p.RenderGraphics(m.surface, bgRComponent, bgGComponent, bgBComponent)
+					p.RenderGraphics(dst[:640*200*4], 640, 200, bgRComponent, bgGComponent, bgBComponent)
 				}
 			}
 		}
@@ -337,16 +363,27 @@ func (m *Device) In(port uint16) byte {
 	defer m.lock.RUnlock()
 
 	switch port {
+	case 0x3B1, 0x3B3, 0x3B5, 0x3B7:
+		fallthrough
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
 		return m.crtReg[m.crtAddr]
-	case 0x3DA:
-		status := m.statusReg
-		m.statusReg &= 0xFE
-		return status
 	case 0x3D9:
 		return m.colorCtrlReg
+	case 0x3BA:
+		if !m.hgcMode {
+			return 0xFF
+		}
+	case 0x3DA:
+		if m.hgcMode {
+			return 0xFF
+		}
+	default:
+		return 0
 	}
-	return 0
+
+	status := m.statusReg
+	m.statusReg &= 0xFE
+	return status
 }
 
 func (m *Device) Out(port uint16, data byte) {
@@ -356,8 +393,12 @@ func (m *Device) Out(port uint16, data byte) {
 	atomic.StoreInt32(&m.dirtyMemory, 1)
 
 	switch port {
+	case 0x3B0, 0x3B2, 0x3B4, 0x3B6:
+		fallthrough
 	case 0x3D0, 0x3D2, 0x3D4, 0x3D6:
 		m.crtAddr = data
+	case 0x3B1, 0x3B3, 0x3B5, 0x3B7:
+		fallthrough
 	case 0x3D1, 0x3D3, 0x3D5, 0x3D7:
 		m.crtReg[m.crtAddr] = data
 		switch m.crtAddr {
@@ -368,10 +409,20 @@ func (m *Device) Out(port uint16, data byte) {
 		case 0xF:
 			m.cursorPosition = (m.cursorPosition & 0xFF00) | uint16(data)
 		}
+	case 0x3B8: // Bit 7 is HGC page and bit 1 is gfx select
+		m.hgcMode = (m.hgcEnable&1)&((data&2)>>1) != 0
+		m.hgcBase = 0
+		if (m.hgcEnable>>1)&(data>>7) != 0 {
+			m.hgcBase = cgaBase
+		}
 	case 0x3D8:
 		m.modeCtrlReg = data
 	case 0x3D9:
 		m.colorCtrlReg = data
+	case 0x3BF: // Enable HGC
+		// Set bit 0 to enable bit 1 of 3B8.
+		// Set bit 1 to enable bit 7 of 3B8 and the second 32k of RAM ("Full" mode).
+		m.hgcEnable = data & 3
 	}
 
 	m.lock.Unlock()
@@ -379,7 +430,7 @@ func (m *Device) Out(port uint16, data byte) {
 
 func (m *Device) ReadByte(addr memory.Pointer) byte {
 	m.lock.RLock()
-	v := m.mem[(addr-memoryBase)&(memorySize-1)]
+	v := m.mem[addr-memoryStart]
 	m.lock.RUnlock()
 	return v
 }
@@ -387,6 +438,6 @@ func (m *Device) ReadByte(addr memory.Pointer) byte {
 func (m *Device) WriteByte(addr memory.Pointer, data byte) {
 	m.lock.Lock()
 	atomic.StoreInt32(&m.dirtyMemory, 1)
-	m.mem[(addr-memoryBase)&(memorySize-1)] = data
+	m.mem[addr-memoryStart] = data
 	m.lock.Unlock()
 }

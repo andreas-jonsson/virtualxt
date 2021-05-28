@@ -27,6 +27,8 @@ import (
 	"github.com/andreas-jonsson/virtualxt/platform/dialog"
 )
 
+const ScreenAspectRatio = float64(4) / 3
+
 type internalPlatform interface{}
 
 type Config func(internalPlatform) error
@@ -53,7 +55,7 @@ type Platform interface {
 	FileSystem
 
 	HasAudio() bool
-	RenderGraphics(backBuffer []byte, r, g, b byte)
+	RenderGraphics(backBuffer []byte, x, y int, r, g, b byte)
 	RenderText(mem []byte, blink bool, bg, cx, cy int)
 	SetTitle(title string)
 	QueueAudio(soundBuffer []byte)

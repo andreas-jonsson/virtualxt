@@ -24,6 +24,7 @@ package platform
 
 import (
 	"log"
+	"math"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -44,7 +45,9 @@ func (p *sdlPlatform) initializeVideo() error {
 		if p.texture, err = p.renderer.CreateTexture(sdl.PIXELFORMAT_ABGR8888, sdl.TEXTUREACCESS_STREAMING, 640, 200); err != nil {
 			return
 		}
-		err = p.renderer.SetLogicalSize(640, 480)
+		p.backBufferX = 640
+		p.backBufferY = 200
+		err = p.setLogicalSize()
 	})
 	if err != nil {
 		return err
@@ -63,16 +66,44 @@ func shutdownVideo(p *sdlPlatform) {
 	})
 }
 
-func (p *sdlPlatform) RenderGraphics(backBuffer []byte, r, g, b byte) {
-	if len(backBuffer) != 640*200*4 {
+func logicalHeight(width int) int32 {
+	return int32(math.Round(float64(width) / ScreenAspectRatio))
+}
+
+func (p *sdlPlatform) setLogicalSize() error {
+	return p.renderer.SetLogicalSize(int32(p.backBufferX), logicalHeight(p.backBufferX))
+}
+
+func (p *sdlPlatform) RenderGraphics(backBuffer []byte, x, y int, r, g, b byte) {
+	if len(backBuffer) != x*y*4 {
 		log.Panic("invalid back buffer size")
 	}
 
 	sdl.Do(func() {
+		if p.backBufferX != x || p.backBufferY != y {
+			// Resize window only if we are in window mode.
+			if (p.window.GetFlags() & sdl.WINDOW_FULLSCREEN) == 0 {
+				p.window.SetSize(int32(x), logicalHeight(x))
+			}
+
+			p.backBufferX = x
+			p.backBufferY = y
+
+			if err := p.texture.Destroy(); err != nil {
+				log.Print(err)
+			}
+
+			var err error
+			if p.texture, err = p.renderer.CreateTexture(sdl.PIXELFORMAT_ABGR8888, sdl.TEXTUREACCESS_STREAMING, int32(x), int32(y)); err != nil {
+				log.Panic(err)
+			}
+			p.setLogicalSize()
+		}
+
 		p.renderer.SetDrawColor(r, g, b, 0xFF)
 		p.renderer.Clear()
 
-		p.texture.Update(nil, backBuffer, 640*4)
+		p.texture.Update(nil, backBuffer, p.backBufferX*4)
 		p.renderer.Copy(p.texture, nil, nil)
 
 		p.renderer.Present()
