@@ -54,7 +54,7 @@ import (
 )
 
 var (
-	biosImage  = "bios/vxtbios.bin"
+	biosImage  = "bios/pcxtbios.bin"
 	vxtxImage  = "bios/vxtx.bin"
 	vbiosImage = ""
 )
