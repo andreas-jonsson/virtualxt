@@ -47,8 +47,8 @@ type Device struct {
 	sampleIndex          uint64
 	toneHz, toneHzBuffer float64
 
-	enabled, turbo bool
-	port           byte
+	enabled, turbo, bank bool
+	port                 byte
 
 	lock     sync.Mutex
 	quitChan chan struct{}
@@ -75,6 +75,10 @@ func (m *Device) TurboSwitch() bool {
 	return m.turbo
 }
 
+func (m *Device) ConfigSwitchBank() bool {
+	return m.bank
+}
+
 func (m *Device) Name() string {
 	return "PC Speaker"
 }
@@ -88,6 +92,7 @@ func (m *Device) Reset() {
 	m.toneHzBuffer = 0
 	m.port = 4
 	m.turbo = true
+	m.bank = false
 	m.enabled = false
 
 	m.pInst.EnableAudio(false)
@@ -184,10 +189,16 @@ func (m *Device) Out(_ uint16, data byte) {
 
 	m.port = data
 	turbo := data&4 != 0
+	bank := data&8 != 0
 
 	if m.turbo != turbo {
 		m.turbo = turbo
 		log.Print("Turbo switch: ", turbo)
+	}
+
+	if m.bank != bank {
+		m.bank = bank
+		log.Print("Config switch bank: ", bank)
 	}
 
 	if b := data&3 == 3; b != m.enabled {

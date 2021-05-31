@@ -108,7 +108,11 @@ func (m *Device) In(port uint16) byte {
 		m.commandPort = 0
 		return m.dataPort
 	case 0x62:
-		return 0
+		// Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
+		//            https://github.com/skiselev/8088_bios/blob/master/bios.asm
+
+		log.Print("Reading switches!")
+		return 0x2 // TODO: Return other then CGA video bits.
 	case 0x64:
 		return m.commandPort
 	}
