@@ -29,7 +29,6 @@ init:
     cli         ; We don't want to be interrupted now!
 
     call install_handlers
-    call set_cga
 
     popf
     retf
@@ -91,22 +90,6 @@ install_handlers:
 
     mov word [INT_19_OFFSET], int_19_handler
     mov [INT_19_SEGMENT], cs
-
-    pop ax
-    pop ds
-    ret
-
-set_cga:
-    push ds
-    push ax
-
-    mov ax,40h
-    mov ds,ax   ; Point DS to the BDA
-
-    mov ax,[10h]
-    or ax,00100000b ; CGA bit
-
-    mov [10h],ax
 
     pop ax
     pop ds
