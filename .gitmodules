@@ -1,3 +1,0 @@
-[submodule "bios/pcxtbios"]
-	path = bios/pcxtbios
-	url = https://github.com/andreas-jonsson/pcxtbios.git

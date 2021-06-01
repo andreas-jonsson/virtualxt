@@ -1,0 +1,121 @@
+     1                                  ; Copyright (c) 2019-2021 Andreas T Jonsson
+     2                                  ; 
+     3                                  ; This software is provided 'as-is', without any express or implied
+     4                                  ; warranty. In no event will the authors be held liable for any damages
+     5                                  ; arising from the use of this software.
+     6                                  ; 
+     7                                  ; Permission is granted to anyone to use this software for any purpose,
+     8                                  ; including commercial applications, and to alter it and redistribute it
+     9                                  ; freely, subject to the following restrictions:
+    10                                  ; 
+    11                                  ; 1. The origin of this software must not be misrepresented; you must not
+    12                                  ;    claim that you wrote the original software. If you use this software
+    13                                  ;    in a product, an acknowledgment in the product documentation would be
+    14                                  ;    appreciated but is not required.
+    15                                  ; 2. Altered source versions must be plainly marked as such, and must not be
+    16                                  ;    misrepresented as being the original software.
+    17                                  ; 3. This notice may not be removed or altered from any source distribution.
+    18                                  
+    19                                  cpu 8086
+    20                                  org 0
+    21                                  
+    22 00000000 55                      db 0x55             ; The BIOS...
+    23 00000001 AA                      db 0xAA             ; Signature!
+    24 00000002 04                      db 0x4              ; We're a 2k ROM(4*512 bytes)
+    25 00000003 EB00                    jmp short init
+    26                                  
+    27                                  init:
+    28 00000005 9C                          pushf
+    29 00000006 FA                          cli         ; We don't want to be interrupted now!
+    30                                  
+    31 00000007 E83400                      call install_handlers
+    32                                  
+    33 0000000A 9D                          popf
+    34 0000000B CB                          retf
+    35                                  
+    36                                  int_13_handler:
+    37 0000000C E6B1                        out 0xB1, al
+    38                                  
+    39 0000000E 50                          push ax
+    40                                      
+    41 0000000F 9C                          pushf
+    42 00000010 58                          pop ax
+    43                                  
+    44 00000011 55                          push bp
+    45 00000012 89E5                        mov bp, sp
+    46 00000014 894608                      mov [bp+8], ax
+    47 00000017 5D                          pop bp
+    48                                  
+    49 00000018 58                          pop ax
+    50                                  
+    51 00000019 CF                          iret
+    52                                  
+    53                                  int_19_handler:
+    54                                  
+    55                                      ; Install network handler during bootstrap
+    56                                  
+    57 0000001A E4B2                        in al, 0xB2 
+    58 0000001C 3C00                        cmp al, 0
+    59 0000001E 750A                        jne no_network
+    60                                  
+    61 00000020 C706F003[3B00]              mov word [INT_FC_OFFSET], int_fc_handler
+    62 00000026 8C0EF203                    mov [INT_FC_SEGMENT], cs
+    63                                  
+    64                                    no_network:
+    65                                  
+    66 0000002A 55                          push bp
+    67 0000002B 89E5                        mov bp, sp
+    68 0000002D C746040000                  mov word [bp+4], 0
+    69 00000032 C74602007C                  mov word [bp+2], 0x7C00
+    70 00000037 5D                          pop bp
+    71                                  
+    72 00000038 E6B0                        out 0xB0, al
+    73                                  
+    74 0000003A CF                          iret
+    75                                  
+    76                                  int_fc_handler:
+    77 0000003B E6B2                        out 0xB2, al
+    78 0000003D CF                          iret
+    79                                  
+    80                                  install_handlers:
+    81 0000003E 1E                          push ds
+    82 0000003F 50                          push ax
+    83                                  
+    84 00000040 B80000                      mov ax,0
+    85 00000043 8ED8                        mov ds,ax   ; Point DS to the IVT
+    86                                  
+    87                                      ; Set up our own vectors!
+    88 00000045 C7064C00[0C00]              mov word [INT_13_OFFSET], int_13_handler
+    89 0000004B 8C0E4E00                    mov [INT_13_SEGMENT], cs
+    90                                  
+    91 0000004F C7066400[1A00]              mov word [INT_19_OFFSET], int_19_handler
+    92 00000055 8C0E6600                    mov [INT_19_SEGMENT], cs
+    93                                  
+    94 00000059 58                          pop ax
+    95 0000005A 1F                          pop ds
+    96 0000005B C3                          ret
+    97                                  
+    98                                  ;;;;;;;;;;;;;;;;;; Data ;;;;;;;;;;;;;;;;;;
+    99                                  
+   100                                  INT_13_OFFSET  equ 0x4C
+   101                                  INT_13_SEGMENT equ 0x4E
+   102                                  
+   103                                  INT_19_OFFSET  equ 0x64
+   104                                  INT_19_SEGMENT equ 0x66
+   105                                  
+   106                                  INT_FC_OFFSET  equ 0x3F0
+   107                                  INT_FC_SEGMENT equ 0x3F2
+   108                                  
+   109 0000005C 56585458202D205669-     db 'VXTX - VirtualXT BIOS Extensions', 0xA
+   109 00000065 727475616C58542042-
+   109 0000006E 494F5320457874656E-
+   109 00000077 73696F6E730A       
+   110 0000007D 5468697320776F726B-     db 'This work is licensed under the zlib license.', 0
+   110 00000086 206973206C6963656E-
+   110 0000008F 73656420756E646572-
+   110 00000098 20746865207A6C6962-
+   110 000000A1 206C6963656E73652E-
+   110 000000AA 00                 
+   111                                  
+   112 000000AB 00<rept>                times 0x7FF-($-$$) db 0
+   113 000007FF 00                      checksum db 0

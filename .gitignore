@@ -1,5 +1,4 @@
 *.dump
-*.lst
 *.prof
 
 tools/validator/clib/validator.h
