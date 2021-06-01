@@ -72,13 +72,6 @@ notifications:
   email:
     on_success: never
     on_failure: change
-    
-  webhooks:
-    urls:
-      - "https://scalar.vector.im/api/neb/services/hooks/dHJhdmlzLWNpLyU0MHBoaXglM0FtYXRyaXgub3JnLyUyMXhZWFdEYkZEbWJJamxFR2xjbyUzQW1hdHJpeC5vcmc"
-      on_success: change  # always|never|change
-      on_failure: always
-      on_start: never
 
 before_install:
   - export PATH=$TRAVIS_BUILD_DIR:$PATH
@@ -86,7 +79,6 @@ before_install:
 before_script:
   - export FULL_VERSION=${VXT_VERSION}.${TRAVIS_BUILD_ID}
   - go generate ./...
-  #- cd bios/pcxtbios/build && go run build.go && cd ${TRAVIS_BUILD_DIR}
   - go test -race -coverprofile coverage.txt -covermode atomic ./...
   - bash <(curl -s https://codecov.io/bash)
 
