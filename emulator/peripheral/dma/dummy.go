@@ -30,12 +30,13 @@ type Device struct {
 }
 
 func (m *Device) Install(p processor.Processor) error {
+	p.InstallIODevice(m, 0x00, 0x0F)
 	p.InstallIODevice(m, 0x80, 0x8F)
-	return p.InstallIODevice(m, 0xC0, 0xDF)
+	return nil
 }
 
 func (m *Device) In(port uint16) byte {
-	return 0xFF
+	return 0
 }
 
 func (m *Device) Out(port uint16, data byte) {

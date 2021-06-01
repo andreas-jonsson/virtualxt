@@ -261,7 +261,7 @@ func (m *Device) Out(port uint16, _ byte) {
 		}
 
 		ah, dl = r.AH(), r.DL()
-		if dl&0x80 != 0 {
+		if dl >= 0x80 {
 			m.cpu.WriteByte(memory.NewPointer(0x40, 0x74), ah)
 		}
 
