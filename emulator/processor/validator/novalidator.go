@@ -22,16 +22,16 @@ freely, subject to the following restrictions:
 
 package validator
 
-import (
-	"github.com/andreas-jonsson/virtualxt/emulator/processor"
-)
-
 const Enabled = false
 
-func Initialize(string, int, int)     {}
-func Begin(byte, processor.Registers) {}
-func End(processor.Registers)         {}
-func Discard()                        {}
-func ReadByte(uint32, byte)           {}
-func WriteByte(uint32, byte)          {}
-func Shutdown()                       {}
+func Initialize(string, int, int) {}
+func Begin(byte)                  {}
+func End()                        {}
+func Discard()                    {}
+func ReadReg8(byte, byte)         {}
+func WriteReg8(byte, byte)        {}
+func ReadReg16(byte, uint16)      {}
+func WriteReg16(byte, uint16)     {}
+func ReadByte(uint32, byte)       {}
+func WriteByte(uint32, byte)      {}
+func Shutdown()                   {}

@@ -137,31 +137,31 @@ func (m *Device) Install(p processor.Processor) error {
 
 func (m *Device) getFlags() string {
 	s := [9]rune{'-', '-', '-', '-', '-', '-', '-', '-', '-'}
-	if m.r.CF {
+	if m.r.GetBool(processor.Carry) {
 		s[0] = 'C'
 	}
-	if m.r.PF {
+	if m.r.GetBool(processor.Parity) {
 		s[1] = 'P'
 	}
-	if m.r.AF {
+	if m.r.GetBool(processor.Adjust) {
 		s[2] = 'A'
 	}
-	if m.r.ZF {
+	if m.r.GetBool(processor.Zero) {
 		s[3] = 'Z'
 	}
-	if m.r.SF {
+	if m.r.GetBool(processor.Sign) {
 		s[4] = 'S'
 	}
-	if m.r.TF {
+	if m.r.GetBool(processor.Trap) {
 		s[5] = 'T'
 	}
-	if m.r.IF {
+	if m.r.GetBool(processor.InterruptEnable) {
 		s[6] = 'I'
 	}
-	if m.r.DF {
+	if m.r.GetBool(processor.Direction) {
 		s[7] = 'D'
 	}
-	if m.r.OF {
+	if m.r.GetBool(processor.Overflow) {
 		s[8] = 'O'
 	}
 	return "\n" + string(s[:]) + "\n"
@@ -173,13 +173,13 @@ func (m *Device) printRegisters() {
 		"AL 0x%X (%d)\tCL 0x%X (%d)\tDL 0x%X (%d)\tBL 0x%X (%d)\nAH 0x%X (%d)\tCH 0x%X (%d)\tDH 0x%X (%d)\tBH 0x%X (%d)\nAX 0x%X (%d)\tCX 0x%X (%d)\tDX 0x%X (%d)\tBX 0x%X (%d)\n\n",
 		r.AL(), r.AL(), r.CL(), r.CL(), r.DL(), r.DL(), r.BL(), r.BL(),
 		r.AH(), r.AH(), r.CH(), r.CH(), r.DH(), r.DH(), r.BH(), r.BH(),
-		r.AX, r.AX, r.CX, r.CX, r.DX, r.DX, r.BX, r.BX,
+		r.AX(), r.AX(), r.CX(), r.CX(), r.DX(), r.DX(), r.BX(), r.BX(),
 	) + fmt.Sprintf(
 		"SP 0x%X (%d)\tBP 0x%X (%d)\nSI 0x%X (%d)\tDI 0x%X (%d)\n\n",
-		r.SP, r.SP, r.BP, r.BP, r.SI, r.SI, r.DI, r.DI,
+		r.SP(), r.SP(), r.BP(), r.BP(), r.SI(), r.SI(), r.DI(), r.DI(),
 	) + fmt.Sprintf(
 		"ES 0x%X (%d)\tCS 0x%X (%d)\nSS 0x%X (%d)\tDS 0x%X (%d)",
-		r.ES, r.ES, r.CS, r.CS, r.SS, r.SS, r.DS, r.DS,
+		r.ES(), r.ES(), r.CS(), r.CS(), r.SS(), r.SS(), r.DS(), r.DS(),
 	)
 	log.Println(regs)
 	log.Println(m.getFlags())
@@ -295,13 +295,13 @@ func (m *Device) pushHistory(inst string) {
 }
 
 func (m *Device) csToString() string {
-	switch m.r.CS {
+	switch m.r.CS() {
 	case 0xF000:
 		return "BIOS"
 	case 0x7C00:
 		return "BOOT"
 	default:
-		return fmt.Sprintf("0x%X", m.r.CS)
+		return fmt.Sprintf("0x%X", m.r.CS())
 	}
 }
 
@@ -381,7 +381,7 @@ func (m *Device) Step(cycles int) error {
 	default:
 	}
 
-	ip := memory.NewPointer(m.r.CS, m.r.IP)
+	ip := memory.NewPointer(m.r.CS(), m.r.IP)
 	op := m.p.ReadByte(ip)
 	inst := instructionToString(op)
 

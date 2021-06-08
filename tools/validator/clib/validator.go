@@ -25,7 +25,6 @@ package main
 */
 import "C"
 import (
-	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
 )
 
@@ -35,18 +34,38 @@ func Initialize(output *C.char, queueSize, bufferSize C.int) {
 }
 
 //export Begin
-func Begin(opcode C.uchar, regs *C.struct_Registers) {
-	validator.Begin(byte(opcode), cToGoRegs(regs))
+func Begin(opcode C.uchar) {
+	validator.Begin(byte(opcode))
 }
 
 //export End
-func End(regs *C.struct_Registers) {
-	validator.End(cToGoRegs(regs))
+func End() {
+	validator.End()
 }
 
 //export Discard
 func Discard() {
 	validator.Discard()
+}
+
+//export ReadReg8
+func ReadReg8(reg, data byte) {
+	validator.ReadReg8(reg, data)
+}
+
+//export WriteReg8
+func WriteReg8(reg, data byte) {
+	validator.WriteReg8(reg, data)
+}
+
+//export ReadReg16
+func ReadReg16(reg byte, data uint16) {
+	validator.ReadReg16(reg, data)
+}
+
+//export WriteReg16
+func WriteReg16(reg byte, data uint16) {
+	validator.WriteReg16(reg, data)
 }
 
 //export ReadByte
@@ -62,17 +81,6 @@ func WriteByte(addr C.uint, data C.uchar) {
 //export Shutdown
 func Shutdown() {
 	validator.Shutdown()
-}
-
-func cToGoRegs(r *C.struct_Registers) processor.Registers {
-	return processor.Registers{
-		AX: uint16(r.AX), CX: uint16(r.CX), DX: uint16(r.DX), BX: uint16(r.BX),
-		SP: uint16(r.SP), BP: uint16(r.BP), SI: uint16(r.SI), DI: uint16(r.DI),
-		ES: uint16(r.ES), CS: uint16(r.CS), SS: uint16(r.SS), DS: uint16(r.DS), IP: uint16(r.IP),
-
-		CF: bool(r.CF), PF: bool(r.PF), AF: bool(r.AF), ZF: bool(r.ZF),
-		SF: bool(r.SF), TF: bool(r.TF), IF: bool(r.IF), DF: bool(r.DF), OF: bool(r.OF),
-	}
 }
 
 func main() {}

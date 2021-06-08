@@ -7,14 +7,21 @@
 extern "C" {
 #endif
 
-
 extern void Initialize(char* p0);
 
-extern void Begin(unsigned char p0, struct Registers* p1);
+extern void Begin(unsigned char p0);
 
-extern void End(struct Registers* p0);
+extern void End();
 
 extern void Discard();
+
+extern void ReadReg8(unsigned char reg, unsigned char data);
+
+extern void WriteReg8(unsigned char reg, unsigned char data);
+
+extern void ReadReg16(unsigned char reg, unsigned short data);
+
+extern void WriteReg16(unsigned char reg, unsigned short data);
 
 extern void ReadByte(unsigned int p0, unsigned char p1);
 

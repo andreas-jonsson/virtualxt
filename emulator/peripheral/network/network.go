@@ -30,6 +30,7 @@ import (
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
+	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
 	"github.com/andreas-jonsson/virtualxt/platform/dialog"
 	"github.com/google/gopacket/pcap"
 )
@@ -173,25 +174,27 @@ func (m *Device) Out(uint16, byte) {
 			http://crynwr.com/drivers/
 	*/
 
+	validator.Discard()
+
 	r := m.cpu.GetRegisters()
 	switch r.AH() {
 	case 0: // Enable packet reception
 		m.canRecv = true
 	case 1: // Send packet of CX at DS:SI
 		m.buffer.Reset()
-		for i := 0; i < int(r.CX); i++ {
-			m.buffer.WriteByte(m.cpu.ReadByte(memory.NewAddress(r.DS, r.SI).AddInt(i).Pointer()))
+		for i := 0; i < int(r.CX()); i++ {
+			m.buffer.WriteByte(m.cpu.ReadByte(memory.NewAddress(r.DS(), r.SI()).AddInt(i).Pointer()))
 		}
 		if err := m.handle.WritePacketData(m.buffer.Bytes()); err != nil {
 			log.Print(err)
 		}
 	case 2: // Return packet info (packet buffer in DS:SI, length in CX)
-		r.DS = 0xD000
-		r.SI = 0x0
-		r.CX = uint16(m.pkgLen)
+		r.SetDS(0xD000)
+		r.SetSI(0x0)
+		r.SetCX(uint16(m.pkgLen))
 	case 3: // Copy packet to final destination (given in ES:DI)
 		for i := 0; i < m.pkgLen; i++ {
-			m.cpu.WriteByte(memory.NewAddress(r.ES, r.DI).AddInt(i).Pointer(), m.cpu.ReadByte(memory.NewAddress(0xD000, 0).AddInt(i).Pointer()))
+			m.cpu.WriteByte(memory.NewAddress(r.ES(), r.DI()).AddInt(i).Pointer(), m.cpu.ReadByte(memory.NewAddress(0xD000, 0).AddInt(i).Pointer()))
 		}
 	case 4:
 		m.canRecv = false

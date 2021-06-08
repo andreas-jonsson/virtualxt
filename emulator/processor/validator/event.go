@@ -22,8 +22,6 @@ package validator
 
 import (
 	"math"
-
-	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 )
 
 const (
@@ -31,9 +29,43 @@ const (
 	DefaultBufferSize = 0x100000 * 1024 // 1GB
 )
 
+const (
+	AL byte = iota
+	AH
+	AX
+	CL
+	CH
+	CX
+	DL
+	DH
+	DX
+	BL
+	BH
+	BX
+	SP
+	BP
+	SI
+	DI
+	ES
+	CS
+	SS
+	DS
+)
+
+const (
+	WideReg byte = 1 << iota
+	ReadReg
+	WriteReg
+)
+
+type RegOp struct {
+	Flags, Name byte
+	Data        uint16
+}
+
 type Event struct {
 	Opcode        byte
-	Regs          [2]processor.Registers
+	Regs          [16]RegOp
 	Reads, Writes [10]MemOp
 }
 
