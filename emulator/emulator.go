@@ -289,7 +289,7 @@ func StartDebugTest(name string) {
 
 	p.Reset()
 	p.IP = 0xFFF0
-	p.CS = 0xF000
+	p.SetCS(0xF000)
 
 	for {
 		if _, err := p.Step(); err != nil {

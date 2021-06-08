@@ -652,28 +652,28 @@ func (p *CPU) execute() error {
 		}
 	case 0x6C: // INSB (80186)
 		if p.isV20 {
-			p.WriteByte(memory.NewPointer(p.getSeg(p.DS), p.SI), p.InByte(p.DX))
+			p.WriteByte(memory.NewPointer(p.getSeg(p.DS()), p.SI()), p.InByte(p.DX()))
 			p.updateDISI()
 		} else {
 			p.invalidOpcode()
 		}
 	case 0x6D: // INSW (80186)
 		if p.isV20 {
-			p.WriteWord(memory.NewPointer(p.getSeg(p.DS), p.SI), p.InWord(p.DX))
+			p.WriteWord(memory.NewPointer(p.getSeg(p.DS()), p.SI()), p.InWord(p.DX()))
 			p.updateDISI()
 		} else {
 			p.invalidOpcode()
 		}
 	case 0x6E: // OUTSB (80186)
 		if p.isV20 {
-			p.OutByte(p.DX, p.ReadByte(memory.NewPointer(p.getSeg(p.DS), p.SI)))
+			p.OutByte(p.DX(), p.ReadByte(memory.NewPointer(p.getSeg(p.DS()), p.SI())))
 			p.updateDISI()
 		} else {
 			p.invalidOpcode()
 		}
 	case 0x6F: // OUTSW (80186)
 		if p.isV20 {
-			p.OutWord(p.DX, p.ReadWord(memory.NewPointer(p.getSeg(p.DS), p.SI)))
+			p.OutWord(p.DX(), p.ReadWord(memory.NewPointer(p.getSeg(p.DS()), p.SI())))
 			p.updateDISI()
 		} else {
 			p.invalidOpcode()
@@ -900,26 +900,26 @@ func (p *CPU) execute() error {
 		if p.isV20 {
 			size := p.readOpcodeImm16()
 			level := p.readOpcodeStream()
-			p.push16(p.BP)
-			sp := p.SP
+			p.push16(p.BP())
+			sp := p.SP()
 
 			if level > 0 {
 				for i := 1; i < int(level); i++ {
-					p.BP -= 2
-					p.push16(p.BP)
+					p.SetBP(p.BP() - 2)
+					p.push16(p.BP())
 				}
-				p.push16(p.SP)
+				p.push16(p.SP())
 			}
 
-			p.BP = sp
-			p.SP = sp - size
+			p.SetBP(sp)
+			p.SetSP(sp - size)
 		} else {
 			p.invalidOpcode()
 		}
 	case 0xC9: // LEAVE (80186)
 		if p.isV20 {
-			p.SP = p.BP
-			p.BP = p.pop16()
+			p.SetSP(p.BP())
+			p.SetBP(p.pop16())
 		} else {
 			p.invalidOpcode()
 		}
