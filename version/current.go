@@ -21,7 +21,7 @@ freely, subject to the following restrictions:
 package version
 
 var (
-	Current = Version{ 0, 6, 1, "" }
+	Current = Version{ 0, 6, 2, "" }
 	Copyright = "Copyright (c) 2019-2021 Andreas T Jonsson"
-	Hash = "eb047da2744bea1b201ec602a6138aa98631c4ba"
+	Hash = "2758c7dbc69b91bca7e5c1304ba8ca28e8c7bd24"
 )
