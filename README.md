@@ -40,3 +40,7 @@ brew install virtualxt
 ![freedos screenshot](doc/screenshots/freedos.PNG)
 
 ![edit screenshot](doc/screenshots/edit.PNG)
+
+![win30setup screenshot](doc/screenshots/win30setup.PNG)
+
+![monkey screenshot](doc/screenshots/monkey.PNG)
