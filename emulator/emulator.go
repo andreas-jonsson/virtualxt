@@ -33,7 +33,6 @@ import (
 
 	"github.com/andreas-jonsson/virtualxt/emulator/memory"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral"
-	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/cga"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/debug"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/disk"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/dma"
@@ -46,6 +45,7 @@ import (
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/rom"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/smouse"
 	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/speaker"
+	"github.com/andreas-jonsson/virtualxt/emulator/peripheral/video"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/cpu"
 	"github.com/andreas-jonsson/virtualxt/emulator/processor/validator"
@@ -66,7 +66,8 @@ var (
 
 var (
 	limitMIPS float64
-	v20cpu    bool
+	v20cpu,
+	vgaCopat bool
 )
 
 func init() {
@@ -82,7 +83,8 @@ func init() {
 		vbiosImage = p
 	}
 
-	flag.BoolVar(&v20cpu, "v20", false, "Emulate NEC V20 CPU")
+	flag.BoolVar(&v20cpu, "v20", v20cpu, "Emulate NEC V20 CPU")
+	flag.BoolVar(&vgaCopat, "vga", vgaCopat, "Experimental VGA support")
 
 	flag.Float64Var(&limitMIPS, "mips", 3, "Limit CPU speed (0 for no limit)")
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")
@@ -138,6 +140,11 @@ func Start(s platform.Platform) {
 		debug.MuteLogging(true)
 	}
 
+	var videoDevice peripheral.Peripheral = &video.CGADevice{}
+	if vgaCopat {
+		videoDevice = &video.VGADevice{}
+	}
+
 	spkr := &speaker.Device{}
 	peripherals := []peripheral.Peripheral{
 		&ram.Device{ // RAM (needs to go first since it maps the full memory range)
@@ -152,8 +159,8 @@ func Start(s platform.Platform) {
 		&pit.Device{},      // Programmable Interval Timer
 		&dma.Device{},      // DMA Controller
 		dc,                 // Disk Controller
-		&cga.Device{},      // Video Device
 		spkr,               // PC Speaker
+		videoDevice,        // Video Device
 		&keyboard.Device{}, // Keyboard Controller
 		&joystick.Device{}, // Game Port Joysticks
 		&network.Device{},  // Network Adapter
