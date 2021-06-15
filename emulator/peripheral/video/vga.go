@@ -46,7 +46,7 @@ type VGADevice struct {
 	sequencerController [0x100]byte
 	graphicsController  [0x100]byte
 	vgaLatch            [4]byte
-	ctrlIndex           byte
+	ctrlIndex, gcIndex  byte
 }
 
 func (m *VGADevice) Install(p processor.Processor) error {
@@ -165,6 +165,8 @@ func (m *VGADevice) In(port uint16) byte {
 		return 0
 	case 0x3C9: // RGB data register
 		return 0
+	case 0x3CE:
+		return m.gcIndex
 	}
 	return m.CGADevice.In(port)
 }
@@ -181,6 +183,10 @@ func (m *VGADevice) Out(port uint16, data byte) {
 	case 0x3C8: // VGA color index
 		// TODO
 	case 0x3C9: //RGB data register
+	case 0x3CE:
+		m.gcIndex = data
+	case 0x3CF:
+		m.graphicsController[m.gcIndex] = data
 	default:
 		m.CGADevice.Out(port, data)
 	}
