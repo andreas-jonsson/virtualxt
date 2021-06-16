@@ -84,7 +84,7 @@ func init() {
 	}
 
 	flag.BoolVar(&v20cpu, "v20", v20cpu, "Emulate NEC V20 CPU")
-	flag.BoolVar(&vgaCopat, "vga", vgaCopat, "Experimental VGA support")
+	flag.BoolVar(&vgaCopat, "vga", vgaCopat, "EGA/VGA support (EXPERIMENTAL)")
 
 	flag.Float64Var(&limitMIPS, "mips", 3, "Limit CPU speed (0 for no limit)")
 	flag.StringVar(&biosImage, "bios", biosImage, "Path to BIOS image")

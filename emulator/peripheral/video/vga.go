@@ -18,6 +18,11 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+/*
+	This code is just a playground for experimenting with EGA/VGA graphics features.
+	It is not working and should not be used! It is enabled with the '-vga' switch.
+*/
+
 package video
 
 import (
