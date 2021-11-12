@@ -1,6 +1,6 @@
 # VirtualXT
 
-[![Build](https://travis-ci.com/andreas-jonsson/virtualxt.svg?branch=master)](https://travis-ci.com/andreas-jonsson/virtualxt)
+[![CI](https://github.com/andreas-jonsson/virtualxt/actions/workflows/ci.yml/badge.svg)](https://github.com/andreas-jonsson/virtualxt/actions/workflows/ci.yml)
 [![Codecov](https://codecov.io/gh/andreas-jonsson/virtualxt/branch/master/graph/badge.svg)](https://codecov.io/gh/andreas-jonsson/virtualxt)
 [![Forum](https://img.shields.io/badge/forum-GitHub-blue)](https://github.com/andreas-jonsson/virtualxt/discussions)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)
