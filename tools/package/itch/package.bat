@@ -1,6 +1,6 @@
 @echo off
 
-set PACKAGE_DEST="%TRAVIS_BUILD_DIR%\package\virtualxt"
+set PACKAGE_DEST="%GITHUB_WORKSPACE%\package\virtualxt"
 if exist %PACKAGE_DEST%\ rmdir /q /s %PACKAGE_DEST%
 mkdir %PACKAGE_DEST%\bios %PACKAGE_DEST%\boot
 

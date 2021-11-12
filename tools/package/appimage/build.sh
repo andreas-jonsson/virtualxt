@@ -1,9 +1,9 @@
 #!/bin/sh
 
-APP_DIR="$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage-build"
+APP_DIR="$GITHUB_WORKSPACE/tools/package/appimage/virtualxt-appimage-build"
 rm -rf $APP_DIR VirtualXT-x86_64.AppImage
 
-cp -r "$TRAVIS_BUILD_DIR/tools/package/appimage/virtualxt-appimage" $APP_DIR
+cp -r "$GITHUB_WORKSPACE/tools/package/appimage/virtualxt-appimage" $APP_DIR
 mkdir -p $APP_DIR/usr/lib/x86_64-linux-gnu $APP_DIR/bios $APP_DIR/boot
 
 # Required for network support.

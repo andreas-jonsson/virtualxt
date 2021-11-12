@@ -1,9 +1,9 @@
 #!/bin/bash
 
-APP_DIR="$TRAVIS_BUILD_DIR/VirtualXT.app"
+APP_DIR="$GITHUB_WORKSPACE/VirtualXT.app"
 rm -rf $APP_DIR
 
-cp -r "$TRAVIS_BUILD_DIR/tools/package/appbundle/virtualxt-appbundle" $APP_DIR
+cp -r "$GITHUB_WORKSPACE/tools/package/appbundle/virtualxt-appbundle" $APP_DIR
 mkdir -p $APP_DIR/Contents/MacOS $APP_DIR/Contents/Resources/bios $APP_DIR/Contents/Resources/boot
 
 cp virtualxt $APP_DIR/Contents/MacOS/

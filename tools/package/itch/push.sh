@@ -1,7 +1,7 @@
 #!/bin/bash
 
-cd "${TRAVIS_BUILD_DIR}/package"
+cd "${GITHUB_WORKSPACE}/package"
 butler validate virtualxt
 butler login
-butler push virtualxt phix/virtualxt:${TRAVIS_OS_NAME}-${TRAVIS_BRANCH} --userversion ${VXT_VERSION}.${TRAVIS_BUILD_ID}
+butler push virtualxt phix/virtualxt:${RUNNER_OS}-${GITHUB_REF_NAME}-X --userversion ${VXT_VERSION}.${GITHUB_RUN_ID}
 cd ..

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PACKAGE_DEST="$TRAVIS_BUILD_DIR/package/virtualxt"
+PACKAGE_DEST="$GITHUB_WORKSPACE/package/virtualxt"
 rm -rf $PACKAGE_DEST
 mkdir -p $PACKAGE_DEST
 
