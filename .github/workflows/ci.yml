@@ -80,9 +80,9 @@ jobs:
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
 
           go get github.com/akavel/rsrc
-          echo "${HOME}/bin" >> $GITHUB_PATH
+          echo "${HOME}/go/bin" >> $GITHUB_PATH
 
-          cd ${HOME}
+          cd ${HOME}/go
           dir
 
       - name: Test
