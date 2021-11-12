@@ -29,7 +29,7 @@ jobs:
       - name: Setup
         run: |
           sudo apt-get update
-          sudo apt-get install libsdl2-dev
+          sudo apt-get install libsdl2-dev libpcap-dev
           curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
 
@@ -78,7 +78,12 @@ jobs:
           curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
           curl -L -o sdl.zip https://www.libsdl.org/release/SDL2-devel-${SDL2_WINDOWS_VERSION}-VC.zip && unzip sdl.zip
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+
           go get github.com/akavel/rsrc
+          echo "${HOME}/bin" >> $GITHUB_PATH
+
+          cd ${HOME}
+          dir
 
       - name: Test
         run: |
