@@ -60,7 +60,9 @@ var (
 )
 
 var (
-	validatorOutput,
+	validatorOutput string
+	validatorStartAddr uint
+	validatorEndAddr uint
 	cpuProfile string
 )
 
@@ -92,6 +94,8 @@ func init() {
 	flag.StringVar(&vbiosImage, "vbios", vbiosImage, "Path to EGA/VGA BIOS image")
 
 	flag.StringVar(&validatorOutput, "validator", validatorOutput, "Set CPU validator output")
+	flag.UintVar(&validatorStartAddr, "vstart", validatorStartAddr, "Set CPU validator linear start address")
+	flag.UintVar(&validatorEndAddr, "vend", validatorEndAddr, "Set CPU validator linear end address")
 	flag.StringVar(&cpuProfile, "cpu-profile", cpuProfile, "Set CPU profile output")
 }
 
@@ -217,7 +221,7 @@ func Start(s platform.Platform) {
 	}
 	limitSpeed := 1000000000 / int64(1000000*doLimit)
 
-	validator.Initialize(validatorOutput, validator.DefulatQueueSize, validator.DefaultBufferSize)
+	validator.Initialize(validatorOutput, uint32(validatorStartAddr), uint32(validatorEndAddr))
 	defer validator.Shutdown()
 
 	p, errs := cpu.NewCPU(peripherals)

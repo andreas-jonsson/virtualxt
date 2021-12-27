@@ -25,48 +25,22 @@ import (
 )
 
 const (
-	DefulatQueueSize  = 1024            // 1KB
+	DefaultQueueSize  = 1024            // 1KB
 	DefaultBufferSize = 0x100000 * 1024 // 1GB
 )
 
-const (
-	AL byte = iota
-	AH
-	AX
-	CL
-	CH
-	CX
-	DL
-	DH
-	DX
-	BL
-	BH
-	BX
-	SP
-	BP
-	SI
-	DI
-	ES
-	CS
-	SS
-	DS
-)
-
-const (
-	WideReg byte = 1 << iota
-	ReadReg
-	WriteReg
-)
-
-type RegOp struct {
-	Flags, Name byte
-	Data        uint16
-}
-
 type Event struct {
 	Opcode        byte
-	Regs          [16]RegOp
+	OpcodeExt	  byte
+	Before        RegsInfo   
+	After         RegsInfo
 	Reads, Writes [10]MemOp
+}
+
+type RegsInfo struct {
+	IP    uint16
+	Flags uint16
+	Regs  [12]uint16
 }
 
 type MemOp struct {

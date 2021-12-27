@@ -22,16 +22,26 @@ freely, subject to the following restrictions:
 
 package validator
 
-const Enabled = false
+const (
+	AX = iota
+	CX
+	DX
+	BX
+	SP
+	BP
+	SI
+	DI
+	ES
+	CS
+	SS
+	DS
+)
 
-func Initialize(string, int, int) {}
-func Begin(byte)                  {}
-func End()                        {}
-func Discard()                    {}
-func ReadReg8(byte, byte)         {}
-func WriteReg8(byte, byte)        {}
-func ReadReg16(byte, uint16)      {}
-func WriteReg16(byte, uint16)     {}
-func ReadByte(uint32, byte)       {}
-func WriteByte(uint32, byte)      {}
-func Shutdown()                   {}
+func Initialize(string, uint32, uint32)            {}
+func Begin(byte, byte, uint16, uint16, [12]uint16) {}
+func End(uint16, uint16, [12]uint16)               {}
+func ReadByte(uint32, byte)                        {}
+func WriteByte(uint32, byte)                       {}
+func Shutdown()                                    {}
+func Discard()                                     {}
+func GetAddr(uint16, uint16) uint32        		   {return 0}

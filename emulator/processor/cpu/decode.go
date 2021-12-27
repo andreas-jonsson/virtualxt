@@ -264,11 +264,9 @@ func (p *CPU) Step() (int, error) {
 		return p.cycleCount, err
 	}
 
-	validator.Begin(p.opcode)
 	if err := p.execute(); err != nil {
 		return p.cycleCount, err
 	}
-	validator.End()
 
 	for _, d := range p.peripherals {
 		if err := d.Step(p.cycleCount); err != nil {
@@ -287,6 +285,10 @@ func (p *CPU) execute() error {
 	if carry := op > 0x0F && p.GetBool(processor.Carry); carry {
 		carryOp = 1
 	}
+
+	// Get registers before execution
+	regs := p.GetRegisters()
+	validator.Begin(p.opcode, p.getReg(), regs.IP, regs.Flags.Load(), regs.GetValues())
 
 	switch op {
 	case 0x00, 0x02, 0x10, 0x12: // ADD/ADC r/m8,r8
@@ -1059,6 +1061,10 @@ func (p *CPU) execute() error {
 	default:
 		p.invalidOpcode()
 	}
+
+	// Get registers after execution
+	regs = p.GetRegisters()
+	validator.End(regs.IP, regs.Flags.Load(), regs.GetValues())
 
 	p.stats.NumInstructions++
 	return nil
