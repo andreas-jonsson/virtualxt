@@ -24,30 +24,63 @@ package validator
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"log"
 	"math"
 	"os"
 )
 
-const Enabled = true
+// A type used to describe the current state of the validator
+type State = int
 
-var outputFile string
+const (
+	Running State = iota	// The start address was hit, the validator is now running
+	Waiting					// The start address is not hit yet
+	Finished				// The end address was hit, the validator cannot run anymore
+)
 
 var (
+	outputFile   string
 	inScope      bool
+	state        State = Waiting
+	startAddr    uint32
+	endAddr      uint32
+)
+
+var (
 	currentEvent Event
 	outputChan   chan Event
 	quitChan     chan struct{}
 )
 
-func Initialize(output string, queueSize, bufferSize int) {
+// Registers indexes
+const (
+	AX = iota
+	CX
+	DX
+	BX
+	SP
+	BP
+	SI
+	DI
+	ES
+	CS
+	SS
+	DS
+)
+
+func Initialize(output string, validatorStartAddr, validatorEndAddr uint32) {
 	if outputFile = output; output == "" {
 		return
+	} else if validatorStartAddr == 0 {
+		// If no start address was specified, we launch the validator
+		state = Running
 	}
 
-	outputChan = make(chan Event, queueSize)
+	startAddr = validatorStartAddr
+	endAddr = validatorEndAddr
+	
+	outputChan = make(chan Event, DefaultQueueSize)
 	quitChan = make(chan struct{})
 
 	fp, err := os.Create(outputFile)
@@ -61,14 +94,12 @@ func Initialize(output string, queueSize, bufferSize int) {
 		defer fp.Close()
 		defer func() { io.Copy(fp, &buffer); quitChan <- struct{}{} }()
 
-		enc := json.NewEncoder(&buffer)
+		enc := NewEncoder(&buffer)
+		defer enc.Close()
 
 		for ev := range outputChan {
-			if err := enc.Encode(ev); err != nil {
-				log.Print(err)
-				return
-			}
-			if buffer.Len() >= bufferSize {
+			enc.Encode(ev);
+			if buffer.Len() >= DefaultBufferSize {
 				log.Print("Flush validation events!")
 				if _, err := io.Copy(fp, &buffer); err != nil {
 					log.Print(err)
@@ -79,60 +110,50 @@ func Initialize(output string, queueSize, bufferSize int) {
 	}()
 }
 
-func pushReg(flags, reg byte, data uint16) {
-	if !inScope {
+func Begin(opcode byte, opcodeExt byte, ip, flags uint16, regs [12]uint16) {
+	if outputFile == "" || state == Finished {
 		return
 	}
-	for i, op := range currentEvent.Regs {
-		if op.Flags == 0 {
-			currentEvent.Regs[i] = RegOp{flags, reg, data}
+
+	if state == Waiting {
+		if addr := GetAddr(regs[CS], ip); addr == startAddr {
+			log.Printf("Validator started at %08X.", addr)
+			state = Running
+		} else {
 			return
 		}
-	}
-	log.Panic("Reg limit!")
-}
-
-func ReadReg8(reg, data byte) {
-	pushReg(ReadReg, reg, uint16(data))
-}
-
-func WriteReg8(reg, data byte) {
-	pushReg(WriteReg, reg, uint16(data))
-}
-
-func ReadReg16(reg byte, data uint16) {
-	pushReg(ReadReg|WideReg, reg, data)
-}
-
-func WriteReg16(reg byte, data uint16) {
-	pushReg(WriteReg|WideReg, reg, data)
-}
-
-func Begin(opcode byte) {
-	if outputFile == "" {
-		return
 	}
 
 	inScope = true
 	currentEvent = EmptyEvent
 	currentEvent.Opcode = opcode
+	currentEvent.OpcodeExt = opcodeExt
+
+	currentEvent.Before.IP = ip
+	currentEvent.Before.Flags = flags
+	currentEvent.Before.Regs = regs
 }
 
-func End() {
-	if !inScope {
+func End(ip, flags uint16, regs [12]uint16) {
+	if !inScope || state != Running {
 		return
 	}
 
+	currentEvent.After.IP = ip
+	currentEvent.After.Flags = flags
+	currentEvent.After.Regs = regs
+
 	inScope = false
 	outputChan <- currentEvent
-}
 
-func Discard() {
-	inScope = false
+	if addr := GetAddr(regs[CS], ip); addr == endAddr {
+		log.Printf("Validator stopped at %08X.", addr)
+		Shutdown()
+	}
 }
 
 func ReadByte(addr uint32, data byte) {
-	if !inScope {
+	if !inScope || state != Running {
 		return
 	}
 	for i, op := range currentEvent.Reads {
@@ -145,7 +166,7 @@ func ReadByte(addr uint32, data byte) {
 }
 
 func WriteByte(addr uint32, data byte) {
-	if !inScope {
+	if !inScope || state != Running {
 		return
 	}
 	for i, op := range currentEvent.Writes {
@@ -158,9 +179,19 @@ func WriteByte(addr uint32, data byte) {
 }
 
 func Shutdown() {
-	if outputFile == "" {
+	if outputFile == "" || state != Running {
 		return
 	}
+	state = Finished
 	close(outputChan)
 	<-quitChan
+}
+
+func Discard() {
+	inScope = false
+}
+
+// Returns a linear address from a segment and an offset
+func GetAddr(cs, ip uint16) uint32 {
+	return uint32(cs) << 16 | uint32(ip)
 }

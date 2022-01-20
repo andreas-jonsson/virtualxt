@@ -46,7 +46,7 @@ func loadBin(t *testing.T, name string) []byte {
 }
 
 func runTest(t *testing.T, progName string) *CPU {
-	validator.Initialize(progName+"_validator.json", validator.DefulatQueueSize, validator.DefaultBufferSize)
+	validator.Initialize(progName+"_validator.json", 0, 0)
 	defer validator.Shutdown()
 
 	p, errs := NewCPU([]peripheral.Peripheral{
