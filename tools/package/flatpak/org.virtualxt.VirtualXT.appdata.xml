@@ -5,8 +5,8 @@
   <name>VirtualXT</name>
   <summary>VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.</summary>
   
-  <metadata_license>zlib</metadata_license>
-  <project_license>zlib</project_license>
+  <metadata_license>FSFAP</metadata_license>
+  <project_license>Zlib</project_license>
   
   <recommends>
     <control>pointing</control>
@@ -25,6 +25,9 @@
       <image>https://github.com/andreas-jonsson/virtualxt/raw/master/doc/screenshots/bios.PNG</image>
     </screenshot>
     <screenshot type="default">
+      <image>https://github.com/andreas-jonsson/virtualxt/raw/master/doc/screenshots/monkey.PNG</image>
+    </screenshot>
+    <screenshot type="default">
       <image>https://github.com/andreas-jonsson/virtualxt/raw/master/doc/screenshots/freedos.PNG</image>
     </screenshot>
     <screenshot type="default">  
@@ -32,9 +35,6 @@
     </screenshot>
     <screenshot type="default">
       <image>https://github.com/andreas-jonsson/virtualxt/raw/master/doc/screenshots/win30setup.PNG</image>
-    </screenshot>
-    <screenshot type="default">
-      <image>https://github.com/andreas-jonsson/virtualxt/raw/master/doc/screenshots/monkey.PNG</image>
     </screenshot>
   </screenshots>
 
