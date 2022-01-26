@@ -5,3 +5,4 @@ Comment=VirtualXT is an IBM PC/XT emulator that runs on modern hardware and oper
 Icon=org.virtualxt.VirtualXT
 Terminal=false
 Categories=Utility;
+Exec=virtualxt.freedos
