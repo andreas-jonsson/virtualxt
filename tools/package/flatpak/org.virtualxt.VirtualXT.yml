@@ -1,0 +1,37 @@
+app-id: org.virtualxt.VirtualXT
+runtime: org.freedesktop.Platform
+runtime-version: '21.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.golang
+command: virtualxt
+
+finish-args:
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --filesystem=host
+  - --device=all
+
+build-options:
+  env:
+    - GOROOT=/usr/lib/sdk/golang
+
+modules:
+  - name: virtualxt
+    buildsystem: simple
+    build-commands:
+      - $GOROOT/bin/go build -tags sdl,pcap,static -ldflags "-s -w"
+
+      - install -Dm00755 virtualxt $FLATPAK_DEST/bin/virtualxt
+      - install -Dm00644 bios/pcxtbios.bin $FLATPAK_DEST/share/virtualxt/pcxtbios.bin
+      - install -Dm00644 bios/vxtx.bin $FLATPAK_DEST/share/virtualxt/vxtx.bin
+      - install -Dm00644 doc/manual $FLATPAK_DEST/share/manual
+
+      - install -Dm00644 doc/icon/icon.png $FLATPAK_DEST/share/icons/hicolor/128x128/apps/$FLATPAK_ID.png
+      - install -Dm00644 tools/package/flatpak/$FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
+      - install -Dm00644 tools/package/flatpak/$FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
+
+    sources:
+      - type: git
+        url: https://github.com/andreas-jonsson/virtualxt.git
