@@ -5,16 +5,14 @@ sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.golang
 command: virtualxt.freedos
-
 finish-args:
-  - --share=network
+  #- --share=network
   - --share=ipc
   - --socket=wayland
   - --socket=fallback-x11
   - --socket=pulseaudio
   - --filesystem=host
   - --device=all
-
 build-options:
   env:
     - GOROOT=/usr/lib/sdk/golang
@@ -22,20 +20,40 @@ build-options:
 modules:
   - name: SDL2
     buildsystem: autotools
+    config-opts:
+      - --disable-libdecor
     cleanup:
       - /bin
       - /include
       - /lib/pkgconfig
       - /share
-      
     sources:
       - type: archive
         url: https://www.libsdl.org/release/SDL2-2.0.20.tar.gz
         sha256: c56aba1d7b5b0e7e999e4a7698c70b63a3394ff9704b5f6e1c57e0c16f04dd06
 
+    #modules:
+    #  - name: libdecor
+    #    config-opts:
+    #      - -Ddemo=false
+    #    buildsystem: meson
+    #    cleanup:
+    #      - /include
+    #      - /lib/pkgconfig
+    #    sources:
+    #      - type: archive
+    #        url: https://gitlab.gnome.org/jadahl/libdecor/uploads/81adf91d27620e20bcc5f6b9b312d768/libdecor-0.1.0.tar.xz
+    #        sha256: fdefa11de4bd51cb14223a97e41fdd848f01f5c5ddca9b036a0c4e3e74d9f486
+
+  #- name: pcap
+  #  buildsystem: autotools
+  #  sources:
+  #    - type: git
+  #      url: https://github.com/the-tcpdump-group/libpcap.git
+  #      branch: libpcap-1.10
+
   - name: virtualxt
     buildsystem: simple
-
     build-commands:
       - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/lib
       - export C_INCLUDE_PATH=$C_INCLUDE_PATH:/include
@@ -48,12 +66,12 @@ modules:
       - install -Dm00644 bios/vxtx.bin $FLATPAK_DEST/share/virtualxt/vxtx.bin
       - install -Dm00644 boot/freedos.img $FLATPAK_DEST/share/virtualxt/freedos.img
       - install -Dm00644 boot/freedos_hd.img $FLATPAK_DEST/share/virtualxt/freedos_hd.img
-      #- install -Dm00644 doc/manual $FLATPAK_DEST/share/virtualxt/manual
+      #- install -dm00644 doc/manual $FLATPAK_DEST/share/virtualxt/manual
 
       - install -Dm00644 doc/icon/icon.png $FLATPAK_DEST/share/icons/hicolor/128x128/apps/$FLATPAK_ID.png
       - install -Dm00644 tools/package/flatpak/$FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
       - install -Dm00644 tools/package/flatpak/$FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
-
     sources:
       - type: git
         url: https://github.com/andreas-jonsson/virtualxt.git
+        #branch: stable
