@@ -49,13 +49,19 @@ modules:
   #- name: pcap
   #  buildsystem: autotools
   #  sources:
-  #    - type: git
-  #      url: https://github.com/the-tcpdump-group/libpcap.git
-  #      branch: libpcap-1.10
+  #    - type: archive
+  #      url: https://github.com/the-tcpdump-group/libpcap/archive/refs/tags/libpcap-1.10.1.tar.gz
+  #      sha256: fdefa11de4bd51cb14223a97e41fdd848f01f5c5ddca9b036a0c4e3e74d9f486
 
   - name: virtualxt
     buildsystem: simple
     build-commands:
+    
+      # Fix for 0.6.1. Remove later.
+      - cp _go.mod go.mod
+      - cp _go.sum go.sum
+      - cp _modules.txt vendor/modules.txt
+
       - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/lib
       - export C_INCLUDE_PATH=$C_INCLUDE_PATH:/include
       #- $GOROOT/bin/go build -tags sdl,pcap
@@ -74,6 +80,9 @@ modules:
       - install -Dm00644 $FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
       - install -Dm00644 $FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
     sources:
-      - type: git
-        url: https://github.com/andreas-jonsson/virtualxt.git
-        branch: stable
+      - type: archive
+        url: https://github.com/andreas-jonsson/virtualxt/archive/refs/tags/v0.6.1.tar.gz
+        sha256: 6619e16925ab488bc7ee09852d05c98f758050aef9c115eec70a283c9bdc04dc
+
+      - type: dir
+        path: .
