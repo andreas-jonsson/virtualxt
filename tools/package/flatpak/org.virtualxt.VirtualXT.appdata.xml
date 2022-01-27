@@ -42,6 +42,10 @@
   <url type="donation">https://phix.itch.io/virtualxt/purchase</url>
   <url type="homepage">https://virtualxt.org</url>
 
+  <releases>
+    <release version="0.6.1" date="2021-06-01"/>
+  </releases>
+
   <!-- Generate the oars rating at: https://hughsie.github.io/oars/generate.html -->
   <content_rating type="oars-1.0" />
 
