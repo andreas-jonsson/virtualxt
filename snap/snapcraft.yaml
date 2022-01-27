@@ -1,0 +1,48 @@
+name: virtualxt
+version: 0.6.1
+summary: Lightweight IBM PC/XT emulator
+#icon: share/icons/hicolor/128x128/apps/virtualxt.png
+architectures: [amd64]
+description: |
+  VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.
+  It is designed to be simple and lightweight yet still capable enough to run a large library of old application and games.
+
+base: core20
+grade: devel
+confinement: strict
+
+parts:
+  desktop:
+    source: tools/package/snap
+    plugin: dump
+
+  virtualxt:
+    stage:
+      - bin/virtualxt
+    #organize:
+    #  bin/virtualxt.freedos: bin/virtualxt.freedos
+    source: .
+    plugin: go
+    go-buildtags: [sdl]
+    #go-importpath: github.com/andreas-jonsson/virtualxt
+    #go-packages: [github.com/andreas-jonsson/fantasim-pub/frontends/sdl]
+    build-packages: [pkg-config, libsdl2-dev]
+
+apps:
+  virtualxt:
+    command: virtualxt.freedos
+    desktop: share/applications/virtualxt.desktop
+    plugs:
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - opengl
+      #- network
+      #- network-bind
+      - audio-playback
+      - joystick
+      - home
+      - removable-media
+    environment:
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu/pulseaudio
