@@ -24,16 +24,16 @@
     <screenshot type="default">
       <image>https://github.com/andreas-jonsson/virtualxt/raw/master/doc/screenshots/bios.PNG</image>
     </screenshot>
-    <screenshot type="default">
+    <screenshot>
       <image>https://github.com/andreas-jonsson/virtualxt/raw/master/doc/screenshots/monkey.PNG</image>
     </screenshot>
-    <screenshot type="default">
+    <screenshot>
       <image>https://github.com/andreas-jonsson/virtualxt/raw/master/doc/screenshots/freedos.PNG</image>
     </screenshot>
-    <screenshot type="default">  
+    <screenshot>  
       <image>https://github.com/andreas-jonsson/virtualxt/raw/master/doc/screenshots/edit.PNG</image>
     </screenshot>
-    <screenshot type="default">
+    <screenshot>
       <image>https://github.com/andreas-jonsson/virtualxt/raw/master/doc/screenshots/win30setup.PNG</image>
     </screenshot>
   </screenshots>
@@ -41,6 +41,9 @@
   <url type="bugtracker">https://github.com/andreas-jonsson/virtualxt/issues</url>
   <url type="donation">https://phix.itch.io/virtualxt/purchase</url>
   <url type="homepage">https://virtualxt.org</url>
+
+  <developer_name>Andreas T Jonsson</developer_name>
+  <update_contact>mail@andreasjonsson.se</update_contact>
 
   <releases>
     <release version="0.6.1" date="2021-06-01"/>
