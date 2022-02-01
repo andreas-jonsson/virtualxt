@@ -1,13 +1,15 @@
 name: virtualxt
 version: 0.6.1
 summary: Lightweight IBM PC/XT emulator
-#icon: share/icons/hicolor/128x128/apps/virtualxt.png
-architectures: [amd64]
+icon: tools/package/snap/usr/share/icons/hicolor/128x128/apps/virtualxt.png
+architectures:
+  - build-on: [i386, amd64, armhf, arm64]
+license: Zlib
 description: |
   VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.
   It is designed to be simple and lightweight yet still capable enough to run a large library of old application and games.
 
-base: core20
+base: core18
 grade: devel
 confinement: strict
 
@@ -15,23 +17,85 @@ parts:
   desktop:
     source: tools/package/snap
     plugin: dump
+    prime:
+      - usr
+
+  boot:
+    source: boot
+    plugin: dump
+    prime:
+      - usr
+    organize:
+      freedos.img: usr/share/virtualxt/boot/freedos.img
+      freedos_hd.img: usr/share/virtualxt/boot/freedos_hd.img
+
+  bios:
+    source: bios
+    plugin: dump
+    prime:
+      - usr
+    organize:
+      pcxtbios.bin: usr/share/virtualxt/bios/pcxtbios.bin
+      vxtx.bin: usr/share/virtualxt/bios/vxtx.bin
+
+  manual:
+    source: doc
+    plugin: dump
+    prime:
+      - usr
+    organize:
+      manual: usr/share/virtualxt/manual
 
   virtualxt:
     stage:
-      - bin/virtualxt
-    #organize:
-    #  bin/virtualxt.freedos: bin/virtualxt.freedos
+      - usr/bin
+      - usr/lib
+    organize:
+      bin/virtualxt: usr/bin/virtualxt
     source: .
     plugin: go
     go-buildtags: [sdl]
-    #go-importpath: github.com/andreas-jonsson/virtualxt
-    #go-packages: [github.com/andreas-jonsson/fantasim-pub/frontends/sdl]
-    build-packages: [pkg-config, libsdl2-dev]
+    go-packages: [github.com/andreas-jonsson/virtualxt]
+    build-packages: [gcc, pkg-config, libsdl2-dev]
+    stage-packages:
+      - libasound2
+      - libasyncns0
+      - libflac8
+      - libogg0
+      - libpulse0
+      - libsdl2-2.0-0
+      - libsndfile1
+      - libsndio6.1
+      - libvorbis0a
+      - libvorbisenc2
+      - libwayland-client0
+      - libwayland-cursor0
+      - libwayland-egl1
+      - libx11-6
+      - libxau6
+      - libxcb1
+      - libxcursor1
+      - libxdmcp6
+      - libxext6
+      - libxfixes3
+      - libxi6
+      - libxinerama1
+      - libxkbcommon0
+      - libxrandr2
+      - libxrender1
+      - libxss1
+      - libxxf86vm1
+    prime:
+      - usr/bin
+      - -usr/bin/X11
+      - usr/lib
+      - -usr/lib/X11
+      - -usr/lib/pkgconfig
 
 apps:
   virtualxt:
-    command: virtualxt.freedos
-    desktop: share/applications/virtualxt.desktop
+    command: usr/bin/virtualxt.freedos
+    desktop: usr/share/applications/virtualxt.desktop
     plugs:
       - desktop
       - desktop-legacy
@@ -45,4 +109,4 @@ apps:
       - home
       - removable-media
     environment:
-      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu/pulseaudio
+      LD_LIBRARY_PATH: "${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}:${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio"
