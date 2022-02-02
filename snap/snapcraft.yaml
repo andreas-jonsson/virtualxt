@@ -96,8 +96,8 @@ parts:
 
 apps:
   virtualxt:
-    extensions:
-      - gnome-3-34
+    #extensions:
+    #  - gnome-3-34
     command: usr/bin/virtualxt.freedos
     desktop: usr/share/applications/virtualxt.desktop
     plugs:
