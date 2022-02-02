@@ -2,6 +2,11 @@ name: virtualxt
 version: 0.6.2
 summary: Lightweight IBM PC/XT emulator
 icon: tools/package/snap/usr/share/icons/hicolor/128x128/apps/virtualxt.png
+architectures:
+  - build-on: amd64
+  - build-on: arm64
+  - build-on: armhf
+  - build-on: i386
 license: Zlib
 description: |
   VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.
