@@ -85,19 +85,19 @@ parts:
       - libxrender1
       - libxss1
       - libxxf86vm1
-      - libdbus-1-3       # Not sure why this one was not detected by snapcraft?
-      - dbus
+      #- libdbus-1-3       # Not sure why this one was not detected by snapcraft?
+      #- dbus
     prime:
       - usr/bin
-      #- -usr/bin/X11
+      - -usr/bin/X11
       - usr/lib
-      #- -usr/lib/X11
-      #- -usr/lib/pkgconfig
+      - -usr/lib/X11
+      - -usr/lib/pkgconfig
 
 apps:
   virtualxt:
-    #extensions:
-    #  - gnome-3-34
+    extensions:
+      - gnome-3-28
     command: usr/bin/virtualxt.freedos
     desktop: usr/share/applications/virtualxt.desktop
     plugs:
