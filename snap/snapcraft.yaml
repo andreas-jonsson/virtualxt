@@ -53,6 +53,7 @@ parts:
     stage:
       - usr/bin
       - usr/lib
+      - usr/share/alsa
     organize:
       bin/virtualxt: usr/bin/virtualxt
     source: .
