@@ -13,7 +13,7 @@ description: |
   It is designed to be simple and lightweight yet still capable enough to run a large library of old application and games.
 
 base: core18
-grade: devel
+grade: stable
 confinement: strict
 
 parts:
@@ -57,9 +57,9 @@ parts:
       bin/virtualxt: usr/bin/virtualxt
     source: .
     plugin: go
-    go-buildtags: [sdl]
+    go-buildtags: [sdl, pcap]
     go-packages: [github.com/andreas-jonsson/virtualxt]
-    build-packages: [gcc, pkg-config, libsdl2-dev]
+    build-packages: [gcc, pkg-config, libsdl2-dev, libpcap0.8-dev]
     stage-packages:
       - libasound2
       - libasyncns0
@@ -88,17 +88,17 @@ parts:
       - libxrender1
       - libxss1
       - libxxf86vm1
+      - libpcap0.8
     prime:
       - usr/bin
       - -usr/bin/X11
       - usr/lib
       - -usr/lib/X11
       - -usr/lib/pkgconfig
+      - usr/share/alsa
 
 apps:
   virtualxt:
-    #extensions:
-    #  - gnome-3-28 # Looks like this is needed to get around the dbus issue.
     command: usr/bin/virtualxt.freedos
     desktop: usr/share/applications/virtualxt.desktop
     plugs:
@@ -107,8 +107,8 @@ apps:
       - wayland
       - x11
       - opengl
-      #- network
-      #- network-bind
+      - network
+      - network-bind
       - audio-playback
       - joystick
       - home
