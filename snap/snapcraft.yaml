@@ -85,6 +85,7 @@ parts:
       - libxrender1
       - libxss1
       - libxxf86vm1
+      - libdbus-1-3       # Not sure why this one was not detected by snapcraft?
     prime:
       - usr/bin
       - -usr/bin/X11
