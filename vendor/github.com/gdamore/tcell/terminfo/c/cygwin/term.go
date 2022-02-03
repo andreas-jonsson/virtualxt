@@ -6,7 +6,7 @@ import "github.com/gdamore/tcell/terminfo"
 
 func init() {
 
-	// ANSI emulation for Cygwin
+	// ansi emulation for Cygwin
 	terminfo.AddTerminfo(&terminfo.Terminfo{
 		Name:         "cygwin",
 		Colors:       8,

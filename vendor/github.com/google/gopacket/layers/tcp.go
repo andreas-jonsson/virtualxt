@@ -108,12 +108,10 @@ func (t TCPOption) String() string {
 	}
 	switch t.OptionType {
 	case TCPOptionKindMSS:
-		if len(t.OptionData) >= 2 {
-			return fmt.Sprintf("TCPOption(%s:%v%s)",
-				t.OptionType,
-				binary.BigEndian.Uint16(t.OptionData),
-				hd)
-		}
+		return fmt.Sprintf("TCPOption(%s:%v%s)",
+			t.OptionType,
+			binary.BigEndian.Uint16(t.OptionData),
+			hd)
 
 	case TCPOptionKindTimestamps:
 		if len(t.OptionData) == 8 {
@@ -256,7 +254,6 @@ func (tcp *TCP) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	} else {
 		tcp.Options = tcp.Options[:0]
 	}
-	tcp.Padding = tcp.Padding[:0]
 	if tcp.DataOffset < 5 {
 		return fmt.Errorf("Invalid TCP data offset %d < 5", tcp.DataOffset)
 	}

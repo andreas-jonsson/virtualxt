@@ -21,7 +21,6 @@ func init() {
 		AttrOff:         "\x1b(B\x1b[m",
 		Underline:       "\x1b[4m",
 		Bold:            "\x1b[1m",
-		Italic:          "\x1b[3m",
 		Reverse:         "\x1b[7m",
 		EnterKeypad:     "\x1b[?1h\x1b=",
 		ExitKeypad:      "\x1b[?1l\x1b>",
@@ -42,7 +41,7 @@ func init() {
 		KeyLeft:         "\x1bOD",
 		KeyInsert:       "\x1b[2~",
 		KeyDelete:       "\x1b[3~",
-		KeyBackspace:    "\u007f",
+		KeyBackspace:    "\xff",
 		KeyHome:         "\x1bOH",
 		KeyEnd:          "\x1bOF",
 		KeyPgUp:         "\x1b[5~",
@@ -151,7 +150,5 @@ func init() {
 		KeyMetaShfEnd:   "\x1b[1;10F",
 		KeyAltShfHome:   "\x1b[1;4H",
 		KeyAltShfEnd:    "\x1b[1;4F",
-		KeyShfPgUp:      "\x1b[5;2~",
-		KeyShfPgDn:      "\x1b[6;2~",
 	})
 }

@@ -135,8 +135,3 @@ func (t *tScreen) getWinSize() (int, int, error) {
 	}
 	return int(dim[1]), int(dim[0]), nil
 }
-
-func (t *tScreen) Beep() error {
-	t.writeString(string(byte(7)))
-	return nil
-}

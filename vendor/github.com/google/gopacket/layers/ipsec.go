@@ -8,7 +8,6 @@ package layers
 
 import (
 	"encoding/binary"
-	"errors"
 	"github.com/google/gopacket"
 )
 
@@ -28,10 +27,6 @@ type IPSecAH struct {
 func (i *IPSecAH) LayerType() gopacket.LayerType { return LayerTypeIPSecAH }
 
 func decodeIPSecAH(data []byte, p gopacket.PacketBuilder) error {
-	if len(data) < 12 {
-		p.SetTruncated()
-		return errors.New("IPSec AH packet less than 12 bytes")
-	}
 	i := &IPSecAH{
 		ipv6ExtensionBase: ipv6ExtensionBase{
 			NextHeader:   IPProtocol(data[0]),
@@ -42,10 +37,6 @@ func decodeIPSecAH(data []byte, p gopacket.PacketBuilder) error {
 		Seq:      binary.BigEndian.Uint32(data[8:12]),
 	}
 	i.ActualLength = (int(i.HeaderLength) + 2) * 4
-	if len(data) < i.ActualLength {
-		p.SetTruncated()
-		return errors.New("Truncated AH packet < ActualLength")
-	}
 	i.AuthenticationData = data[12:i.ActualLength]
 	i.Contents = data[:i.ActualLength]
 	i.Payload = data[i.ActualLength:]

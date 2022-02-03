@@ -116,7 +116,6 @@ var udpPortLayerType = [65536]gopacket.LayerType{
 	3784: LayerTypeBFD,
 	2152: LayerTypeGTPv1U,
 	623:  LayerTypeRMCP,
-	1812: LayerTypeRADIUS,
 }
 
 // RegisterUDPPortLayerType creates a new mapping between a UDPPort

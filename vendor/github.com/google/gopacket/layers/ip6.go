@@ -324,11 +324,7 @@ func (h *ipv6HeaderTLVOption) serializeTo(data []byte, fixLengths bool, dryrun b
 	return length
 }
 
-func decodeIPv6HeaderTLVOption(data []byte, df gopacket.DecodeFeedback) (h *ipv6HeaderTLVOption, _ error) {
-	if len(data) < 2 {
-		df.SetTruncated()
-		return nil, errors.New("IPv6 header option too small")
-	}
+func decodeIPv6HeaderTLVOption(data []byte) (h *ipv6HeaderTLVOption) {
 	h = &ipv6HeaderTLVOption{}
 	if data[0] == 0 {
 		h.ActualLength = 1
@@ -337,10 +333,6 @@ func decodeIPv6HeaderTLVOption(data []byte, df gopacket.DecodeFeedback) (h *ipv6
 	h.OptionType = data[0]
 	h.OptionLength = data[1]
 	h.ActualLength = int(h.OptionLength) + 2
-	if len(data) < h.ActualLength {
-		df.SetTruncated()
-		return nil, errors.New("IPv6 header TLV option too small")
-	}
 	h.OptionData = data[2:h.ActualLength]
 	return
 }
@@ -512,13 +504,9 @@ func (i *IPv6HopByHop) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) 
 	if err != nil {
 		return err
 	}
-	i.Options = i.Options[:0]
 	offset := 2
 	for offset < i.ActualLength {
-		opt, err := decodeIPv6HeaderTLVOption(data[offset:], df)
-		if err != nil {
-			return err
-		}
+		opt := decodeIPv6HeaderTLVOption(data[offset:])
 		i.Options = append(i.Options, (*IPv6HopByHopOption)(opt))
 		offset += opt.ActualLength
 	}
@@ -645,10 +633,7 @@ func (i *IPv6Destination) DecodeFromBytes(data []byte, df gopacket.DecodeFeedbac
 	}
 	offset := 2
 	for offset < i.ActualLength {
-		opt, err := decodeIPv6HeaderTLVOption(data[offset:], df)
-		if err != nil {
-			return err
-		}
+		opt := decodeIPv6HeaderTLVOption(data[offset:])
 		i.Options = append(i.Options, (*IPv6DestinationOption)(opt))
 		offset += opt.ActualLength
 	}

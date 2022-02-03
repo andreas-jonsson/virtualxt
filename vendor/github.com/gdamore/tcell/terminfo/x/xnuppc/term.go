@@ -29,6 +29,6 @@ func init() {
 		KeyDown:      "\x1bOB",
 		KeyRight:     "\x1bOC",
 		KeyLeft:      "\x1bOD",
-		KeyBackspace: "\u007f",
+		KeyBackspace: "\xff",
 	})
 }
