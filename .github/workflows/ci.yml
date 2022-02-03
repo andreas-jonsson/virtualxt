@@ -30,8 +30,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libsdl2-dev libpcap-dev
-          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
-          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
 
       - name: Test
         run: |
@@ -46,16 +44,6 @@ jobs:
         
       - name: Build
         run: go build -tags sdl,pcap,static -ldflags "-s -w"
-        
-      - name: Package
-        run: |
-          export FULL_VERSION=${VXT_VERSION}.${GITHUB_RUN_ID}
-          ./tools/package/itch/package.linux.sh
-        
-      - name: Deploy
-        env:
-          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: ./tools/package/itch/push.sh
 
   macos-build:
     name: Build (MacOS AMD64)
@@ -72,9 +60,7 @@ jobs:
       - name: Setup
         run: |
           brew update
-          brew install sdl2 rpl
-          curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip -d butler
-          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          brew install sdl2
 
       - name: Test
         run: |
@@ -84,16 +70,6 @@ jobs:
         
       - name: Build
         run: go build -tags sdl,pcap,static -ldflags "-s -w"
-        
-      - name: Package
-        run: |
-          export FULL_VERSION=${VXT_VERSION}.${GITHUB_RUN_ID}
-          ./tools/package/itch/package.osx.sh
-        
-      - name: Deploy
-        env:
-          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: ./tools/package/itch/push.sh
 
   windows-build:
     name: Build (Windows AMD64)
