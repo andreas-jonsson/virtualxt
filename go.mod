@@ -1,6 +1,6 @@
 module github.com/andreas-jonsson/virtualxt
 
-go 1.17
+go 1.16
 
 require (
 	github.com/gdamore/tcell v1.4.0
