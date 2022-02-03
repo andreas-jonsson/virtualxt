@@ -53,6 +53,7 @@ parts:
     stage:
       - usr/bin
       - usr/lib
+      - usr/share
     organize:
       bin/virtualxt: usr/bin/virtualxt
     source: .
@@ -95,6 +96,7 @@ parts:
       - usr/lib
       - -usr/lib/X11
       - -usr/lib/pkgconfig
+      - usr/share
 
 apps:
   virtualxt:
@@ -113,5 +115,4 @@ apps:
       - home
       - removable-media
     environment:
-      SDL_AUDIODRIVER: pulseaudio
       LD_LIBRARY_PATH: "${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}:${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio"
