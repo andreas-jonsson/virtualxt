@@ -124,7 +124,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("Decoded", len(vxt_events), "event(s).\n")
+	fmt.Print("Decoded", len(vxt_events), "event(s).\n\n")
 
 	for i := 0; i < len(vxt_events); i++ {
 		vxt := vxt_events[i]
@@ -165,7 +165,7 @@ func main() {
 			n_differences++
 		}
 
-		fmt.Println("\nFound", n_differences, "difference(s).\n")
+		fmt.Print("\nFound", n_differences, "difference(s).\n\n")
 
 		if n_differences > 0 {
 			fmt.Println("Memory writes/reads (virtualxt):")
