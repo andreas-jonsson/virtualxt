@@ -101,7 +101,7 @@ apps:
     command: usr/bin/virtualxt.freedos
     desktop: usr/share/applications/virtualxt.desktop
     extensions:
-      - gnome-3-28
+      - gnome-3-28    # TODO: Using this extension because it seems to fix the issue of ALSA not findig config files.
     plugs:
       - desktop
       - desktop-legacy
