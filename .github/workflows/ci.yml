@@ -100,7 +100,7 @@ jobs:
         run: |
           export FULL_VERSION=${VXT_VERSION}.${GITHUB_RUN_ID}
           go generate ./...
-          go test -race ./...
+          go test -mod mod -race ./...
         
       - name: Build
         run: |
@@ -108,7 +108,7 @@ jobs:
           export LIBRARY_PATH=${GITHUB_WORKSPACE}/SDL2-${SDL2_WINDOWS_VERSION}/x86_64-w64-mingw32/lib
 
           rsrc -ico=doc/icon/icon.ico -arch=amd64
-          go build -tags sdl,pcap,static -ldflags "-s -w"
+          go build -mod mod -tags sdl,pcap,static -ldflags "-s -w"
         
       - name: Package
         run: |
