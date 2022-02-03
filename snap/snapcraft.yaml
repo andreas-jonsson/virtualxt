@@ -101,7 +101,7 @@ apps:
     command: usr/bin/virtualxt.freedos
     desktop: usr/share/applications/virtualxt.desktop
     extensions:
-      - gnome-3-34
+      - gnome-3-28
     plugs:
       - desktop
       - desktop-legacy
