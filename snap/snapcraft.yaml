@@ -49,32 +49,7 @@ parts:
     organize:
       manual: usr/share/virtualxt/manual
 
-  alsa-lib:
-    plugin: autotools
-    source: http://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.6.1.tar.bz2
-    configflags:
-      - --prefix=/usr
-      - --sysconfdir=/etc
-      - --libexec=/usr/lib
-      - --libdir=/usr/lib
-      - --localstatedir=/var
-      - --with-configdir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa
-      - --with-plugindir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/alsa-lib
-      - --disable-static
-    stage:
-      - usr/include
-      - usr/lib
-    prime:
-      - -usr/bin
-      - -usr/include
-      - -usr/lib/pkgconfig
-      - -usr/share/alsa/alsa.conf
-      - -usr/share/alsa/pcm
-      - -usr/share/alsa/topology/broadwell
-
   virtualxt:
-    after:
-      - alsa-lib
     stage:
       - usr/bin
       - usr/lib
@@ -86,7 +61,7 @@ parts:
     go-packages: [github.com/andreas-jonsson/virtualxt]
     build-packages: [gcc, pkg-config, libsdl2-dev, libpcap0.8-dev]
     stage-packages:
-      #- libasound2
+      - libasound2
       - libasyncns0
       - libflac8
       - libogg0
@@ -121,14 +96,12 @@ parts:
       - -usr/lib/X11
       - -usr/lib/pkgconfig
 
-#layout:
-#  /usr/share/alsa/alsa.conf:
-#    symlink: $SNAP/usr/share/alsa/alsa.conf
-
 apps:
   virtualxt:
     command: usr/bin/virtualxt.freedos
     desktop: usr/share/applications/virtualxt.desktop
+    extensions:
+      - gnome-3-34
     plugs:
       - desktop
       - desktop-legacy
@@ -138,10 +111,8 @@ apps:
       - network
       - network-bind
       - audio-playback
-      - alsa
       - joystick
       - home
       - removable-media
     environment:
-      ALSA_CONFIG_PATH: "/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa"
       LD_LIBRARY_PATH: "${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}:${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio"
