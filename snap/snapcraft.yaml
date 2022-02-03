@@ -53,7 +53,7 @@ parts:
     stage:
       - usr/bin
       - usr/lib
-      - usr/share/alsa
+      #- usr/share/alsa
     organize:
       bin/virtualxt: usr/bin/virtualxt
     source: .
@@ -96,7 +96,11 @@ parts:
       - usr/lib
       - -usr/lib/X11
       - -usr/lib/pkgconfig
-      - usr/share/alsa
+      #- usr/share/alsa
+
+layout:
+  /usr/share/alsa/alsa.conf:
+    symlink: $SNAP/usr/share/alsa/alsa.conf
 
 apps:
   virtualxt:
@@ -111,9 +115,10 @@ apps:
       - network
       - network-bind
       - audio-playback
+      - alsa
       - joystick
       - home
       - removable-media
     environment:
-      ALSA_CONFIG_PATH: "${SNAP}/usr/share/alsa/alsa.conf"
+      ALSA_CONFIG_PATH: "/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa/alsa.conf"
       LD_LIBRARY_PATH: "${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}:${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio"
