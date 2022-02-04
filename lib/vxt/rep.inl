@@ -1,0 +1,143 @@
+/*
+Copyright (c) 2019-2022 Andreas T Jonsson
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+*/
+
+#include "common.h"
+#include "cpu.h"
+
+#define REPEAT(name, op)                                       \
+   static void name (CONSTSP(cpu) p, INST(inst)) {             \
+      UNUSED(inst);                                            \
+      if (p->repeat && !p->regs.cx) {                          \
+         p->cycles += (p->repeat == 0xF2) ? 5 : 6;             \
+         p->repeat = 0;                                        \
+         return;                                               \
+      }                                                        \
+      op                                                       \
+      if (p->repeat) {                                         \
+         p->regs.cx--;                                         \
+         p->regs.ip = p->inst_start;                           \
+         p->cycles += (p->repeat == 0xF2) ? 19 : 18;           \
+      }                                                        \
+   }                                                           \
+
+REPEAT(movsb_A4, {
+   vxt_system_write_byte(p->s, POINTER(p->regs.es, p->regs.di), vxt_system_read_byte(p->s, POINTER(p->seg, p->regs.si)));
+   update_di_si(p, 1);
+})
+REPEAT(movsw_A5, {
+   vxt_system_write_word(p->s, POINTER(p->regs.es, p->regs.di), vxt_system_read_word(p->s, POINTER(p->seg, p->regs.si)));
+   update_di_si(p, 2);
+})
+REPEAT(stosb_AA, {
+   vxt_system_write_byte(p->s, POINTER(p->regs.es, p->regs.di), p->regs.al);
+   update_di(p, 1);
+})
+REPEAT(stosw_AB, {
+   vxt_system_write_word(p->s, POINTER(p->regs.es, p->regs.di), p->regs.ax);
+   update_di(p, 2);
+})
+REPEAT(lodsb_AC, {
+   p->regs.al = vxt_system_read_byte(p->s, POINTER(p->regs.es, p->regs.si));
+   update_si(p, 1);
+})
+REPEAT(lodsw_AD, {
+   p->regs.ax = vxt_system_read_word(p->s, POINTER(p->regs.es, p->regs.si));
+   update_si(p, 2);
+})
+#undef REPEAT
+
+#define REPEATF(name, op)                                                                    \
+   static void name (CONSTSP(cpu) p, INST(inst)) {                                           \
+      UNUSED(inst);                                                                          \
+      if (p->repeat && !p->regs.cx) {                                                        \
+         p->cycles += (p->repeat == 0xF2) ? 5 : 6;                                           \
+         p->repeat = 0;                                                                      \
+         return;                                                                             \
+      }                                                                                      \
+      op                                                                                     \
+      if (p->repeat) {                                                                       \
+         p->regs.cx--;                                                                       \
+         p->regs.ip = p->inst_start;                                                         \
+         p->cycles += (p->repeat == 0xF2) ? 19 : 18;                                         \
+      }                                                                                      \
+                                                                                             \
+		if (((p->repeat == 0xF3) && !FLAGS(p->regs.flags, VXT_ZERO)) ||                        \
+			((p->repeat == 0xF2) && FLAGS(p->regs.flags, VXT_ZERO)))                            \
+      {                                                                                      \
+         p->cycles += (p->repeat == 0xF2) ? 5 : 6;                                           \
+         p->repeat = 0;                                                                      \
+         return;                                                                             \
+      }                                                                                      \
+                                                                                             \
+      if (p->repeat) {                                                                       \
+         p->regs.ip = p->inst_start;                                                         \
+         p->cycles += (p->repeat == 0xF2) ? 19 : 18;                                         \
+      }                                                                                      \
+   }                                                                                         \
+
+REPEATF(cmpsb_A6, {
+   vxt_byte a = vxt_system_read_byte(p->s, POINTER(p->seg, p->regs.si));
+   vxt_byte b = vxt_system_read_byte(p->s, POINTER(p->regs.es, p->regs.di));
+   update_di_si(p, 1);
+   flag_sub_sbb8(&p->regs, a, b, 0);
+})
+REPEATF(cmpsw_A7, {
+   vxt_word a = vxt_system_read_word(p->s, POINTER(p->seg, p->regs.si));
+   vxt_word b = vxt_system_read_word(p->s, POINTER(p->regs.es, p->regs.di));
+   update_di_si(p, 2);
+   flag_sub_sbb16(&p->regs, a, b, 0);
+})
+REPEATF(scasb_AE, {
+   vxt_byte v = vxt_system_read_byte(p->s, POINTER(p->regs.es, p->regs.di));
+   update_di_si(p, 1);
+   flag_sub_sbb8(&p->regs, p->regs.al, v, 0);
+})
+REPEATF(scasw_AF, {
+   vxt_word v = vxt_system_read_word(p->s, POINTER(p->regs.es, p->regs.di));
+   update_di_si(p, 2);
+   flag_sub_sbb16(&p->regs, p->regs.ax, v, 0);
+})
+#undef REPEATF
+
+#define LOOP(name, cond, taken, ntaken)                  \
+   static void name (CONSTSP(cpu) p, INST(inst)) {       \
+      UNUSED(inst);                                      \
+      vxt_word v = SIGNEXT16(read_opcode8(p));           \
+      if (cond) {                                        \
+         p->regs.ip += v;                                \
+         p->cycles += taken;                             \
+      } else {                                           \
+         p->cycles += ntaken;                            \
+      }                                                  \
+   }                                                     \
+		
+LOOP(loopnz_E0, --p->regs.cx && !FLAGS(p->regs.flags, VXT_ZERO), 19, 5)
+LOOP(loopz_E1, --p->regs.cx && FLAGS(p->regs.flags, VXT_ZERO), 18, 6)
+LOOP(loop_E2, --p->regs.cx, 17, 5)
+#undef LOOP
+
+static void jcxz_E3(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   vxt_word v = SIGNEXT16(read_opcode8(p));
+   if (!p->regs.cx) {
+      p->cycles += 12;
+      p->regs.ip += v;
+   }
+}

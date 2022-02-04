@@ -1,0 +1,36 @@
+name: Docs
+
+on:
+  push:
+    branches: [ "0.7" ]
+
+  workflow_dispatch:
+
+env:
+  ZIG_VERSION: 0.9.0
+
+jobs:
+  linux-docs:
+    name: Docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Setup
+        run: |
+          sudo apt-get update
+          sudo apt-get install doxygen
+          curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
+          echo "${GITHUB_WORKSPACE}/zig-linux-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
+
+      - name: Generate
+        run: zig build doc
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@4.1.6
+        with:
+          branch: gh-pages
+          folder: docs
