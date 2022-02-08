@@ -83,63 +83,77 @@ $(document).ready(function(){initNavTree('utils_8h_source.html',''); initResizab
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="vxt_8h.html">vxt.h</a>&quot;</span></div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#if defined(VXT_LIBC) || defined(VXT_CLIB_IO)</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">    #include &lt;stdio.h&gt;</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">    #include &lt;string.h&gt;</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">static</span> <a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> *vxtu_read_file(<a class="code" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *alloc, <span class="keyword">const</span> <span class="keywordtype">char</span> *file, <span class="keywordtype">int</span> *size) {</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;        <a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> *data = <a class="code" href="vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;        FILE *fp = fopen(file, <span class="stringliteral">&quot;rb&quot;</span>);</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <span class="keywordflow">if</span> (!fp)</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;            <span class="keywordflow">return</span> data;</div>
+<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="structvxtu__debugger__interface.html">   28</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structvxtu__debugger__interface.html">vxtu_debugger_interface</a> {</div>
+<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="structvxtu__debugger__interface.html#a709a225534eea96ed808a3a80d9cf5e4">   29</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="structvxtu__debugger__interface.html#a709a225534eea96ed808a3a80d9cf5e4">halt</a>;</div>
+<div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="structvxtu__debugger__interface.html#af6b83143c9997e67a111620eee290652">   30</a></span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *(*getline)(void);</div>
+<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="structvxtu__debugger__interface.html#a83545da00cf23e3ab5565b05ae527888">   31</a></span>&#160;    int (*<a class="code" href="structvxtu__debugger__interface.html#a83545da00cf23e3ab5565b05ae527888">print</a>)(<span class="keyword">const</span> <span class="keywordtype">char</span>*, ...);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;};</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#if defined(VXT_LIBC) || defined(VXT_CLIB_IO)</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">    #include &lt;stdio.h&gt;</span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">    #include &lt;string.h&gt;</span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        <span class="keywordflow">if</span> (fseek(fp, 0, SEEK_END))</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;            <span class="keywordflow">goto</span> error;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        <span class="keywordtype">int</span> sz = (int)ftell(fp);</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        <span class="keywordflow">if</span> (size)</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;            *size = sz;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        <span class="keywordflow">if</span> (fseek(fp, 0, SEEK_SET))</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;            <span class="keywordflow">goto</span> error;</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        data = (<a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>*)alloc(<a class="code" href="vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>, sz);</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keywordflow">if</span> (!data)</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;            <span class="keywordflow">goto</span> error;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        memset(data, 0, sz);</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <span class="keywordflow">if</span> (fread(data, 1, sz, fp) != (<span class="keywordtype">size_t</span>)sz) {</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            alloc(data, 0);</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <span class="keywordflow">goto</span> error;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        }</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keyword">static</span> <a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> *vxtu_read_file(<a class="code" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *alloc, <span class="keyword">const</span> <span class="keywordtype">char</span> *file, <span class="keywordtype">int</span> *size) {</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        <a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> *data = <a class="code" href="vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;        FILE *fp = fopen(file, <span class="stringliteral">&quot;rb&quot;</span>);</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        <span class="keywordflow">if</span> (!fp)</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;            <span class="keywordflow">return</span> data;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <span class="keywordflow">if</span> (fseek(fp, 0, SEEK_END))</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;            <span class="keywordflow">goto</span> error;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;        <span class="keywordtype">int</span> sz = (int)ftell(fp);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keywordflow">if</span> (size)</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;            *size = sz;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="keywordflow">if</span> (fseek(fp, 0, SEEK_SET))</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            <span class="keywordflow">goto</span> error;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        data = (<a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>*)alloc(<a class="code" href="vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>, sz);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordflow">if</span> (!data)</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            <span class="keywordflow">goto</span> error;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    error:</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        fclose(fp);</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <span class="keywordflow">return</span> data;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    }</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keyword">static</span> <a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> *vxtu_read_file(<a class="code" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *alloc, <span class="keywordtype">int</span> *size, <span class="keyword">const</span> <span class="keywordtype">char</span> *file) {</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        (void)alloc; (void)size; (void)file;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    }</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keyword">extern</span> <span class="keyword">struct </span><a class="code" href="structvxt__pirepheral.html">vxt_pirepheral</a> <a class="code" href="utils_8h.html#a620b20ac01d55e256607b7f0be9bcf90">vxtu_create_memory_device</a>(<a class="code" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *alloc, <a class="code" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a> base, <span class="keywordtype">int</span> amount, <span class="keywordtype">bool</span> read_only);</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">bool</span> <a class="code" href="utils_8h.html#a41eb9011a2e77e7ae3ec6020b6c72f66">vxtu_memory_device_fill</a>(<span class="keyword">struct</span> <a class="code" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p, <span class="keyword">const</span> <a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> *data, <span class="keywordtype">int</span> size);</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;}</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        memset(data, 0, sz);</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <span class="keywordflow">if</span> (fread(data, 1, sz, fp) != (<span class="keywordtype">size_t</span>)sz) {</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;            alloc(data, 0);</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;            <span class="keywordflow">goto</span> error;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        }</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    error:</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        fclose(fp);</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <span class="keywordflow">return</span> data;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    }</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">static</span> <a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> *vxtu_read_file(<a class="code" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *alloc, <span class="keywordtype">int</span> *size, <span class="keyword">const</span> <span class="keywordtype">char</span> *file) {</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        (void)alloc; (void)size; (void)file;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    }</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keyword">extern</span> <span class="keyword">struct </span><a class="code" href="structvxt__pirepheral.html">vxt_pirepheral</a> <a class="code" href="utils_8h.html#a620b20ac01d55e256607b7f0be9bcf90">vxtu_create_memory_device</a>(<a class="code" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *alloc, <a class="code" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a> base, <span class="keywordtype">int</span> amount, <span class="keywordtype">bool</span> read_only);</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">bool</span> <a class="code" href="utils_8h.html#a41eb9011a2e77e7ae3ec6020b6c72f66">vxtu_memory_device_fill</a>(<span class="keyword">struct</span> <a class="code" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p, <span class="keyword">const</span> <a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> *data, <span class="keywordtype">int</span> size);</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="keyword">extern</span> <span class="keyword">struct </span><a class="code" href="structvxt__pirepheral.html">vxt_pirepheral</a> <a class="code" href="utils_8h.html#ad9a5f9835b4e274a3dd0f1cd5e5b1c70">vxtu_create_debugger_device</a>(<a class="code" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *alloc, <span class="keyword">const</span> <span class="keyword">struct </span><a class="code" href="structvxtu__debugger__interface.html">vxtu_debugger_interface</a> *interface);</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="utils_8h.html#a5101b920f9a48f0b72f4d8e5754f7570">vxtu_debugger_interrupt</a>(<span class="keyword">struct</span> <a class="code" href="structvxt__pirepheral.html">vxt_pirepheral</a> *dbg);</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;}</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor">#endif</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
+<div class="ttc" id="autils_8h_html_a5101b920f9a48f0b72f4d8e5754f7570"><div class="ttname"><a href="utils_8h.html#a5101b920f9a48f0b72f4d8e5754f7570">vxtu_debugger_interrupt</a></div><div class="ttdeci">void vxtu_debugger_interrupt(struct vxt_pirepheral *dbg)</div></div>
 <div class="ttc" id="autils_8h_html_a41eb9011a2e77e7ae3ec6020b6c72f66"><div class="ttname"><a href="utils_8h.html#a41eb9011a2e77e7ae3ec6020b6c72f66">vxtu_memory_device_fill</a></div><div class="ttdeci">bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size)</div></div>
-<div class="ttc" id="astructvxt__pirepheral_html"><div class="ttname"><a href="structvxt__pirepheral.html">vxt_pirepheral</a></div><div class="ttdoc">Represents a IO or memory mapped device.</div><div class="ttdef"><b>Definition:</b> vxt.h:147</div></div>
+<div class="ttc" id="astructvxtu__debugger__interface_html"><div class="ttname"><a href="structvxtu__debugger__interface.html">vxtu_debugger_interface</a></div><div class="ttdef"><b>Definition:</b> utils.h:28</div></div>
+<div class="ttc" id="astructvxt__pirepheral_html"><div class="ttname"><a href="structvxt__pirepheral.html">vxt_pirepheral</a></div><div class="ttdoc">Represents a IO or memory mapped device.</div><div class="ttdef"><b>Definition:</b> vxt.h:152</div></div>
 <div class="ttc" id="autils_8h_html_a620b20ac01d55e256607b7f0be9bcf90"><div class="ttname"><a href="utils_8h.html#a620b20ac01d55e256607b7f0be9bcf90">vxtu_create_memory_device</a></div><div class="ttdeci">struct vxt_pirepheral vxtu_create_memory_device(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only)</div></div>
-<div class="ttc" id="avxt_8h_html_a0e988123517189df1ad9657099fdeb81"><div class="ttname"><a href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a></div><div class="ttdeci">void * vxt_allocator(void *, int)</div><div class="ttdef"><b>Definition:</b> vxt.h:103</div></div>
+<div class="ttc" id="avxt_8h_html_a0e988123517189df1ad9657099fdeb81"><div class="ttname"><a href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a></div><div class="ttdeci">void * vxt_allocator(void *, int)</div><div class="ttdef"><b>Definition:</b> vxt.h:104</div></div>
+<div class="ttc" id="astructvxtu__debugger__interface_html_a83545da00cf23e3ab5565b05ae527888"><div class="ttname"><a href="structvxtu__debugger__interface.html#a83545da00cf23e3ab5565b05ae527888">vxtu_debugger_interface::print</a></div><div class="ttdeci">int(* print)(const char *,...)</div><div class="ttdef"><b>Definition:</b> utils.h:31</div></div>
 <div class="ttc" id="avxt_8h_html"><div class="ttname"><a href="vxt_8h.html">vxt.h</a></div></div>
 <div class="ttc" id="avxt_8h_html_af39a2a43386c5266fe94d53223308671"><div class="ttname"><a href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a></div><div class="ttdeci">unsigned int vxt_pointer</div><div class="ttdef"><b>Definition:</b> vxt.h:61</div></div>
+<div class="ttc" id="autils_8h_html_ad9a5f9835b4e274a3dd0f1cd5e5b1c70"><div class="ttname"><a href="utils_8h.html#ad9a5f9835b4e274a3dd0f1cd5e5b1c70">vxtu_create_debugger_device</a></div><div class="ttdeci">struct vxt_pirepheral vxtu_create_debugger_device(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface)</div></div>
+<div class="ttc" id="astructvxtu__debugger__interface_html_a709a225534eea96ed808a3a80d9cf5e4"><div class="ttname"><a href="structvxtu__debugger__interface.html#a709a225534eea96ed808a3a80d9cf5e4">vxtu_debugger_interface::halt</a></div><div class="ttdeci">bool halt</div><div class="ttdef"><b>Definition:</b> utils.h:29</div></div>
 <div class="ttc" id="avxt_8h_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> vxt.h:70</div></div>
 <div class="ttc" id="avxt_8h_html_a1a2c86d8b0bade734327e283188d6b77"><div class="ttname"><a href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a></div><div class="ttdeci">unsigned char vxt_byte</div><div class="ttdef"><b>Definition:</b> vxt.h:58</div></div>
 <!-- start footer part -->

@@ -6,6 +6,9 @@ var vxt_8h =
     [ "vxt_pirepheral", "structvxt__pirepheral.html", "structvxt__pirepheral" ],
     [ "NULL", "vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4", null ],
     [ "VXT_INVALID_DEVICE_ID", "vxt_8h.html#aedee3310691d61f01335d01cb93a0752", null ],
+    [ "VXT_IO_MAP_SIZE", "vxt_8h.html#a0805f80bc96947fff1919912df1e8d5e", null ],
+    [ "VXT_MAX_PIREPHERALS", "vxt_8h.html#ab740cb9791821ffb26bf633c05c0cf50", null ],
+    [ "VXT_MEM_MAP_SIZE", "vxt_8h.html#a4cdd4ee72c72a2d4a86a9fafa8eb4a25", null ],
     [ "VXT_PACK", "vxt_8h.html#a7962fbd94b626c926d9a1242024eb12a", null ],
     [ "VXT_VERSION", "vxt_8h.html#ac3d9aeef44ef000c6bb367613239bc4e", null ],
     [ "VXT_VERSION_MAJOR", "vxt_8h.html#a1dda08b7c7b99cc4abd17f1e5ac18179", null ],
@@ -34,7 +37,8 @@ var vxt_8h =
     [ "vxt_error", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047", [
       [ "VXT_NO_ERROR", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a303639ce6216d5df97fd907ec6be0bef", null ],
       [ "VXT_INVALID_VERSION", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ae0b9ce2aef425ed0ed1e06daf943d9c2", null ],
-      [ "VXT_INVALID_REGISTER_PACKING", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ab6543bc82279c3921f82ffe4d9ccfcb8", null ]
+      [ "VXT_INVALID_REGISTER_PACKING", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ab6543bc82279c3921f82ffe4d9ccfcb8", null ],
+      [ "VXT_USER_TERMINATION", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047aebc9bde81021d51eb886bfea944c558c", null ]
     ] ],
     [ "_Static_assert", "vxt_8h.html#a2ca34a316adc42e471aa8ff05871cfa4", null ],
     [ "_vxt_system_initialize", "vxt_8h.html#a577ffdb252aa22e91c1ba55a22cfc10d", null ],
@@ -53,6 +57,9 @@ var vxt_8h =
     [ "vxt_system_install_io_at", "vxt_8h.html#af49917b2c29716cb00288f80f7be89cf", null ],
     [ "vxt_system_install_mem", "vxt_8h.html#aa6a33acc1aea6a72bb362894cfd3849e", null ],
     [ "vxt_system_install_mem_at", "vxt_8h.html#a4b9a1de96a7e339759c73bab185d2fe2", null ],
+    [ "vxt_system_io_map", "vxt_8h.html#abf857e6f9933550b882bdcc3d428d407", null ],
+    [ "vxt_system_mem_map", "vxt_8h.html#a509e6644bbf9c6d8a1c17007f6860cba", null ],
+    [ "vxt_system_pirepheral", "vxt_8h.html#a434a15b56f3046f6a7ff1e30ccd86dbe", null ],
     [ "vxt_system_read_byte", "vxt_8h.html#ac1836055f5d57469eb7199cdc142ec41", null ],
     [ "vxt_system_read_word", "vxt_8h.html#a3ca1233a86fc3ba67b3c13137cbf9bb2", null ],
     [ "vxt_system_registers", "vxt_8h.html#a61696a0ccc5bd21ffef5fc9035954e76", null ],
