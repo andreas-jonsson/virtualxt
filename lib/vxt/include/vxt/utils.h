@@ -25,6 +25,12 @@ extern "C" {
 
 #include "vxt.h"
 
+struct vxtu_debugger_interface {
+    bool halt;
+    const char *(*getline)(void);
+    int (*print)(const char*, ...);
+};
+
 #if defined(VXT_LIBC) || defined(VXT_CLIB_IO)
     #include <stdio.h>
     #include <string.h>
@@ -68,6 +74,9 @@ extern "C" {
 
 extern struct vxt_pirepheral vxtu_create_memory_device(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);
 extern bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size);
+
+extern struct vxt_pirepheral vxtu_create_debugger_device(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface);
+extern void vxtu_debugger_interrupt(struct vxt_pirepheral *dbg);
 
 #ifdef __cplusplus
 }

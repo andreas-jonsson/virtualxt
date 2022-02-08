@@ -91,6 +91,7 @@ extern "C" {
     x(0, VXT_NO_ERROR,                  "no error")                             \
     x(1, VXT_INVALID_VERSION,           "invalid version")                      \
     x(2, VXT_INVALID_REGISTER_PACKING,  "invalid register size or packing")     \
+    x(3, VXT_USER_TERMINATION,          "user requested termination")           \
 
 #define _VXT_ERROR_ENUM(id, name, text) name = id,
 typedef enum {_VXT_ERROR_CODES(_VXT_ERROR_ENUM)} vxt_error;
@@ -113,6 +114,10 @@ enum {
     VXT_DIRECTION = 0x400,
     VXT_OVERFLOW  = 0x800
 };
+
+#define VXT_IO_MAP_SIZE 0x10000
+#define VXT_MEM_MAP_SIZE 0x100000
+#define VXT_MAX_PIREPHERALS 256
 
 #define _VXT_REG(r) VXT_PACK(union {VXT_PACK(struct {vxt_byte r ## l; vxt_byte r ## h;}); vxt_word r ## x;})
 struct vxt_registers {
@@ -190,6 +195,10 @@ extern struct vxt_registers *vxt_system_registers(vxt_system *s);
 extern void vxt_system_set_userdata(vxt_system *s, void *data);
 extern void *vxt_system_userdata(vxt_system *s);
 extern vxt_allocator *vxt_system_allocator(vxt_system *s);
+
+extern const vxt_byte *vxt_system_io_map(vxt_system *s);
+extern const vxt_byte *vxt_system_mem_map(vxt_system *s);
+extern const struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx);
 
 extern void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_word addr);
 extern void vxt_system_install_mem_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer addr);

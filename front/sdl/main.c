@@ -305,6 +305,11 @@ static int err_printf(const char *fmt, ...) {
 	return ret;
 }
 
+static const char *getline() {
+	static char buffer[1024] = {0};
+	return fgets(buffer, sizeof(buffer), stdin);
+}
+
 int ENTRY(int argc, char *argv[]) {
 	printf("Application arguments: ");
 	for (int i = 0; i < argc; i++)
@@ -353,6 +358,9 @@ int ENTRY(int argc, char *argv[]) {
 	//struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
 	struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
 
+	struct vxtu_debugger_interface dbgif = {true, &getline, &printf};
+	struct vxt_pirepheral dbg = vxtu_create_debugger_device(&vxt_clib_malloc, &dbgif);
+
 	if (!vxtu_memory_device_fill(&rom, data, size)) {
 		write_log("vxtu_memory_device_fill() failed!\n");
 		return -1;
@@ -360,6 +368,7 @@ int ENTRY(int argc, char *argv[]) {
 
 	struct vxt_pirepheral *devices[] = {
 		&ram, &rom,
+		&dbg, // Must be the last device in list.
 		NULL
 	};
 
@@ -411,7 +420,10 @@ int ENTRY(int argc, char *argv[]) {
 
 		struct vxt_step res = vxt_system_step(vxt, 0);
 		if (res.err != VXT_NO_ERROR) {
-			write_log("step error: %s", vxt_error_str(res.err));
+			if (res.err == VXT_USER_TERMINATION)
+				run = false;
+			else
+				write_log("step error: %s", vxt_error_str(res.err));
 		}
 
 		r_clear(mu_color(0, 0, 0, 255));

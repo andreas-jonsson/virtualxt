@@ -138,8 +138,11 @@ struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
 
         for (int i = 0; i < s->num_devices; i++) {
             CONSTSP(vxt_pirepheral) d = &s->devices[i];
-            if (d->step)
-                d->step(d->userdata, c);
+            if (d->step) {
+                if ((step.err = d->step(d->userdata, c)) != VXT_NO_ERROR)
+                    return step;
+
+            }
         }
 
         if (newc >= cycles)
@@ -153,6 +156,18 @@ void vxt_system_set_userdata(CONSTP(vxt_system) s, void *data) {
 
 void *vxt_system_userdata(CONSTP(vxt_system) s) {
     return s->userdata;
+}
+
+const vxt_byte *vxt_system_io_map(vxt_system *s) {
+    return s->io_map;
+}
+
+const vxt_byte *vxt_system_mem_map(vxt_system *s) {
+    return s->mem_map;
+}
+
+const struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx) {
+    return &s->devices[idx];
 }
 
 void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word addr) {

@@ -22,14 +22,15 @@
 #include "system.h"
 #include "testing.h"
 
-#define RUN_BBTEST(bin, res, diff) {                                                                    \
-    struct vxt_pirepheral ram = vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false);      \
-    struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, 0x10000, true);    \
+#define RUN_BBTEST(bin, check) {                                                                        \
+    struct vxt_pirepheral ram = vxtu_create_memory_device(TEST_ALLOC, 0x0, 0x100000, false);            \
+    struct vxt_pirepheral rom = vxtu_create_memory_device(TEST_ALLOC, 0xF0000, 0x10000, true);          \
                                                                                                         \
     int size = 0;                                                                                       \
-    vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, (bin), &size);                                    \
+    vxt_byte *data = vxtu_read_file(TEST_ALLOC, (bin), &size);                                          \
     TENSURE(data);                                                                                      \
     TENSURE(vxtu_memory_device_fill(&rom, data, size));                                                 \
+    TFREE(data);                                                                                        \
                                                                                                         \
     struct vxt_pirepheral *devices[] = {                                                                \
         &ram, &rom,                                                                                     \
@@ -51,19 +52,38 @@
             break;                                                                                      \
     }                                                                                                   \
                                                                                                         \
-    vxt_system_destroy(s);                                                                              \
+    check;                                                                                              \
 }                                                                                                       \
+
+#define CHECK_DIFF(res, diff) {                                                                         \
+    int res_size = 0;                                                                                   \
+    vxt_byte *res_data = vxtu_read_file(TEST_ALLOC, (res), &size);                                      \
+    TENSURE(res_data);                                                                                  \
+                                                                                                        \
+    int diff_count = 0;                                                                                 \
+    for (int i = 0; i < res_size; i++) {                                                                \
+        if (vxt_system_read_byte(s, (vxt_pointer)i) != res_data[i])                                     \
+            diff_count++;                                                                               \
+    }                                                                                                   \
+    TFREE(res_data);                                                                                    \
+                                                                                                        \
+    vxt_system_destroy(s);                                                                              \
+    TENSURE(diff_count == (diff));                                                                      \
+}                                                                                                       \
+
+#define COMP_MEM_CHECK(addr, type, value) { TENSURE(vxt_system_read_ ## type (s, (vxt_pointer)(addr)) == (value)); vxt_system_destroy(s); }
+#define NO_CHECK vxt_system_destroy(s)
 
 //TEST(blackbox_add, {
 //    RUN_BBTEST("tools/testdata/add.bin", "tools/testdata/res_add.bin", 0);
 //})
 
 TEST(blackbox_bcdcnv, {
-    RUN_BBTEST("tools/testdata/bcdcnv.bin", "tools/testdata/res_bcdcnv.bin", 0);
+    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF("tools/testdata/res_bcdcnv.bin", 0));
 })
 
 //TEST(blackbox_bitwise, {
-//    RUN_BBTEST("tools/testdata/bitwise.bin", "tools/testdata/res_bitwise.bin", 0);
+//    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF("tools/testdata/res_bitwise.bin", 0));
 //})
 
 //TEST(blackbox_cmpneg, {
@@ -71,7 +91,7 @@ TEST(blackbox_bcdcnv, {
 //})
 
 TEST(blackbox_control, {
-    RUN_BBTEST("tools/testdata/control.bin", "tools/testdata/res_control.bin", 0);
+    RUN_BBTEST("tools/testdata/control.bin", CHECK_DIFF("tools/testdata/res_control.bin", 0));
 })
 
 //TEST(blackbox_datatrnf, {
@@ -87,11 +107,11 @@ TEST(blackbox_control, {
 //})
 
 //TEST(blackbox_jmpmov, {
-//    RUN_BBTEST("tools/testdata/jmpmov.bin", "tools/testdata/res_jmpmov.bin", 0);
+//    RUN_BBTEST("tools/testdata/jmpmov.bin", COMP_MEM_CHECK(0, word, 0x4001));
 //})
 
 TEST(blackbox_jump1, {
-    RUN_BBTEST("tools/testdata/jump1.bin", "tools/testdata/res_jump1.bin", 0);
+    RUN_BBTEST("tools/testdata/jump1.bin", CHECK_DIFF("tools/testdata/res_jump1.bin", 0));
 })
 
 //TEST(blackbox_jump2, {
@@ -107,7 +127,7 @@ TEST(blackbox_jump1, {
 //})
 
 TEST(blackbox_rotate, {
-    RUN_BBTEST("tools/testdata/rotate.bin", "tools/testdata/res_rotate.bin", 0);
+    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF("tools/testdata/res_rotate.bin", 0));
 })
 
 //TEST(blackbox_segpr, {

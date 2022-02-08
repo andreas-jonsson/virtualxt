@@ -44,7 +44,8 @@ static struct Test {
 #define TENSURE_NO_ERR(e)  { vxt_error __err = (e); TASSERT(__err == VXT_NO_ERROR, vxt_error_str(__err)); }
 #define TEST(n, c)         int test_ ## n (struct Test T) { T.name = #n ; { c } return 0; }
 #define TEST_LOG(...)      fprintf(T.output, __VA_ARGS__)
-#define TEST_ALLOC         &test_malloc
+#define TEST_ALLOC         test_malloc
+#define TFREE(p)           { void *_ = test_malloc(p, 0); (void)_; }
 
 static void *test_malloc(void *p, int s) {
    return realloc(p, s);

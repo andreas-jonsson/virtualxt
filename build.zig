@@ -118,6 +118,7 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         "lib/vxt/dummy.c",
         "lib/vxt/memory.c",
         "lib/vxt/cpu.c",
+        "lib/vxt/debugger.c",
         "lib/vxt/testsuit.c",
     };
 

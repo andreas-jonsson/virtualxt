@@ -24,19 +24,17 @@ freely, subject to the following restrictions:
 #include "common.h"
 #include "cpu.h"
 
-#define MAX_DEVICES 256
-
 struct system {
    void *userdata;
 
-   vxt_byte io_map[0x10000];
-   vxt_byte mem_map[0x100000];
+   vxt_byte io_map[VXT_IO_MAP_SIZE];
+   vxt_byte mem_map[VXT_MEM_MAP_SIZE];
 
    vxt_allocator *alloc;
    struct cpu cpu;
 
    int num_devices;
-   struct vxt_pirepheral devices[MAX_DEVICES];
+   struct vxt_pirepheral devices[VXT_MAX_PIREPHERALS];
 };
 
 extern void init_dummy_device(vxt_system *s, struct vxt_pirepheral *d);    // From dummy.c

@@ -71,6 +71,7 @@ struct vxt_pirepheral vxtu_create_memory_device(vxt_allocator *alloc, vxt_pointe
     struct vxt_pirepheral p = {0};
     p.userdata = m;
     p.install = &install;
+    p.destroy = &destroy;
     p.io.read = &read;
     p.io.write = &write;
     return p;
