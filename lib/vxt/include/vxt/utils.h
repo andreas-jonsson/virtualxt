@@ -27,6 +27,7 @@ extern "C" {
 
 struct vxtu_debugger_interface {
     bool halt;
+    bool (*pdisasm)(vxt_system*, vxt_pointer, int);
     const char *(*getline)(void);
     int (*print)(const char*, ...);
 };

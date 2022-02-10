@@ -307,7 +307,42 @@ static int err_printf(const char *fmt, ...) {
 
 static const char *getline() {
 	static char buffer[1024] = {0};
-	return fgets(buffer, sizeof(buffer), stdin);
+	char *str = fgets(buffer, sizeof(buffer), stdin);
+	for (char *p = str; *p; p++) {
+		if (*p == '\n') {
+			*p = 0;
+			break;
+		}
+	}
+	return str;
+}
+
+static bool pdisasm(vxt_system *s, vxt_pointer start, int size) {
+	char *name = tmpnam(NULL);
+	if (!name)
+		return false;
+	
+	FILE *tmpf = fopen(name, "wb");
+	if (!tmpf)
+		return false;
+
+	for (int i = 0; i < size; i++) {
+		vxt_byte v = vxt_system_read_byte(s, start + i);
+		if (fwrite(&v, 1, 1, tmpf) != 1) {
+			fclose(tmpf);
+			remove(name);
+			return false;
+		}
+	}
+	fclose(tmpf);
+
+	static char cmd[512] = {0};
+	//sprintf_s(cmd, sizeof(cmd), "ndisasm -b 16 -o %d \"%s\"", start, name);
+	sprintf(cmd, "ndisasm -b 16 -o %d \"%s\"", start, name);
+
+	int ret = system(cmd) == 0;
+	remove(name);
+	return ret;
 }
 
 int ENTRY(int argc, char *argv[]) {
@@ -358,7 +393,7 @@ int ENTRY(int argc, char *argv[]) {
 	//struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
 	struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
 
-	struct vxtu_debugger_interface dbgif = {true, &getline, &printf};
+	struct vxtu_debugger_interface dbgif = {true, &pdisasm, &getline, &printf};
 	struct vxt_pirepheral dbg = vxtu_create_debugger_device(&vxt_clib_malloc, &dbgif);
 
 	if (!vxtu_memory_device_fill(&rom, data, size)) {
@@ -406,6 +441,8 @@ int ENTRY(int argc, char *argv[]) {
 				}
 
 				case SDL_KEYDOWN:
+					if (e.key.keysym.sym == SDLK_F12 && (e.key.keysym.mod & KMOD_ALT))
+						vxtu_debugger_interrupt(&dbg);
 					write_log("SDL_KEYDOWN: %s\n", SDL_GetKeyName(e.key.keysym.sym));
 				case SDL_KEYUP: {
 					int c = key_map[e.key.keysym.sym & 0xff];
