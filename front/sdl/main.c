@@ -120,36 +120,41 @@ int ENTRY(int argc, char *argv[]) {
 	}
 	SDL_RenderSetLogicalSize(renderer, 640, 200);
 
-	int size = 0;
-	//vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "bios/pcxtbios.bin", &size);
-	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/bitwise.bin", &size);
-	if (!data) {
-		printf("vxtu_read_file() failed!\n");
-		return -1;
-	}
-	
-	struct vxt_pirepheral ram = vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false);
-	//struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
-	struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
-
-	struct vxtu_debugger_interface dbgif = {(bool)args.halt, &pdisasm, &getline, &printf};
-	struct vxt_pirepheral dbg;
-	if (args.debug)
-		dbg = vxtu_create_debugger_device(&vxt_clib_malloc, &dbgif);
-
-	if (!vxtu_memory_device_fill(&rom, data, size)) {
-		printf("vxtu_memory_device_fill() failed!\n");
-		return -1;
-	}
-
-	struct vxt_pirepheral *devices[] = {
-		&ram, &rom,
-		args.debug ? &dbg : NULL, // Must be the last device in list.
-		NULL
-	};
-
+	vxt_system *vxt = NULL;
 	vxt_set_logger(&printf);
-	vxt_system *vxt = vxt_system_create(&vxt_clib_malloc, devices);
+
+	struct vxt_pirepheral dbg = {0};
+	if (args.debug) {
+		struct vxtu_debugger_interface dbgif = {(bool)args.halt, &pdisasm, &getline, &printf};
+		dbg = vxtu_create_debugger_device(&vxt_clib_malloc, &dbgif);
+	}
+
+	{
+		int size = 0;
+		//vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "bios/pcxtbios.bin", &size);
+		vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/bitwise.bin", &size);
+		if (!data) {
+			printf("vxtu_read_file() failed!\n");
+			return -1;
+		}
+		
+		struct vxt_pirepheral ram = vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false);
+		//struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
+		struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
+
+		if (!vxtu_memory_device_fill(&rom, data, size)) {
+			printf("vxtu_memory_device_fill() failed!\n");
+			return -1;
+		}
+
+		struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = {
+			&ram, &rom, // RAM & ROM should be initialized first.
+			args.debug ? &dbg : NULL, // Must be the last device in list.
+			NULL
+		};
+
+		vxt = vxt_system_create(&vxt_clib_malloc, devices);
+	}
 
 	vxt_error err = vxt_system_initialize(vxt);
 	if (err != VXT_NO_ERROR) {

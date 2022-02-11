@@ -79,7 +79,6 @@ extern "C" {
     }
 #endif
 
-
 #ifdef _MSC_VER
    #define VXT_PACK(x) __pragma(pack(push, 1)) x __pragma(pack(pop))
 #else

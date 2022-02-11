@@ -281,14 +281,79 @@ JUMP(jg, (!FLAGS(p->regs.flags, VXT_ZERO) && FLAGS(p->regs.flags, VXT_SIGN)) == 
 
 static void grp1_80_82(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   LOG("opcode not implemented: grp1");
-   p->cycles++;
+   vxt_byte a = read_dest8(p);
+   vxt_byte b = read_opcode8(p);
+   vxt_byte res = 0;
+
+   switch (p->mode.reg) {
+      case 0:
+         res = op_add_adc8(&p->regs, a, b, 0);
+         break;
+      case 1:
+         res = op_or8(&p->regs, a, b);
+         break;
+      case 2:
+         res = op_add_adc8(&p->regs, a, b, (p->regs.flags & VXT_CARRY) ? 1 : 0);
+         break;
+      case 3:
+         res = op_sub_sbb8(&p->regs, a, b, (p->regs.flags & VXT_CARRY) ? 1 : 0);
+         break;
+      case 4:
+         res = op_and8(&p->regs, a, b);
+         break;
+      case 5:
+         res = op_sub_sbb8(&p->regs, a, b, 0);
+         break;
+      case 6:
+         res = op_xor8(&p->regs, a, b);
+         break;
+      case 7:
+         flag_sub_sbb8(&p->regs, a, b, 0);
+         break;
+      default:
+         UNREACHABLE();
+   }
+
+   if (p->mode.reg < 7)
+      write_dest8(p, res);
 }
 
 static void grp1_81_83(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   LOG("opcode not implemented: grp1");
-   p->cycles++;
+   vxt_word a = read_dest16(p);
+   vxt_word b = (inst->opcode == 0x81) ? read_opcode16(p) : SIGNEXT16(read_opcode8(p));
+   vxt_word res = 0;
+
+   switch (p->mode.reg) {
+      case 0:
+         res = op_add_adc16(&p->regs, a, b, 0);
+         break;
+      case 1:
+         res = op_or16(&p->regs, a, b);
+         break;
+      case 2:
+         res = op_add_adc16(&p->regs, a, b, (p->regs.flags & VXT_CARRY) ? 1 : 0);
+         break;
+      case 3:
+         res = op_sub_sbb16(&p->regs, a, b, (p->regs.flags & VXT_CARRY) ? 1 : 0);
+         break;
+      case 4:
+         res = op_and16(&p->regs, a, b);
+         break;
+      case 5:
+         res = op_sub_sbb16(&p->regs, a, b, 0);
+         break;
+      case 6:
+         res = op_xor16(&p->regs, a, b);
+         break;
+      case 7:
+         flag_sub_sbb16(&p->regs, a, b, 0);
+         break;
+      default:
+         UNREACHABLE();
+   }
+
+   if (p->mode.reg < 7)
+      write_dest16(p, res);
 }
 
 static void test_84(CONSTSP(cpu) p, INST(inst)) {
@@ -682,6 +747,24 @@ static void std_FD(CONSTSP(cpu) p, INST(inst)) {
    p->regs.flags |= VXT_DIRECTION;
 }
 
+static void grp4_FE(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+
+   vxt_byte v = read_dest8(p);
+   vxt_word c = p->regs.flags & VXT_CARRY;
+   switch (p->mode.reg) {
+      case 0:
+         write_dest8(p, op_add_adc8(&p->regs, v, 1, 0));
+         break;
+      case 1:
+         write_dest8(p, op_sub_sbb8(&p->regs, v, 1, 0));
+         break;
+      default:
+         LOG("TODO: Invalid opcode!");
+   }
+   SET_FLAG(p->regs.flags, VXT_CARRY, c);
+}
+
 #define X 1
 #define INVALID "INVALID", false, X, &invalid_op
 
@@ -817,10 +900,10 @@ static struct instruction const opcode_table[0x100] = {
    {0x7D, "JGE Jb", false, 4, &jump_jge},
    {0x7E, "JLE Jb", false, 4, &jump_jle},
    {0x7F, "JG Jb", false, 4, &jump_jg},
-   {0x80, "GRP1 Eb Ib", false, 0, &grp1_80_82},
-   {0x81, "GRP1 Ev Iv", false, 0, &grp1_81_83},
-   {0x82, "GRP1 Eb Ib", false, 0, &grp1_80_82},
-   {0x83, "GRP1 Ev Ib", false, 0, &grp1_81_83},
+   {0x80, "GRP1 Eb Ib", true, X, &grp1_80_82},
+   {0x81, "GRP1 Ev Iv", true, X, &grp1_81_83},
+   {0x82, "GRP1 Eb Ib", true, X, &grp1_80_82},
+   {0x83, "GRP1 Ev Ib", true, X, &grp1_81_83},
    {0x84, "TEST Gb Eb", true, X, &test_84},
    {0x85, "TEST Gv Ev", true, X, &test_85},
    {0x86, "XCHG Gb Eb", true, X, &xchg_86},
@@ -943,7 +1026,7 @@ static struct instruction const opcode_table[0x100] = {
    {0xFB, "STI", false, 2, &sti_FB},
    {0xFC, "CLD", false, 2, &cld_FC},
    {0xFD, "STD", false, 2, &std_FD},
-   {0xFE, "GRP4 Eb", false, X, NULL},
+   {0xFE, "GRP4 Eb", true, 23, &grp4_FE},
    {0xFF, "GRP5 Ev", false, X, NULL}
 };
 
