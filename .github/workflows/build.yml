@@ -83,8 +83,6 @@ jobs:
     name: Build (MacOS AMD64)
     runs-on: macos-latest
 
-    if: false # Disable osx build
-
     steps:
       - uses: actions/checkout@v2
         with:
@@ -96,7 +94,7 @@ jobs:
       - name: Setup
         run: |
           brew update
-          brew install sdl2 rpl
+          brew install sdl2
           curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-macos-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
           echo "${GITHUB_WORKSPACE}/zig-macos-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
 

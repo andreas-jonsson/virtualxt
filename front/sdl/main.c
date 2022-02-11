@@ -94,6 +94,10 @@ int ENTRY(int argc, char *argv[]) {
 	}
 	printf("Config path: %s\n", args.config);
 
+	const char *base_path = SDL_GetBasePath();
+	base_path = base_path ? base_path : "./";
+	printf("Base path: %s\n", base_path);
+
 	SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
 	SDL_Init(SDL_INIT_EVERYTHING);
 
