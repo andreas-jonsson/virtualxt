@@ -83,6 +83,8 @@ jobs:
     name: Build (MacOS AMD64)
     runs-on: macos-latest
 
+    if: false # Disable osx build
+
     steps:
       - uses: actions/checkout@v2
         with:
