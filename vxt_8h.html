@@ -81,11 +81,11 @@ Data Structures</h2></td></tr>
 Macros</h2></td></tr>
 <tr class="memitem:a1dda08b7c7b99cc4abd17f1e5ac18179"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a1dda08b7c7b99cc4abd17f1e5ac18179">VXT_VERSION_MAJOR</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:a1dda08b7c7b99cc4abd17f1e5ac18179"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab8216dbfb8be4e92f22aef22bfb426a8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ab8216dbfb8be4e92f22aef22bfb426a8">VXT_VERSION_MINOR</a>&#160;&#160;&#160;0</td></tr>
+<tr class="memitem:ab8216dbfb8be4e92f22aef22bfb426a8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ab8216dbfb8be4e92f22aef22bfb426a8">VXT_VERSION_MINOR</a>&#160;&#160;&#160;7</td></tr>
 <tr class="separator:ab8216dbfb8be4e92f22aef22bfb426a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a95d5caaa76d447935cd2267e88f119ec"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a95d5caaa76d447935cd2267e88f119ec">VXT_VERSION_PATCH</a>&#160;&#160;&#160;1</td></tr>
+<tr class="memitem:a95d5caaa76d447935cd2267e88f119ec"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a95d5caaa76d447935cd2267e88f119ec">VXT_VERSION_PATCH</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:a95d5caaa76d447935cd2267e88f119ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac3d9aeef44ef000c6bb367613239bc4e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ac3d9aeef44ef000c6bb367613239bc4e">VXT_VERSION</a>&#160;&#160;&#160;_VXT_STRINGIFY(<a class="el" href="vxt_8h.html#a1dda08b7c7b99cc4abd17f1e5ac18179">VXT_VERSION_MAJOR</a>) &quot;.&quot; _VXT_STRINGIFY(<a class="el" href="vxt_8h.html#ab8216dbfb8be4e92f22aef22bfb426a8">VXT_VERSION_MINOR</a>) &quot;.&quot; _VXT_STRINGIFY(<a class="el" href="vxt_8h.html#a95d5caaa76d447935cd2267e88f119ec">VXT_VERSION_PATCH</a>)</td></tr>
+<tr class="memitem:ac3d9aeef44ef000c6bb367613239bc4e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ac3d9aeef44ef000c6bb367613239bc4e">VXT_VERSION</a>&#160;&#160;&#160;_VXT_VERSION(<a class="el" href="vxt_8h.html#a1dda08b7c7b99cc4abd17f1e5ac18179">VXT_VERSION_MAJOR</a>, <a class="el" href="vxt_8h.html#ab8216dbfb8be4e92f22aef22bfb426a8">VXT_VERSION_MINOR</a>, <a class="el" href="vxt_8h.html#a95d5caaa76d447935cd2267e88f119ec">VXT_VERSION_PATCH</a>)</td></tr>
 <tr class="separator:ac3d9aeef44ef000c6bb367613239bc4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a070d2ce7b6bb7e5c05602aa8c308d0c4"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>&#160;&#160;&#160;((void*)0)</td></tr>
 <tr class="separator:a070d2ce7b6bb7e5c05602aa8c308d0c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -300,7 +300,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define VXT_VERSION&#160;&#160;&#160;_VXT_STRINGIFY(<a class="el" href="vxt_8h.html#a1dda08b7c7b99cc4abd17f1e5ac18179">VXT_VERSION_MAJOR</a>) &quot;.&quot; _VXT_STRINGIFY(<a class="el" href="vxt_8h.html#ab8216dbfb8be4e92f22aef22bfb426a8">VXT_VERSION_MINOR</a>) &quot;.&quot; _VXT_STRINGIFY(<a class="el" href="vxt_8h.html#a95d5caaa76d447935cd2267e88f119ec">VXT_VERSION_PATCH</a>)</td>
+          <td class="memname">#define VXT_VERSION&#160;&#160;&#160;_VXT_VERSION(<a class="el" href="vxt_8h.html#a1dda08b7c7b99cc4abd17f1e5ac18179">VXT_VERSION_MAJOR</a>, <a class="el" href="vxt_8h.html#ab8216dbfb8be4e92f22aef22bfb426a8">VXT_VERSION_MINOR</a>, <a class="el" href="vxt_8h.html#a95d5caaa76d447935cd2267e88f119ec">VXT_VERSION_PATCH</a>)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -328,7 +328,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define VXT_VERSION_MINOR&#160;&#160;&#160;0</td>
+          <td class="memname">#define VXT_VERSION_MINOR&#160;&#160;&#160;7</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -342,7 +342,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define VXT_VERSION_PATCH&#160;&#160;&#160;1</td>
+          <td class="memname">#define VXT_VERSION_PATCH&#160;&#160;&#160;0</td>
         </tr>
       </table>
 </div><div class="memdoc">
