@@ -951,12 +951,8 @@ static struct instruction const opcode_table[0x100] = {
 #undef X
 
 void cpu_exec(CONSTSP(cpu) p) {
-   LOG("Opcode: 0x%X", p->opcode);
-
    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
    ENSURE(inst->opcode == p->opcode);
-
-   LOG("Instruction: %s", inst->name);
 
    p->ea_cycles = 0;
    if (inst->modregrm)

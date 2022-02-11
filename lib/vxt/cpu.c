@@ -365,8 +365,6 @@ static void read_modregrm(CONSTSP(cpu) p) {
       .rm = modregrm & 7,
       .disp = 0
    };
-
-   LOG("ModRegRM: 0x%X", modregrm);
    
 	switch(mode.mod) {
 	   case 0:
@@ -402,9 +400,6 @@ static void prep_exec(CONSTSP(cpu) p) {
 }
 
 static void read_opcode(CONSTSP(cpu) p) {
-   
-   LOG("IP: 0x%X:0x%X", p->regs.cs, p->regs.ip);
-
    for (;;) {
       switch (p->opcode = read_opcode8(p)) {
          case 0x26:

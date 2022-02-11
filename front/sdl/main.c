@@ -79,7 +79,20 @@ static bool pdisasm(vxt_system *s, vxt_pointer start, int size) {
 
 int ENTRY(int argc, char *argv[]) {
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
-	(void)args;
+	args.debug |= args.halt;
+	if (args.manual) {
+		// TODO
+		return 0;
+	}
+
+	if (!args.config) {
+		args.config = SDL_GetPrefPath("virtualxt", "VirtualXT-SDL");
+		if (!args.config) {
+			printf("Could not initialize config!\n");
+			return -1;		
+		}
+	}
+	printf("Config path: %s\n", args.config);
 
 	SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -115,8 +128,10 @@ int ENTRY(int argc, char *argv[]) {
 	//struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
 	struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
 
-	struct vxtu_debugger_interface dbgif = {true, &pdisasm, &getline, &printf};
-	struct vxt_pirepheral dbg = vxtu_create_debugger_device(&vxt_clib_malloc, &dbgif);
+	struct vxtu_debugger_interface dbgif = {(bool)args.halt, &pdisasm, &getline, &printf};
+	struct vxt_pirepheral dbg;
+	if (args.debug)
+		dbg = vxtu_create_debugger_device(&vxt_clib_malloc, &dbgif);
 
 	if (!vxtu_memory_device_fill(&rom, data, size)) {
 		printf("vxtu_memory_device_fill() failed!\n");
@@ -125,7 +140,7 @@ int ENTRY(int argc, char *argv[]) {
 
 	struct vxt_pirepheral *devices[] = {
 		&ram, &rom,
-		&dbg, // Must be the last device in list.
+		args.debug ? &dbg : NULL, // Must be the last device in list.
 		NULL
 	};
 
@@ -158,7 +173,7 @@ int ENTRY(int argc, char *argv[]) {
 				case SDL_MOUSEBUTTONUP:
 					break;
 				case SDL_KEYDOWN:
-					if (e.key.keysym.sym == SDLK_F12 && (e.key.keysym.mod & KMOD_ALT))
+					if (args.debug && e.key.keysym.sym == SDLK_F12 && (e.key.keysym.mod & KMOD_ALT))
 						vxtu_debugger_interrupt(&dbg);
 					break;
 				case SDL_KEYUP:

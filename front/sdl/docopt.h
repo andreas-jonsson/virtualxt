@@ -85,16 +85,17 @@ typedef size_t bool;
 struct DocoptArgs {
     
     /* options without arguments */
-    size_t bios;
-    size_t config;
     size_t debug;
-    size_t floppy;
     size_t halt;
-    size_t harddrive;
     size_t hdboot;
     size_t help;
     size_t manual;
     size_t version;
+    /* options with arguments */
+    char *bios;
+    char *config;
+    char *floppy;
+    char *harddrive;
     /* special */
     const char *usage_pattern;
     const char *help_message[13];

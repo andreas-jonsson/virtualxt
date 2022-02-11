@@ -233,18 +233,10 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
                    strcmp(option->olong, "--version") == 0) {
             puts(version);
             return EXIT_FAILURE;
-        } else if (strcmp(option->olong, "--bios") == 0) {
-            args->bios = option->value;
-        } else if (strcmp(option->olong, "--config") == 0) {
-            args->config = option->value;
         } else if (strcmp(option->olong, "--debug") == 0) {
             args->debug = option->value;
-        } else if (strcmp(option->olong, "--floppy") == 0) {
-            args->floppy = option->value;
         } else if (strcmp(option->olong, "--halt") == 0) {
             args->halt = option->value;
-        } else if (strcmp(option->olong, "--harddrive") == 0) {
-            args->harddrive = option->value;
         } else if (strcmp(option->olong, "--hdboot") == 0) {
             args->hdboot = option->value;
         } else if (strcmp(option->olong, "--help") == 0) {
@@ -253,6 +245,22 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->manual = option->value;
         } else if (strcmp(option->olong, "--version") == 0) {
             args->version = option->value;
+        } else if (strcmp(option->olong, "--bios") == 0) {
+            if (option->argument) {
+                args->bios = (char *) option->argument;
+            }
+        } else if (strcmp(option->olong, "--config") == 0) {
+            if (option->argument) {
+                args->config = (char *) option->argument;
+            }
+        } else if (strcmp(option->olong, "--floppy") == 0) {
+            if (option->argument) {
+                args->floppy = (char *) option->argument;
+            }
+        } else if (strcmp(option->olong, "--harddrive") == 0) {
+            if (option->argument) {
+                args->harddrive = (char *) option->argument;
+            }
         }
     }
     /* commands */
@@ -275,37 +283,37 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
               "Options:",
-              "  -h --help                  Show this screen.",
-              "  -m --manual                Open manual in browser.",
-              "  -v --version               Display version.",
-              "  -d --debug                 Enable CLI debugger.",
-              "  --halt                     Debugger will stop after first instruction.",
-              "  --hdboot                   Prefer booting from harddrive.",
-              "  --config                   Set config directory.",
-              "  --bios            FILE     BIOS binary.",
-              "  -a --floppy       FILE     Mount floppy image as drive A.",
-              "  -c --harddrive    FILE     Mount harddrive image as drive C."}
+              "  -h --help               Show this screen.",
+              "  -m --manual             Open manual in browser.",
+              "  -v --version            Display version.",
+              "  -d --debug              Enable CLI debugger.",
+              "  --halt                  Debugger will stop after first instruction.",
+              "  --hdboot                Prefer booting from harddrive.",
+              "  --config=PATH           Set config directory.",
+              "  --bios=FILE             BIOS binary.",
+              "  -a --floppy=FILE        Mount floppy image as drive A.",
+              "  -c --harddrive=FILE     Mount harddrive image as drive C."}
     };
     struct Command commands[] = {NULL
     };
     struct Argument arguments[] = {NULL
     };
     struct Option options[] = {
-        {NULL, "--bios", 0, 0, NULL},
-        {NULL, "--config", 0, 0, NULL},
         {"-d", "--debug", 0, 0, NULL},
-        {"-a", "--floppy", 0, 0, NULL},
         {NULL, "--halt", 0, 0, NULL},
-        {"-c", "--harddrive", 0, 0, NULL},
         {NULL, "--hdboot", 0, 0, NULL},
         {"-h", "--help", 0, 0, NULL},
         {"-m", "--manual", 0, 0, NULL},
-        {"-v", "--version", 0, 0, NULL}
+        {"-v", "--version", 0, 0, NULL},
+        {NULL, "--bios", 1, 0, NULL},
+        {NULL, "--config", 1, 0, NULL},
+        {"-a", "--floppy", 1, 0, NULL},
+        {"-c", "--harddrive", 1, 0, NULL}
     };
     struct Elements elements;
     int return_code = EXIT_SUCCESS;

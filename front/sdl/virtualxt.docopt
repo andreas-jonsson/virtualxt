@@ -1,13 +1,13 @@
 Usage: virtualxt [options]
 
 Options:
-  -h --help                  Show this screen.
-  -m --manual                Open manual in browser.
-  -v --version               Display version.
-  -d --debug                 Enable CLI debugger.
-  --halt                     Debugger will stop after first instruction.
-  --hdboot                   Prefer booting from harddrive.
-  --config                   Set config directory.
-  --bios            FILE     BIOS binary.
-  -a --floppy       FILE     Mount floppy image as drive A.
-  -c --harddrive    FILE     Mount harddrive image as drive C.
+  -h --help               Show this screen.
+  -m --manual             Open manual in browser.
+  -v --version            Display version.
+  -d --debug              Enable CLI debugger.
+  --halt                  Debugger will stop after first instruction.
+  --hdboot                Prefer booting from harddrive.
+  --config=PATH           Set config directory.
+  --bios=FILE             BIOS binary.
+  -a --floppy=FILE        Mount floppy image as drive A.
+  -c --harddrive=FILE     Mount harddrive image as drive C.
