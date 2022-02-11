@@ -89,7 +89,7 @@ vxt_error _vxt_system_initialize(CONSTP(vxt_system) s) {
 }
 
 TEST(system_initialize, {
-    CONSTP(vxt_system) sp = vxt_system_create(TEST_ALLOC, NULL);
+    CONSTP(vxt_system) sp = vxt_system_create(TALLOC, NULL);
     TENSURE(sp);
     TENSURE_NO_ERR(vxt_system_initialize(sp));
     vxt_system_destroy(sp);

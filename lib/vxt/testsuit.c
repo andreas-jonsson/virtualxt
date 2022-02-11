@@ -23,11 +23,11 @@
 #include "testing.h"
 
 #define RUN_BBTEST(bin, check, ...) {                                                                   \
-    struct vxt_pirepheral ram = vxtu_create_memory_device(TEST_ALLOC, 0x0, 0x100000, false);            \
-    struct vxt_pirepheral rom = vxtu_create_memory_device(TEST_ALLOC, 0xF0000, 0x10000, true);          \
+    struct vxt_pirepheral ram = vxtu_create_memory_device(TALLOC, 0x0, 0x100000, false);                \
+    struct vxt_pirepheral rom = vxtu_create_memory_device(TALLOC, 0xF0000, 0x10000, true);              \
                                                                                                         \
     int size = 0;                                                                                       \
-    vxt_byte *data = vxtu_read_file(TEST_ALLOC, (bin), &size);                                          \
+    vxt_byte *data = vxtu_read_file(TALLOC, (bin), &size);                                              \
     TENSURE(data);                                                                                      \
     TENSURE(vxtu_memory_device_fill(&rom, data, size));                                                 \
     TFREE(data);                                                                                        \
@@ -37,7 +37,7 @@
         NULL                                                                                            \
     };                                                                                                  \
                                                                                                         \
-    CONSTP(vxt_system) s = vxt_system_create(TEST_ALLOC, devices);                                      \
+    CONSTP(vxt_system) s = vxt_system_create(TALLOC, devices);                                          \
     TENSURE_NO_ERR(vxt_system_initialize(s));                                                           \
     vxt_system_reset(s);                                                                                \
     struct vxt_registers *r = vxt_system_registers(s);                                                  \
@@ -57,7 +57,7 @@
 
 #define CHECK_DIFF(res, diff) {                                                                         \
     int res_size = 0;                                                                                   \
-    vxt_byte *res_data = vxtu_read_file(TEST_ALLOC, (res), &size);                                      \
+    vxt_byte *res_data = vxtu_read_file(TALLOC, (res), &size);                                          \
     TENSURE(res_data);                                                                                  \
                                                                                                         \
     int diff_count = 0;                                                                                 \

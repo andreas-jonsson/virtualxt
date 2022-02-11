@@ -40,11 +40,11 @@ static struct Test {
 };
 
 #define TASSERT(e, ...)    if (!(e)) { fprintf(T.output, "TEST FAILED! -> %s (%s:%d)\n", T.name, __FILE__, __LINE__); fprintf(T.output, __VA_ARGS__); fputc('\n', T.output); return -1; }
-#define TENSURE(e)         TASSERT((e), "ENSURE failed!")
-#define TENSURE_NO_ERR(e)  { vxt_error __err = (e); TASSERT(__err == VXT_NO_ERROR, vxt_error_str(__err)); }
+#define TENSURE(e)         TASSERT((e), "%s", "ENSURE failed!")
+#define TENSURE_NO_ERR(e)  { vxt_error __err = (e); TASSERT(__err == VXT_NO_ERROR, "%s", vxt_error_str(__err)); }
 #define TEST(n, c)         int test_ ## n (struct Test T) { T.name = #n ; { c } return 0; }
-#define TEST_LOG(...)      fprintf(T.output, __VA_ARGS__)
-#define TEST_ALLOC         test_malloc
+#define TLOG(...)          fprintf(T.output, __VA_ARGS__)
+#define TALLOC             test_malloc
 #define TFREE(p)           { void *_ = test_malloc(p, 0); (void)_; }
 
 static void *test_malloc(void *p, int s) {
