@@ -22,7 +22,7 @@
 #include "system.h"
 #include "testing.h"
 
-#define RUN_BBTEST(bin, check) {                                                                        \
+#define RUN_BBTEST(bin, check, ...) {                                                                   \
     struct vxt_pirepheral ram = vxtu_create_memory_device(TEST_ALLOC, 0x0, 0x100000, false);            \
     struct vxt_pirepheral rom = vxtu_create_memory_device(TEST_ALLOC, 0xF0000, 0x10000, true);          \
                                                                                                         \
@@ -52,7 +52,7 @@
             break;                                                                                      \
     }                                                                                                   \
                                                                                                         \
-    check;                                                                                              \
+    check(__VA_ARGS__);                                                                                 \
 }                                                                                                       \
 
 #define CHECK_DIFF(res, diff) {                                                                         \
@@ -72,14 +72,14 @@
 }                                                                                                       \
 
 #define COMP_MEM_CHECK(addr, type, value) { TENSURE(vxt_system_read_ ## type (s, (vxt_pointer)(addr)) == (value)); vxt_system_destroy(s); }
-#define NO_CHECK vxt_system_destroy(s)
+#define NO_CHECK(_) vxt_system_destroy(s)
 
 //TEST(blackbox_add, {
 //    RUN_BBTEST("tools/testdata/add.bin", "tools/testdata/res_add.bin", 0);
 //})
 
 TEST(blackbox_bcdcnv, {
-    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF("tools/testdata/res_bcdcnv.bin", 0));
+    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 0);
 })
 
 //TEST(blackbox_bitwise, {
@@ -91,7 +91,7 @@ TEST(blackbox_bcdcnv, {
 //})
 
 TEST(blackbox_control, {
-    RUN_BBTEST("tools/testdata/control.bin", CHECK_DIFF("tools/testdata/res_control.bin", 0));
+    RUN_BBTEST("tools/testdata/control.bin", CHECK_DIFF, "tools/testdata/res_control.bin", 0);
 })
 
 //TEST(blackbox_datatrnf, {
@@ -107,11 +107,11 @@ TEST(blackbox_control, {
 //})
 
 //TEST(blackbox_jmpmov, {
-//    RUN_BBTEST("tools/testdata/jmpmov.bin", COMP_MEM_CHECK(0, word, 0x4001));
+//    RUN_BBTEST("tools/testdata/jmpmov.bin", COMP_MEM_CHECK, 0, word, 0x4001);
 //})
 
 TEST(blackbox_jump1, {
-    RUN_BBTEST("tools/testdata/jump1.bin", CHECK_DIFF("tools/testdata/res_jump1.bin", 0));
+    RUN_BBTEST("tools/testdata/jump1.bin", CHECK_DIFF, "tools/testdata/res_jump1.bin", 0);
 })
 
 //TEST(blackbox_jump2, {
@@ -127,7 +127,7 @@ TEST(blackbox_jump1, {
 //})
 
 TEST(blackbox_rotate, {
-    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF("tools/testdata/res_rotate.bin", 0));
+    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 0);
 })
 
 //TEST(blackbox_segpr, {
