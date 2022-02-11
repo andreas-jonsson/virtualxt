@@ -1,13 +1,77 @@
 <meta charset="utf-8" emacsmode="-*- markdown -*-"><link rel="stylesheet" href="style.css">
-# Manual
+# Building a Hard Disk Image
 
-## Building a Hard Disk Image
+Generate a flat file (no bigger then 528MB) filled with zero bytes.
 
-Generate a flat file (no bigger then 528MB) filled with zero bytes. `fsutil file createnew hd.img 10485760`
+* Windows: `fsutil file createnew hd.img 10485760`
+* Unix: `truncate -s 10485760 file.txt`
+
 Boot the emulator with a floppy, run `FDISK` to partition the hard disk and reboot.
 Format the disk using `FORMAT C:` (or `FORMAT C: /S` to create a bootable disk)
 
-If you want to modify the disk image from your host system you can use [OSFMount](https://www.osforensics.com/tools/mount-disk-images.html).
+If you want to modify the disk image from your host system you can use the mount scripts in
+the `tools/mount` directory or if you are on Windows you can use [OSFMount](https://www.osforensics.com/tools/mount-disk-images.html).
+
+# Validator
+
+The validator saves the state of the registers (including IP and flags) before and after the execution of the opcode pointed by IP.
+At the same time, writes and reads are saved, with a maximum amount of 10 for each.
+
+## Usage
+
+On both VirtualXT and 86Box: 
+- `--validator` flag to specify the output path
+- `--vstart` to specify the start address of the validator (e.g. `--vstart 0x00007C01`)
+- `--vend` to specify the end address of the validator
+
+Flags are still the same for the comparison tool (i.e. `-virtualxt` and `-validation`).
+
+## Output
+
+In both emulators, the output of the validator is compressed using gzip, and formatted in the following way:
+
+### Opcode and extension
+
+| Opcode | Opcode extension |
+|--------|------------------|
+| 8 bits | 8 bits           |
+
+### State before execution
+
+| IP      | Flags   | AX      | CX      | DX      | BX      | SP      | BP      | SI      | DI      | ES      | CS      | SS      | DS      |
+|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
+| 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits |
+
+### State after execution
+
+| IP      | Flags   | AX      | CX      | DX      | BX      | SP      | BP      | SI      | DI      | ES      | CS      | SS      | DS      |
+|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
+| 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits | 16 bits |
+
+### Writes and reads
+
+| Write address 1 | Write data 1 | Write address 2 | Write data 2 | ... | Write address 10 | Write data 10 |
+|-----------------|--------------|-----------------|--------------|-----|------------------|---------------|
+| 32 bits         | 8 bits       | 32 bits         | 8 bits       | ... | 32 bits          | 8 bits        |
+
+| Read address 1 | Read data 1 | Read address 2 | Read data 2 | ... | Read address 10 | Read data 10 |
+|-----------------|--------------|-----------------|--------------|-----|------------------|---------------|
+| 32 bits         | 8 bits       | 32 bits         | 8 bits       | ... | 32 bits          | 8 bits        |
+
+## 86Box setup
+
+Download 86Box 3.1 from Github and patch it using the zip file `patched-86Box-3.1` found under `tools/validator`.
+Then, build it with `VALIDATOR` set to `on`.
+
+86Box will ask for roms, you can download them [here](https://github.com/86Box/roms/releases/tag/20211223). After that, you can copy `pcxtbios.bin` from VirtualXT to `roms/machines/ibmpc82` under the name `pc102782.bin`.
+
+Finally, start 86Box and choose:
+-  `8088` in `Machine type`
+- `[8088] IBM PC (1982)` in `Machine`
+- 640 KB of memory
+-  `[ISA] Acculogic XT IDE` or `[ISA] PC/XT XTIDE` in `HD Controller`
+
+86Box is now ready to launch with any disk.
 
 <!-- Markdeep: -->
 <style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
