@@ -200,17 +200,14 @@ pub fn build(b: *Builder) void {
 
     exe_sdl.linkSystemLibrary("SDL2");
 
-    exe_sdl.addIncludeDir("lib/microui/src");
-    exe_sdl.linkLibrary(microui);
-
     exe_sdl.linkLibrary(libvxt);
     exe_sdl.addIncludeDir("lib/vxt/include");
 
     exe_sdl.linkLibC();
 
-    const opt = c_options ++ &[_][]const u8{"-std=c11"};
+    const opt = c_options ++ &[_][]const u8{"-std=c11", "-pedantic"};
     exe_sdl.addCSourceFile("front/sdl/main.c", opt);
-    exe_sdl.addCSourceFile("front/sdl/mu_renderer.c", opt);
+    exe_sdl.addCSourceFile("front/sdl/docopt.c", &[_][]const u8{"-std=c11", "-Wno-unused-variable", "-Wno-unused-parameter"});
 
     // -------- virtualxt libretro --------
 
@@ -227,7 +224,7 @@ pub fn build(b: *Builder) void {
 
         libretro.addIncludeDir("lib/libretro");
 
-        libretro.addCSourceFile("front/libretro/core.c", c_options ++ &[_][]const u8{"-std=c11"});
+        libretro.addCSourceFile("front/libretro/core.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
 
         b.step("libretro", "Build libretro core").dependOn(&libretro.step);
     }
@@ -242,7 +239,7 @@ pub fn build(b: *Builder) void {
         pi8088.linkLibC();
         pi8088.linkSystemLibrary("gpiod");
 
-        pi8088.addCSourceFile("tools/validator/pi8088/pi8088.c", c_options ++ &[_][]const u8{"-std=c11"});
+        pi8088.addCSourceFile("tools/validator/pi8088/pi8088.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
     
         b.step("pi8088", "Build RaspberryPI Hardware validator").dependOn(&pi8088.step);
     }

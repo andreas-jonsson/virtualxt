@@ -16,13 +16,12 @@
 //    misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
 
-#ifndef _MAIN_H_
-#define _MAIN_H_
+const std = @import("std");
 
-#ifndef ENTRY
-    #define ENTRY main
-#endif
-
-extern int ENTRY(int argc, char *argv[]);
-
-#endif
+pub fn main() void {
+    const ret = @cImport(@cInclude("main.h")).c_main(
+        @intCast(c_int, std.os.argv.len),
+        @ptrCast([*c][*c]u8, std.os.argv)
+    );
+    std.os.exit(@intCast(u8, ret));
+}

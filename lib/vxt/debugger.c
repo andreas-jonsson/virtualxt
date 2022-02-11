@@ -81,7 +81,7 @@ static unsigned tonumber(const char *str) {
     return res;
 }
 
-static bool strcmp(const char *a, const char *b) {
+static bool strcomp(const char *a, const char *b) {
     do {
         if (*a != *b)
             return false;
@@ -116,7 +116,7 @@ static void print_help(struct debugger * const dbg) {
 }
 
 static vxt_error read_command(struct debugger * const dbg) {
-    #define CMD(str) else if (strcmp(line, (str)))
+    #define CMD(str) else if (strcomp(line, (str)))
     #define PREFIX(str) else if (has_prefix(line, (str)))
 
     #define REG1(r) PREFIX(#r) {                    \
@@ -141,7 +141,7 @@ static vxt_error read_command(struct debugger * const dbg) {
         const char *line = dbg->getline();
         ENSURE(line);
 
-        if (strcmp(line, "h")) {
+        if (strcomp(line, "h")) {
             print_help(dbg);
         } CMD("c") {
             dbg->halt = false;
