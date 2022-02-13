@@ -457,12 +457,21 @@ static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
 
 static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   push(p, p->regs.flags);
+   #ifdef VXT_CPU_286
+      push(p, p->regs.flags | 0x0802);
+   #else
+      push(p, p->regs.flags | 0xF802);
+   #endif
 }
 
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.flags = (pop(p) & ALL_FLAGS) | 2;
+   p->regs.flags = pop(p) & ALL_FLAGS;
+   #ifdef VXT_CPU_286
+      p->regs.flags |= 0x0802;
+   #else
+      p->regs.flags |= 0xF802;
+   #endif
 }
 
 static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
@@ -715,6 +724,177 @@ static void hlt_F4(CONSTSP(cpu) p, INST(inst)) {
 static void cmc_F5(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    SET_FLAG_IF(p->regs.flags, VXT_CARRY, !FLAGS(p->regs.flags, VXT_CARRY));
+}
+
+static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   vxt_byte v = read_dest8(p);
+   switch (p->mode.reg) {
+      case 0: // TEST Eb Ib
+      case 1:
+         flag_logic8(&p->regs, v & read_opcode8(p));
+         break;
+      case 2: // NOT
+         write_dest8(p, ~v);
+         break;
+      case 3: // NEG
+      {
+         vxt_byte res = ~v + 1;
+         flag_sub_sbb8(&p->regs, 0, v, 0);
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY, res);
+         write_dest8(p, res);
+         break;
+      }
+      case 4: // MUL
+      {
+         vxt_dword res = (vxt_dword)v * (vxt_dword)p->regs.al;
+         p->regs.ax = (vxt_word)(res & 0xFFFF);
+         flag_szp8(&p->regs, (vxt_byte)res);
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
+         p->regs.flags &= ~VXT_ZERO; // 8088 always clears zero flag.
+         break;
+      }
+      case 5: // IMUL
+         p->regs.ax = SIGNEXT16(v) * SIGNEXT16(p->regs.al);
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
+         p->regs.flags &= ~VXT_ZERO; // 8088 always clears zero flag.
+         break;
+      case 6: // DIV
+      {
+         vxt_word ax = p->regs.ax;
+         if (!v || (ax / (vxt_word)v) > 0xFF) {
+            // TODO
+            LOG("Division by zero not implemented!");
+            return;
+         }
+
+         p->regs.ah = (vxt_byte)(ax % (vxt_word)v);
+         p->regs.al = (vxt_byte)(ax / (vxt_word)v);
+         break;
+      }
+      case 7: // IDIV - reference: fake86's - cpu.c
+      {
+         if (!v) {
+            // TODO
+            LOG("Division by zero not implemented!");
+            return;
+         }
+
+         vxt_word a = p->regs.ax;
+         vxt_word d = SIGNEXT16(v);
+	      bool sign = ((a ^ d) & 0x8000) != 0;
+
+         if (a >= 0x8000)
+            a = ~a + 1;
+         if (d >= 0x8000)
+            d = ~d + 1;
+
+         vxt_word res1 = a / d; 
+         vxt_word res2 = a % d;
+         if ((res1 & 0xFF00) != 0) {
+            // TODO
+            LOG("Division by zero not implemented!");
+            return;
+         }
+
+         if (sign) {
+            res1 = (~res1 + 1) & 0xFF;
+            res2 = (~res2 + 1) & 0xFF;
+         }
+
+         p->regs.al = (vxt_byte)res1;
+         p->regs.ah = (vxt_byte)res2;
+         break;
+      }
+   }
+}
+
+static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   vxt_word v = read_dest16(p);
+   switch (p->mode.reg) {
+      case 0: // TEST Ev Iv
+      case 1:
+         flag_logic16(&p->regs, v & read_opcode16(p));
+         break;
+      case 2: // NOT
+         write_dest16(p, ~v);
+         break;
+      case 3: // NEG
+      {
+         vxt_word res = ~v + 1;
+         flag_sub_sbb16(&p->regs, 0, v, 0);
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY, res);
+         write_dest16(p, res);
+         break;
+      }
+      case 4: // MUL
+      {
+         vxt_dword res = (vxt_dword)v * (vxt_dword)p->regs.ax;
+         p->regs.dx = (vxt_word)(res >> 16);
+         p->regs.ax = (vxt_word)(res & 0xFFFF);
+         flag_szp16(&p->regs, (vxt_byte)res);
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.dx);
+         p->regs.flags &= ~VXT_ZERO; // 8088 always clears zero flag.
+         break;
+      }
+      case 5: // IMUL
+      {
+         vxt_dword res = SIGNEXT32(v) * SIGNEXT32(p->regs.ax);
+         p->regs.ax = (vxt_word)(res & 0xFFFF);
+         p->regs.dx = (vxt_word)(res >> 16);
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.dx);
+         p->regs.flags &= ~VXT_ZERO; // 8088 always clears zero flag.
+         break;
+      }
+      case 6: // DIV
+      {
+         vxt_dword a = (p->regs.dx << 16) + p->regs.ax;
+         if (!v || (a / (vxt_dword)v) > 0xFFFF) {
+            // TODO
+            LOG("Division by zero not implemented!");
+            return;
+         }
+
+         p->regs.dx = (vxt_word)(a % (vxt_dword)v);
+         p->regs.ax = (vxt_word)(a / (vxt_dword)v);
+         break;
+      }
+      case 7: // IDIV - reference: fake86's - cpu.c
+      {
+         if (!v) {
+            // TODO
+            LOG("Division by zero not implemented!");
+            return;
+         }
+
+         vxt_dword a = (p->regs.dx << 16) + p->regs.ax;
+         vxt_dword d = SIGNEXT32(v);
+	      bool sign = ((a ^ d) & 0x80000000) != 0;
+
+         if (a >= 0x80000000)
+            a = ~a + 1;
+         if (d >= 0x80000000)
+            d = ~d + 1;
+
+         vxt_dword res1 = a / d; 
+         vxt_dword res2 = a % d;
+         if ((res1 & 0xFFFF0000) != 0) {
+            // TODO
+            LOG("Division by zero not implemented!");
+            return;
+         }
+
+         if (sign) {
+            res1 = (~res1 + 1) & 0xFFFF;
+            res2 = (~res2 + 1) & 0xFFFF;
+         }
+
+         p->regs.ax = (vxt_word)res1;
+         p->regs.dx = (vxt_word)res2;
+         break;
+      }
+   }
 }
 
 static void clc_F8(CONSTSP(cpu) p, INST(inst)) {
@@ -1018,8 +1198,8 @@ static struct instruction const opcode_table[0x100] = {
    {0xF3, "PREFIX", false, X, &invalid_prefix},
    {0xF4, "HLT", false, 2, &hlt_F4},
    {0xF5, "CMC", false, 2, &cmc_F5},
-   {0xF6, "GRP3a Eb", false, X, NULL},
-   {0xF7, "GRP3b Ev", false, X, NULL},
+   {0xF6, "GRP3a Eb", true, X, &grp3_F6},
+   {0xF7, "GRP3b Ev", true, X, &grp3_F7},
    {0xF8, "CLC", false, 2, &clc_F8},
    {0xF9, "STC", false, 2, &stc_F9},
    {0xFA, "CLI", false, 2, &cli_FA},

@@ -82,9 +82,9 @@ TEST(blackbox_bcdcnv, {
     RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 0);
 })
 
-//TEST(blackbox_bitwise, {
-//    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF("tools/testdata/res_bitwise.bin", 0));
-//})
+TEST(blackbox_bitwise, {
+    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF, "tools/testdata/res_bitwise.bin", 0);
+})
 
 //TEST(blackbox_cmpneg, {
 //    RUN_BBTEST("tools/testdata/cmpneg.bin", "tools/testdata/res_cmpneg.bin", 0);
