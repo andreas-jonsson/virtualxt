@@ -96,9 +96,10 @@ struct DocoptArgs {
     char *config;
     char *floppy;
     char *harddrive;
+    char *trace;
     /* special */
     const char *usage_pattern;
-    const char *help_message[13];
+    const char *help_message[14];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

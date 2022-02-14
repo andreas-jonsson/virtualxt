@@ -47,7 +47,12 @@ static const char *getline() {
 	return str;
 }
 
-static bool pdisasm(vxt_system *s, vxt_pointer start, int size) {
+static bool pdisasm(vxt_system *s, const char *file, vxt_pointer start, int size, int lines) {
+	if (file && !size) {
+		remove(file);
+		return true;
+	}
+
 	char *name = tmpnam(NULL);
 	if (!name)
 		return false;
@@ -66,12 +71,18 @@ static bool pdisasm(vxt_system *s, vxt_pointer start, int size) {
 	}
 	fclose(tmpf);
 
-	const char *cmd = "ndisasm -i -b 16 -o %d \"%s\"";
-	char *buffer = (char*)malloc(strlen(name) + strlen(cmd));
-	sprintf(buffer, cmd, start, name);
+	char *buffer = NULL;
+	if (file) {
+		const char *cmd = "ndisasm -i -b 16 -o %d \"%s\" | head -%d >> \"%s\"";
+		buffer = (char*)malloc(strlen(name) + strlen(cmd) + strlen(file));
+		sprintf(buffer, cmd, start, name, lines, file);
+	} else {
+		const char *cmd = "ndisasm -i -b 16 -o %d \"%s\" | head -%d";
+		buffer = (char*)malloc(strlen(name) + strlen(cmd));
+		sprintf(buffer, cmd, start, name, lines);
+	}
 
-	int ret = system(buffer) == 0;
-
+	bool ret = system(buffer) == 0;
 	free(buffer);
 	remove(name);
 	return ret;
@@ -125,14 +136,14 @@ int ENTRY(int argc, char *argv[]) {
 
 	struct vxt_pirepheral dbg = {0};
 	if (args.debug) {
-		struct vxtu_debugger_interface dbgif = {(bool)args.halt, &pdisasm, &getline, &printf};
+		struct vxtu_debugger_interface dbgif = {args.trace, &pdisasm, &getline, &printf};
 		dbg = vxtu_create_debugger_device(&vxt_clib_malloc, &dbgif);
 	}
 
 	{
 		int size = 0;
 		//vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "bios/pcxtbios.bin", &size);
-		vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/bitwise.bin", &size);
+		vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/control.bin", &size);
 		if (!data) {
 			printf("vxtu_read_file() failed!\n");
 			return -1;
@@ -163,6 +174,7 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	vxt_system_reset(vxt);
+	vxt_system_registers(vxt)->debug = (bool)args.halt;
 
 	// For running testdata.
 	struct vxt_registers *r = vxt_system_registers(vxt);

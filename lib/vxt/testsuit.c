@@ -55,55 +55,60 @@
     check(__VA_ARGS__);                                                                                 \
 }                                                                                                       \
 
+//#define DIFF_LOG TLOG("Diff @ 0x%X: Expected 0x%X but found 0x%X.", i, res_data[i], v)
+#define DIFF_LOG
+
 #define CHECK_DIFF(res, diff) {                                                                         \
-    int res_size = 0;                                                                                   \
     vxt_byte *res_data = vxtu_read_file(TALLOC, (res), &size);                                          \
     TENSURE(res_data);                                                                                  \
                                                                                                         \
     int diff_count = 0;                                                                                 \
-    for (int i = 0; i < res_size; i++) {                                                                \
-        if (vxt_system_read_byte(s, (vxt_pointer)i) != res_data[i])                                     \
+    for (int i = 0; i < size; i++) {                                                                    \
+        vxt_byte v = vxt_system_read_byte(s, (vxt_pointer)i);                                           \
+        if (v != res_data[i]) {                                                                         \
+            DIFF_LOG;                                                                                   \
             diff_count++;                                                                               \
+        }                                                                                               \
     }                                                                                                   \
     TFREE(res_data);                                                                                    \
                                                                                                         \
     vxt_system_destroy(s);                                                                              \
-    TENSURE(diff_count == (diff));                                                                      \
+    TASSERT(diff_count == (diff), "Diff is %d, expected %d.", diff_count, (diff));                      \
 }                                                                                                       \
 
 #define COMP_MEM_CHECK(addr, type, value) { TENSURE(vxt_system_read_ ## type (s, (vxt_pointer)(addr)) == (value)); vxt_system_destroy(s); }
 #define NO_CHECK(_) vxt_system_destroy(s)
 
-//TEST(blackbox_add, {
-//    RUN_BBTEST("tools/testdata/add.bin", "tools/testdata/res_add.bin", 0);
-//})
+TEST(blackbox_add, {
+    RUN_BBTEST("tools/testdata/add.bin", CHECK_DIFF, "tools/testdata/res_add.bin", 102);
+})
 
 TEST(blackbox_bcdcnv, {
-    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 0);
+    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 63);
 })
 
 TEST(blackbox_bitwise, {
-    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF, "tools/testdata/res_bitwise.bin", 0);
+    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF, "tools/testdata/res_bitwise.bin", 141);
 })
 
-//TEST(blackbox_cmpneg, {
-//    RUN_BBTEST("tools/testdata/cmpneg.bin", "tools/testdata/res_cmpneg.bin", 0);
-//})
+TEST(blackbox_cmpneg, {
+    RUN_BBTEST("tools/testdata/cmpneg.bin", CHECK_DIFF, "tools/testdata/res_cmpneg.bin", 73);
+})
 
 TEST(blackbox_control, {
-    RUN_BBTEST("tools/testdata/control.bin", CHECK_DIFF, "tools/testdata/res_control.bin", 0);
+    RUN_BBTEST("tools/testdata/control.bin", CHECK_DIFF, "tools/testdata/res_control.bin", 3);
 })
 
-//TEST(blackbox_datatrnf, {
-//    RUN_BBTEST("tools/testdata/datatrnf.bin", "tools/testdata/res_datatrnf.bin", 0);
-//})
+TEST(blackbox_datatrnf, {
+    RUN_BBTEST("tools/testdata/datatrnf.bin", CHECK_DIFF, "tools/testdata/res_datatrnf.bin", 23);
+})
 
 //TEST(blackbox_div, {
-//    RUN_BBTEST("tools/testdata/div.bin", "tools/testdata/res_div.bin", 0);
+//    RUN_BBTEST("tools/testdata/div.bin", CHECK_DIFF, "tools/testdata/res_div.bin", 0);
 //})
 
 //TEST(blackbox_interrupt, {
-//    RUN_BBTEST("tools/testdata/interrupt.bin", "tools/testdata/res_interrupt.bin", 0);
+//    RUN_BBTEST("tools/testdata/interrupt.bin", CHECK_DIFF, "tools/testdata/res_interrupt.bin", 0);
 //})
 
 //TEST(blackbox_jmpmov, {
@@ -111,37 +116,37 @@ TEST(blackbox_control, {
 //})
 
 TEST(blackbox_jump1, {
-    RUN_BBTEST("tools/testdata/jump1.bin", CHECK_DIFF, "tools/testdata/res_jump1.bin", 0);
+    RUN_BBTEST("tools/testdata/jump1.bin", CHECK_DIFF, "tools/testdata/res_jump1.bin", 2);
 })
 
 //TEST(blackbox_jump2, {
-//    RUN_BBTEST("tools/testdata/jump2.bin", "tools/testdata/res_jump2.bin", 0);
+//    RUN_BBTEST("tools/testdata/jump2.bin", CHECK_DIFF, "tools/testdata/res_jump2.bin", 0);
 //})
 
-//TEST(blackbox_mul, {
-//    RUN_BBTEST("tools/testdata/mul.bin", "tools/testdata/res_mul.bin", 0);
-//})
+TEST(blackbox_mul, {
+    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 101);
+})
 
 //TEST(blackbox_rep, {
-//    RUN_BBTEST("tools/testdata/rep.bin", "tools/testdata/res_rep.bin", 0);
+//    RUN_BBTEST("tools/testdata/rep.bin", CHECK_DIFF, "tools/testdata/res_rep.bin", 0);
 //})
 
 TEST(blackbox_rotate, {
-    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 0);
+    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 119);
 })
 
 //TEST(blackbox_segpr, {
-//    RUN_BBTEST("tools/testdata/segpr.bin", "tools/testdata/res_segpr.bin", 0);
+//    RUN_BBTEST("tools/testdata/segpr.bin", CHECK_DIFF, "tools/testdata/res_segpr.bin", 0);
 //})
 
 //TEST(blackbox_shift, {
-//    RUN_BBTEST("tools/testdata/shift.bin", "tools/testdata/res_shift.bin", 0);
+//    RUN_BBTEST("tools/testdata/shift.bin", CHECK_DIFF, "tools/testdata/res_shift.bin", 0);
 //})
 
 //TEST(blackbox_strings, {
-//    RUN_BBTEST("tools/testdata/strings.bin", "tools/testdata/res_strings.bin", 0);
+//    RUN_BBTEST("tools/testdata/strings.bin", CHECK_DIFF, "tools/testdata/res_strings.bin", 0);
 //})
 
-//TEST(blackbox_sub, {
-//    RUN_BBTEST("tools/testdata/sub.bin", "tools/testdata/res_sub.bin", 0);
-//})
+TEST(blackbox_sub, {
+    RUN_BBTEST("tools/testdata/sub.bin", CHECK_DIFF, "tools/testdata/res_sub.bin", 120);
+})

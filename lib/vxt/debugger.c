@@ -23,10 +23,10 @@ freely, subject to the following restrictions:
 
 struct debugger {
 	vxt_system *s;
-    bool halt;
+    const char *trace;
     vxt_pointer cursor;
 
-    bool (*pdisasm)(vxt_system*, vxt_pointer, int);
+    bool (*pdisasm)(vxt_system*, const char*, vxt_pointer, int, int);
     const char *(*getline)(void);
     int (*print)(const char*, ...);
 
@@ -131,9 +131,9 @@ static vxt_error read_command(struct debugger * const dbg) {
         REG1(r ## h)        \
         REG1(r ## x)        \
 
-    #define DISASM(c, z)                                        \
-        if (dbg->pdisasm && !dbg->pdisasm(dbg->s, (c), (z)))    \
-            dbg->print("Unable to disassemble code!\n");        \
+    #define DISASM(c, z, l)                                                     \
+        if (dbg->pdisasm && !dbg->pdisasm(dbg->s, NULL, (c), (z), (l)))         \
+            dbg->print("Unable to disassemble code! Is ndisasm installed?\n");  \
 
     CONSTSP(vxt_registers) regs = vxt_system_registers(dbg->s);
     for (;;) {
@@ -144,20 +144,32 @@ static vxt_error read_command(struct debugger * const dbg) {
         if (strcomp(line, "h")) {
             print_help(dbg);
         } CMD("c") {
-            dbg->halt = false;
+            regs->debug = false;
             return VXT_NO_ERROR;
         } CMD("q") {
             return VXT_USER_TERMINATION;
         } CMD("s") {
+            DISASM(POINTER(regs->cs, regs->ip), 16, 1);
             return VXT_NO_ERROR;
         } CMD("f") {
-            dbg->print("%0*X\n", 4, regs->flags);
+            #define FLAG_SYM(f, c) dbg->print("%c", (regs->flags & f) ? c : '-')
+            FLAG_SYM(VXT_OVERFLOW, 'O');
+            FLAG_SYM(VXT_DIRECTION, 'D');
+            FLAG_SYM(VXT_INTERRUPT, 'I');
+            FLAG_SYM(VXT_TRAP, 'T');
+            FLAG_SYM(VXT_SIGN, 'S');
+            FLAG_SYM(VXT_ZERO, 'Z');
+            FLAG_SYM(VXT_AUXILIARY, 'A');
+            FLAG_SYM(VXT_PARITY, 'P');
+            FLAG_SYM(VXT_CARRY, 'C');
+            #undef FLAG_SYM
+            dbg->print(" (0x%0*X)\n", 4, regs->flags);
         } CMD("?") {
-            DISASM(POINTER(regs->cs, regs->ip), 8);
+            DISASM(POINTER(regs->cs, regs->ip), 16, 1);
         } PREFIX("d") {
             if (dbg->pdisasm) {
-                dbg->cursor = (line[1] ? tonumber(&line[1]) : dbg->cursor + 64);
-                DISASM(dbg->cursor, 64);
+                dbg->cursor = (line[1] ? tonumber(&line[1]) : dbg->cursor + 256);
+                DISASM(dbg->cursor, 256, 20);
             }
         } PREFIX("m") {
             dbg->cursor = (line[1] ? tonumber(&line[1]) : dbg->cursor + 256) & 0xFFFF0;
@@ -213,6 +225,9 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *d) {
     DEC_DEVICE(dbg, debugger, d->userdata);
     dbg->s = s;
 
+    if (dbg->pdisasm)
+        dbg->pdisasm(s, "trace.cpu", 0, 0, 0);
+
     const vxt_byte *io = vxt_system_io_map(s);
     for (int i = 0; i < VXT_IO_MAP_SIZE; i++)
         dbg->io_map[i] = io[i];
@@ -227,7 +242,15 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *d) {
 
 static vxt_error step(void *d, int cycles) {
     DEC_DEVICE(dbg, debugger, d); (void)cycles;
-    if (dbg->halt)
+    CONSTSP(vxt_registers) regs = vxt_system_registers(dbg->s);
+
+    if (dbg->trace && dbg->pdisasm) {
+        if (!dbg->pdisasm(dbg->s, dbg->trace, POINTER(regs->cs, regs->ip), 16, 1)) {
+            LOG("Could not write trace!");
+            dbg->trace = NULL;
+        }
+    }
+    if (regs->debug)
         return read_command(dbg);
     return VXT_NO_ERROR;
 }
@@ -240,7 +263,7 @@ static vxt_error destroy(void *d) {
 
 void vxtu_debugger_interrupt(struct vxt_pirepheral *d) {
     DEC_DEVICE(dbg, debugger, d->userdata);
-    dbg->halt = true;
+    vxt_system_registers(dbg->s)->debug = true;
     dbg->print("\aInterrupted!\n");
 }
 
@@ -248,7 +271,7 @@ struct vxt_pirepheral vxtu_create_debugger_device(vxt_allocator *alloc, const st
     struct debugger *d = (struct debugger*)alloc(NULL, sizeof(struct debugger));
     memclear(d, sizeof(struct debugger));
 
-    d->halt = interface->halt;
+    d->trace = interface->trace;
     d->pdisasm = interface->pdisasm;
     d->getline = interface->getline;
     d->print = interface->print;

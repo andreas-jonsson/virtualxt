@@ -57,3 +57,4 @@ kcov-out
 build
 docs
 test
+trace.cpu

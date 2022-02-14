@@ -457,21 +457,22 @@ static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
 
 static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   #ifdef VXT_CPU_286
-      push(p, p->regs.flags | 0x0802);
-   #else
-      push(p, p->regs.flags | 0xF802);
-   #endif
+   push(p, (p->regs.flags & ALL_FLAGS) | 0x0002);
+   //#ifdef VXT_CPU_286
+   //   push(p, p->regs.flags | 0x0802);
+   //#else
+   //   push(p, p->regs.flags | 0xF802);
+   //#endif
 }
 
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.flags = pop(p) & ALL_FLAGS;
-   #ifdef VXT_CPU_286
-      p->regs.flags |= 0x0802;
-   #else
-      p->regs.flags |= 0xF802;
-   #endif
+   p->regs.flags = (pop(p) & ALL_FLAGS) | 0x0002;
+   //#ifdef VXT_CPU_286
+   //   p->regs.flags |= 0x0802;
+   //#else
+   //   p->regs.flags |= 0xF802;
+   //#endif
 }
 
 static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
@@ -764,7 +765,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          vxt_word ax = p->regs.ax;
          if (!v || (ax / (vxt_word)v) > 0xFF) {
             // TODO
-            LOG("Division by zero not implemented!");
+            PANIC("Division by zero not implemented!");
             return;
          }
 
@@ -776,7 +777,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       {
          if (!v) {
             // TODO
-            LOG("Division by zero not implemented!");
+            PANIC("Division by zero not implemented!");
             return;
          }
 
@@ -793,7 +794,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          vxt_word res2 = a % d;
          if ((res1 & 0xFF00) != 0) {
             // TODO
-            LOG("Division by zero not implemented!");
+            PANIC("Division by zero not implemented!");
             return;
          }
 
@@ -852,7 +853,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          vxt_dword a = (p->regs.dx << 16) + p->regs.ax;
          if (!v || (a / (vxt_dword)v) > 0xFFFF) {
             // TODO
-            LOG("Division by zero not implemented!");
+            PANIC("Division by zero not implemented!");
             return;
          }
 
@@ -864,7 +865,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       {
          if (!v) {
             // TODO
-            LOG("Division by zero not implemented!");
+            PANIC("Division by zero not implemented!");
             return;
          }
 
@@ -881,7 +882,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          vxt_dword res2 = a % d;
          if ((res1 & 0xFFFF0000) != 0) {
             // TODO
-            LOG("Division by zero not implemented!");
+            PANIC("Division by zero not implemented!");
             return;
          }
 
@@ -933,16 +934,63 @@ static void grp4_FE(CONSTSP(cpu) p, INST(inst)) {
    vxt_byte v = read_dest8(p);
    vxt_word c = p->regs.flags & VXT_CARRY;
    switch (p->mode.reg) {
-      case 0:
+      case 0: // INC
          write_dest8(p, op_add_adc8(&p->regs, v, 1, 0));
          break;
-      case 1:
+      case 1: // DEC
          write_dest8(p, op_sub_sbb8(&p->regs, v, 1, 0));
          break;
       default:
          LOG("TODO: Invalid opcode!");
    }
    SET_FLAG(p->regs.flags, VXT_CARRY, c);
+}
+
+static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+
+   vxt_word v = read_dest16(p);
+   vxt_word c = p->regs.flags & VXT_CARRY;
+   switch (p->mode.reg) {
+      case 0: // INC
+         write_dest16(p, op_add_adc16(&p->regs, v, 1, 0));
+         SET_FLAG(p->regs.flags, VXT_CARRY, c);
+         break;
+      case 1: // DEC
+         write_dest16(p, op_sub_sbb16(&p->regs, v, 1, 0));
+         SET_FLAG(p->regs.flags, VXT_CARRY, c);
+         break;
+      case 2: // CALL
+         push(p, p->regs.ip);
+         p->regs.ip = v;
+         break;
+      case 3: // CALL Mp
+      {
+         push(p, p->regs.cs);
+         push(p, p->regs.ip);
+
+         vxt_pointer ea = get_effective_address(p);
+         p->regs.ip = vxt_system_read_word(p->s, ea);
+         p->regs.cs = vxt_system_read_word(p->s, ea + 2);
+         break;
+      }
+      case 4: // JMP
+         p->regs.ip = v;
+         break;
+      case 5: // JMP Mp
+      {
+         vxt_pointer ea = get_effective_address(p);
+         p->regs.ip = vxt_system_read_word(p->s, ea);
+         p->regs.cs = vxt_system_read_word(p->s, ea + 2);
+         break;
+      }
+      case 6: // PUSH
+      case 7:
+         push(p, v);
+         break;
+      default:
+         UNREACHABLE();
+   }
 }
 
 #define X 1
@@ -1207,7 +1255,7 @@ static struct instruction const opcode_table[0x100] = {
    {0xFC, "CLD", false, 2, &cld_FC},
    {0xFD, "STD", false, 2, &std_FD},
    {0xFE, "GRP4 Eb", true, 23, &grp4_FE},
-   {0xFF, "GRP5 Ev", false, X, NULL}
+   {0xFF, "GRP5 Ev", true, X, &grp5_FF}
 };
 
 #undef INVALID
@@ -1220,11 +1268,7 @@ void cpu_exec(CONSTSP(cpu) p) {
    p->ea_cycles = 0;
    if (inst->modregrm)
       read_modregrm(p);
-   
-   if (inst->func)
-      inst->func(p, inst);
-   else
-      LOG("opcode not implemented: 0x%X", p->opcode);
+   inst->func(p, inst);
 
    p->cycles += inst->cycles + p->ea_cycles;
 }

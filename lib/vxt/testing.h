@@ -43,7 +43,7 @@ static struct Test {
 #define TENSURE(e)         TASSERT((e), "%s", "ENSURE failed!")
 #define TENSURE_NO_ERR(e)  { vxt_error __err = (e); TASSERT(__err == VXT_NO_ERROR, "%s", vxt_error_str(__err)); }
 #define TEST(n, c)         int test_ ## n (struct Test T) { T.name = #n ; { c } return 0; }
-#define TLOG(...)          fprintf(T.output, __VA_ARGS__)
+#define TLOG(...)          { fprintf(T.output, __VA_ARGS__); fprintf(T.output, "%s", "\n"); }
 #define TALLOC             test_malloc
 #define TFREE(p)           { void *_ = test_malloc(p, 0); (void)_; }
 

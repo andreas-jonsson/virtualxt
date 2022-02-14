@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 13; j++)
+            for (j = 0; j < 14; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -261,6 +261,10 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             if (option->argument) {
                 args->harddrive = (char *) option->argument;
             }
+        } else if (strcmp(option->olong, "--trace") == 0) {
+            if (option->argument) {
+                args->trace = (char *) option->argument;
+            }
         }
     }
     /* commands */
@@ -283,7 +287,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL,
+        0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *) "trace.cpu",
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -296,6 +300,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --hdboot                Prefer booting from harddrive.",
               "  --config=PATH           Set config directory.",
               "  --bios=FILE             BIOS binary.",
+              "  --trace=FILE            Write CPU trace to file [default: trace.cpu].",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
               "  -c --harddrive=FILE     Mount harddrive image as drive C."}
     };
@@ -313,14 +318,15 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--bios", 1, 0, NULL},
         {NULL, "--config", 1, 0, NULL},
         {"-a", "--floppy", 1, 0, NULL},
-        {"-c", "--harddrive", 1, 0, NULL}
+        {"-c", "--harddrive", 1, 0, NULL},
+        {NULL, "--trace", 1, 0, NULL}
     };
     struct Elements elements;
     int return_code = EXIT_SUCCESS;
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 10;
+    elements.n_options = 11;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;
