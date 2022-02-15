@@ -357,7 +357,7 @@ static void override_with_ss(CONSTSP(cpu) p, bool cond) {
 	   p->seg = p->regs.ss;
 }
 
-static void read_modregrm(CONSTSP(cpu) p) {
+static vxt_byte read_modregrm(CONSTSP(cpu) p) {
    vxt_byte modregrm = read_opcode8(p);
    struct address_mode mode = {
       .mod = modregrm >> 6,
@@ -381,7 +381,9 @@ static void read_modregrm(CONSTSP(cpu) p) {
 	      override_with_ss(p, (mode.rm == 2) || (mode.rm == 3) || (mode.rm == 6));
 	      break;
 	}
+   
    p->mode = mode;
+   return modregrm;
 }
 
 static void prep_exec(CONSTSP(cpu) p) {

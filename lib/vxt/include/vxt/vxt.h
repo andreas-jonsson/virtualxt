@@ -164,9 +164,11 @@ struct vxt_pirepheral {
 
 struct vxt_validator {
     void *userdata;
+
     vxt_error (*initialize)(vxt_system *s, void *userdata);
     vxt_error (*destroy)(void *userdata);
-    void (*begin)(vxt_byte opcode, vxt_byte modregrm, struct vxt_registers *regs, void *userdata);
+    
+    void (*begin)(const char *name, vxt_byte opcode, vxt_byte modregrm, struct vxt_registers *regs, void *userdata);
     void (*end)(struct vxt_registers *regs, void *userdata);
     void (*read)(vxt_pointer addr, vxt_byte data, void *userdata);
     void (*write)(vxt_pointer addr, vxt_byte data, void *userdata);

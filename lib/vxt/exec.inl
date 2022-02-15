@@ -1266,9 +1266,11 @@ void cpu_exec(CONSTSP(cpu) p) {
    ENSURE(inst->opcode == p->opcode);
 
    p->ea_cycles = 0;
-   if (inst->modregrm)
-      read_modregrm(p);
+   vxt_byte modregrm = inst->modregrm ? read_modregrm(p) : 0;
+   
+   VALIDATOR_BEGIN(p, inst->name, p->opcode, modregrm, &p->regs);
    inst->func(p, inst);
+   VALIDATOR_END(p, &p->regs);
 
    p->cycles += inst->cycles + p->ea_cycles;
 }

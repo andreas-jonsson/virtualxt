@@ -203,13 +203,16 @@ void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vx
 vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = &s->devices[s->mem_map[addr]];
-    return dev->io.read(dev->userdata, addr);
+    vxt_byte data = dev->io.read(dev->userdata, addr);
+    VALIDATOR_READ(&s->cpu, addr, data);
+    return data;
 }
 
 void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = &s->devices[s->mem_map[addr]];
     dev->io.write(dev->userdata, addr, data);
+    VALIDATOR_WRITE(&s->cpu, addr, data);
 }
 
 vxt_word vxt_system_read_word(CONSTP(vxt_system) s, vxt_pointer addr) {
