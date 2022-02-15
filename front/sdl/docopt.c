@@ -287,7 +287,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *) "trace.cpu",
+        0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -300,7 +300,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --hdboot                Prefer booting from harddrive.",
               "  --config=PATH           Set config directory.",
               "  --bios=FILE             BIOS binary.",
-              "  --trace=FILE            Write CPU trace to file [default: trace.cpu].",
+              "  --trace=FILE            Write CPU trace to file.",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
               "  -c --harddrive=FILE     Mount harddrive image as drive C."}
     };

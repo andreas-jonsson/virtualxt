@@ -457,7 +457,7 @@ static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
 
 static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   push(p, (p->regs.flags & ALL_FLAGS) | 0x0002);
+   push(p, (p->regs.flags & ALL_FLAGS) | 2);
    //#ifdef VXT_CPU_286
    //   push(p, p->regs.flags | 0x0802);
    //#else
@@ -467,7 +467,7 @@ static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
 
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.flags = (pop(p) & ALL_FLAGS) | 0x0002;
+   p->regs.flags = (pop(p) & ALL_FLAGS) | 2;
    //#ifdef VXT_CPU_286
    //   p->regs.flags |= 0x0802;
    //#else
@@ -477,12 +477,12 @@ static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
 
 static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.flags = (p->regs.flags & 0xFF00) | p->regs.ah;
+   p->regs.flags = (p->regs.flags & 0xFF00) | (vxt_word)(p->regs.ah & ALL_FLAGS) | 2;
 }
 
 static void lahf_9F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ah = (vxt_byte)(p->regs.flags & 0xFF);
+   p->regs.ah = (vxt_byte)(p->regs.flags & 0xFF) | 2;
 }
 
 static void mov_A0(CONSTSP(cpu) p, INST(inst)) {
@@ -719,7 +719,7 @@ static void lock_F0(CONSTSP(cpu) p, INST(inst)) {
 
 static void hlt_F4(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->halt = true;
+   p->halt = p->regs.debug = true;
 }
 
 static void cmc_F5(CONSTSP(cpu) p, INST(inst)) {

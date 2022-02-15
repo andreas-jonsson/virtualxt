@@ -162,6 +162,17 @@ struct vxt_pirepheral {
     struct vxt_io io;
 };
 
+struct vxt_validator {
+    void *userdata;
+    vxt_error (*initialize)(vxt_system *s, void *userdata);
+    vxt_error (*destroy)(void *userdata);
+    void (*begin)(vxt_byte opcode, vxt_byte modregrm, struct vxt_registers *regs, void *userdata);
+    void (*end)(struct vxt_registers *regs, void *userdata);
+    void (*read)(vxt_pointer addr, vxt_byte data, void *userdata);
+    void (*write)(vxt_pointer addr, vxt_byte data, void *userdata);
+    void (*discard)(void *userdata);
+};
+
 /// @private
 extern int _vxt_system_register_size(void);
 
@@ -186,12 +197,13 @@ static vxt_error vxt_system_initialize(vxt_system *s) {
     return _vxt_system_initialize(s);
 }
 
-extern vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral *devs[]);
+extern vxt_system *vxt_system_create(vxt_allocator *alloc, const struct vxt_pirepheral *devs[]);
 extern vxt_error vxt_system_destroy(vxt_system *s);
 extern struct vxt_step vxt_system_step(vxt_system *s, int cycles);
 extern void vxt_system_reset(vxt_system *s);
 extern struct vxt_registers *vxt_system_registers(vxt_system *s);
 
+extern void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *interface);
 extern void vxt_system_set_userdata(vxt_system *s, void *data);
 extern void *vxt_system_userdata(vxt_system *s);
 extern vxt_allocator *vxt_system_allocator(vxt_system *s);

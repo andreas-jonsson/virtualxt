@@ -90,7 +90,7 @@ static bool pdisasm(vxt_system *s, const char *file, vxt_pointer start, int size
 
 int ENTRY(int argc, char *argv[]) {
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
-	args.debug |= args.halt;
+	args.debug |= (args.halt || args.trace) ? 1 : 0;
 	if (args.manual) {
 		// TODO
 		return 0;
@@ -143,7 +143,7 @@ int ENTRY(int argc, char *argv[]) {
 	{
 		int size = 0;
 		//vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "bios/pcxtbios.bin", &size);
-		vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/control.bin", &size);
+		vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/datatrnf.bin", &size);
 		if (!data) {
 			printf("vxtu_read_file() failed!\n");
 			return -1;
@@ -158,7 +158,7 @@ int ENTRY(int argc, char *argv[]) {
 			return -1;
 		}
 
-		struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = {
+		const struct vxt_pirepheral *devices[] = {
 			&ram, &rom, // RAM & ROM should be initialized first.
 			args.debug ? &dbg : NULL, // Must be the last device in list.
 			NULL

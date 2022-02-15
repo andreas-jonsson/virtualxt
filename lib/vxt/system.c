@@ -59,7 +59,7 @@ void vxt_set_logger(int (*f)(const char*, ...)) {
     logger = f;
 }
 
-vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral *devs[]) {
+vxt_system *vxt_system_create(vxt_allocator *alloc, const struct vxt_pirepheral *devs[]) {
     vxt_system *s = (vxt_system*)alloc(NULL, sizeof(struct system));
     memclear(s, sizeof(struct system));
     s->alloc = alloc;
@@ -85,6 +85,8 @@ vxt_error _vxt_system_initialize(CONSTP(vxt_system) s) {
             if (err) return err;
         }
     }
+    if (s->cpu.validator.initialize)
+        s->cpu.validator.initialize(s, s->cpu.validator.userdata);
     return VXT_NO_ERROR;
 }
 
@@ -96,6 +98,9 @@ TEST(system_initialize, {
 })
 
 vxt_error vxt_system_destroy(CONSTP(vxt_system) s) {
+    if (s->cpu.validator.destroy)
+        s->cpu.validator.destroy(s->cpu.validator.userdata);
+
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_pirepheral) d = &s->devices[i];
         if (d->destroy) {
@@ -148,6 +153,10 @@ struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
         if (newc >= cycles)
             return step;
     }
+}
+
+void vxt_system_set_validator(CONSTP(vxt_system) s, const struct vxt_validator *interface) {
+    s->cpu.validator = *interface;
 }
 
 void vxt_system_set_userdata(CONSTP(vxt_system) s, void *data) {

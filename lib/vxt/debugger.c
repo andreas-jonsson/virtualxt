@@ -25,6 +25,9 @@ struct debugger {
 	vxt_system *s;
     const char *trace;
     vxt_pointer cursor;
+    vxt_pointer breakpoint;
+    vxt_pointer until;
+    vxt_pointer watch;
 
     bool (*pdisasm)(vxt_system*, const char*, vxt_pointer, int, int);
     const char *(*getline)(void);
@@ -101,17 +104,23 @@ static bool has_prefix(const char *a, const char *b) {
 
 static void print_help(struct debugger * const dbg) {
     dbg->print(
-        "  h      Displays this text\n"
-        "  q      Shutdown emulator\n"
-        "  c      Continue execution\n"
-        "  s      Step to next instruction\n"
-        "  d(X)   Display disassembly of address X\n"
-        "  m(X)   Show memory dump of data at address X\n"
-        "  ?      Display disassembly near IP\n"
-        "  @X     Read byte at address X\n"
-        "  @@X    Read word at address X\n"
-        "  f      Display CPU flags\n"
-        "  R(.)   Display content of register R\n"
+        "  h      Displays this text.\n"
+        "  q      Shutdown emulator.\n"
+        "  c      Continue execution.\n"
+        "  s      Step to next instruction.\n"
+        "  sb     Set breakpoint.\n"
+        "  cb     Clear breakpoint.\n"
+        "  sw     Set memory watch.\n"
+        "  cw     Clear memory watch.\n"
+        "  n(X)   Display disassembly of address X.\n"
+        "  m(X)   Show memory dump of data at address X.\n"
+        "  ?      Disassemble next instruction.\n"
+        "  @X     Read byte at address X.\n"
+        "  @@X    Read word at address X.\n"
+        "  #(X)   Print X number of stack entries.\n"
+        "  uX     Continue execution until CS:IP == CS:X.\n"
+        "  f      Display CPU flags.\n"
+        "  R(.)   Display content of register R.\n"
     );
 }
 
@@ -153,20 +162,38 @@ static vxt_error read_command(struct debugger * const dbg) {
             return VXT_NO_ERROR;
         } CMD("f") {
             #define FLAG_SYM(f, c) dbg->print("%c", (regs->flags & f) ? c : '-')
+            dbg->print("????");
             FLAG_SYM(VXT_OVERFLOW, 'O');
             FLAG_SYM(VXT_DIRECTION, 'D');
             FLAG_SYM(VXT_INTERRUPT, 'I');
             FLAG_SYM(VXT_TRAP, 'T');
             FLAG_SYM(VXT_SIGN, 'S');
             FLAG_SYM(VXT_ZERO, 'Z');
+            dbg->print("?");
             FLAG_SYM(VXT_AUXILIARY, 'A');
+            dbg->print("?");
             FLAG_SYM(VXT_PARITY, 'P');
+            dbg->print("?");
             FLAG_SYM(VXT_CARRY, 'C');
             #undef FLAG_SYM
             dbg->print(" (0x%0*X)\n", 4, regs->flags);
+        } CMD("sb") {
+            dbg->print("breakpoint>");
+            const char *line = dbg->getline();
+            ENSURE(line);
+            dbg->breakpoint = (vxt_pointer)tonumber(line) & 0xFFFFF;
+        } CMD("cb") {
+            dbg->breakpoint = -1;
+        } CMD("sw") {
+            dbg->print("watch>");
+            const char *line = dbg->getline();
+            ENSURE(line);
+            dbg->watch = (vxt_pointer)tonumber(line) & 0xFFFFF;
+        } CMD("cw") {
+            dbg->watch = -1;
         } CMD("?") {
             DISASM(POINTER(regs->cs, regs->ip), 16, 1);
-        } PREFIX("d") {
+        } PREFIX("n") {
             if (dbg->pdisasm) {
                 dbg->cursor = (line[1] ? tonumber(&line[1]) : dbg->cursor + 256);
                 DISASM(dbg->cursor, 256, 20);
@@ -185,12 +212,24 @@ static vxt_error read_command(struct debugger * const dbg) {
                     dbg->print("%c", toprint(vxt_system_read_byte(dbg->s, dbg->cursor + (i * 16) + j)));
                 dbg->print("\n");
             }
+        } PREFIX("u") {
+            dbg->until = POINTER(regs->cs, tonumber(&line[1]));
+            regs->debug = false;
+            return VXT_NO_ERROR;
         } PREFIX("@@") {
             vxt_word n = vxt_system_read_word(dbg->s, (vxt_pointer)tonumber(&line[2]));
             dbg->print("0x%X (%d, '%c%c')\n", n, n, toprint((vxt_byte)(n>>8)), toprint((vxt_byte)(n&0xF)));
         } PREFIX("@") {
             vxt_byte n = vxt_system_read_byte(dbg->s, (vxt_pointer)tonumber(&line[1]));
             dbg->print("0x%X (%d, '%c')\n", n, n, toprint(n));
+        } PREFIX("#") {
+            unsigned c = tonumber(&line[1]);
+            c = c ? c : 1;
+            for (unsigned i = 0; i < c; i++) {
+                vxt_word offset = regs->sp + (vxt_word)i * 2;
+                vxt_word n = vxt_system_read_word(dbg->s, POINTER(regs->ss, offset));
+                dbg->print("%0*X: 0x%0*X (%d, '%c%c')\n", 4, offset, 4, n, n, toprint((vxt_byte)(n>>8)), toprint((vxt_byte)(n&0xF)));
+            }
         }
         REG(a) REG(b) REG(c) REG(d)
         REG1(cs) REG1(ss) REG1(ds) REG1(es)
@@ -217,6 +256,12 @@ static vxt_byte read(void *d, vxt_pointer addr) {
 
 static void write(void *d, vxt_pointer addr, vxt_byte data) {
     DEC_DEVICE(dbg, debugger, d);
+
+    if (dbg->watch == addr) {
+        dbg->print("Memory watch triggered: 0x%X <- 0x%X (%d)\n", addr, data, data);
+        vxt_system_registers(dbg->s)->debug = true;
+    }
+
     const CONSTSP(vxt_pirepheral) dev = vxt_system_pirepheral(dbg->s, dbg->mem_map[addr]);
     dev->io.write(dev->userdata, addr, data);
 }
@@ -225,8 +270,8 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *d) {
     DEC_DEVICE(dbg, debugger, d->userdata);
     dbg->s = s;
 
-    if (dbg->pdisasm)
-        dbg->pdisasm(s, "trace.cpu", 0, 0, 0);
+    if (dbg->trace && dbg->pdisasm)
+        dbg->pdisasm(s, dbg->trace, 0, 0, 0);
 
     const vxt_byte *io = vxt_system_io_map(s);
     for (int i = 0; i < VXT_IO_MAP_SIZE; i++)
@@ -244,15 +289,27 @@ static vxt_error step(void *d, int cycles) {
     DEC_DEVICE(dbg, debugger, d); (void)cycles;
     CONSTSP(vxt_registers) regs = vxt_system_registers(dbg->s);
 
+    if (dbg->breakpoint == POINTER(regs->cs, regs->ip)) {
+        dbg->print("Breakpoint triggered!\n");
+        regs->debug = true;
+    }
+
+    if (dbg->until <= POINTER(regs->cs, regs->ip)) {
+        dbg->until = -1;
+        regs->debug = true;
+    }
+
+    vxt_error err = VXT_NO_ERROR;
+    if (regs->debug)
+        err = read_command(dbg);
+
     if (dbg->trace && dbg->pdisasm) {
         if (!dbg->pdisasm(dbg->s, dbg->trace, POINTER(regs->cs, regs->ip), 16, 1)) {
             LOG("Could not write trace!");
             dbg->trace = NULL;
         }
     }
-    if (regs->debug)
-        return read_command(dbg);
-    return VXT_NO_ERROR;
+    return err;
 }
 
 static vxt_error destroy(void *d) {
@@ -275,6 +332,7 @@ struct vxt_pirepheral vxtu_create_debugger_device(vxt_allocator *alloc, const st
     d->pdisasm = interface->pdisasm;
     d->getline = interface->getline;
     d->print = interface->print;
+    d->breakpoint = d->until = d->watch = -1;
 
     struct vxt_pirepheral p = {0};
     p.userdata = d;

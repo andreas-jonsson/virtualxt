@@ -29,6 +29,12 @@ freely, subject to the following restrictions:
 #define SET_FLAG(r, f, v) ( (r) = ((r) & ~(f)) | ((v) & (f)) )
 #define SET_FLAG_IF(r, f, c) ( SET_FLAG((r), (f), (c) ? (f) : ~(f)) )
 
+#define VALIDATOR_BEGIN(p, op, mod, regs) { if ((p)->validator.begin) (p)->validator.begin((op), (mod), (regs), (p)->s, (p)->validator.userdata); }
+#define VALIDATOR_END(p) { if ((p)->validator.end) (p)->validator.end((p)->validator.userdata); }
+#define VALIDATOR_READ(p, addr, data) { if ((p)->validator.read) (p)->validator.read((addr), (data), (p)->validator.userdata); }
+#define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator.write) (p)->validator.write((addr), (data), (p)->validator.userdata); }
+#define VALIDATOR_DISCARD(p) { if ((p)->validator.discard) (p)->validator.discard((p)->validator.userdata); }
+
 #define INST(n) const struct instruction * const n
 
 struct address_mode {
@@ -37,20 +43,21 @@ struct address_mode {
 };
 
 struct cpu {
-    struct vxt_registers regs;
-    bool trap, halt;
-    int cycles, ea_cycles;
-    vxt_word inst_start;
+   struct vxt_registers regs;
+   bool trap, halt;
+   int cycles, ea_cycles;
+   vxt_word inst_start;
 
-    vxt_byte opcode, repeat;
-    bool wide_op, rm_to_reg;
+   vxt_byte opcode, repeat;
+   bool wide_op, rm_to_reg;
 
-    struct address_mode mode;
+   struct address_mode mode;
 
-    vxt_word seg;
-    bool seg_override;
+   vxt_word seg;
+   bool seg_override;
 
-    vxt_system *s;
+   struct vxt_validator validator;
+   vxt_system *s;
 };
 
 struct instruction {
