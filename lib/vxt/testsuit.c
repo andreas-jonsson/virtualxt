@@ -32,7 +32,7 @@
     TENSURE(vxtu_memory_device_fill(&rom, data, size));                                                 \
     TFREE(data);                                                                                        \
                                                                                                         \
-    struct vxt_pirepheral *devices[] = {                                                                \
+    const struct vxt_pirepheral *devices[] = {                                                          \
         &ram, &rom,                                                                                     \
         NULL                                                                                            \
     };                                                                                                  \
@@ -80,27 +80,27 @@
 #define NO_CHECK(_) vxt_system_destroy(s)
 
 TEST(blackbox_add, {
-    RUN_BBTEST("tools/testdata/add.bin", CHECK_DIFF, "tools/testdata/res_add.bin", 102);
+    RUN_BBTEST("tools/testdata/add.bin", CHECK_DIFF, "tools/testdata/res_add.bin", 70);
 })
 
 TEST(blackbox_bcdcnv, {
-    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 63);
+    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 38);
 })
 
 TEST(blackbox_bitwise, {
-    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF, "tools/testdata/res_bitwise.bin", 141);
+    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF, "tools/testdata/res_bitwise.bin", 91);
 })
 
 TEST(blackbox_cmpneg, {
-    RUN_BBTEST("tools/testdata/cmpneg.bin", CHECK_DIFF, "tools/testdata/res_cmpneg.bin", 73);
+    RUN_BBTEST("tools/testdata/cmpneg.bin", CHECK_DIFF, "tools/testdata/res_cmpneg.bin", 53);
 })
 
 TEST(blackbox_control, {
-    RUN_BBTEST("tools/testdata/control.bin", CHECK_DIFF, "tools/testdata/res_control.bin", 3);
+    RUN_BBTEST("tools/testdata/control.bin", CHECK_DIFF, "tools/testdata/res_control.bin", 0);
 })
 
 TEST(blackbox_datatrnf, {
-    RUN_BBTEST("tools/testdata/datatrnf.bin", CHECK_DIFF, "tools/testdata/res_datatrnf.bin", 23);
+    RUN_BBTEST("tools/testdata/datatrnf.bin", CHECK_DIFF, "tools/testdata/res_datatrnf.bin", 11);
 })
 
 //TEST(blackbox_div, {
@@ -124,7 +124,7 @@ TEST(blackbox_jump1, {
 //})
 
 TEST(blackbox_mul, {
-    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 101);
+    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 93);
 })
 
 //TEST(blackbox_rep, {
@@ -132,7 +132,7 @@ TEST(blackbox_mul, {
 //})
 
 TEST(blackbox_rotate, {
-    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 119);
+    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 99);
 })
 
 //TEST(blackbox_segpr, {
@@ -148,5 +148,5 @@ TEST(blackbox_rotate, {
 //})
 
 TEST(blackbox_sub, {
-    RUN_BBTEST("tools/testdata/sub.bin", CHECK_DIFF, "tools/testdata/res_sub.bin", 120);
+    RUN_BBTEST("tools/testdata/sub.bin", CHECK_DIFF, "tools/testdata/res_sub.bin", 88);
 })
