@@ -20,69 +20,68 @@ freely, subject to the following restrictions:
 
 #include "common.h"
 
-struct memory {
-    vxt_system *s;
-
+VXT_PIREPHERAL_WITH_DATA(memory, vxt_byte, {
     vxt_pointer base;
     bool read_only;
-
     int size;
-    vxt_byte data[];
-};
+})
 
-static vxt_byte read(void *d, vxt_pointer addr) {
-    DEC_DEVICE(m, memory, d);
+static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
+    VXT_DEC_DEVICE(m, memory, p);
     ENSURE((int)(addr - m->base) < m->size);
-    return m->data[addr - m->base];
+    return VXT_GET_DEVICE_DATA(memory, p)[addr - m->base];
 }
 
-static void write(void *d, vxt_pointer addr, vxt_byte data) {
-    DEC_DEVICE(m, memory, d);
+static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
+    VXT_DEC_DEVICE(m, memory, p);
     ENSURE((int)(addr - m->base) < m->size);
     if (!m->read_only) {
-        m->data[addr - m->base] = data;
+        VXT_GET_DEVICE_DATA(memory, p)[addr - m->base] = data;
     } else {
         LOG("writing to read-only memory: [0x%X] = 0x%X", addr, data);
     }
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *d) {
-    DEC_DEVICE(m, memory, d->userdata);
-    m->s = s;
-    vxt_system_install_mem(s, d, m->base, (m->base + (vxt_pointer)m->size) - 1);
+static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+    VXT_DEC_DEVICE(m, memory, p);
+    vxt_system_install_mem(s, p, m->base, (m->base + (vxt_pointer)m->size) - 1);
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(void *d) {
-    DEC_DEVICE(m, memory, d);
-    vxt_system_allocator(m->s)(m, 0);
+static vxt_error destroy(struct vxt_pirepheral *p) {
+    vxt_system_allocator(VXT_GET_SYSTEM(memory, p))(p, 0);
     return VXT_NO_ERROR;
 }
 
-struct vxt_pirepheral vxtu_create_memory_device(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
-    int size = sizeof(struct memory) + amount;
-    struct memory *m = (struct memory*)alloc(NULL, size);
-    memclear(m, size);
+static const char *name(struct vxt_pirepheral *p) {
+    VXT_DEC_DEVICE(m, memory, p);
+    return m->read_only ? "ROM" : "RAM";
+}
+
+struct vxt_pirepheral *vxtu_create_memory_device(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
+    int size = VXT_PIREPHERAL_SIZE(memory) + amount;
+    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, size);
+    memclear(p, size);
+    VXT_DEC_DEVICE(m, memory, p);
 
     m->base = base;
     m->read_only = read_only;
     m->size = amount;
 
-    struct vxt_pirepheral p = {0};
-    p.userdata = m;
-    p.install = &install;
-    p.destroy = &destroy;
-    p.io.read = &read;
-    p.io.write = &write;
+    p->install = &install;
+    p->destroy = &destroy;
+    p->name = &name;
+    p->io.read = &read;
+    p->io.write = &write;
     return p;
 }
 
-bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size) {
-    DEC_DEVICE(m, memory, p->userdata);
+bool vxtu_memory_device_fill(const struct vxt_pirepheral *p, const vxt_byte *data, int size) {
+    VXT_DEC_DEVICE(m, memory, p);
     ENSURE(data);
     if (m->size < size)
         return false;
     for (int i = 0; i < size; i++)
-        m->data[i] = data[i];
+        VXT_GET_DEVICE_DATA(memory, p)[i] = data[i];
     return true;
 }

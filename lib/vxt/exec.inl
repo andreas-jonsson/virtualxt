@@ -574,21 +574,20 @@ static void retf_CB(CONSTSP(cpu) p, INST(inst)) {
 }
 
 static void int_CC(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(p); UNUSED(inst);
-   PANIC("not implemented");
+   UNUSED(inst);
+   IRQ(p, 3);
 }
 
 static void int_CD(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   read_opcode8(p);
-   PANIC("not implemented");
+   IRQ(p, (int)read_opcode8(p));
 }
 
 static void int_CE(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    if (p->regs.flags & VXT_OVERFLOW) {
       p->cycles += 69;
-      PANIC("not implemented");
+      IRQ(p, 4);
    }  
 }
 
@@ -623,8 +622,8 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_byte a = p->regs.al;
    vxt_byte b = read_opcode8(p);
-   if (b == 0) {
-      PANIC("div zero, not implemented");
+   if (!b) {
+      IRQ(p, 0);
       return;
    } else {
       p->regs.al = a % b;
@@ -764,8 +763,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       {
          vxt_word ax = p->regs.ax;
          if (!v || (ax / (vxt_word)v) > 0xFF) {
-            // TODO
-            PANIC("Division by zero not implemented!");
+            IRQ(p, 0);
             return;
          }
 
@@ -776,8 +774,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       case 7: // IDIV - reference: fake86's - cpu.c
       {
          if (!v) {
-            // TODO
-            PANIC("Division by zero not implemented!");
+            IRQ(p, 0);
             return;
          }
 
@@ -793,8 +790,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          vxt_word res1 = a / d; 
          vxt_word res2 = a % d;
          if ((res1 & 0xFF00) != 0) {
-            // TODO
-            PANIC("Division by zero not implemented!");
+            IRQ(p, 0);
             return;
          }
 
@@ -852,8 +848,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       {
          vxt_dword a = (p->regs.dx << 16) + p->regs.ax;
          if (!v || (a / (vxt_dword)v) > 0xFFFF) {
-            // TODO
-            PANIC("Division by zero not implemented!");
+            IRQ(p, 0);
             return;
          }
 
@@ -864,8 +859,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       case 7: // IDIV - reference: fake86's - cpu.c
       {
          if (!v) {
-            // TODO
-            PANIC("Division by zero not implemented!");
+            IRQ(p, 0);
             return;
          }
 
@@ -881,8 +875,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          vxt_dword res1 = a / d; 
          vxt_dword res2 = a % d;
          if ((res1 & 0xFFFF0000) != 0) {
-            // TODO
-            PANIC("Division by zero not implemented!");
+            IRQ(p, 0);
             return;
          }
 
@@ -1260,17 +1253,3 @@ static struct instruction const opcode_table[0x100] = {
 
 #undef INVALID
 #undef X
-
-void cpu_exec(CONSTSP(cpu) p) {
-   const CONSTSP(instruction) inst = &opcode_table[p->opcode];
-   ENSURE(inst->opcode == p->opcode);
-
-   p->ea_cycles = 0;
-   vxt_byte modregrm = inst->modregrm ? read_modregrm(p) : 0;
-   
-   VALIDATOR_BEGIN(p, inst->name, p->opcode, modregrm, &p->regs);
-   inst->func(p, inst);
-   VALIDATOR_END(p, &p->regs);
-
-   p->cycles += inst->cycles + p->ea_cycles;
-}

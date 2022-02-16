@@ -67,17 +67,19 @@ struct vxtu_debugger_interface {
         return data;
     }
 #else
-    static vxt_byte *vxtu_read_file(vxt_allocator *alloc, int *size, const char *file) {
+    static vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size) {
         (void)alloc; (void)size; (void)file;
         return NULL;
     }
 #endif
 
-extern struct vxt_pirepheral vxtu_create_memory_device(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);
+extern struct vxt_pirepheral *vxtu_create_memory_device(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);
 extern bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size);
 
-extern struct vxt_pirepheral vxtu_create_debugger_device(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface);
+extern struct vxt_pirepheral *vxtu_create_debugger(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface);
 extern void vxtu_debugger_interrupt(struct vxt_pirepheral *dbg);
+
+extern struct vxt_pirepheral *vxtu_create_pic(vxt_allocator *alloc);
 
 #ifdef __cplusplus
 }

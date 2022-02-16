@@ -23,22 +23,22 @@
 #include "testing.h"
 
 #define RUN_BBTEST(bin, check, ...) {                                                                   \
-    struct vxt_pirepheral ram = vxtu_create_memory_device(TALLOC, 0x0, 0x100000, false);                \
-    struct vxt_pirepheral rom = vxtu_create_memory_device(TALLOC, 0xF0000, 0x10000, true);              \
+    struct vxt_pirepheral *ram = vxtu_create_memory_device(TALLOC, 0x0, 0x100000, false);               \
+    struct vxt_pirepheral *rom = vxtu_create_memory_device(TALLOC, 0xF0000, 0x10000, true);             \
                                                                                                         \
     int size = 0;                                                                                       \
     vxt_byte *data = vxtu_read_file(TALLOC, (bin), &size);                                              \
     TENSURE(data);                                                                                      \
-    TENSURE(vxtu_memory_device_fill(&rom, data, size));                                                 \
+    TENSURE(vxtu_memory_device_fill(rom, data, size));                                                  \
     TFREE(data);                                                                                        \
                                                                                                         \
-    const struct vxt_pirepheral *devices[] = {                                                          \
-        &ram, &rom,                                                                                     \
+    struct vxt_pirepheral *devices[] = {                                                                \
+        ram, rom,                                                                                       \
         NULL                                                                                            \
     };                                                                                                  \
                                                                                                         \
     CONSTP(vxt_system) s = vxt_system_create(TALLOC, devices);                                          \
-    TENSURE_NO_ERR(vxt_system_initialize(s));                                                           \
+    TENSURE_NO_ERR(vxt_system_initialize(s, VXT_INVALID_DEVICE_ID));                                    \
     vxt_system_reset(s);                                                                                \
     struct vxt_registers *r = vxt_system_registers(s);                                                  \
     r->cs = 0xF000;                                                                                     \

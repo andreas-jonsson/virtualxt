@@ -34,10 +34,11 @@ struct system {
    struct cpu cpu;
 
    int num_devices;
-   struct vxt_pirepheral devices[VXT_MAX_PIREPHERALS];
+   struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS];
+   struct _vxt_pirepheral dummy;
 };
 
-extern void init_dummy_device(vxt_system *s, struct vxt_pirepheral *d);    // From dummy.c
+extern void init_dummy_device(vxt_system *s);
 extern vxt_byte system_in(vxt_system *s, vxt_word port);
 extern void system_out(vxt_system *s, vxt_word port, vxt_byte data);
 

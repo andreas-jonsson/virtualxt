@@ -72,9 +72,6 @@ freely, subject to the following restrictions:
 #define CONSTP(t)    t * const
 #define CONSTSP(t)   struct CONSTP(t)
 
-#define GET_DEVICE(type, device)          ( (struct type*)(device) )
-#define DEC_DEVICE(name, type, device)    struct type* const name = GET_DEVICE(type, device)
-
 #define ENSURE(e)          if (!(e)) { _LOG("( " #e " ) "); ABORT(); }
 #define ASSERT(e, ...)     if (!(e)) { _LOG("( " #e " ) "); LOG(__VA_ARGS__); ABORT(); }
 #define PANIC(...)         { LOG(__VA_ARGS__); ABORT(); }

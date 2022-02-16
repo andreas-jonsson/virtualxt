@@ -18,45 +18,52 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+#include <vxt/utils.h>
 #include "common.h"
-#include "system.h"
+
+VXT_PIREPHERAL(pic, {
+    int _;
+})
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    UNUSED(p);
-    LOG("reading unmapped IO port: %X", port);
-    return 0xFF;
+    (void)port;
+    (void)p;
+    return 0;
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    UNUSED(p); UNUSED(data);
-    LOG("writing unmapped IO port: %X", port);
+    (void)port; (void)data;
+    (void)p;
 }
 
-static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    UNUSED(p);
-    LOG("reading unmapped memory: %X", addr);
-    return 0xFF;
-}
-
-static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
-    UNUSED(p); UNUSED(data);
-    LOG("writing unmapped memory: %X", addr);
-}
-
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io(s, p, 0x0, 0xFFFF);
-    vxt_system_install_mem(s, p, 0x0, 0xFFFFF);
+static vxt_error install(vxt_system *s, struct vxt_pirepheral *d) {
+    (void)s; (void)d;
     return VXT_NO_ERROR;
 }
 
-void init_dummy_device(vxt_system *s) {
-    struct _vxt_pirepheral *dummy = &((struct system*)s)->dummy;
-    dummy->s = s;
+static vxt_error reset(struct vxt_pirepheral *p) {
+    (void)p;
+    return VXT_NO_ERROR;
+}
 
-    struct vxt_pirepheral *d = &dummy->p;
-    d->install = &install;
-    d->io.in = &in;
-    d->io.out = &out;
-    d->io.read = &read;
-    d->io.write = &write;
+static vxt_error destroy(struct vxt_pirepheral *p) {
+    vxt_system_allocator(VXT_GET_SYSTEM(pic, p))(p, 0);
+    return VXT_NO_ERROR;
+}
+
+static const char *name(struct vxt_pirepheral *p) {
+    (void)p; return "PIC (Intel 8259)";
+}
+
+struct vxt_pirepheral *vxtu_create_pic(vxt_allocator *alloc) {
+    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(pic));
+    memclear(p, VXT_PIREPHERAL_SIZE(pic));
+
+    p->install = &install;
+    p->destroy = &destroy;
+    p->reset = &reset;
+    p->name = &name;
+    p->io.in = &in;
+    p->io.out = &out;
+    return p;
 }

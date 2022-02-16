@@ -59,7 +59,7 @@ void vxt_set_logger(int (*f)(const char*, ...)) {
     logger = f;
 }
 
-vxt_system *vxt_system_create(vxt_allocator *alloc, const struct vxt_pirepheral *devs[]) {
+vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral * const devs[]) {
     vxt_system *s = (vxt_system*)alloc(NULL, sizeof(struct system));
     memclear(s, sizeof(struct system));
     s->alloc = alloc;
@@ -67,44 +67,53 @@ vxt_system *vxt_system_create(vxt_allocator *alloc, const struct vxt_pirepheral 
 
     int i = 1;
     for (; devs && devs[i-1]; i++) {
-        s->devices[i] = *devs[i-1];
-        s->devices[i].id = (vxt_device_id)i;
+        s->devices[i] = devs[i-1];
+        struct _vxt_pirepheral *internal = (struct _vxt_pirepheral*)s->devices[i];
+        internal->id = (vxt_device_id)i;
+        internal->s = s;
     }
     s->num_devices = i;
 
     // Always init dummy device 0. Depends on memset!
-    init_dummy_device(s, &s->devices[0]);
+    s->devices[0] = (struct vxt_pirepheral*)&s->dummy;
+    init_dummy_device(s);
     return s;
 }
 
-vxt_error _vxt_system_initialize(CONSTP(vxt_system) s) {
+vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, vxt_device_id pic) {
     for (int i = 0; i < s->num_devices; i++) {
-        CONSTSP(vxt_pirepheral) d = &s->devices[i];
+        CONSTSP(vxt_pirepheral) d = s->devices[i];
         if (d->install) {
-            vxt_error err = d->install(s, d);
+            vxt_error err = d->install(s, (struct vxt_pirepheral*)d);
             if (err) return err;
         }
+        if (vxt_pirepheral_id(d) == pic)
+            s->cpu.pic = d;
     }
-    if (s->cpu.validator.initialize)
-        s->cpu.validator.initialize(s, s->cpu.validator.userdata);
+
+    if (s->cpu.validator)
+        s->cpu.validator->initialize(s, s->cpu.validator->userdata);
+    
+    if (pic != VXT_INVALID_DEVICE_ID)
+        return s->cpu.pic ? VXT_NO_ERROR : VXT_NO_PIC;
     return VXT_NO_ERROR;
 }
 
 TEST(system_initialize, {
     CONSTP(vxt_system) sp = vxt_system_create(TALLOC, NULL);
     TENSURE(sp);
-    TENSURE_NO_ERR(vxt_system_initialize(sp));
+    TENSURE_NO_ERR(vxt_system_initialize(sp, VXT_INVALID_DEVICE_ID));
     vxt_system_destroy(sp);
 })
 
 vxt_error vxt_system_destroy(CONSTP(vxt_system) s) {
-    if (s->cpu.validator.destroy)
-        s->cpu.validator.destroy(s->cpu.validator.userdata);
+    if (s->cpu.validator)
+        s->cpu.validator->destroy(s->cpu.validator->userdata);
 
     for (int i = 0; i < s->num_devices; i++) {
-        CONSTSP(vxt_pirepheral) d = &s->devices[i];
+        CONSTSP(vxt_pirepheral) d = s->devices[i];
         if (d->destroy) {
-            vxt_error err = d->destroy(d->userdata);
+            vxt_error err = d->destroy(d);
             if (err) return err;
         }
     }
@@ -123,9 +132,9 @@ vxt_allocator *vxt_system_allocator(vxt_system *s) {
 void vxt_system_reset(CONSTP(vxt_system) s) {
     cpu_reset(&s->cpu);
     for (int i = 0; i < s->num_devices; i++) {
-        CONSTSP(vxt_pirepheral) d = &s->devices[i];
+        CONSTSP(vxt_pirepheral) d = s->devices[i];
         if (d->reset)
-            d->reset(d->userdata);
+            d->reset(d);
     }
 }
 
@@ -142,11 +151,10 @@ struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
         step.halted = s->cpu.halt;
 
         for (int i = 0; i < s->num_devices; i++) {
-            CONSTSP(vxt_pirepheral) d = &s->devices[i];
+            CONSTSP(vxt_pirepheral) d = s->devices[i];
             if (d->step) {
-                if ((step.err = d->step(d->userdata, c)) != VXT_NO_ERROR)
+                if ((step.err = d->step(d, c)) != VXT_NO_ERROR)
                     return step;
-
             }
         }
 
@@ -156,7 +164,7 @@ struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
 }
 
 void vxt_system_set_validator(CONSTP(vxt_system) s, const struct vxt_validator *interface) {
-    s->cpu.validator = *interface;
+    s->cpu.validator = interface;
 }
 
 void vxt_system_set_userdata(CONSTP(vxt_system) s, void *data) {
@@ -175,71 +183,79 @@ const vxt_byte *vxt_system_mem_map(vxt_system *s) {
     return s->mem_map;
 }
 
-const struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx) {
-    return &s->devices[idx];
+struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx) {
+    return s->devices[idx];
+}
+
+vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p) {
+    return ((struct _vxt_pirepheral*)p)->s;
+}
+
+vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p) {
+    return ((struct _vxt_pirepheral*)p)->id;
 }
 
 void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word addr) {
-    s->io_map[addr] = (vxt_byte)dev->id;
+    s->io_map[addr] = (vxt_byte)vxt_pirepheral_id(dev);
 }
 
 void vxt_system_install_mem_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_pointer addr) {
-    s->mem_map[addr & 0xFFFFF] = (vxt_byte)dev->id;
+    s->mem_map[addr & 0xFFFFF] = (vxt_byte)vxt_pirepheral_id(dev);
 }
 
 void vxt_system_install_io(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to) {
     int i = (int)from;
     while (i <= (int)to)
-        s->io_map[i++] = (vxt_byte)dev->id;
+        s->io_map[i++] = (vxt_byte)vxt_pirepheral_id(dev);
 }
 
 void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to) {
     int i = (int)(from & 0xFFFFF);
     to &= 0xFFFFF;
     while (i <= (int)to)
-        s->mem_map[i++] = (vxt_byte)dev->id;
+        s->mem_map[i++] = (vxt_byte)vxt_pirepheral_id(dev);
 }
 
 vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
     addr &= 0xFFFFF;
-    CONSTSP(vxt_pirepheral) dev = &s->devices[s->mem_map[addr]];
-    vxt_byte data = dev->io.read(dev->userdata, addr);
+    CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
+    vxt_byte data = dev->io.read(dev, addr);
     VALIDATOR_READ(&s->cpu, addr, data);
     return data;
 }
 
 void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
     addr &= 0xFFFFF;
-    CONSTSP(vxt_pirepheral) dev = &s->devices[s->mem_map[addr]];
-    dev->io.write(dev->userdata, addr, data);
+    CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
+    dev->io.write(dev, addr, data);
     VALIDATOR_WRITE(&s->cpu, addr, data);
 }
 
 vxt_word vxt_system_read_word(CONSTP(vxt_system) s, vxt_pointer addr) {
     vxt_pointer p = addr & 0xFFFFF;
-    CONSTSP(vxt_pirepheral) devl = &s->devices[s->mem_map[p]];
-    vxt_byte low = devl->io.read(devl->userdata, p);
+    CONSTSP(vxt_pirepheral) devl = s->devices[s->mem_map[p]];
+    vxt_byte low = devl->io.read(devl, p);
     p = (addr+1) & 0xFFFFF;
-    CONSTSP(vxt_pirepheral) devh = &s->devices[s->mem_map[p]];
-    vxt_byte high = devh->io.read(devh->userdata, (addr+1) & 0xFFFFF);
+    CONSTSP(vxt_pirepheral) devh = s->devices[s->mem_map[p]];
+    vxt_byte high = devh->io.read(devh, (addr+1) & 0xFFFFF);
     return WORD(high, low);
 }
 
 void vxt_system_write_word(CONSTP(vxt_system) s, vxt_pointer addr, vxt_word data) {
     vxt_pointer p = addr &= 0xFFFFF;
-    CONSTSP(vxt_pirepheral) devh = &s->devices[s->mem_map[p]];
-    devh->io.write(devh->userdata, p, LBYTE(data));
+    CONSTSP(vxt_pirepheral) devh = s->devices[s->mem_map[p]];
+    devh->io.write(devh, p, LBYTE(data));
     p = (addr+1) & 0xFFFFF;
-    CONSTSP(vxt_pirepheral) devl = &s->devices[s->mem_map[p]];
-    devl->io.write(devl->userdata, p, HBYTE(data));
+    CONSTSP(vxt_pirepheral) devl = s->devices[s->mem_map[p]];
+    devl->io.write(devl, p, HBYTE(data));
 }
 
 vxt_byte system_in(CONSTP(vxt_system) s, vxt_word port) {
-    CONSTSP(vxt_pirepheral) dev = &s->devices[s->io_map[port]];
-    return dev->io.in(dev->userdata, port);
+    CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
+    return dev->io.in(dev, port);
 }
 
 void system_out(CONSTP(vxt_system) s, vxt_word port, vxt_byte data) {
-    CONSTSP(vxt_pirepheral) dev = &s->devices[s->io_map[port]];
-    dev->io.out(dev->userdata, port, data);
+    CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
+    dev->io.out(dev, port, data);
 }

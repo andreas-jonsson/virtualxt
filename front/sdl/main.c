@@ -131,43 +131,42 @@ int ENTRY(int argc, char *argv[]) {
 	}
 	SDL_RenderSetLogicalSize(renderer, 640, 200);
 
-	vxt_system *vxt = NULL;
 	vxt_set_logger(&printf);
 
-	struct vxt_pirepheral dbg = {0};
+	struct vxt_pirepheral *dbg = NULL;
 	if (args.debug) {
 		struct vxtu_debugger_interface dbgif = {args.trace, &pdisasm, &getline, &printf};
-		dbg = vxtu_create_debugger_device(&vxt_clib_malloc, &dbgif);
+		dbg = vxtu_create_debugger(&vxt_clib_malloc, &dbgif);
 	}
 
-	{
-		int size = 0;
-		//vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "bios/pcxtbios.bin", &size);
-		vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/datatrnf.bin", &size);
-		if (!data) {
-			printf("vxtu_read_file() failed!\n");
-			return -1;
-		}
-		
-		struct vxt_pirepheral ram = vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false);
-		//struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
-		struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
+	int size = 0;
+	//vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "bios/pcxtbios.bin", &size);
+	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/datatrnf.bin", &size);
+	if (!data) {
+		printf("vxtu_read_file() failed!\n");
+		return -1;
+	}
+	
+	struct vxt_pirepheral *ram = vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false);
+	//struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
+	struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
 
-		if (!vxtu_memory_device_fill(&rom, data, size)) {
-			printf("vxtu_memory_device_fill() failed!\n");
-			return -1;
-		}
-
-		const struct vxt_pirepheral *devices[] = {
-			&ram, &rom, // RAM & ROM should be initialized first.
-			args.debug ? &dbg : NULL, // Must be the last device in list.
-			NULL
-		};
-
-		vxt = vxt_system_create(&vxt_clib_malloc, devices);
+	if (!vxtu_memory_device_fill(rom, data, size)) {
+		printf("vxtu_memory_device_fill() failed!\n");
+		return -1;
 	}
 
-	vxt_error err = vxt_system_initialize(vxt);
+	struct vxt_pirepheral *pic = vxtu_create_pic(&vxt_clib_malloc);
+
+	struct vxt_pirepheral *devices[] = {
+		ram, rom, // RAM & ROM should be initialized first.
+		pic,
+		dbg, // Must be the last device in list.
+		NULL
+	};
+
+	vxt_system *vxt = vxt_system_create(&vxt_clib_malloc, devices);
+	vxt_error err = vxt_system_initialize(vxt, vxt_pirepheral_id(pic));
 	if (err != VXT_NO_ERROR) {
 		printf("vxt_system_initialize() failed with error %s\n", vxt_error_str(err));
 		return -1;
@@ -195,7 +194,7 @@ int ENTRY(int argc, char *argv[]) {
 					break;
 				case SDL_KEYDOWN:
 					if (args.debug && e.key.keysym.sym == SDLK_F12 && (e.key.keysym.mod & KMOD_ALT))
-						vxtu_debugger_interrupt(&dbg);
+						vxtu_debugger_interrupt(dbg);
 					break;
 				case SDL_KEYUP:
 					break;

@@ -29,11 +29,13 @@ freely, subject to the following restrictions:
 #define SET_FLAG(r, f, v) ( (r) = ((r) & ~(f)) | ((v) & (f)) )
 #define SET_FLAG_IF(r, f, c) ( SET_FLAG((r), (f), (c) ? (f) : ~(f)) )
 
-#define VALIDATOR_BEGIN(p, name, op, mod, regs) { if ((p)->validator.begin) (p)->validator.begin((name), (op), (mod), (regs), (p)->validator.userdata); }
-#define VALIDATOR_END(p, regs) { if ((p)->validator.end) (p)->validator.end((regs), (p)->validator.userdata); }
-#define VALIDATOR_READ(p, addr, data) { if ((p)->validator.read) (p)->validator.read((addr), (data), (p)->validator.userdata); }
-#define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator.write) (p)->validator.write((addr), (data), (p)->validator.userdata); }
-#define VALIDATOR_DISCARD(p) { if ((p)->validator.discard) (p)->validator.discard((p)->validator.userdata); }
+#define VALIDATOR_BEGIN(p, name, op, mod, regs) { if ((p)->validator) (p)->validator->begin((name), (op), (mod), (regs), (p)->validator->userdata); }
+#define VALIDATOR_END(p, regs) { if ((p)->validator) (p)->validator->end((regs), (p)->validator->userdata); }
+#define VALIDATOR_READ(p, addr, data) { if ((p)->validator) (p)->validator->read((addr), (data), (p)->validator->userdata); }
+#define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr), (data), (p)->validator->userdata); }
+#define VALIDATOR_DISCARD(p) { if ((p)->validator) (p)->validator->discard((p)->validator->userdata); }
+
+#define IRQ(p, n) { ENSURE((p)->pic); (p)->pic->pic.irq((p)->pic, (n)); }
 
 #define INST(n) const struct instruction * const n
 
@@ -56,7 +58,8 @@ struct cpu {
    vxt_word seg;
    bool seg_override;
 
-   struct vxt_validator validator;
+   const struct vxt_validator *validator;
+   struct vxt_pirepheral *pic;
    vxt_system *s;
 };
 

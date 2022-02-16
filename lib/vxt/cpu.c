@@ -381,7 +381,7 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
 	      override_with_ss(p, (mode.rm == 2) || (mode.rm == 3) || (mode.rm == 6));
 	      break;
 	}
-   
+
    p->mode = mode;
    return modregrm;
 }
@@ -441,6 +441,20 @@ static void read_opcode(CONSTSP(cpu) p) {
 #include "shift.inl"
 #include "rep.inl"
 #include "exec.inl"
+
+static void cpu_exec(CONSTSP(cpu) p) {
+   const CONSTSP(instruction) inst = &opcode_table[p->opcode];
+   ENSURE(inst->opcode == p->opcode);
+
+   p->ea_cycles = 0;
+   vxt_byte modregrm = inst->modregrm ? read_modregrm(p) : 0;
+   
+   VALIDATOR_BEGIN(p, inst->name, p->opcode, modregrm, &p->regs);
+   inst->func(p, inst);
+   VALIDATOR_END(p, &p->regs);
+
+   p->cycles += inst->cycles + p->ea_cycles;
+}
 
 int cpu_step(CONSTSP(cpu) p) {
    prep_exec(p);
