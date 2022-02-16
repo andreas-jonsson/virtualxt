@@ -1,7 +1,7 @@
 var structvxt__io =
 [
-    [ "in", "structvxt__io.html#a21d0dfd6b915d99aba2c4a7e48c7b2bc", null ],
-    [ "out", "structvxt__io.html#a2f98e5c6a9dcf84e4ba852c6e7b5592f", null ],
-    [ "read", "structvxt__io.html#a12be6330a252c63fb10c610cfb864151", null ],
-    [ "write", "structvxt__io.html#a4376201e64ba8d3d1d624aac5d4d29b1", null ]
+    [ "in", "structvxt__io.html#a5cd2674f2b58b4fbeaa731fb91e75b7a", null ],
+    [ "out", "structvxt__io.html#ad0391a6eae2cb1084406f76f473cb491", null ],
+    [ "read", "structvxt__io.html#a5cd7dbdc2ea7080362190862887912d3", null ],
+    [ "write", "structvxt__io.html#a2bf18a3a3ba3e27f2798701c8859c9e1", null ]
 ];

@@ -1,11 +1,10 @@
 var structvxt__pirepheral =
 [
-    [ "destroy", "structvxt__pirepheral.html#a734fc9acf6662e6514b05b2410115693", null ],
-    [ "id", "structvxt__pirepheral.html#a70023d6ee7427cff83fde41ae89eb21e", null ],
+    [ "destroy", "structvxt__pirepheral.html#aa43cee629beb19a47cd0fb42a097c008", null ],
     [ "install", "structvxt__pirepheral.html#a4fab5e6d319b14c6ba7fbf3605376e8d", null ],
     [ "io", "structvxt__pirepheral.html#ae56deb98874bb6d0463e2213be8137a0", null ],
-    [ "name", "structvxt__pirepheral.html#acea6f391cb89845d5f7a6f6fd2c9d654", null ],
-    [ "reset", "structvxt__pirepheral.html#a75f21ef61bd8c53c9b3b8d45ec0b2c10", null ],
-    [ "step", "structvxt__pirepheral.html#afaec408ee1007d1b4ee15ad8518135e5", null ],
-    [ "userdata", "structvxt__pirepheral.html#afd0ffb02780e738d4c0a10ab833b7834", null ]
+    [ "name", "structvxt__pirepheral.html#abc41e5af11264b1449a4b5f1b088790d", null ],
+    [ "pic", "structvxt__pirepheral.html#a2162a2eca268a28d83762f50dafdedb2", null ],
+    [ "reset", "structvxt__pirepheral.html#afa7e4708f97b5d75131d15115b680c20", null ],
+    [ "step", "structvxt__pirepheral.html#aedbdd9b0cbbf731bb83c4d92b0192f03", null ]
 ];

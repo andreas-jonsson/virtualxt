@@ -1,8 +1,9 @@
 var utils_8h =
 [
     [ "vxtu_debugger_interface", "structvxtu__debugger__interface.html", "structvxtu__debugger__interface" ],
-    [ "vxtu_create_debugger_device", "utils_8h.html#ad9a5f9835b4e274a3dd0f1cd5e5b1c70", null ],
-    [ "vxtu_create_memory_device", "utils_8h.html#a620b20ac01d55e256607b7f0be9bcf90", null ],
+    [ "vxtu_create_debugger", "utils_8h.html#af833b417e61bf32840f0a6317edfc14a", null ],
+    [ "vxtu_create_memory_device", "utils_8h.html#a4a802db8897107d6f3a0d550e0ba8897", null ],
+    [ "vxtu_create_pic", "utils_8h.html#a22e26c8605daa9acc3401f3fa345df8d", null ],
     [ "vxtu_debugger_interrupt", "utils_8h.html#a5101b920f9a48f0b72f4d8e5754f7570", null ],
     [ "vxtu_memory_device_fill", "utils_8h.html#a41eb9011a2e77e7ae3ec6020b6c72f66", null ]
 ];
