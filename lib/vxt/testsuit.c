@@ -38,7 +38,7 @@
     };                                                                                                  \
                                                                                                         \
     CONSTP(vxt_system) s = vxt_system_create(TALLOC, devices);                                          \
-    TENSURE_NO_ERR(vxt_system_initialize(s, VXT_INVALID_DEVICE_ID));                                    \
+    TENSURE_NO_ERR(vxt_system_initialize(s));                                                           \
     vxt_system_reset(s);                                                                                \
     struct vxt_registers *r = vxt_system_registers(s);                                                  \
     r->cs = 0xF000;                                                                                     \

@@ -147,7 +147,6 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 	
-	struct vxt_pirepheral *ram = vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false);
 	//struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
 	struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
 
@@ -156,20 +155,26 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 
-	struct vxt_pirepheral *pic = vxtu_create_pic(&vxt_clib_malloc);
-
 	struct vxt_pirepheral *devices[] = {
-		ram, rom, // RAM & ROM should be initialized first.
-		pic,
+		vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false),
+		rom, // RAM & ROM should be initialized first.
+		vxtu_create_pic(&vxt_clib_malloc),
 		dbg, // Must be the last device in list.
 		NULL
 	};
 
 	vxt_system *vxt = vxt_system_create(&vxt_clib_malloc, devices);
-	vxt_error err = vxt_system_initialize(vxt, vxt_pirepheral_id(pic));
+	vxt_error err = vxt_system_initialize(vxt);
 	if (err != VXT_NO_ERROR) {
 		printf("vxt_system_initialize() failed with error %s\n", vxt_error_str(err));
 		return -1;
+	}
+
+	printf("Installed pirepherals:\n");
+	for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
+		struct vxt_pirepheral *device = vxt_system_pirepheral(vxt, (vxt_byte)i);
+		if (device)
+			printf("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
 
 	vxt_system_reset(vxt);

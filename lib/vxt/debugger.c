@@ -285,7 +285,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
 }
 
 static vxt_error step(struct vxt_pirepheral *p, int cycles) {
-    VXT_DEC_DEVICE(dbg, debugger, p); (void)cycles;
+    VXT_DEC_DEVICE(dbg, debugger, p); UNUSED(cycles);
     vxt_system *s = vxt_pirepheral_system(p);
     CONSTSP(vxt_registers) regs = vxt_system_registers(s);
 
@@ -317,6 +317,10 @@ static vxt_error destroy(struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
+static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
+    UNUSED(p); return VXT_PCLASS_DEBUGGER;
+}
+
 static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "Debugger";
 }
@@ -341,6 +345,7 @@ struct vxt_pirepheral *vxtu_create_debugger(vxt_allocator *alloc, const struct v
     p->install = &install;
     p->destroy = &destroy;
     p->step = &step;
+    p->pclass = &pclass;
     p->name = &name;
     p->io.read = &read;
     p->io.write = &write;

@@ -79,10 +79,4 @@ freely, subject to the following restrictions:
 
 extern int (*logger)(const char*, ...);
 
-static const char *get_device_name(CONSTSP(vxt_pirepheral) dev) {
-   if (dev->name)
-      return dev->name(dev);
-   return "unknown device";
-}
-
 #endif

@@ -118,7 +118,7 @@ enum {
 
 #define VXT_IO_MAP_SIZE 0x10000
 #define VXT_MEM_MAP_SIZE 0x100000
-#define VXT_MAX_PIREPHERALS 256
+#define VXT_MAX_PIREPHERALS 0xFF
 
 #define VXT_PIREPHERAL_SIZE(type) sizeof(struct _ ## type)
 #define VXT_GET_DEVICE_DATA(type, pir) ((struct _ ## type*)(pir))->d
@@ -164,6 +164,14 @@ struct vxt_step {
     vxt_error err;
 };
 
+enum vxt_pclass {
+    VXT_PCLASS_GENERIC  = 0x01,
+    VXT_PCLASS_DEBUGGER = 0x02,
+    VXT_PCLASS_PIC      = 0x04,
+    VXT_PCLASS_DMA      = 0x08,
+    VXT_PCLASS_VIDEO    = 0x10
+};
+
 struct vxt_pirepheral;
 
 struct vxt_io {
@@ -185,6 +193,7 @@ struct vxt_pirepheral {
     vxt_error (*destroy)(struct vxt_pirepheral*);
     vxt_error (*reset)(struct vxt_pirepheral*);
     const char* (*name)(struct vxt_pirepheral*);
+    enum vxt_pclass (*pclass)(struct vxt_pirepheral*);
     vxt_error (*step)(struct vxt_pirepheral*,int);
 
     struct vxt_io io;
@@ -215,7 +224,7 @@ struct vxt_validator {
 extern int _vxt_system_register_size(void);
 
 /// @private
-extern vxt_error _vxt_system_initialize(vxt_system *s, vxt_device_id pic);
+extern vxt_error _vxt_system_initialize(vxt_system *s);
 
 extern vxt_allocator *vxt_static_allocator(void *mem, int size);
 
@@ -226,14 +235,17 @@ extern int vxt_lib_version_major(void);
 extern int vxt_lib_version_minor(void);
 extern int vxt_lib_version_patch(void);
 
-static vxt_error vxt_system_initialize(vxt_system *s, vxt_device_id pic) {
+static vxt_error vxt_system_initialize(vxt_system *s) {
     if (_vxt_system_register_size() != sizeof(struct vxt_registers))
         return VXT_INVALID_REGISTER_PACKING;
     //if (vxt_lib_version_major() != VXT_VERSION_MAJOR || vxt_lib_version_minor() < VXT_VERSION_MINOR)
     if (vxt_lib_version_major() != VXT_VERSION_MAJOR || vxt_lib_version_minor() != VXT_VERSION_MINOR)
         return VXT_INVALID_VERSION;
-    return _vxt_system_initialize(s, pic);
+    return _vxt_system_initialize(s);
 }
+
+extern const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
+extern enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
 
 extern vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral * const devs[]);
 extern vxt_error vxt_system_destroy(vxt_system *s);
@@ -251,6 +263,7 @@ extern const vxt_byte *vxt_system_mem_map(vxt_system *s);
 extern struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx);
 extern vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p);
 extern vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p);
+extern void vxt_system_interrupt(vxt_system *s, int n);
 
 extern void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_word addr);
 extern void vxt_system_install_mem_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer addr);

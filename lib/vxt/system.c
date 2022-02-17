@@ -32,7 +32,7 @@
    int (*logger)(const char*, ...) = &libc_print;
 #else
    static int no_print(const char *fmt, ...) {
-      (void)fmt;
+      UNUSED(fmt);
       return -1;
    }
    int (*logger)(const char*, ...) = &no_print;
@@ -80,29 +80,29 @@ vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral * cons
     return s;
 }
 
-vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, vxt_device_id pic) {
+vxt_error _vxt_system_initialize(CONSTP(vxt_system) s) {
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_pirepheral) d = s->devices[i];
         if (d->install) {
             vxt_error err = d->install(s, (struct vxt_pirepheral*)d);
             if (err) return err;
         }
-        if (vxt_pirepheral_id(d) == pic)
+        if (vxt_pirepheral_class(d) == VXT_PCLASS_PIC)
             s->cpu.pic = d;
     }
 
     if (s->cpu.validator)
         s->cpu.validator->initialize(s, s->cpu.validator->userdata);
     
-    if (pic != VXT_INVALID_DEVICE_ID)
-        return s->cpu.pic ? VXT_NO_ERROR : VXT_NO_PIC;
+    if (!s->cpu.pic)
+        LOG("WARNING: No interrupt controller attached!");
     return VXT_NO_ERROR;
 }
 
 TEST(system_initialize, {
     CONSTP(vxt_system) sp = vxt_system_create(TALLOC, NULL);
     TENSURE(sp);
-    TENSURE_NO_ERR(vxt_system_initialize(sp, VXT_INVALID_DEVICE_ID));
+    TENSURE_NO_ERR(vxt_system_initialize(sp));
     vxt_system_destroy(sp);
 })
 
@@ -193,6 +193,19 @@ vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p) {
 
 vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p) {
     return ((struct _vxt_pirepheral*)p)->id;
+}
+
+const char *vxt_pirepheral_name(struct vxt_pirepheral *p) {
+    return p->name ? p->name(p) : "unknown device";
+}
+
+enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p) {
+    return p->pclass ? p->pclass(p) : VXT_PCLASS_GENERIC;
+}
+
+void vxt_system_interrupt(CONSTP(vxt_system) s, int n) {
+    if (s->cpu.pic)
+        s->cpu.pic->pic.irq(s->cpu.pic, n);
 }
 
 void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word addr) {
