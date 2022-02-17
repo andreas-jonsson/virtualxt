@@ -101,7 +101,7 @@ Macros</h2></td></tr>
 <tr class="separator:a0805f80bc96947fff1919912df1e8d5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cdd4ee72c72a2d4a86a9fafa8eb4a25"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a4cdd4ee72c72a2d4a86a9fafa8eb4a25">VXT_MEM_MAP_SIZE</a>&#160;&#160;&#160;0x100000</td></tr>
 <tr class="separator:a4cdd4ee72c72a2d4a86a9fafa8eb4a25"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab740cb9791821ffb26bf633c05c0cf50"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ab740cb9791821ffb26bf633c05c0cf50">VXT_MAX_PIREPHERALS</a>&#160;&#160;&#160;256</td></tr>
+<tr class="memitem:ab740cb9791821ffb26bf633c05c0cf50"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ab740cb9791821ffb26bf633c05c0cf50">VXT_MAX_PIREPHERALS</a>&#160;&#160;&#160;0xFF</td></tr>
 <tr class="separator:ab740cb9791821ffb26bf633c05c0cf50"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad4034072e24fcd403a7b7b11a758ab1f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ad4034072e24fcd403a7b7b11a758ab1f">VXT_PIREPHERAL_SIZE</a>(type)&#160;&#160;&#160;sizeof(struct _ ## type)</td></tr>
 <tr class="separator:ad4034072e24fcd403a7b7b11a758ab1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -170,6 +170,16 @@ Enumerations</h2></td></tr>
 <br />
  }</td></tr>
 <tr class="separator:a06fc87d81c62e9abb8790b6e5713c55b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa3ddedb822fcd71e56229096428cb1d7"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7">vxt_pclass</a> { <br />
+&#160;&#160;<a class="el" href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7a77eada4e490e3da25d6a21f419528a09">VXT_PCLASS_GENERIC</a> = 0x01, 
+<a class="el" href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7ab3ba639f46a039cff1d5573ec2bd30c2">VXT_PCLASS_DEBUGGER</a> = 0x02, 
+<a class="el" href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7a25ef6a9a14043c39d60f324b2c3f0632">VXT_PCLASS_PIC</a> = 0x04, 
+<a class="el" href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7aec097525072986716f858b0c3a4a04b2">VXT_PCLASS_DMA</a> = 0x08, 
+<br />
+&#160;&#160;<a class="el" href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7ae2b7291f521041de9150c12e52638dfc">VXT_PCLASS_VIDEO</a> = 0x10
+<br />
+ }</td></tr>
+<tr class="separator:aa3ddedb822fcd71e56229096428cb1d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -187,6 +197,10 @@ Functions</h2></td></tr>
 <tr class="separator:a723f8c0fdec0372d7bf81874e9b4141b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad3d8b744aa70f774478c0d8fbbc89013"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ad3d8b744aa70f774478c0d8fbbc89013">vxt_lib_version_patch</a> (void)</td></tr>
 <tr class="separator:ad3d8b744aa70f774478c0d8fbbc89013"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af4abee73d2ad4003e907683f33e06bd6"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#af4abee73d2ad4003e907683f33e06bd6">vxt_pirepheral_name</a> (struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p)</td></tr>
+<tr class="separator:af4abee73d2ad4003e907683f33e06bd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02531673d69031cdd31ae53756aa413c"><td class="memItemLeft" align="right" valign="top">enum <a class="el" href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7">vxt_pclass</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a02531673d69031cdd31ae53756aa413c">vxt_pirepheral_class</a> (struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p)</td></tr>
+<tr class="separator:a02531673d69031cdd31ae53756aa413c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac7a654df67b900afea641f338419b2a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ac7a654df67b900afea641f338419b2a8">vxt_system_create</a> (<a class="el" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *alloc, struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *const devs[])</td></tr>
 <tr class="separator:ac7a654df67b900afea641f338419b2a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a28cb435dac218f9aab23c829fde46887"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047">vxt_error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a28cb435dac218f9aab23c829fde46887">vxt_system_destroy</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s)</td></tr>
@@ -215,6 +229,8 @@ Functions</h2></td></tr>
 <tr class="separator:ad409827fb4cfca82bf5a08bcc7b1d4e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a425e9fc9f8a91f0c7365c06764104c31"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#a571d86caa501fa57b72a107c1ca14bfb">vxt_device_id</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a425e9fc9f8a91f0c7365c06764104c31">vxt_pirepheral_id</a> (const struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p)</td></tr>
 <tr class="separator:a425e9fc9f8a91f0c7365c06764104c31"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4e925ab4bc7c7799954a4f11b329c73"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#aa4e925ab4bc7c7799954a4f11b329c73">vxt_system_interrupt</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, int n)</td></tr>
+<tr class="separator:aa4e925ab4bc7c7799954a4f11b329c73"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af49917b2c29716cb00288f80f7be89cf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#af49917b2c29716cb00288f80f7be89cf">vxt_system_install_io_at</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *dev, <a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a> addr)</td></tr>
 <tr class="separator:af49917b2c29716cb00288f80f7be89cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4b9a1de96a7e339759c73bab185d2fe2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a4b9a1de96a7e339759c73bab185d2fe2">vxt_system_install_mem_at</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *dev, <a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a> addr)</td></tr>
@@ -400,7 +416,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define VXT_MAX_PIREPHERALS&#160;&#160;&#160;256</td>
+          <td class="memname">#define VXT_MAX_PIREPHERALS&#160;&#160;&#160;0xFF</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -790,6 +806,27 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="aa3ddedb822fcd71e56229096428cb1d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa3ddedb822fcd71e56229096428cb1d7">&#9670;&nbsp;</a></span>vxt_pclass</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7">vxt_pclass</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="aa3ddedb822fcd71e56229096428cb1d7a77eada4e490e3da25d6a21f419528a09"></a>VXT_PCLASS_GENERIC&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa3ddedb822fcd71e56229096428cb1d7ab3ba639f46a039cff1d5573ec2bd30c2"></a>VXT_PCLASS_DEBUGGER&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa3ddedb822fcd71e56229096428cb1d7a25ef6a9a14043c39d60f324b2c3f0632"></a>VXT_PCLASS_PIC&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa3ddedb822fcd71e56229096428cb1d7aec097525072986716f858b0c3a4a04b2"></a>VXT_PCLASS_DMA&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa3ddedb822fcd71e56229096428cb1d7ae2b7291f521041de9150c12e52638dfc"></a>VXT_PCLASS_VIDEO&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="af5e6ede3891397e3db35ec36e4f34bbc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af5e6ede3891397e3db35ec36e4f34bbc">&#9670;&nbsp;</a></span>vxt_error_str()</h2>
@@ -881,6 +918,24 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a02531673d69031cdd31ae53756aa413c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a02531673d69031cdd31ae53756aa413c">&#9670;&nbsp;</a></span>vxt_pirepheral_class()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7">vxt_pclass</a> vxt_pirepheral_class </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td>
+          <td class="paramname"><em>p</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a425e9fc9f8a91f0c7365c06764104c31"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a425e9fc9f8a91f0c7365c06764104c31">&#9670;&nbsp;</a></span>vxt_pirepheral_id()</h2>
 
@@ -891,6 +946,24 @@ Functions</h2></td></tr>
           <td class="memname"><a class="el" href="vxt_8h.html#a571d86caa501fa57b72a107c1ca14bfb">vxt_device_id</a> vxt_pirepheral_id </td>
           <td>(</td>
           <td class="paramtype">const struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td>
+          <td class="paramname"><em>p</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af4abee73d2ad4003e907683f33e06bd6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af4abee73d2ad4003e907683f33e06bd6">&#9670;&nbsp;</a></span>vxt_pirepheral_name()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* vxt_pirepheral_name </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td>
           <td class="paramname"><em>p</em></td><td>)</td>
           <td></td>
         </tr>
@@ -1164,6 +1237,34 @@ Functions</h2></td></tr>
           <td></td>
           <td class="paramtype"><a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>&#160;</td>
           <td class="paramname"><em>addr</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aa4e925ab4bc7c7799954a4f11b329c73"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa4e925ab4bc7c7799954a4f11b329c73">&#9670;&nbsp;</a></span>vxt_system_interrupt()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void vxt_system_interrupt </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *&#160;</td>
+          <td class="paramname"><em>s</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>n</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
