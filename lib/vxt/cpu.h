@@ -30,7 +30,7 @@ freely, subject to the following restrictions:
 #define SET_FLAG_IF(r, f, c) ( SET_FLAG((r), (f), (c) ? (f) : ~(f)) )
 
 #define VALIDATOR_BEGIN(p, name, op, mod, regs) { if ((p)->validator) (p)->validator->begin((name), (op), (mod), (regs), (p)->validator->userdata); }
-#define VALIDATOR_END(p, regs) { if ((p)->validator) (p)->validator->end((regs), (p)->validator->userdata); }
+#define VALIDATOR_END(p, cycles, regs) { if ((p)->validator) (p)->validator->end((cycles), (regs), (p)->validator->userdata); }
 #define VALIDATOR_READ(p, addr, data) { if ((p)->validator) (p)->validator->read((addr), (data), (p)->validator->userdata); }
 #define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr), (data), (p)->validator->userdata); }
 #define VALIDATOR_DISCARD(p) { if ((p)->validator) (p)->validator->discard((p)->validator->userdata); }

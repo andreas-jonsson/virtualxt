@@ -85,6 +85,7 @@ extern "C" {
    #define VXT_PACK(x) x __attribute__((__packed__))
 #endif
 
+#define VXT_INVALID_POINTER ((vxt_pointer)0xFFFFFFFF)
 #define VXT_INVALID_DEVICE_ID ((vxt_device_id)0xFF)
 
 #define _VXT_ERROR_CODES(x)                                                     \
@@ -213,8 +214,8 @@ struct vxt_validator {
     vxt_error (*initialize)(vxt_system *s, void *userdata);
     vxt_error (*destroy)(void *userdata);
 
-    void (*begin)(const char *name, vxt_byte opcode, vxt_byte modregrm, struct vxt_registers *regs, void *userdata);
-    void (*end)(struct vxt_registers *regs, void *userdata);
+    void (*begin)(const char *name, vxt_byte opcode, bool modregrm, struct vxt_registers *regs, void *userdata);
+    void (*end)(int cycles, struct vxt_registers *regs, void *userdata);
     void (*read)(vxt_pointer addr, vxt_byte data, void *userdata);
     void (*write)(vxt_pointer addr, vxt_byte data, void *userdata);
     void (*discard)(void *userdata);

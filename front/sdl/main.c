@@ -35,6 +35,10 @@
 #include "main.h"
 #include "docopt.h"
 
+#ifdef PI8088
+	extern struct vxt_validator *pi8088_validator();
+#endif
+
 static const char *getline() {
 	static char buffer[1024] = {0};
 	char *str = fgets(buffer, sizeof(buffer), stdin);
@@ -176,6 +180,10 @@ int ENTRY(int argc, char *argv[]) {
 		if (device)
 			printf("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
+
+	#ifdef PI8088
+		vxt_system_set_validator(vxt, pi8088_validator());
+	#endif
 
 	vxt_system_reset(vxt);
 	vxt_system_registers(vxt)->debug = (bool)args.halt;

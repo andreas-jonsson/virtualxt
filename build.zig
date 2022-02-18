@@ -144,6 +144,7 @@ pub fn build(b: *Builder) void {
     assert_version(0, expected_zig_version);
 
     //const textmode = b.option(bool, "textmode", "Build for textmode only") orelse false;
+    const validator = b.option(bool, "validator", "Enable PI8088 hardware validator") orelse false;
     const sdl_path = b.option([]const u8, "sdl-path", "Path to SDL2 headers and libs") orelse null;
 
     const mode = b.standardReleaseOptions();
@@ -210,6 +211,12 @@ pub fn build(b: *Builder) void {
     exe_sdl.addCSourceFile("front/sdl/main.c", opt);
     exe_sdl.addCSourceFile("front/sdl/docopt.c", &[_][]const u8{"-std=c11", "-Wno-unused-variable", "-Wno-unused-parameter"});
 
+    if (validator) {
+        exe_sdl.linkSystemLibrary("gpiod");
+        exe_sdl.defineCMacroRaw("PI8088");
+        exe_sdl.addCSourceFile("tools/validator/pi8088/pi8088.c", c_options);
+    }
+
     // -------- virtualxt libretro --------
 
     {
@@ -228,21 +235,6 @@ pub fn build(b: *Builder) void {
         libretro.addCSourceFile("front/libretro/core.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
 
         b.step("libretro", "Build libretro core").dependOn(&libretro.step);
-    }
-
-    // -------- pi8088 validator --------
-
-    {
-        const pi8088 = b.addExecutable("pi8088", null);
-        pi8088.setBuildMode(mode);
-        pi8088.setTarget(target);
-        pi8088.setOutputDir("build/bin");
-        pi8088.linkLibC();
-        pi8088.linkSystemLibrary("gpiod");
-
-        pi8088.addCSourceFile("tools/validator/pi8088/pi8088.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
-    
-        b.step("pi8088", "Build RaspberryPI Hardware validator").dependOn(&pi8088.step);
     }
 
     // -------- test --------

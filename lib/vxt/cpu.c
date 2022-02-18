@@ -447,13 +447,15 @@ static void cpu_exec(CONSTSP(cpu) p) {
    ENSURE(inst->opcode == p->opcode);
 
    p->ea_cycles = 0;
-   vxt_byte modregrm = inst->modregrm ? read_modregrm(p) : 0;
-   
-   VALIDATOR_BEGIN(p, inst->name, p->opcode, modregrm, &p->regs);
-   inst->func(p, inst);
-   VALIDATOR_END(p, &p->regs);
+   VALIDATOR_BEGIN(p, inst->name, p->opcode, inst->modregrm, &p->regs);
 
-   p->cycles += inst->cycles + p->ea_cycles;
+   if (inst->modregrm)
+      read_modregrm(p);
+   inst->func(p, inst);
+
+   int executed_cycles = inst->cycles + p->ea_cycles;
+   VALIDATOR_END(p, executed_cycles, &p->regs);
+   p->cycles += executed_cycles;
 }
 
 int cpu_step(CONSTSP(cpu) p) {
