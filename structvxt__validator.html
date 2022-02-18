@@ -69,10 +69,10 @@ Data Fields</h2></td></tr>
 <tr class="separator:aa1a8c709e1b30cbadc6a1fef60527bac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad7330ca3e01661093dacd903cb200191"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047">vxt_error</a>(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__validator.html#ad7330ca3e01661093dacd903cb200191">destroy</a> )(void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td></tr>
 <tr class="separator:ad7330ca3e01661093dacd903cb200191"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a75b023ef12953c4233676a8a6a103c3d"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__validator.html#a75b023ef12953c4233676a8a6a103c3d">begin</a> )(const char *name, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> opcode, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> modregrm, struct <a class="el" href="structvxt__registers.html">vxt_registers</a> *regs, void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td></tr>
-<tr class="separator:a75b023ef12953c4233676a8a6a103c3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa04073405b42a398fa14a7745b83b596"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__validator.html#aa04073405b42a398fa14a7745b83b596">end</a> )(struct <a class="el" href="structvxt__registers.html">vxt_registers</a> *regs, void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td></tr>
-<tr class="separator:aa04073405b42a398fa14a7745b83b596"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89549f8ae61cb54bc2bf70a41c5f2fbb"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__validator.html#a89549f8ae61cb54bc2bf70a41c5f2fbb">begin</a> )(const char *name, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> opcode, <a class="el" href="vxt_8h.html#afaa87723b8417d40fcf45b7330261ef9">bool</a> modregrm, struct <a class="el" href="structvxt__registers.html">vxt_registers</a> *regs, void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td></tr>
+<tr class="separator:a89549f8ae61cb54bc2bf70a41c5f2fbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a842484a36e3f82f427669275c0fa2954"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__validator.html#a842484a36e3f82f427669275c0fa2954">end</a> )(int cycles, struct <a class="el" href="structvxt__registers.html">vxt_registers</a> *regs, void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td></tr>
+<tr class="separator:a842484a36e3f82f427669275c0fa2954"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a60f241793fe03ca61851907823996cbf"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__validator.html#a60f241793fe03ca61851907823996cbf">read</a> )(<a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a> addr, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> data, void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td></tr>
 <tr class="separator:a60f241793fe03ca61851907823996cbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae9e93488cf7ea8f85483bc15b7941deb"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__validator.html#ae9e93488cf7ea8f85483bc15b7941deb">write</a> )(<a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a> addr, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> data, void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td></tr>
@@ -81,14 +81,14 @@ Data Fields</h2></td></tr>
 <tr class="separator:a4a34034f0eb44625904738ce6631d46c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
-<a id="a75b023ef12953c4233676a8a6a103c3d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a75b023ef12953c4233676a8a6a103c3d">&#9670;&nbsp;</a></span>begin</h2>
+<a id="a89549f8ae61cb54bc2bf70a41c5f2fbb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a89549f8ae61cb54bc2bf70a41c5f2fbb">&#9670;&nbsp;</a></span>begin</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void(* begin(const char *name, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> opcode, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> modregrm, struct <a class="el" href="structvxt__registers.html">vxt_registers</a> *regs, void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td>
+          <td class="memname">void(* begin(const char *name, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> opcode, <a class="el" href="vxt_8h.html#afaa87723b8417d40fcf45b7330261ef9">bool</a> modregrm, struct <a class="el" href="structvxt__registers.html">vxt_registers</a> *regs, void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -123,14 +123,14 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a id="aa04073405b42a398fa14a7745b83b596"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa04073405b42a398fa14a7745b83b596">&#9670;&nbsp;</a></span>end</h2>
+<a id="a842484a36e3f82f427669275c0fa2954"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a842484a36e3f82f427669275c0fa2954">&#9670;&nbsp;</a></span>end</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void(* end(struct <a class="el" href="structvxt__registers.html">vxt_registers</a> *regs, void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td>
+          <td class="memname">void(* end(int cycles, struct <a class="el" href="structvxt__registers.html">vxt_registers</a> *regs, void *<a class="el" href="structvxt__validator.html#afd0ffb02780e738d4c0a10ab833b7834">userdata</a>)</td>
         </tr>
       </table>
 </div><div class="memdoc">

@@ -12,6 +12,7 @@ var vxt_8h =
     [ "VXT_GET_DEVICE_DATA", "vxt_8h.html#a1ee79160f5a72f2ace3eeb0470b2c5f6", null ],
     [ "VXT_GET_SYSTEM", "vxt_8h.html#a2fb1b08853764e42353e716b5d5827b3", null ],
     [ "VXT_INVALID_DEVICE_ID", "vxt_8h.html#aedee3310691d61f01335d01cb93a0752", null ],
+    [ "VXT_INVALID_POINTER", "vxt_8h.html#af5b876880e067c418ea0cf9a93f97117", null ],
     [ "VXT_IO_MAP_SIZE", "vxt_8h.html#a0805f80bc96947fff1919912df1e8d5e", null ],
     [ "VXT_MAX_PIREPHERALS", "vxt_8h.html#ab740cb9791821ffb26bf633c05c0cf50", null ],
     [ "VXT_MEM_MAP_SIZE", "vxt_8h.html#a4cdd4ee72c72a2d4a86a9fafa8eb4a25", null ],
