@@ -40,17 +40,18 @@ struct mem_op {
 	vxt_pointer addr;
 	vxt_byte data;
 	enum mem_op_flag flags;
-}
+};
 
 struct frame {
 	const char *name;
 	vxt_byte opcode;
 	bool modregrm;
+	int bus_cycles;
 	struct vxt_registers regs[2];
 
 	struct mem_op reads[NUM_MEM_OPS];
 	struct mem_op writes[NUM_MEM_OPS];
-}
+};
 
 struct gpiod_chip *chip = NULL;
 
@@ -65,6 +66,7 @@ struct gpiod_line *ale_line = NULL;
 struct gpiod_line *ad_0_7_line[8] = {NULL};
 struct gpiod_line *a_8_19_line[12] = {NULL};
 
+int bus_cycles = 0;
 int cycle_count = 0;
 int rd_signal = 0;
 int wr_signal = 0;
@@ -83,13 +85,13 @@ static void pulse_clock(int ticks) {
 		cycle_count++;
 	}
 
-	rd_signal = gpiod_line_get_value(rd_line);
-	wr_signal = gpiod_line_get_value(wr_line);
+	rd_signal = !gpiod_line_get_value(rd_line);
+	wr_signal = !gpiod_line_get_value(wr_line);
 	iom_signal = gpiod_line_get_value(iom_line);
 	ale_signal = gpiod_line_get_value(ale_line);
 
 	assert((rd_signal == 0) || (wr_signal == 0));
-	assert((wr_line == 0) || (ale_signal == 0));
+	assert((rd_signal == 0) || (ale_signal == 0));
 }
 
 static void reset_sequence() {
@@ -99,13 +101,15 @@ static void reset_sequence() {
 	pulse_clock(4);
 	gpiod_line_set_value(reset_line, 0);
 
-	printf("Waiting for ALE...\n");
+	printf("Waiting for ALE");
 
 	do {
+		printf(".");
+		fflush(stdout);
 		pulse_clock(1);
 	} while (!ale_signal);
 
-	printf("CPU is initialized!\n");
+	printf("\nCPU is initialized!\n");
 }
 
 static void latch_address() {
@@ -113,30 +117,30 @@ static void latch_address() {
 
 	address_latch = 0;
 	for (int i = 0; i < 8; i++)
-		address_latch |= ((uint32_t)gpiod_line_get_value(ad_0_7_line[i]) << i);
+		address_latch |= ((uint32_t)gpiod_line_get_value(ad_0_7_line[i])) << i;
 	for (int i = 0; i < 12; i++)
-		address_latch |= ((uint32_t)gpiod_line_get_value(a_8_19_line[i]) << (i + 8));
+		address_latch |= ((uint32_t)gpiod_line_get_value(a_8_19_line[i])) << (i + 8);
 
 	printf("Address latched: 0x%X\n", address_latch);
 }
 
-static void set_bus_direction_in() {
+static void set_bus_direction_out() {
 	for (int i = 0; i < 8; i++)
 		gpiod_line_request_input(ad_0_7_line[i], CONSUMER);
 }
 
-static void set_bus_direction_out() {
+static void set_bus_direction_in() {
 	assert(rd_signal);
 	for (int i = 0; i < 8; i++)
 		gpiod_line_request_output(ad_0_7_line[i], CONSUMER, 0);
 }
 
-static void write_data(vxt_byte data) {
+static void write_cpu_pins(vxt_byte data) {
 	for (int i = 0; i < 8; i++)
 		gpiod_line_set_value(ad_0_7_line[i], (data >> i) & 1);
 }
 
-static vxt_byte read_data() {
+static vxt_byte read_cpu_pins() {
 	vxt_byte data = 0;
 	for (int i = 0; i < 8; i++)
 		data |= gpiod_line_get_value(ad_0_7_line[i]) << i;
@@ -147,7 +151,7 @@ static void validate_data_write(vxt_pointer addr, vxt_byte data) {
 	printf("CPU write: [0x%X] <- 0x%X\n", addr, data);
 	
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
-		mem_op *op = &current_frame.writes[i];
+		struct mem_op *op = &current_frame.writes[i];
 		if (!(op->flags & MOF_PI8088) && (op->flags & MOF_EMULATOR)) {
 			if (op->addr == addr) { // YES: This is a valid write!
 				op->flags |= MOF_PI8088;
@@ -162,42 +166,53 @@ static void validate_data_write(vxt_pointer addr, vxt_byte data) {
 }
 
 static vxt_byte validate_data_read(vxt_pointer addr) {
-	printf("CPU read: 0x%X <- [0x%X]\n", data, addr);
+	printf("CPU read: [0x%X] -> ", addr);
 
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		struct mem_op *op = &current_frame.reads[i];
 		if (!(op->flags & MOF_PI8088) && (op->flags & MOF_EMULATOR)) {
 			if (op->addr == addr) { // YES: This is a valid read!
 				op->flags |= MOF_PI8088;
+				printf("0x%X\n", op->data);
 				return op->data;
 			}
 		}
 	}
 
+	printf("?\n");
 	fprintf(stderr, "ERROR: This is not a valid read!\n");
 	assert(0);
 	return 0;
 }
 
-static void execute_cycle() {
-	printf("Execute cycle...\n");
-	if (ale_signal) {
-		latch_address();
+static void next_bus_cycle() {
+	printf("Wait for bus cycle");
+	while (!ale_signal) {
+		printf(".");
+		fflush(stdout);
 		pulse_clock(1);
-		
-		if (wr_signal) { // CPU is writing data to the bus.
-			assert(!iom_line);
-			validate_data_write(address_latch, read_data());
-			pulse_clock(2);
-		} else if (rd_line) { // CPU is reading data from the bus.
-			assert(!iom_line);
-			set_bus_direction_out();
-			write_data(validate_data_read(address_latch));
-			pulse_clock(2);
-			set_bus_direction_in();
-		}
-	} else {
-		pulse_clock(1);
+	}
+	printf("\n");
+}
+
+static void execute_bus_cycle() {
+	printf("Execute bus cycle...\n");
+
+	assert(ale_signal);
+	bus_cycles++;
+	latch_address();
+	pulse_clock(1);
+	
+	if (wr_signal) { // CPU is writing data to the bus.
+		assert(!iom_signal);
+		validate_data_write(address_latch, read_cpu_pins());
+		pulse_clock(2);
+	} else if (rd_signal) { // CPU is reading data from the bus.
+		assert(!iom_signal);
+		set_bus_direction_in();
+		write_cpu_pins(validate_data_read(address_latch));
+		pulse_clock(2);
+		set_bus_direction_out();
 	}
 }
 
@@ -248,9 +263,12 @@ static void init_pins() {
 }
 
 static void begin(const char *name, vxt_byte opcode, bool modregrm, struct vxt_registers *regs, void *userdata) {
+	(void)userdata;
+
 	current_frame.name = name;
 	current_frame.opcode = opcode;
 	current_frame.modregrm = modregrm;
+	current_frame.bus_cycles = 1;
 	current_frame.regs[0] = *regs;
 	
 	for (int i = 0; i < NUM_MEM_OPS; i++)
@@ -267,11 +285,18 @@ static void validate_mem_op(struct mem_op *op) {
 }
 
 static void end(int cycles, struct vxt_registers *regs, void *userdata) {
+	(void)cycles; (void)userdata;
 	current_frame.regs[1] = *regs;
 
 	cycle_count = 0;
-	while (cycle_count < cycles)
-		execute_cycle();
+	bus_cycles = 0;
+
+	while (bus_cycles < current_frame.bus_cycles) {
+		execute_bus_cycle();
+		next_bus_cycle();
+	}
+		
+	assert(bus_cycles == current_frame.bus_cycles);
 
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		validate_mem_op(&current_frame.reads[i]);
@@ -279,22 +304,26 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 	}
 }
 
-static void read(vxt_pointer addr, vxt_byte data, void *userdata) {
+static void read_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
+	(void)userdata;
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		struct mem_op *op = &current_frame.reads[i];
 		if (!op->flags) {
 			*op = (struct mem_op){addr, data, MOF_EMULATOR};
+			current_frame.bus_cycles++;
 			return;
 		}
 	}
 	assert(0);
 }
 
-static void write(vxt_pointer addr, vxt_byte data, void *userdata) {
+static void write_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
+	(void)userdata;
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		struct mem_op *op = &current_frame.writes[i];
 		if (!op->flags) {
 			*op = (struct mem_op){addr, data, MOF_EMULATOR};
+			current_frame.bus_cycles++;
 			return;
 		}
 	}
@@ -302,10 +331,12 @@ static void write(vxt_pointer addr, vxt_byte data, void *userdata) {
 }
 
 static void discard(void *userdata) {
+	(void)userdata;
 	fprintf(stderr, "WARNING: This validator can not discard instructions.\n");
 }
 
 static vxt_error initialize(vxt_system *s, void *userdata) {
+	(void)s; (void)userdata;
 	if (!(chip = gpiod_chip_open_by_name("gpiochip0"))) {
 		fprintf(stderr, "Could not connect GPIO chip!\n");
 		return -1;
@@ -317,6 +348,7 @@ static vxt_error initialize(vxt_system *s, void *userdata) {
 }
 
 static vxt_error destroy(void *userdata) {
+	(void)userdata;
 	printf("Cleanup...\n");
 	
 	// Output pins.
@@ -347,5 +379,10 @@ struct vxt_validator pi8088 = {0};
 struct vxt_validator *pi8088_validator() {
 	pi8088.initialize = &initialize;
 	pi8088.destroy = &destroy;
+	pi8088.begin = &begin;
+	pi8088.end = &end;
+	pi8088.read = &read_byte;
+	pi8088.write = &write_byte;
+	pi8088.discard = &discard;
 	return &pi8088;
 }

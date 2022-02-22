@@ -248,9 +248,11 @@ vxt_word vxt_system_read_word(CONSTP(vxt_system) s, vxt_pointer addr) {
     vxt_pointer p = addr & 0xFFFFF;
     CONSTSP(vxt_pirepheral) devl = s->devices[s->mem_map[p]];
     vxt_byte low = devl->io.read(devl, p);
+    VALIDATOR_READ(&s->cpu, p, low);
     p = (addr+1) & 0xFFFFF;
     CONSTSP(vxt_pirepheral) devh = s->devices[s->mem_map[p]];
     vxt_byte high = devh->io.read(devh, (addr+1) & 0xFFFFF);
+    VALIDATOR_READ(&s->cpu, p, high);
     return WORD(high, low);
 }
 
@@ -258,9 +260,11 @@ void vxt_system_write_word(CONSTP(vxt_system) s, vxt_pointer addr, vxt_word data
     vxt_pointer p = addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) devh = s->devices[s->mem_map[p]];
     devh->io.write(devh, p, LBYTE(data));
+    VALIDATOR_WRITE(&s->cpu, p, LBYTE(data));
     p = (addr+1) & 0xFFFFF;
     CONSTSP(vxt_pirepheral) devl = s->devices[s->mem_map[p]];
     devl->io.write(devl, p, HBYTE(data));
+    VALIDATOR_WRITE(&s->cpu, p, HBYTE(data));
 }
 
 vxt_byte system_in(CONSTP(vxt_system) s, vxt_word port) {

@@ -235,7 +235,7 @@ extern void vxt_set_logger(int (*f)(const char*, ...));
 extern int vxt_lib_version_major(void);
 extern int vxt_lib_version_minor(void);
 extern int vxt_lib_version_patch(void);
-
+/*
 static vxt_error vxt_system_initialize(vxt_system *s) {
     if (_vxt_system_register_size() != sizeof(struct vxt_registers))
         return VXT_INVALID_REGISTER_PACKING;
@@ -244,6 +244,8 @@ static vxt_error vxt_system_initialize(vxt_system *s) {
         return VXT_INVALID_VERSION;
     return _vxt_system_initialize(s);
 }
+*/
+#define vxt_system_initialize _vxt_system_initialize
 
 extern const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
 extern enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
