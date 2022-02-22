@@ -144,15 +144,15 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	int size = 0;
-	//vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "bios/pcxtbios.bin", &size);
-	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/datatrnf.bin", &size);
+	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "bios/pcxtbios.bin", &size);
+	//vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/control.bin", &size);
 	if (!data) {
 		printf("vxtu_read_file() failed!\n");
 		return -1;
 	}
 	
-	//struct vxt_pirepheral rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
-	struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
+	struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
+	//struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
 
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		printf("vxtu_memory_device_fill() failed!\n");
@@ -168,6 +168,11 @@ int ENTRY(int argc, char *argv[]) {
 	};
 
 	vxt_system *vxt = vxt_system_create(&vxt_clib_malloc, devices);
+
+	#ifdef PI8088
+		vxt_system_set_validator(vxt, pi8088_validator());
+	#endif
+
 	vxt_error err = vxt_system_initialize(vxt);
 	if (err != VXT_NO_ERROR) {
 		printf("vxt_system_initialize() failed with error %s\n", vxt_error_str(err));
@@ -181,17 +186,13 @@ int ENTRY(int argc, char *argv[]) {
 			printf("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
 
-	#ifdef PI8088
-		vxt_system_set_validator(vxt, pi8088_validator());
-	#endif
-
 	vxt_system_reset(vxt);
 	vxt_system_registers(vxt)->debug = (bool)args.halt;
 
 	// For running testdata.
-	struct vxt_registers *r = vxt_system_registers(vxt);
-	r->cs = 0xF000;
-    r->ip = 0xFFF0;
+	//struct vxt_registers *r = vxt_system_registers(vxt);
+	//r->cs = 0xF000;
+    //r->ip = 0xFFF0;
 
 	for (bool run = true; run;) {
 		for (SDL_Event e; SDL_PollEvent(&e);) {
