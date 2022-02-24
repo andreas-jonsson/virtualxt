@@ -25,10 +25,19 @@ freely, subject to the following restrictions:
 #include <unistd.h>
 
 #include <vxt/vxt.h>
+#include <vxt/utils.h>
 
+#define NUM_INVALID_FETCHES 6
 #define NUM_MEM_OPS 16
 #define CONSUMER "pi8088"
 #define PULSE_LENGTH 1000000 //50000 // Microseconds
+
+enum validator_state {
+	STATE_SETUP,
+	STATE_EXECUTE,
+	STATE_READBACK,
+	STATE_FINISHED
+};
 
 enum mem_op_flag {
 	MOF_UNUSED 		= 0x0,
@@ -46,7 +55,8 @@ struct frame {
 	const char *name;
 	vxt_byte opcode;
 	bool modregrm;
-	int bus_cycles;
+	bool discard;
+	int num_nop;
 	struct vxt_registers regs[2];
 
 	struct mem_op reads[NUM_MEM_OPS];
@@ -57,7 +67,9 @@ struct gpiod_chip *chip = NULL;
 
 struct gpiod_line *clock_line = NULL;
 struct gpiod_line *reset_line = NULL;
+struct gpiod_line *test_line = NULL;
 
+struct gpiod_line *ss0_line = NULL;
 struct gpiod_line *rd_line = NULL;
 struct gpiod_line *wr_line = NULL;
 struct gpiod_line *iom_line = NULL;
@@ -66,7 +78,6 @@ struct gpiod_line *ale_line = NULL;
 struct gpiod_line *ad_0_7_line[8] = {NULL};
 struct gpiod_line *a_8_19_line[12] = {NULL};
 
-int bus_cycles = 0;
 int cycle_count = 0;
 int rd_signal = 0;
 int wr_signal = 0;
@@ -74,6 +85,14 @@ int iom_signal = 0;
 int ale_signal = 0;
 uint32_t address_latch = 0;
 
+vxt_allocator *allocator = NULL;
+vxt_byte *load_code = NULL;
+int load_code_size = 0;
+vxt_byte *store_code = NULL;
+int store_code_size = 0;
+vxt_byte scratchpad[0x100000] = {0}; 
+
+enum validator_state state = STATE_SETUP;
 struct frame current_frame = {0};
 
 static void pulse_clock(int ticks) {
@@ -149,6 +168,7 @@ static vxt_byte read_cpu_pins() {
 
 static void validate_data_write(vxt_pointer addr, vxt_byte data) {
 	printf("CPU write: [0x%X] <- 0x%X\n", addr, data);
+	assert(state != STATE_SETUP);
 	
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		struct mem_op *op = &current_frame.writes[i];
@@ -168,23 +188,53 @@ static void validate_data_write(vxt_pointer addr, vxt_byte data) {
 static vxt_byte validate_data_read(vxt_pointer addr) {
 	printf("CPU read: [0x%X] -> ", addr);
 
-	for (int i = 0; i < NUM_MEM_OPS; i++) {
-		struct mem_op *op = &current_frame.reads[i];
-		if (!(op->flags & MOF_PI8088) && (op->flags & MOF_EMULATOR)) {
-			if (op->addr == addr) { // YES: This is a valid read!
-				op->flags |= MOF_PI8088;
-				printf("0x%X\n", op->data);
-				return op->data;
+	switch (state) {
+		case STATE_SETUP:
+		{
+			vxt_byte data = scratchpad[addr];
+			printf("0x%X\n", data);
+
+			// Trigger state change.
+			if (addr != current_frame.reads[0].addr)
+				return data;
+
+			state = STATE_EXECUTE;
+			printf("Validator state change: 0x%X\n", state);
+		}
+		case STATE_EXECUTE:
+		{
+			const struct vxt_registers *r = &current_frame.regs[1];
+			if (addr != VXT_POINTER(r->cs, r->ip)) {
+				for (int i = 0; i < NUM_MEM_OPS; i++) {
+					struct mem_op *op = &current_frame.reads[i];
+					if (!(op->flags & MOF_PI8088) && (op->flags & MOF_EMULATOR)) {
+						if (op->addr == addr) { // YES: This is a valid read!
+							op->flags |= MOF_PI8088;
+							printf("0x%X\n", op->data);
+							return op->data;
+						}
+					}
+				}
+
+				// Allow for N invalid fetches that we assume is the prefetch.
+				if (current_frame.num_nop++ < NUM_INVALID_FETCHES)
+					return 0x90; // NOP
 			}
+			state = STATE_READBACK;
+		}
+		case STATE_READBACK:
+		{
+			state = STATE_FINISHED;
+			// TODO
+			assert(0);
 		}
 	}
 
-	printf("?\n");
-	fprintf(stderr, "ERROR: This is not a valid read!\n");
 	assert(0);
 	return 0;
 }
 
+// next_bus_cycle executes Tw, T4.
 static void next_bus_cycle() {
 	printf("Wait for bus cycle");
 	while (!ale_signal) {
@@ -195,11 +245,11 @@ static void next_bus_cycle() {
 	printf("\n");
 }
 
+// execute_bus_cycle executes T1, T2, T3.
 static void execute_bus_cycle() {
 	printf("Execute bus cycle...\n");
 
 	assert(ale_signal);
-	bus_cycles++;
 	latch_address();
 	pulse_clock(1);
 	
@@ -229,7 +279,15 @@ static void init_pins() {
 	assert(reset_line);
 	gpiod_line_request_output(reset_line, CONSUMER, 1);
 
+	test_line = gpiod_chip_get_line(chip, 23);
+	assert(test_line);
+	gpiod_line_request_output(test_line, CONSUMER, 0);
+
 	// Input pins.
+
+	ss0_line = gpiod_chip_get_line(chip, 22);
+	assert(ss0_line);
+	gpiod_line_request_input(ss0_line, CONSUMER);
 
 	rd_line = gpiod_chip_get_line(chip, 24);
 	assert(rd_line);
@@ -268,12 +326,16 @@ static void begin(const char *name, vxt_byte opcode, bool modregrm, struct vxt_r
 	current_frame.name = name;
 	current_frame.opcode = opcode;
 	current_frame.modregrm = modregrm;
-	current_frame.bus_cycles = 1;
+	current_frame.num_nop = 0;
+	current_frame.discard = false;
 	current_frame.regs[0] = *regs;
 	
 	for (int i = 0; i < NUM_MEM_OPS; i++)
 		current_frame.reads[i].flags = current_frame.writes[i].flags = MOF_UNUSED;
-	current_frame.reads[0] = (struct mem_op){(vxt_pointer)((regs->cs << 4) + (regs->ip - 1)), opcode, MOF_EMULATOR};
+	current_frame.reads[0] = (struct mem_op){VXT_POINTER(regs->cs, regs->ip), opcode, MOF_EMULATOR};
+
+	if (current_frame.reads[0].addr == 0xFFFF0)
+		current_frame.discard = true;
 }
 
 static void validate_mem_op(struct mem_op *op) {
@@ -286,17 +348,53 @@ static void validate_mem_op(struct mem_op *op) {
 
 static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 	(void)cycles; (void)userdata;
+
 	current_frame.regs[1] = *regs;
+	if (current_frame.discard)
+		return;
 
+	// Create scratchpad.
+	memset(scratchpad, 0, sizeof(scratchpad));
+	for (int i = 0; i < load_code_size; i++)
+		scratchpad[i] = load_code[i];
+
+	const struct vxt_registers *r = current_frame.regs;
+
+	#define WRITE_WORD(o, w) { scratchpad[(o)] = ((w)&0xF); scratchpad[(o)+1] = ((w)>>8); }
+	WRITE_WORD(0x00, r->flags);
+
+	WRITE_WORD(0x0B, r->bx);
+	WRITE_WORD(0x0E, r->cx);
+	WRITE_WORD(0x11, r->dx);
+
+	WRITE_WORD(0x14, r->ss);
+	WRITE_WORD(0x19, r->ds);
+	WRITE_WORD(0x1E, r->es);
+	WRITE_WORD(0x23, r->sp);
+	WRITE_WORD(0x28, r->bp);
+	WRITE_WORD(0x2D, r->si);
+	WRITE_WORD(0x32, r->di);
+	
+	WRITE_WORD(0x37, r->ax);
+	
+	WRITE_WORD(0x3A, r->ip);
+	WRITE_WORD(0x3C, r->cs);
+	#undef WRITE_WORD
+
+	// JMP 0:2
+	const vxt_byte jmp[5] = {0xEB, 0x2, 0x0, 0x0, 0x0};
+	for (int i = 0; i < sizeof(jmp); i++)
+		scratchpad[0xFFFF0 + i] = jmp[i];
+
+	state = STATE_SETUP;
 	cycle_count = 0;
-	bus_cycles = 0;
 
-	while (bus_cycles < current_frame.bus_cycles) {
+	reset_sequence();
+	while (state != STATE_FINISHED) {
 		execute_bus_cycle();
 		next_bus_cycle();
 	}
-		
-	assert(bus_cycles == current_frame.bus_cycles);
+	
 
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		validate_mem_op(&current_frame.reads[i]);
@@ -310,7 +408,6 @@ static void read_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
 		struct mem_op *op = &current_frame.reads[i];
 		if (!op->flags) {
 			*op = (struct mem_op){addr, data, MOF_EMULATOR};
-			current_frame.bus_cycles++;
 			return;
 		}
 	}
@@ -323,7 +420,6 @@ static void write_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
 		struct mem_op *op = &current_frame.writes[i];
 		if (!op->flags) {
 			*op = (struct mem_op){addr, data, MOF_EMULATOR};
-			current_frame.bus_cycles++;
 			return;
 		}
 	}
@@ -332,7 +428,7 @@ static void write_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
 
 static void discard(void *userdata) {
 	(void)userdata;
-	fprintf(stderr, "WARNING: This validator can not discard instructions.\n");
+	current_frame.discard = true;
 }
 
 static vxt_error initialize(vxt_system *s, void *userdata) {
@@ -342,20 +438,31 @@ static vxt_error initialize(vxt_system *s, void *userdata) {
 		return -1;
 	}
 
-	init_pins();	
-	reset_sequence();
+	allocator = vxt_system_allocator(s);
+	load_code = vxtu_read_file(allocator, "tools/validator/pi8088/load", &load_code_size);
+	aseert(load_code);
+
+	store_code = vxtu_read_file(allocator, "tools/validator/pi8088/load", &store_code_size);
+	aseert(store_code);
+
+	init_pins();
 	return VXT_NO_ERROR;
 }
 
 static vxt_error destroy(void *userdata) {
 	(void)userdata;
 	printf("Cleanup...\n");
+
+	allocator(load_code, 0);
+	allocator(store_code, 0);
 	
 	// Output pins.
 	gpiod_line_release(clock_line);
 	gpiod_line_release(reset_line);
+	gpiod_line_release(test_line);
 
 	// Input pins.
+	gpiod_line_release(ss0_line);
 	gpiod_line_release(rd_line);
 	gpiod_line_release(wr_line);
 	gpiod_line_release(iom_line);

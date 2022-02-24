@@ -157,7 +157,7 @@ static vxt_error read_command(vxt_system *s, struct debugger * const dbg) {
         } CMD("q") {
             return VXT_USER_TERMINATION;
         } CMD("s") {
-            DISASM(POINTER(regs->cs, regs->ip), 16, 1);
+            DISASM(VXT_POINTER(regs->cs, regs->ip), 16, 1);
             return VXT_NO_ERROR;
         } CMD("f") {
             #define FLAG_SYM(f, c) dbg->print("%c", (regs->flags & f) ? c : '-')
@@ -191,7 +191,7 @@ static vxt_error read_command(vxt_system *s, struct debugger * const dbg) {
         } CMD("cw") {
             dbg->watch = -1;
         } CMD("?") {
-            DISASM(POINTER(regs->cs, regs->ip), 16, 1);
+            DISASM(VXT_POINTER(regs->cs, regs->ip), 16, 1);
         } PREFIX("n") {
             if (dbg->pdisasm) {
                 dbg->cursor = (line[1] ? tonumber(&line[1]) : dbg->cursor + 256);
@@ -212,7 +212,7 @@ static vxt_error read_command(vxt_system *s, struct debugger * const dbg) {
                 dbg->print("\n");
             }
         } PREFIX("u") {
-            dbg->until = POINTER(regs->cs, tonumber(&line[1]));
+            dbg->until = VXT_POINTER(regs->cs, tonumber(&line[1]));
             regs->debug = false;
             return VXT_NO_ERROR;
         } PREFIX("@@") {
@@ -226,7 +226,7 @@ static vxt_error read_command(vxt_system *s, struct debugger * const dbg) {
             c = c ? c : 1;
             for (unsigned i = 0; i < c; i++) {
                 vxt_word offset = regs->sp + (vxt_word)i * 2;
-                vxt_word n = vxt_system_read_word(s, POINTER(regs->ss, offset));
+                vxt_word n = vxt_system_read_word(s, VXT_POINTER(regs->ss, offset));
                 dbg->print("%0*X: 0x%0*X (%d, '%c%c')\n", 4, offset, 4, n, n, toprint((vxt_byte)(n>>8)), toprint((vxt_byte)(n&0xF)));
             }
         }
@@ -289,12 +289,12 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
     vxt_system *s = vxt_pirepheral_system(p);
     CONSTSP(vxt_registers) regs = vxt_system_registers(s);
 
-    if (dbg->breakpoint == POINTER(regs->cs, regs->ip)) {
+    if (dbg->breakpoint == VXT_POINTER(regs->cs, regs->ip)) {
         dbg->print("Breakpoint triggered!\n");
         regs->debug = true;
     }
 
-    if (dbg->until <= POINTER(regs->cs, regs->ip)) {
+    if (dbg->until <= VXT_POINTER(regs->cs, regs->ip)) {
         dbg->until = -1;
         regs->debug = true;
     }
@@ -304,7 +304,7 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
         err = read_command(s, dbg);
 
     if (dbg->trace && dbg->pdisasm) {
-        if (!dbg->pdisasm(s, dbg->trace, POINTER(regs->cs, regs->ip), 16, 1)) {
+        if (!dbg->pdisasm(s, dbg->trace, VXT_POINTER(regs->cs, regs->ip), 16, 1)) {
             LOG("Could not write trace!");
             dbg->trace = NULL;
         }

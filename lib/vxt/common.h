@@ -63,8 +63,6 @@ freely, subject to the following restrictions:
    #error Bigendian is not supported!
 #endif
 
-#define POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
-
 #define _LOG(...)    { logger(__VA_ARGS__); }
 #define LOG(...)     { _LOG(__VA_ARGS__); _LOG("\n"); }
 

@@ -487,22 +487,22 @@ static void lahf_9F(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A0(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = vxt_system_read_byte(p->s, POINTER(p->seg, read_opcode16(p)));
+   p->regs.al = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, read_opcode16(p)));
 }
 
 static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ax = vxt_system_read_word(p->s, POINTER(p->seg, read_opcode16(p)));
+   p->regs.ax = vxt_system_read_word(p->s, VXT_POINTER(p->seg, read_opcode16(p)));
 }
 
 static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_system_write_byte(p->s, POINTER(p->seg, read_opcode16(p)), p->regs.al);
+   vxt_system_write_byte(p->s, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.al);
 }
 
 static void mov_A3(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_system_write_word(p->s, POINTER(p->seg, read_opcode16(p)), p->regs.ax);
+   vxt_system_write_word(p->s, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.ax);
 }
 
 static void test_A8(CONSTSP(cpu) p, INST(inst)) {
@@ -641,7 +641,7 @@ static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
 
 static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = vxt_system_read_byte(p->s, POINTER(p->seg, p->regs.bx + p->regs.al));
+   p->regs.al = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, p->regs.bx + p->regs.al));
 }
 
 static void fpu_dummy(CONSTSP(cpu) p, INST(inst)) {

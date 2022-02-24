@@ -27,11 +27,11 @@ freely, subject to the following restrictions:
 #define SIGNEXT32(v)	 ( (vxt_int32)(vxt_int16)(v) )
 
 static vxt_byte read_opcode8(CONSTSP(cpu) p) {
-   return vxt_system_read_byte(p->s, POINTER(p->regs.cs, p->regs.ip++));
+   return vxt_system_read_byte(p->s, VXT_POINTER(p->regs.cs, p->regs.ip++));
 }
 
 static vxt_word read_opcode16(CONSTSP(cpu) p){
-   vxt_word data = vxt_system_read_word(p->s, POINTER(p->regs.cs, p->regs.ip));
+   vxt_word data = vxt_system_read_word(p->s, VXT_POINTER(p->regs.cs, p->regs.ip));
    p->regs.ip += 2;
    return data;
 }
@@ -118,7 +118,7 @@ static vxt_pointer get_effective_address(CONSTSP(cpu) p) {
          break;
 	}
    p->ea_cycles = cycles;
-	return POINTER(p->seg, ea);
+	return VXT_POINTER(p->seg, ea);
 }
 
 static vxt_byte reg_read8(CONSTSP(vxt_registers) r, int reg) {
@@ -325,11 +325,11 @@ WIDE(WRITE_DESTINATION_FUNC)
 
 static void push(CONSTSP(cpu) p, vxt_word data) {
    p->regs.sp -= 2;
-   vxt_system_write_word(p->s, POINTER(p->regs.ss, p->regs.sp), data);
+   vxt_system_write_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp), data);
 }
 
 static vxt_word pop(CONSTSP(cpu) p) {
-   vxt_word data = vxt_system_read_word(p->s, POINTER(p->regs.ss, p->regs.sp));
+   vxt_word data = vxt_system_read_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp));
    p->regs.sp -= 2;
    return data;
 }

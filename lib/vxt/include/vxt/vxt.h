@@ -85,6 +85,8 @@ extern "C" {
    #define VXT_PACK(x) x __attribute__((__packed__))
 #endif
 
+#define VXT_POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
+
 #define VXT_INVALID_POINTER ((vxt_pointer)0xFFFFFFFF)
 #define VXT_INVALID_DEVICE_ID ((vxt_device_id)0xFF)
 
