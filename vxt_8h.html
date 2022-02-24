@@ -95,6 +95,8 @@ Macros</h2></td></tr>
 <tr class="separator:a070d2ce7b6bb7e5c05602aa8c308d0c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7962fbd94b626c926d9a1242024eb12a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a7962fbd94b626c926d9a1242024eb12a">VXT_PACK</a>(x)&#160;&#160;&#160;x __attribute__((__packed__))</td></tr>
 <tr class="separator:a7962fbd94b626c926d9a1242024eb12a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84f0b9a641d0c29c80fbe58d2078f2c9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a84f0b9a641d0c29c80fbe58d2078f2c9">VXT_POINTER</a>(s,  o)&#160;&#160;&#160;( (((((<a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>)(<a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a>)(s)) &lt;&lt; 4) + (<a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>)(<a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a>)(o))) &amp; 0xFFFFF )</td></tr>
+<tr class="separator:a84f0b9a641d0c29c80fbe58d2078f2c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af5b876880e067c418ea0cf9a93f97117"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#af5b876880e067c418ea0cf9a93f97117">VXT_INVALID_POINTER</a>&#160;&#160;&#160;((<a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>)0xFFFFFFFF)</td></tr>
 <tr class="separator:af5b876880e067c418ea0cf9a93f97117"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aedee3310691d61f01335d01cb93a0752"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#aedee3310691d61f01335d01cb93a0752">VXT_INVALID_DEVICE_ID</a>&#160;&#160;&#160;((<a class="el" href="vxt_8h.html#a571d86caa501fa57b72a107c1ca14bfb">vxt_device_id</a>)0xFF)</td></tr>
@@ -564,6 +566,34 @@ Functions</h2></td></tr>
 <div class="line">        type d[];                                       \</div>
 <div class="line">    };                                                  \</div>
 </div><!-- fragment -->
+</div>
+</div>
+<a id="a84f0b9a641d0c29c80fbe58d2078f2c9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a84f0b9a641d0c29c80fbe58d2078f2c9">&#9670;&nbsp;</a></span>VXT_POINTER</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXT_POINTER</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">s, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">o&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td>&#160;&#160;&#160;( (((((<a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>)(<a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a>)(s)) &lt;&lt; 4) + (<a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>)(<a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a>)(o))) &amp; 0xFFFFF )</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
 </div>
 </div>
 <a id="a90f7f217bf2101f09ee4182769bba97e"></a>
