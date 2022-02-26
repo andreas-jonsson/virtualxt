@@ -22,21 +22,30 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
+#include <string.h>
 #include <unistd.h>
 
+#define VXT_CLIB_IO
 #include <vxt/vxt.h>
 #include <vxt/utils.h>
 
 #define NUM_INVALID_FETCHES 6
 #define NUM_MEM_OPS 16
 #define CONSUMER "pi8088"
-#define PULSE_LENGTH 1000000 //50000 // Microseconds
+#define PULSE_LENGTH 2000 // Microseconds
 
 enum validator_state {
 	STATE_SETUP,
 	STATE_EXECUTE,
 	STATE_READBACK,
 	STATE_FINISHED
+};
+
+enum access_type {
+	ACC_ALTERNATE_DATA 		= 0x0,
+	ACC_STACK 				= 0x1,
+	ACC_CODE_OR_NONE  		= 0x2,
+	ACC_DATA 				= 0x4
 };
 
 enum mem_op_flag {
@@ -78,6 +87,9 @@ struct gpiod_line *ale_line = NULL;
 struct gpiod_line *ad_0_7_line[8] = {NULL};
 struct gpiod_line *a_8_19_line[12] = {NULL};
 
+enum access_type cpu_memory_access = 0;
+bool cpu_interrupt_enabled = false;
+
 int cycle_count = 0;
 int rd_signal = 0;
 int wr_signal = 0;
@@ -91,34 +103,45 @@ int load_code_size = 0;
 vxt_byte *store_code = NULL;
 int store_code_size = 0;
 vxt_byte scratchpad[0x100000] = {0}; 
+int readback_ptr = 0;
 
 enum validator_state state = STATE_SETUP;
 struct frame current_frame = {0};
 
+static int check(int line) {
+	assert(line == 0 || line == 1);
+	return line;
+}
+
 static void pulse_clock(int ticks) {
 	for (int i = 0; i < ticks; i++) {
-		gpiod_line_set_value(clock_line, 1);
+		check(gpiod_line_set_value(clock_line, 1));
 		usleep(PULSE_LENGTH / 2);
-		gpiod_line_set_value(clock_line, 0);
+		check(gpiod_line_set_value(clock_line, 0));
 		usleep(PULSE_LENGTH / 2);
 		cycle_count++;
 	}
 
-	rd_signal = !gpiod_line_get_value(rd_line);
-	wr_signal = !gpiod_line_get_value(wr_line);
-	iom_signal = gpiod_line_get_value(iom_line);
-	ale_signal = gpiod_line_get_value(ale_line);
+	rd_signal = !check(gpiod_line_get_value(rd_line));
+	wr_signal = !check(gpiod_line_get_value(wr_line));
+	iom_signal = check(gpiod_line_get_value(iom_line));
+	ale_signal = check(gpiod_line_get_value(ale_line));
 
 	assert((rd_signal == 0) || (wr_signal == 0));
 	assert((rd_signal == 0) || (ale_signal == 0));
+
+	if (!ale_signal) {
+		cpu_memory_access = (enum access_type)(check(gpiod_line_get_value(a_8_19_line[9])) << 1) | check(gpiod_line_get_value(a_8_19_line[8]));
+		cpu_interrupt_enabled = check(gpiod_line_get_value(a_8_19_line[10])) != 0;
+	}
 }
 
 static void reset_sequence() {
 	printf("Starting reset sequence...\n");
 
-	gpiod_line_set_value(reset_line, 1);
+	check(gpiod_line_set_value(reset_line, 1));
 	pulse_clock(4);
-	gpiod_line_set_value(reset_line, 0);
+	check(gpiod_line_set_value(reset_line, 0));
 
 	printf("Waiting for ALE");
 
@@ -136,40 +159,59 @@ static void latch_address() {
 
 	address_latch = 0;
 	for (int i = 0; i < 8; i++)
-		address_latch |= ((uint32_t)gpiod_line_get_value(ad_0_7_line[i])) << i;
+		address_latch |= ((uint32_t)check(gpiod_line_get_value(ad_0_7_line[i]))) << i;
 	for (int i = 0; i < 12; i++)
-		address_latch |= ((uint32_t)gpiod_line_get_value(a_8_19_line[i])) << (i + 8);
+		address_latch |= ((uint32_t)check(gpiod_line_get_value(a_8_19_line[i]))) << (i + 8);
 
 	printf("Address latched: 0x%X\n", address_latch);
 }
 
 static void set_bus_direction_out() {
-	for (int i = 0; i < 8; i++)
-		gpiod_line_request_input(ad_0_7_line[i], CONSUMER);
+	for (int i = 0; i < 8; i++) {
+		struct gpiod_line **ln = &ad_0_7_line[i];
+		gpiod_line_release(*ln);
+		*ln = gpiod_chip_get_line(chip, i);
+		assert(*ln);
+		check(gpiod_line_request_input(*ln, CONSUMER));
+	}
 }
 
-static void set_bus_direction_in() {
+static void set_bus_direction_in(vxt_byte data) {
 	assert(rd_signal);
-	for (int i = 0; i < 8; i++)
-		gpiod_line_request_output(ad_0_7_line[i], CONSUMER, 0);
-}
-
-static void write_cpu_pins(vxt_byte data) {
-	for (int i = 0; i < 8; i++)
-		gpiod_line_set_value(ad_0_7_line[i], (data >> i) & 1);
+	for (int i = 0; i < 8; i++) {
+		struct gpiod_line **ln = &ad_0_7_line[i]; 
+		gpiod_line_release(*ln);
+		*ln = gpiod_chip_get_line(chip, i);
+		assert(*ln);
+		check(gpiod_line_request_output(*ln, CONSUMER, (data >> i) & 1));
+	}
 }
 
 static vxt_byte read_cpu_pins() {
 	vxt_byte data = 0;
 	for (int i = 0; i < 8; i++)
-		data |= gpiod_line_get_value(ad_0_7_line[i]) << i;
+		data |= check(gpiod_line_get_value(ad_0_7_line[i])) << i;
 	return data;
 }
 
 static void validate_data_write(vxt_pointer addr, vxt_byte data) {
 	printf("CPU write: [0x%X] <- 0x%X\n", addr, data);
-	assert(state != STATE_SETUP);
-	
+	assert(state == STATE_EXECUTE || state == STATE_READBACK);
+
+	if (state == STATE_READBACK) {
+		if (iom_signal && !addr && !data) {
+			state = STATE_FINISHED;
+			printf("Validator state change: 0x%X\n", state);
+			return;
+		}
+
+		assert(!iom_signal);
+		scratchpad[addr] = data;
+		return;
+	}
+
+	assert(!iom_signal);
+
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		struct mem_op *op = &current_frame.writes[i];
 		if (!(op->flags & MOF_PI8088) && (op->flags & MOF_EMULATOR)) {
@@ -187,16 +229,17 @@ static void validate_data_write(vxt_pointer addr, vxt_byte data) {
 
 static vxt_byte validate_data_read(vxt_pointer addr) {
 	printf("CPU read: [0x%X] -> ", addr);
+	assert(!iom_signal);
 
 	switch (state) {
 		case STATE_SETUP:
 		{
-			vxt_byte data = scratchpad[addr];
-			printf("0x%X\n", data);
-
-			// Trigger state change.
-			if (addr != current_frame.reads[0].addr)
+			// Trigger state change?
+			if (addr != current_frame.reads[0].addr) {
+				vxt_byte data = scratchpad[addr];
+				printf("0x%X\n", data);
 				return data;
+			}
 
 			state = STATE_EXECUTE;
 			printf("Validator state change: 0x%X\n", state);
@@ -217,16 +260,36 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 				}
 
 				// Allow for N invalid fetches that we assume is the prefetch.
-				if (current_frame.num_nop++ < NUM_INVALID_FETCHES)
+				if (current_frame.num_nop++ < NUM_INVALID_FETCHES) {
+					printf("NOP\n");
 					return 0x90; // NOP
+				}
 			}
+
 			state = STATE_READBACK;
+			printf("Validator state change: 0x%X\n", state);
+
+			// Clear scratchpad.
+			memset(scratchpad, 0, sizeof(scratchpad));
+			readback_ptr = 0;
 		}
 		case STATE_READBACK:
 		{
-			state = STATE_FINISHED;
-			// TODO
-			assert(0);
+			// Assume this is prefetch.
+			if (readback_ptr >= store_code_size) {
+				printf("NOP\n");
+				return 0x90; // NOP
+			}
+
+			// We assume store code fetches linear memory.
+			vxt_byte data = store_code[readback_ptr++];
+			printf("0x%X\n", data);
+			return data;
+		}
+		case STATE_FINISHED:
+		{
+			printf("NOP\n");
+			return 0x90; // NOP
 		}
 	}
 
@@ -252,15 +315,14 @@ static void execute_bus_cycle() {
 	assert(ale_signal);
 	latch_address();
 	pulse_clock(1);
+
+	printf("Memory access type: 0x%X\n", cpu_memory_access);
 	
 	if (wr_signal) { // CPU is writing data to the bus.
-		assert(!iom_signal);
 		validate_data_write(address_latch, read_cpu_pins());
 		pulse_clock(2);
 	} else if (rd_signal) { // CPU is reading data from the bus.
-		assert(!iom_signal);
-		set_bus_direction_in();
-		write_cpu_pins(validate_data_read(address_latch));
+		set_bus_direction_in(validate_data_read(address_latch));
 		pulse_clock(2);
 		set_bus_direction_out();
 	}
@@ -273,50 +335,50 @@ static void init_pins() {
 
 	clock_line = gpiod_chip_get_line(chip, 20);
 	assert(clock_line);
-	gpiod_line_request_output(clock_line, CONSUMER, 0);
+	check(gpiod_line_request_output(clock_line, CONSUMER, 0));
 	
 	reset_line = gpiod_chip_get_line(chip, 21);
 	assert(reset_line);
-	gpiod_line_request_output(reset_line, CONSUMER, 1);
+	check(gpiod_line_request_output(reset_line, CONSUMER, 1));
 
 	test_line = gpiod_chip_get_line(chip, 23);
 	assert(test_line);
-	gpiod_line_request_output(test_line, CONSUMER, 0);
+	check(gpiod_line_request_output(test_line, CONSUMER, 0));
 
 	// Input pins.
 
 	ss0_line = gpiod_chip_get_line(chip, 22);
 	assert(ss0_line);
-	gpiod_line_request_input(ss0_line, CONSUMER);
+	check(gpiod_line_request_input(ss0_line, CONSUMER));
 
 	rd_line = gpiod_chip_get_line(chip, 24);
 	assert(rd_line);
-	gpiod_line_request_input(rd_line, CONSUMER);
+	check(gpiod_line_request_input(rd_line, CONSUMER));
 
 	wr_line = gpiod_chip_get_line(chip, 25);
 	assert(wr_line);
-	gpiod_line_request_input(wr_line, CONSUMER);
+	check(gpiod_line_request_input(wr_line, CONSUMER));
 
 	iom_line = gpiod_chip_get_line(chip, 26);
 	assert(iom_line);
-	gpiod_line_request_input(iom_line, CONSUMER);
+	check(gpiod_line_request_input(iom_line, CONSUMER));
 
 	ale_line = gpiod_chip_get_line(chip, 27);
 	assert(ale_line);
-	gpiod_line_request_input(ale_line, CONSUMER);
+	check(gpiod_line_request_input(ale_line, CONSUMER));
 
 	// Address and data pins.
 
 	for (int i = 0; i < 8; i++) {
 		ad_0_7_line[i] = gpiod_chip_get_line(chip, i);
 		assert(ad_0_7_line[i]);
-		gpiod_line_request_input(ad_0_7_line[i], CONSUMER);
+		check(gpiod_line_request_input(ad_0_7_line[i], CONSUMER));
 	}
 	
 	for (int i = 0; i < 12; i++) {
 		a_8_19_line[i] = gpiod_chip_get_line(chip, i + 8);
 		assert(a_8_19_line[i]);
-		gpiod_line_request_input(a_8_19_line[i], CONSUMER);
+		check(gpiod_line_request_input(a_8_19_line[i], CONSUMER));
 	}
 }
 
@@ -329,21 +391,59 @@ static void begin(const char *name, vxt_byte opcode, bool modregrm, struct vxt_r
 	current_frame.num_nop = 0;
 	current_frame.discard = false;
 	current_frame.regs[0] = *regs;
+
+	// Correct for fetch.
+	current_frame.regs->ip--;
 	
 	for (int i = 0; i < NUM_MEM_OPS; i++)
 		current_frame.reads[i].flags = current_frame.writes[i].flags = MOF_UNUSED;
-	current_frame.reads[0] = (struct mem_op){VXT_POINTER(regs->cs, regs->ip), opcode, MOF_EMULATOR};
+	current_frame.reads[0] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), opcode, MOF_EMULATOR};
 
+	// We must discard the first instruction after boot.
 	if (current_frame.reads[0].addr == 0xFFFF0)
 		current_frame.discard = true;
 }
 
 static void validate_mem_op(struct mem_op *op) {
+	assert(state == STATE_FINISHED);
 	if (op->flags && op->flags != (MOF_EMULATOR | MOF_PI8088)) {
 		fprintf(stderr, "ERROR: Operations do not match!\n");
 		//print_debug_info();
 		assert(0);
 	}
+}
+
+static void validate_registers() {
+	assert(state == STATE_FINISHED);
+	struct vxt_registers *r = &current_frame.regs[1];
+	bool err = false;
+	int offset = 2; // 0
+
+	#define TEST(reg) {																					\
+		vxt_word v = *(vxt_word*)&scratchpad[offset];													\
+		offset += 2;																					\
+		if (r->reg != v) { 																				\
+			fprintf(stderr, "ERROR: '" #reg "' do not match! EMU: 0x%X != CPU: 0x%X\n", r->reg, v);		\
+			err = true;																					\
+		}																								\
+	}																									\
+		
+	//TEST(flags);
+	TEST(ax);
+	TEST(bx);
+	TEST(cx);
+	TEST(dx);
+	TEST(ss);
+	TEST(sp);
+	TEST(cs);
+	TEST(ds);
+	TEST(es);
+	TEST(bp);
+	TEST(si);
+	TEST(di);
+	#undef TEST
+
+	assert(!err);
 }
 
 static void end(int cycles, struct vxt_registers *regs, void *userdata) {
@@ -360,7 +460,7 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 
 	const struct vxt_registers *r = current_frame.regs;
 
-	#define WRITE_WORD(o, w) { scratchpad[(o)] = ((w)&0xF); scratchpad[(o)+1] = ((w)>>8); }
+	#define WRITE_WORD(o, w) { scratchpad[(o)] = (vxt_byte)((w)&0xFF); scratchpad[(o)+1] = (vxt_byte)((w)>>8); }
 	WRITE_WORD(0x00, r->flags);
 
 	WRITE_WORD(0x0B, r->bx);
@@ -382,8 +482,8 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 	#undef WRITE_WORD
 
 	// JMP 0:2
-	const vxt_byte jmp[5] = {0xEB, 0x2, 0x0, 0x0, 0x0};
-	for (int i = 0; i < sizeof(jmp); i++)
+	const vxt_byte jmp[5] = {0xEA, 0x2, 0x0, 0x0, 0x0};
+	for (unsigned i = 0; i < sizeof(jmp); i++)
 		scratchpad[0xFFFF0 + i] = jmp[i];
 
 	state = STATE_SETUP;
@@ -394,12 +494,12 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 		execute_bus_cycle();
 		next_bus_cycle();
 	}
-	
 
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		validate_mem_op(&current_frame.reads[i]);
 		validate_mem_op(&current_frame.writes[i]);
 	}
+	validate_registers();
 }
 
 static void read_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
@@ -440,10 +540,10 @@ static vxt_error initialize(vxt_system *s, void *userdata) {
 
 	allocator = vxt_system_allocator(s);
 	load_code = vxtu_read_file(allocator, "tools/validator/pi8088/load", &load_code_size);
-	aseert(load_code);
+	assert(load_code);
 
-	store_code = vxtu_read_file(allocator, "tools/validator/pi8088/load", &store_code_size);
-	aseert(store_code);
+	store_code = vxtu_read_file(allocator, "tools/validator/pi8088/store", &store_code_size);
+	assert(store_code);
 
 	init_pins();
 	return VXT_NO_ERROR;

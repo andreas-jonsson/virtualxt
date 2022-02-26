@@ -1,5 +1,5 @@
 cpu	8086
-org	100h
+org	0h
 
 dw 0
 
