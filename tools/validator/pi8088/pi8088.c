@@ -452,7 +452,7 @@ static void mask_undefined_flags(vxt_word *flags) {
 		if (flag_mask_lookup[i].opcode == (int)current_frame.opcode) {
 			if (current_frame.modregrm) {
 				int ext_op = (current_frame.reads[1].data >> 3) & 7;
-				for (flag_mask_lookup[i].opcode != -1; i++) {
+				for (; flag_mask_lookup[i].opcode != -1; i++) {
 					if (flag_mask_lookup[i].ext == ext_op)
 						break;
 					ERROR("Could not find mask!" NL);
