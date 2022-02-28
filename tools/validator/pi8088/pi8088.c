@@ -96,6 +96,7 @@ enum access_type cpu_memory_access = 0;
 bool cpu_interrupt_enabled = false;
 
 int cycle_count = 0;
+int executed_cycles = 0;
 int rd_signal = 0;
 int wr_signal = 0;
 int iom_signal = 0;
@@ -119,7 +120,7 @@ const enum log_level {
 	LOG_WARNING,
 	LOG_ERROR,
 	LOG_SILENT
-} level = LOG_DEBUG;
+} level = LOG_INFO;
 
 static int log(const enum log_level lv, const char *fmt, ...) {
 	va_list va;
@@ -162,21 +163,19 @@ static void pulse_clock(int ticks) {
 }
 
 static void reset_sequence() {
-	log(LOG_INFO, "Starting reset sequence..." NL);
+	DEBUG("Starting reset sequence..." NL);
 
 	check(gpiod_line_set_value(reset_line, 1));
 	pulse_clock(4);
 	check(gpiod_line_set_value(reset_line, 0));
 
-	log(LOG_INFO, "Waiting for ALE");
-
+	DEBUG("Waiting for ALE");
 	do {
-		log(LOG_INFO, ".");
+		DEBUG(".");
 		fflush(stdout);
 		pulse_clock(1);
 	} while (!ale_signal);
-
-	log(LOG_INFO, NL "CPU is initialized!" NL);
+	DEBUG(NL "CPU is initialized!" NL);
 }
 
 static void latch_address() {
@@ -267,6 +266,7 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 				return data;
 			}
 
+			cycle_count = 0;
 			state = STATE_EXECUTE;
 			DEBUG("Validator state change: 0x%X" NL, state);
 		}
@@ -292,6 +292,7 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 				}
 			}
 
+			executed_cycles = cycle_count;
 			state = STATE_READBACK;
 			DEBUG("Validator state change: 0x%X" NL, state);
 
@@ -426,14 +427,14 @@ static void begin(const char *name, vxt_byte opcode, bool modregrm, struct vxt_r
 	current_frame.reads[0] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), opcode, MOF_EMULATOR};
 
 	// We must discard the first instruction after boot.
-	if (current_frame.reads[0].addr == 0xFFFF0)
+	if ((current_frame.reads[0].addr == 0xFFFF0) || (current_frame.reads[0].addr <= 0xFF))
 		current_frame.discard = true;
 }
 
 static void validate_mem_op(struct mem_op *op) {
 	ENSURE(state == STATE_FINISHED);
 	if (op->flags && op->flags != (MOF_EMULATOR | MOF_PI8088)) {
-		//print_debug_info();
+		// TODO: Print more info.
 		ERROR("Operations do not match!" NL);
 	}
 }
@@ -478,7 +479,7 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 	if (current_frame.discard)
 		return;
 
-	log(LOG_INFO, "Validate instruction: %s (0x%X)" NL, current_frame.name, current_frame.opcode);
+	log(LOG_INFO, "VALIDATE: %s (0x%X) @ %0*X:%0*X" NL, current_frame.name, current_frame.opcode, 4, current_frame.regs[0].cs, 4, current_frame.regs[0].ip);
 
 	// Create scratchpad.
 	memset(scratchpad, 0, sizeof(scratchpad));
@@ -513,14 +514,14 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 	for (unsigned i = 0; i < sizeof(jmp); i++)
 		scratchpad[0xFFFF0 + i] = jmp[i];
 
-	state = STATE_SETUP;
-	cycle_count = 0;
-
 	reset_sequence();
-	while (state != STATE_FINISHED) {
+	for (state = STATE_SETUP; state != STATE_FINISHED;) {
 		execute_bus_cycle();
 		next_bus_cycle();
 	}
+
+	if (executed_cycles != cycles)
+		log(LOG_WARNING, "WARNING: Unexpected cycle timing! EMU: %d, CPU: %d" NL, cycles, executed_cycles);
 
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		validate_mem_op(&current_frame.reads[i]);
