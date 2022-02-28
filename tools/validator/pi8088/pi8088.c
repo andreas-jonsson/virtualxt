@@ -31,7 +31,10 @@ freely, subject to the following restrictions:
 #define NUM_INVALID_FETCHES 6
 #define NUM_MEM_OPS 16
 #define CONSUMER "pi8088"
-#define PULSE_LENGTH 2000 // Microseconds
+
+// Fall/rise edge delay in microseconds.
+//#define EDGE_WAIT usleep(1000)
+#define EDGE_WAIT
 
 #define NL "\n"
 #define DEBUG(...) log(LOG_DEBUG, __VA_ARGS__)
@@ -142,9 +145,9 @@ static int check(int line) {
 static void pulse_clock(int ticks) {
 	for (int i = 0; i < ticks; i++) {
 		check(gpiod_line_set_value(clock_line, 1));
-		usleep(PULSE_LENGTH / 2);
+		EDGE_WAIT;
 		check(gpiod_line_set_value(clock_line, 0));
-		usleep(PULSE_LENGTH / 2);
+		EDGE_WAIT;
 		cycle_count++;
 	}
 
@@ -442,17 +445,13 @@ static void validate_mem_op(struct mem_op *op) {
 static void validate_registers() {
 	ENSURE(state == STATE_FINISHED);
 	struct vxt_registers *r = &current_frame.regs[1];
-	bool err = false;
 	int offset = 0;
 
-	#define TEST(reg) {																		\
-		vxt_word v = *(vxt_word*)&scratchpad[offset];										\
-		offset += 2;																		\
-		if (r->reg != v) { 																	\
-			ERROR("'" #reg "' do not match! EMU: 0x%X != CPU: 0x%X\n", r->reg, v); 			\
-			err = true;																		\
-		}																					\
-	}																						\
+	#define TEST(reg) {																			\
+		vxt_word v = *(vxt_word*)&scratchpad[offset];											\
+		offset += 2;																			\
+		ASSERT(r->reg == v, "'" #reg "' do not match! EMU: 0x%X != CPU: 0x%X\n", r->reg, v);	\
+	}																							\
 		
 	TEST(flags);
 	TEST(ax);
@@ -467,9 +466,8 @@ static void validate_registers() {
 	TEST(bp);
 	TEST(si);
 	TEST(di);
+	
 	#undef TEST
-
-	ENSURE(!err);
 }
 
 static void end(int cycles, struct vxt_registers *regs, void *userdata) {
