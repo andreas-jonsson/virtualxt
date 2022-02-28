@@ -35,7 +35,7 @@ freely, subject to the following restrictions:
 #define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr), (data), (p)->validator->userdata); }
 #define VALIDATOR_DISCARD(p) { if ((p)->validator) (p)->validator->discard((p)->validator->userdata); }
 
-#define IRQ(p, n) { ENSURE((p)->pic); (p)->pic->pic.irq((p)->pic, (n)); }
+#define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq((p)->pic, (n)); }
 
 #define INST(n) const struct instruction * const n
 

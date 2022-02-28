@@ -269,10 +269,12 @@ void vxt_system_write_word(CONSTP(vxt_system) s, vxt_pointer addr, vxt_word data
 
 vxt_byte system_in(CONSTP(vxt_system) s, vxt_word port) {
     CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
+    VALIDATOR_DISCARD(&s->cpu);
     return dev->io.in(dev, port);
 }
 
 void system_out(CONSTP(vxt_system) s, vxt_word port, vxt_byte data) {
     CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
+    VALIDATOR_DISCARD(&s->cpu);
     dev->io.out(dev, port, data);
 }

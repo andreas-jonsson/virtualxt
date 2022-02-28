@@ -405,27 +405,32 @@ static void read_opcode(CONSTSP(cpu) p) {
    for (;;) {
       switch (p->opcode = read_opcode8(p)) {
          case 0x26:
+            VALIDATOR_DISCARD(p);
             p->seg = p->regs.es;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0x2E:
+            VALIDATOR_DISCARD(p);
             p->seg = p->regs.cs;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0x36:
+            VALIDATOR_DISCARD(p);
             p->seg = p->regs.ss;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0x3E:
+            VALIDATOR_DISCARD(p);
             p->seg = p->regs.ds;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0xF2: // REPNE/REPNZ
          case 0xF3: // REP/REPE/REPZ
+            VALIDATOR_DISCARD(p);
             p->repeat = p->opcode;
             p->cycles += 2;
             break;
@@ -478,7 +483,11 @@ void cpu_reset_cycle_count(CONSTSP(cpu) p) {
 void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
    memclear(&p->regs, sizeof(p->regs));
-   p->regs.flags = 2;
+   #ifdef VXT_CPU_286
+      p->regs.flags = 0x0802;
+   #else
+      p->regs.flags = 0xF802;
+   #endif
    p->regs.cs = 0xFFFF;
    cpu_reset_cycle_count(p);
 }

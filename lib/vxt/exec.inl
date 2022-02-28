@@ -93,6 +93,7 @@ static void or_D(CONSTSP(cpu) p, INST(inst)) {
 
 static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(p); UNUSED(inst);
+   VALIDATOR_DISCARD(p);
 }
 
 static void invalid_prefix(CONSTSP(cpu) p, INST(inst)) {
@@ -453,26 +454,26 @@ static void call_9A(CONSTSP(cpu) p, INST(inst)) {
 
 static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(p); UNUSED(inst);
+   VALIDATOR_DISCARD(p);
 }
 
 static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   push(p, (p->regs.flags & ALL_FLAGS) | 2);
-   //#ifdef VXT_CPU_286
-   //   push(p, p->regs.flags | 0x0802);
-   //#else
-   //   push(p, p->regs.flags | 0xF802);
-   //#endif
+   #ifdef VXT_CPU_286
+      push(p, (p->regs.flags & ALL_FLAGS) | 0x0802);
+   #else
+      push(p, (p->regs.flags & ALL_FLAGS) | 0xF802);
+   #endif
 }
 
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.flags = (pop(p) & ALL_FLAGS) | 2;
-   //#ifdef VXT_CPU_286
-   //   p->regs.flags |= 0x0802;
-   //#else
-   //   p->regs.flags |= 0xF802;
-   //#endif
+   p->regs.flags = pop(p) & ALL_FLAGS;
+   #ifdef VXT_CPU_286
+      p->regs.flags |= 0x0802;
+   #else
+      p->regs.flags |= 0xF802;
+   #endif
 }
 
 static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
@@ -561,6 +562,7 @@ static void mov_C7(CONSTSP(cpu) p, INST(inst)) {
 
 static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
+   VALIDATOR_DISCARD(p);
    vxt_word sp = read_opcode16(p);
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
@@ -569,6 +571,7 @@ static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
 
 static void retf_CB(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
+   VALIDATOR_DISCARD(p);
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
 }
@@ -646,6 +649,7 @@ static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
 
 static void fpu_dummy(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(p); UNUSED(inst);
+   VALIDATOR_DISCARD(p);
 }
 
 static void in_E4(CONSTSP(cpu) p, INST(inst)) {
@@ -714,10 +718,12 @@ static void out_EF(CONSTSP(cpu) p, INST(inst)) {
 
 static void lock_F0(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(p); UNUSED(inst);
+   VALIDATOR_DISCARD(p);
 }
 
 static void hlt_F4(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
+   VALIDATOR_DISCARD(p);
    p->halt = p->regs.debug = true;
 }
 
