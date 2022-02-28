@@ -28,6 +28,8 @@ freely, subject to the following restrictions:
 #include <vxt/vxt.h>
 #include <vxt/utils.h>
 
+#include "udmask.h"
+
 #define NUM_INVALID_FETCHES 6
 #define NUM_MEM_OPS 16
 #define CONSUMER "pi8088"
@@ -445,17 +447,38 @@ static void validate_mem_op(struct mem_op *op) {
 	}
 }
 
+static void mask_undefined_flags(vxt_word *flags) {
+	for (int i = 0; flag_mask_lookup[i].opcode != -1; i++) {
+		if (flag_mask_lookup[i].opcode == (int)current_frame.opcode) {
+			if (current_frame.modregrm) {
+				int ext_op = (current_frame.reads[1].data >> 3) & 7;
+				for (flag_mask_lookup[i].opcode != -1; i++) {
+					if (flag_mask_lookup[i].ext == ext_op)
+						break;
+					ERROR("Could not find mask!" NL);
+				}
+			}
+
+			*flags &= ~((vxt_word)flag_mask_lookup[i].mask);
+			return;
+		}
+	}
+}
+
 static void validate_registers() {
 	ENSURE(state == STATE_FINISHED);
 	struct vxt_registers *r = &current_frame.regs[1];
 	int offset = 0;
+
+	mask_undefined_flags((vxt_word*)scratchpad);
+	mask_undefined_flags(&r->flags);
 
 	#define TEST(reg) {																			\
 		vxt_word v = *(vxt_word*)&scratchpad[offset];											\
 		offset += 2;																			\
 		ASSERT(r->reg == v, "'" #reg "' do not match! EMU: 0x%X != CPU: 0x%X\n", r->reg, v);	\
 	}																							\
-		
+	
 	TEST(flags);
 	TEST(ax);
 	TEST(bx);
