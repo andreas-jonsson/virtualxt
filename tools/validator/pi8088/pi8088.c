@@ -132,6 +132,11 @@ static int log(const enum log_level lv, const char *fmt, ...) {
 	int ret = 0;
 	if (lv >= level)
 		ret = vfprintf(lv == LOG_ERROR ? stderr : stdout, fmt, va);
+
+	if (lv == LOG_DEBUG) {
+		fflush(stdout);
+		fflush(stderr);
+	}
 	
 	va_end(va);
 	return ret;
@@ -175,7 +180,6 @@ static void reset_sequence() {
 	DEBUG("Waiting for ALE");
 	do {
 		DEBUG(".");
-		fflush(stdout);
 		pulse_clock(1);
 	} while (!ale_signal);
 	DEBUG(NL "CPU is initialized!" NL);
@@ -332,7 +336,6 @@ static void next_bus_cycle() {
 	DEBUG("Wait for bus cycle");
 	while (!ale_signal) {
 		DEBUG(".");
-		fflush(stdout);
 		pulse_clock(1);
 	}
 	DEBUG(NL);
