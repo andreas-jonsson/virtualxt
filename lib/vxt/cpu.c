@@ -484,7 +484,7 @@ void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
    memclear(&p->regs, sizeof(p->regs));
    #ifdef VXT_CPU_286
-      p->regs.flags = 0x0802;
+      p->regs.flags = 0x2;
    #else
       p->regs.flags = 0xF802;
    #endif

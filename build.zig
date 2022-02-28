@@ -94,6 +94,7 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
 
     if (testing) {
         lib.defineCMacroRaw("TESTING");
+        lib.defineCMacroRaw("VXT_CPU_286");
         lib.linkLibC();
         lib.setBuildMode(.ReleaseSafe);
         create_test_files() catch unreachable;
@@ -246,6 +247,7 @@ pub fn build(b: *Builder) void {
 
         tests.linkLibC();
         tests.defineCMacroRaw("TESTING");
+        tests.defineCMacroRaw("VXT_CPU_286");
         tests.addIncludeDir("test");
 
         tests.linkLibrary(build_libvxt(b, mode, target, true));

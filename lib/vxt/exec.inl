@@ -460,7 +460,7 @@ static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
 static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      push(p, (p->regs.flags & ALL_FLAGS) | 0x0802);
+      push(p, (p->regs.flags & ALL_FLAGS) | 0x2);
    #else
       push(p, (p->regs.flags & ALL_FLAGS) | 0xF802);
    #endif
@@ -470,7 +470,7 @@ static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.flags = pop(p) & ALL_FLAGS;
    #ifdef VXT_CPU_286
-      p->regs.flags |= 0x0802;
+      p->regs.flags |= 0x2;
    #else
       p->regs.flags |= 0xF802;
    #endif

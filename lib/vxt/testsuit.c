@@ -45,7 +45,7 @@
     r->ip = 0xFFF0;                                                                                     \
                                                                                                         \
     for (;;) {                                                                                          \
-        TENSURE(VXT_POINTER(r->cs, r->ip) < 0xFFFFE);                                                       \
+        TENSURE(VXT_POINTER(r->cs, r->ip) < 0xFFFFE);                                                   \
         struct vxt_step step = vxt_system_step(s, 0);                                                   \
         TENSURE_NO_ERR(step.err);                                                                       \
         if (step.halted)                                                                                \
