@@ -121,7 +121,7 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         "lib/vxt/cpu.c",
         "lib/vxt/pic.c",
         "lib/vxt/debugger.c",
-        "lib/vxt/testsuit.c",
+        //"lib/vxt/testsuit.c",
     };
 
     for (files) |file| {

@@ -242,13 +242,15 @@ static void cmp_3D(CONSTSP(cpu) p, INST(inst)) {
 
 static void inc_reg(CONSTSP(cpu) p, INST(inst)) {
    vxt_word c = p->regs.flags & VXT_CARRY;
-   op_add_adc16(&p->regs, reg_read16(&p->regs, inst->opcode - 0x40), 1, 0);
+   vxt_word r = inst->opcode - 0x40;
+   reg_write16(&p->regs, r, op_add_adc16(&p->regs, reg_read16(&p->regs, r), 1, 0));
    SET_FLAG(p->regs.flags, VXT_CARRY, c);
 }
 
 static void dec_reg(CONSTSP(cpu) p, INST(inst)) {
    vxt_word c = p->regs.flags & VXT_CARRY;
-   op_sub_sbb16(&p->regs, reg_read16(&p->regs, inst->opcode - 0x48), 1, 0);
+   vxt_word r = inst->opcode - 0x48;
+   reg_write16(&p->regs, r, op_sub_sbb16(&p->regs, reg_read16(&p->regs, r), 1, 0));
    SET_FLAG(p->regs.flags, VXT_CARRY, c);
 }
 

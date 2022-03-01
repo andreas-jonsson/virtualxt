@@ -443,7 +443,7 @@ static void validate_mem_op(struct mem_op *op) {
 	ENSURE(state == STATE_FINISHED);
 	if (op->flags && op->flags != (MOF_EMULATOR | MOF_PI8088)) {
 		// TODO: Print more info.
-		ERROR("Operations do not match!" NL);
+		ERROR("Memory operations do not match!" NL);
 	}
 }
 
@@ -468,18 +468,22 @@ static void mask_undefined_flags(vxt_word *flags) {
 static void validate_registers() {
 	ENSURE(state == STATE_FINISHED);
 	struct vxt_registers *r = &current_frame.regs[1];
-	int offset = 0;
+	int offset = 2;
 
-	mask_undefined_flags((vxt_word*)scratchpad);
-	mask_undefined_flags(&r->flags);
+	vxt_word cpu_flags = *(vxt_word*)scratchpad; 
+	mask_undefined_flags(&cpu_flags);
+	vxt_word emu_flags = r->flags;
+	mask_undefined_flags(&emu_flags);
+
+	if (cpu_flags != emu_flags)
+		ERROR("Flags error! EMU: 0x%X (0x%X) != CPU: 0x%X (0x%X)" NL, emu_flags, r->flags, cpu_flags, *(vxt_word*)scratchpad);
 
 	#define TEST(reg) {																			\
 		vxt_word v = *(vxt_word*)&scratchpad[offset];											\
 		offset += 2;																			\
-		ASSERT(r->reg == v, "'" #reg "' do not match! EMU: 0x%X != CPU: 0x%X\n", r->reg, v);	\
+		ASSERT(r->reg == v, "'" #reg "' do not match! EMU: 0x%X != CPU: 0x%X" NL, r->reg, v);	\
 	}																							\
 	
-	TEST(flags);
 	TEST(ax);
 	TEST(bx);
 	TEST(cx);

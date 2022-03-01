@@ -62,7 +62,7 @@ static void flag_szp8(CONSTSP(vxt_registers) r, vxt_byte v) {
 	SET_FLAG_IF(r->flags, VXT_PARITY, parity_table[v]);
 }
 
-static void flag_szp16(CONSTSP(vxt_registers) r, vxt_byte v) {
+static void flag_szp16(CONSTSP(vxt_registers) r, vxt_word v) {
    SET_FLAG_IF(r->flags, VXT_ZERO, !v);
    SET_FLAG_IF(r->flags, VXT_SIGN, v & 0x8000);
    SET_FLAG_IF(r->flags, VXT_PARITY, parity_table[v & 0xFF]);
