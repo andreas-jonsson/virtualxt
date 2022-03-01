@@ -1,6 +1,6 @@
 # PI8088 Hardware Validator
 
-This is a hardware validator for testing instruction accuracy in 8088/V20 PC emulators. It plugs in the top/back of an RaspberryPi 4/400 computer and was built for testing the VirtualXT IBM PC/XT emulator but can easily be adopted for use with other systems as well.
+This is a hardware validator for testing instruction accuracy in 8088/V20 PC emulators. It plugs in the top/back of an RaspberryPi 4/400 computer and was built for testing the VirtualXT IBM PC/XT emulator. But it can easily be adopted for use with other emulators as well.
 
 ## Hardware
 The hardware is very simple for this project. It is just a passive PCB that attaches to the RaspberryPi and connects any CMOS 8088 compatible CPU, like the 80C88 or NEC V20 to the RaspberryPi's GPIO pins. Something that should be noted is that the system is running on 3.3V and not 5V. Although that is out of spec for the CPU's in question it seems to run completely stable in the frequencies used here. 
