@@ -35,9 +35,9 @@ freely, subject to the following restrictions:
 #define CONSUMER "pi8088"
 #define HW_REVISION 1
 
-// Fall/rise edge delay in microseconds.
-//#define EDGE_WAIT usleep(1000)
-#define EDGE_WAIT
+// Cloack peak delay in microseconds.
+//#define PEAK_HOLD usleep(1)
+#define PEAK_HOLD
 
 #define NL "\n"
 #define DEBUG(...) log(LOG_DEBUG, __VA_ARGS__)
@@ -153,9 +153,8 @@ static int check(int line) {
 static void pulse_clock(int ticks) {
 	for (int i = 0; i < ticks; i++) {
 		check(gpiod_line_set_value(clock_line, 1));
-		EDGE_WAIT;
+		PEAK_HOLD;
 		check(gpiod_line_set_value(clock_line, 0));
-		EDGE_WAIT;
 		cycle_count++;
 	}
 
@@ -201,24 +200,14 @@ static void latch_address() {
 }
 
 static void set_bus_direction_out() {
-	for (int i = 0; i < 8; i++) {
-		struct gpiod_line **ln = &ad_0_7_line[i];
-		gpiod_line_release(*ln);
-		*ln = gpiod_chip_get_line(chip, i);
-		ENSURE(*ln);
-		check(gpiod_line_request_input(*ln, CONSUMER));
-	}
+	for (int i = 0; i < 8; i++)
+		check(gpiod_line_set_config(ad_0_7_line[i], GPIOD_LINE_REQUEST_DIRECTION_INPUT, 0, 0));
 }
 
 static void set_bus_direction_in(vxt_byte data) {
 	ENSURE(rd_signal);
-	for (int i = 0; i < 8; i++) {
-		struct gpiod_line **ln = &ad_0_7_line[i]; 
-		gpiod_line_release(*ln);
-		*ln = gpiod_chip_get_line(chip, i);
-		ENSURE(*ln);
-		check(gpiod_line_request_output(*ln, CONSUMER, (data >> i) & 1));
-	}
+	for (int i = 0; i < 8; i++)
+		check(gpiod_line_set_config(ad_0_7_line[i], GPIOD_LINE_REQUEST_DIRECTION_OUTPUT, 0, (data >> i) & 1));
 }
 
 static vxt_byte read_cpu_pins() {
