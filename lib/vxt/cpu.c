@@ -398,6 +398,7 @@ static void prep_exec(CONSTSP(cpu) p) {
    p->seg = p->regs.ds;
    p->seg_override = false;
    p->repeat = 0;
+   p->has_prefix = false;
    p->inst_start = p->regs.ip;
 }
 
@@ -405,32 +406,32 @@ static void read_opcode(CONSTSP(cpu) p) {
    for (;;) {
       switch (p->opcode = read_opcode8(p)) {
          case 0x26:
-            VALIDATOR_DISCARD(p);
+            p->has_prefix = true;
             p->seg = p->regs.es;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0x2E:
-            VALIDATOR_DISCARD(p);
+            p->has_prefix = true;
             p->seg = p->regs.cs;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0x36:
-            VALIDATOR_DISCARD(p);
+            p->has_prefix = true;
             p->seg = p->regs.ss;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0x3E:
-            VALIDATOR_DISCARD(p);
+            p->has_prefix = true;
             p->seg = p->regs.ds;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0xF2: // REPNE/REPNZ
          case 0xF3: // REP/REPE/REPZ
-            VALIDATOR_DISCARD(p);
+            p->has_prefix = true;
             p->repeat = p->opcode;
             p->cycles += 2;
             break;
@@ -454,6 +455,8 @@ static void cpu_exec(CONSTSP(cpu) p) {
    p->ea_cycles = 0;
    VALIDATOR_BEGIN(p, inst->name, p->opcode, inst->modregrm, &p->regs);
 
+   if (p->has_prefix)
+      VALIDATOR_DISCARD(p);
    if (inst->modregrm)
       read_modregrm(p);
    inst->func(p, inst);
