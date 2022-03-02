@@ -136,7 +136,7 @@ static int log(const enum log_level lv, const char *fmt, ...) {
 	if (lv >= level)
 		ret = vfprintf(lv == LOG_ERROR ? stderr : stdout, fmt, va);
 
-	if (lv == LOG_DEBUG) {
+	if (level == LOG_DEBUG) {
 		fflush(stdout);
 		fflush(stderr);
 	}
@@ -451,11 +451,13 @@ static void mask_undefined_flags(vxt_word *flags) {
 		if (flag_mask_lookup[i].opcode == (int)current_frame.opcode) {
 			if (flag_mask_lookup[i].ext != -1) {
 				ENSURE(current_frame.modregrm);
-				int ext_op = (current_frame.reads[1].data >> 3) & 7;
+				volatile int ext_op = (current_frame.reads[1].data >> 3) & 7;
 				for (; flag_mask_lookup[i].opcode != -1; i++) {
 					if (flag_mask_lookup[i].ext == ext_op)
 						break;
-					ERROR("Could not find mask!" NL);
+
+					// Nothing to mask!
+					return;
 				}
 			}
 
