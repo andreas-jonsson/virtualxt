@@ -215,7 +215,7 @@ pub fn build(b: *Builder) void {
     if (validator) {
         exe_sdl.linkSystemLibrary("gpiod");
         exe_sdl.defineCMacroRaw("PI8088");
-        exe_sdl.addCSourceFile("tools/validator/pi8088/pi8088.c", c_options);
+        exe_sdl.addCSourceFile("tools/validator/pi8088/pi8088.c", opt);
     }
 
     // -------- virtualxt libretro --------

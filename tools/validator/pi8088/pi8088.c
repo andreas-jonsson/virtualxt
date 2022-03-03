@@ -22,7 +22,6 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <unistd.h>
 
 #define VXT_CLIB_IO
 #include <vxt/vxt.h>
@@ -34,10 +33,6 @@ freely, subject to the following restrictions:
 #define NUM_MEM_OPS 16
 #define CONSUMER "pi8088"
 #define HW_REVISION 1
-
-// Cloack peak delay in microseconds.
-//#define PEAK_HOLD usleep(1)
-#define PEAK_HOLD
 
 #define NL "\n"
 #define DEBUG(...) log(LOG_DEBUG, __VA_ARGS__)
@@ -153,7 +148,6 @@ static int check(int line) {
 static void pulse_clock(int ticks) {
 	for (int i = 0; i < ticks; i++) {
 		check(gpiod_line_set_value(clock_line, 1));
-		PEAK_HOLD;
 		check(gpiod_line_set_value(clock_line, 0));
 		cycle_count++;
 	}
