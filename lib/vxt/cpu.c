@@ -330,7 +330,7 @@ static void push(CONSTSP(cpu) p, vxt_word data) {
 
 static vxt_word pop(CONSTSP(cpu) p) {
    vxt_word data = vxt_system_read_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp));
-   p->regs.sp -= 2;
+   p->regs.sp += 2;
    return data;
 }
 
