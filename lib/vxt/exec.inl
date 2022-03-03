@@ -605,22 +605,22 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
 
 static void grp2_D0(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest8(p, bitshift_8(p, read_source8(p), 1));
+   rm_write8(p, bitshift_8(p, rm_read8(p), 1));
 }
 
 static void grp2_D1(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest16(p, bitshift_16(p, read_source16(p), 1));
+   rm_write16(p, bitshift_16(p, rm_read16(p), 1));
 }
 
 static void grp2_D2(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest8(p, bitshift_8(p, read_source8(p), p->regs.cl));
+   rm_write8(p, bitshift_8(p, rm_read8(p), p->regs.cl));
 }
 
 static void grp2_D3(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest16(p, bitshift_16(p, read_source16(p), p->regs.cl));
+   rm_write16(p, bitshift_16(p, rm_read16(p), p->regs.cl));
 }
 
 static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
