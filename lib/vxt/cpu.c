@@ -495,7 +495,7 @@ void cpu_reset(CONSTSP(cpu) p) {
    cpu_reset_cycle_count(p);
 }
 
-TEST(register_layout, {
+TEST(register_layout,
     struct vxt_registers regs = {0};
     regs.ax = 0x0102;
     TENSURE(regs.ah == 1);
@@ -520,4 +520,4 @@ TEST(register_layout, {
     TENSURE(regs.dh == 7);
     TENSURE(regs.dl == 8);
     TENSURE(regs.dx == 0x0708);
-})
+)
