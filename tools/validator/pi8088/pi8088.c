@@ -278,7 +278,7 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 
 			// Allow for N invalid fetches that we assume is the prefetch.
 			// Should perhaps record this for debugging purposes?
-			if (current_frame.num_nop++ < NUM_INVALID_FETCHES) {
+			if ((cpu_memory_access == ACC_CODE_OR_NONE) && (current_frame.num_nop++ < NUM_INVALID_FETCHES)) {
 				DEBUG("NOP" NL);
 				return 0x90; // NOP
 			}
@@ -295,6 +295,7 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 		{
 			// Assume this is prefetch.
 			if (readback_ptr >= store_code_size) {
+				ENSURE(cpu_memory_access == ACC_CODE_OR_NONE);
 				DEBUG("NOP" NL);
 				return 0x90; // NOP
 			}
@@ -306,6 +307,7 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 		}
 		case STATE_FINISHED:
 		{
+			ENSURE(cpu_memory_access == ACC_CODE_OR_NONE);
 			DEBUG("NOP" NL);
 			return 0x90; // NOP
 		}
