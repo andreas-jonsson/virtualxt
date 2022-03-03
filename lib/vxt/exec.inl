@@ -736,21 +736,21 @@ static void cmc_F5(CONSTSP(cpu) p, INST(inst)) {
 
 static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_byte v = read_dest8(p);
+   vxt_byte v = rm_read8(p);
    switch (p->mode.reg) {
       case 0: // TEST Eb Ib
       case 1:
          flag_logic8(&p->regs, v & read_opcode8(p));
          break;
       case 2: // NOT
-         write_dest8(p, ~v);
+         rm_write8(p, ~v);
          break;
       case 3: // NEG
       {
          vxt_byte res = ~v + 1;
          flag_sub_sbb8(&p->regs, 0, v, 0);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY, res);
-         write_dest8(p, res);
+         rm_write8(p, res);
          break;
       }
       case 4: // MUL
@@ -816,21 +816,21 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
 
 static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_word v = read_dest16(p);
+   vxt_word v = rm_read16(p);
    switch (p->mode.reg) {
       case 0: // TEST Ev Iv
       case 1:
          flag_logic16(&p->regs, v & read_opcode16(p));
          break;
       case 2: // NOT
-         write_dest16(p, ~v);
+         rm_write16(p, ~v);
          break;
       case 3: // NEG
       {
          vxt_word res = ~v + 1;
          flag_sub_sbb16(&p->regs, 0, v, 0);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY, res);
-         write_dest16(p, res);
+         rm_write16(p, res);
          break;
       }
       case 4: // MUL
