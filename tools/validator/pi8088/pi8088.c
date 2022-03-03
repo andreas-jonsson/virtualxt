@@ -75,6 +75,7 @@ struct frame {
 	int num_nop;
 	struct vxt_registers regs[2];
 
+	vxt_pointer prefetch_addr[NUM_INVALID_FETCHES];
 	struct mem_op reads[NUM_MEM_OPS];
 	struct mem_op writes[NUM_MEM_OPS];
 };
@@ -283,8 +284,8 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 
 				// Allow for N invalid fetches that we assume is the prefetch.
 				// This is intended to fill the prefetch queue so the instruction can finish.
-				// Should perhaps record this for debugging purposes?
-				if (current_frame.num_nop++ < NUM_INVALID_FETCHES) {
+				if (current_frame.num_nop < NUM_INVALID_FETCHES) {
+					current_frame.prefetch_addr[current_frame.num_nop++] = addr;
 					DEBUG("NOP" NL);
 					return 0x90; // NOP
 				}
@@ -418,12 +419,13 @@ static void begin(const char *name, vxt_byte opcode, bool modregrm, struct vxt_r
 	current_frame.next_fetch = false;
 	current_frame.discard = false;
 	current_frame.regs[0] = *regs;
+	
+	memset(current_frame.prefetch_addr, 0, sizeof(current_frame.prefetch_addr));
+	memset(current_frame.reads, 0, sizeof(current_frame.reads));
+	memset(current_frame.writes, 0, sizeof(current_frame.writes));
 
 	// Correct for fetch.
 	current_frame.regs->ip--;
-	
-	for (int i = 0; i < NUM_MEM_OPS; i++)
-		current_frame.reads[i].flags = current_frame.writes[i].flags = MOF_UNUSED;
 	current_frame.reads[0] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), opcode, MOF_EMULATOR};
 
 	// We must discard the first instruction after boot.
