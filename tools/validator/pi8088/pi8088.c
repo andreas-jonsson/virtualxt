@@ -71,6 +71,7 @@ struct frame {
 	vxt_byte opcode;
 	bool modregrm;
 	bool discard;
+	bool next_fetch;
 	int num_nop;
 	struct vxt_registers regs[2];
 
@@ -276,11 +277,17 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 				}
 			}
 
-			// Allow for N invalid fetches that we assume is the prefetch.
-			// Should perhaps record this for debugging purposes?
-			if ((cpu_memory_access == ACC_CODE_OR_NONE) && (current_frame.num_nop++ < NUM_INVALID_FETCHES)) {
-				DEBUG("NOP" NL);
-				return 0x90; // NOP
+			if (cpu_memory_access == ACC_CODE_OR_NONE) {
+				if (addr == VXT_POINTER(current_frame.regs[1].cs, current_frame.regs[1].ip))
+					current_frame.next_fetch = true;
+
+				// Allow for N invalid fetches that we assume is the prefetch.
+				// This is intended to fill the prefetch queue so the instruction can finish.
+				// Should perhaps record this for debugging purposes?
+				if (current_frame.num_nop++ < NUM_INVALID_FETCHES) {
+					DEBUG("NOP" NL);
+					return 0x90; // NOP
+				}
 			}
 
 			executed_cycles = cycle_count;
@@ -408,6 +415,7 @@ static void begin(const char *name, vxt_byte opcode, bool modregrm, struct vxt_r
 	current_frame.opcode = opcode;
 	current_frame.modregrm = modregrm;
 	current_frame.num_nop = 0;
+	current_frame.next_fetch = false;
 	current_frame.discard = false;
 	current_frame.regs[0] = *regs;
 
@@ -461,6 +469,8 @@ static void validate_registers() {
 	mask_undefined_flags(&cpu_flags);
 	vxt_word emu_flags = r->flags;
 	mask_undefined_flags(&emu_flags);
+
+	ASSERT(current_frame.next_fetch, "Next instruction was never fetched! Possible bad jump.");
 
 	if (cpu_flags != emu_flags)
 		ERROR("Flags error! EMU: 0x%X (0x%X) != CPU: 0x%X (0x%X)" NL, emu_flags, r->flags, cpu_flags, *(vxt_word*)scratchpad);
