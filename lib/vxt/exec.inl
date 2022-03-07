@@ -232,7 +232,7 @@ static void cmp_39_3B(CONSTSP(cpu) p, INST(inst)) {
 
 static void cmp_3C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   flag_sub_sbb16(&p->regs, p->regs.al, read_opcode8(p), 0);
+   flag_sub_sbb8(&p->regs, p->regs.al, read_opcode8(p), 0);
 }
 
 static void cmp_3D(CONSTSP(cpu) p, INST(inst)) {
@@ -554,12 +554,12 @@ LOAD(lds_C5, ds)
 
 static void mov_C6(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest8(p, read_opcode8(p));
+   rm_write8(p, read_opcode8(p));
 }
 
 static void mov_C7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest16(p, read_opcode16(p));
+   rm_write16(p, read_opcode16(p));
 }
 
 static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
@@ -932,14 +932,14 @@ static void std_FD(CONSTSP(cpu) p, INST(inst)) {
 static void grp4_FE(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
 
-   vxt_byte v = read_dest8(p);
+   vxt_byte v = rm_read8(p);
    vxt_word c = p->regs.flags & VXT_CARRY;
    switch (p->mode.reg) {
       case 0: // INC
-         write_dest8(p, op_add_adc8(&p->regs, v, 1, 0));
+         rm_write8(p, op_add_adc8(&p->regs, v, 1, 0));
          break;
       case 1: // DEC
-         write_dest8(p, op_sub_sbb8(&p->regs, v, 1, 0));
+         rm_write8(p, op_sub_sbb8(&p->regs, v, 1, 0));
          break;
       default:
          LOG("TODO: Invalid opcode!");
@@ -950,15 +950,15 @@ static void grp4_FE(CONSTSP(cpu) p, INST(inst)) {
 static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
 
-   vxt_word v = read_dest16(p);
+   vxt_word v = rm_read16(p);
    vxt_word c = p->regs.flags & VXT_CARRY;
    switch (p->mode.reg) {
       case 0: // INC
-         write_dest16(p, op_add_adc16(&p->regs, v, 1, 0));
+         rm_write16(p, op_add_adc16(&p->regs, v, 1, 0));
          SET_FLAG(p->regs.flags, VXT_CARRY, c);
          break;
       case 1: // DEC
-         write_dest16(p, op_sub_sbb16(&p->regs, v, 1, 0));
+         rm_write16(p, op_sub_sbb16(&p->regs, v, 1, 0));
          SET_FLAG(p->regs.flags, VXT_CARRY, c);
          break;
       case 2: // CALL

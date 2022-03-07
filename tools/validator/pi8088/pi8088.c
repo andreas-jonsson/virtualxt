@@ -114,8 +114,8 @@ int store_code_size = 0;
 vxt_byte scratchpad[0x100000] = {0};
 int readback_ptr = 0;
 
-vxt_pointer trigger_addr = VXT_POINTER(0xF000, 0xE1BE);
-//vxt_pointer trigger_addr = VXT_INVALID_POINTER;
+//vxt_pointer trigger_addr = VXT_POINTER(0xF000, 0xF980);
+vxt_pointer trigger_addr = VXT_INVALID_POINTER;
 
 enum validator_state state = STATE_SETUP;
 struct frame current_frame = {0};
@@ -136,7 +136,7 @@ static int log(const enum log_level lv, const char *fmt, ...) {
 	if (lv >= level)
 		ret = vfprintf(lv == LOG_ERROR ? stderr : stdout, fmt, va);
 
-	if (level == LOG_DEBUG) {
+	if ((level == LOG_DEBUG) || (lv == LOG_ERROR)) {
 		fflush(stdout);
 		fflush(stderr);
 	}
@@ -246,8 +246,8 @@ static void validate_data_write(vxt_pointer addr, vxt_byte data) {
 			}
 		}
 	}
-
-	ERROR("This is not a valid write!" NL);
+	
+	ERROR("This is not a valid write! ([0x%X] <- 0x%X)" NL, addr, data);
 }
 
 static vxt_byte validate_data_read(vxt_pointer addr) {

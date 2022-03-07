@@ -104,8 +104,11 @@ static bool pdisasm(vxt_system *s, const char *file, vxt_pointer start, int size
 static int emu_loop(void *ptr) {
 	vxt_system *vxt = (vxt_system*)ptr;
 	while (SDL_AtomicGet(&running)) {
+		struct vxt_step res;
+		Uint64 start = SDL_GetPerformanceCounter();
+
 		SYNC(
-			struct vxt_step res = vxt_system_step(vxt, 0);
+			res = vxt_system_step(vxt, 0);
 			if (res.err != VXT_NO_ERROR) {
 				if (res.err == VXT_USER_TERMINATION)
 					SDL_AtomicSet(&running, 0);
@@ -113,6 +116,10 @@ static int emu_loop(void *ptr) {
 					printf("step error: %s", vxt_error_str(res.err));
 			}
 		);
+
+		//const Uint64 freq = 4772726ul; // 4.77 Mhz
+		const Uint64 freq = 477272600ul; // 400.77 Mhz
+		while (((SDL_GetPerformanceCounter() - start) / (SDL_GetPerformanceFrequency() / freq)) < (Uint64)res.cycles);
 	}
 	return 0;
 }

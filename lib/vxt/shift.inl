@@ -47,7 +47,7 @@ static vxt_byte bitshift_8(CONSTSP(cpu) p, vxt_byte v, vxt_byte c) {
          case 1: // ROR r/m8
             s = v & 1;
             SET_FLAG_IF(p->regs.flags, VXT_CARRY, s);
-            v = (v << 1) | (s >> 7);
+            v = (v >> 1) | (s << 7);
             break;
          case 2: // RCL r/m8
             s = v & 0x80;
@@ -127,7 +127,7 @@ static vxt_word bitshift_16(CONSTSP(cpu) p, vxt_word v, vxt_byte c) {
          case 1: // ROR r/m8
             s = v & 1;
             SET_FLAG_IF(p->regs.flags, VXT_CARRY, s);
-            v = (v << 1) | (s >> 15);
+            v = (v >> 1) | (s << 15);
             break;
          case 2: // RCL r/m8
             s = v & 0x8000;

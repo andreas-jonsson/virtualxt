@@ -86,7 +86,7 @@ static void flag_add_adc16(CONSTSP(vxt_registers) r, vxt_word a, vxt_word b, vxt
 
 static void flag_sub_sbb8(CONSTSP(vxt_registers) r, vxt_byte a, vxt_byte b, vxt_byte c) {
    b += c;
-   vxt_word d = (vxt_word)a + (vxt_word)b;
+   vxt_word d = (vxt_word)a - (vxt_word)b;
    flag_szp8(r, (vxt_byte)d);
    SET_FLAG_IF(r->flags, VXT_CARRY, d & 0xFF00);
    SET_FLAG_IF(r->flags, VXT_AUXILIARY, (a ^ b ^ d) & 0x10);
@@ -95,7 +95,7 @@ static void flag_sub_sbb8(CONSTSP(vxt_registers) r, vxt_byte a, vxt_byte b, vxt_
 
 static void flag_sub_sbb16(CONSTSP(vxt_registers) r, vxt_word a, vxt_word b, vxt_word c) {
    b += c;
-   vxt_dword d = (vxt_dword)a + (vxt_dword)b;
+   vxt_dword d = (vxt_dword)a - (vxt_dword)b;
    flag_szp16(r, (vxt_word)d);
    SET_FLAG_IF(r->flags, VXT_CARRY, d & 0xFFFF0000);
    SET_FLAG_IF(r->flags, VXT_AUXILIARY, (a ^ b ^ d) & 0x10);
