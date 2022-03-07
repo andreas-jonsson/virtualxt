@@ -284,7 +284,7 @@ JUMP(jg, (!FLAGS(p->regs.flags, VXT_ZERO) && FLAGS(p->regs.flags, VXT_SIGN)) == 
 
 static void grp1_80_82(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_byte a = read_dest8(p);
+   vxt_byte a = rm_read8(p);
    vxt_byte b = read_opcode8(p);
    vxt_byte res = 0;
 
@@ -317,12 +317,12 @@ static void grp1_80_82(CONSTSP(cpu) p, INST(inst)) {
          UNREACHABLE();
    }
 
-   if (p->mode.reg < 7)
-      write_dest8(p, res);
+   if (p->mode.reg != 7)
+      rm_write8(p, res);
 }
 
 static void grp1_81_83(CONSTSP(cpu) p, INST(inst)) {
-   vxt_word a = read_dest16(p);
+   vxt_word a = rm_read16(p);
    vxt_word b = (inst->opcode == 0x81) ? read_opcode16(p) : SIGNEXT16(read_opcode8(p));
    vxt_word res = 0;
 
@@ -355,8 +355,8 @@ static void grp1_81_83(CONSTSP(cpu) p, INST(inst)) {
          UNREACHABLE();
    }
 
-   if (p->mode.reg < 7)
-      write_dest16(p, res);
+   if (p->mode.reg != 7)
+      rm_write16(p, res);
 }
 
 static void test_84(CONSTSP(cpu) p, INST(inst)) {

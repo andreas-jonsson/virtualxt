@@ -111,8 +111,11 @@ vxt_byte *load_code = NULL;
 int load_code_size = 0;
 vxt_byte *store_code = NULL;
 int store_code_size = 0;
-vxt_byte scratchpad[0x100000] = {0}; 
+vxt_byte scratchpad[0x100000] = {0};
 int readback_ptr = 0;
+
+vxt_pointer trigger_addr = VXT_POINTER(0xF000, 0xE1BE);
+//vxt_pointer trigger_addr = VXT_INVALID_POINTER;
 
 enum validator_state state = STATE_SETUP;
 struct frame current_frame = {0};
@@ -443,19 +446,21 @@ static void validate_mem_op(struct mem_op *op) {
 
 static void mask_undefined_flags(vxt_word *flags) {
 	for (int i = 0; flag_mask_lookup[i].opcode != -1; i++) {
-		if (flag_mask_lookup[i].opcode == (int)current_frame.opcode) {
+		int iop = (int)current_frame.opcode;
+		if (flag_mask_lookup[i].opcode == iop) {
 			if (flag_mask_lookup[i].ext != -1) {
 				ENSURE(current_frame.modregrm);
-				volatile int ext_op = (current_frame.reads[1].data >> 3) & 7;
-				for (; flag_mask_lookup[i].opcode != -1; i++) {
+				int ext_op = (current_frame.reads[1].data >> 3) & 7;
+				for (; flag_mask_lookup[i].opcode == iop; i++) {
 					if (flag_mask_lookup[i].ext == ext_op)
-						break;
-
-					// Nothing to mask!
-					return;
+						goto mask;
 				}
+
+				// Nothing to mask!
+				return;
 			}
 
+mask:
 			*flags &= ~((vxt_word)flag_mask_lookup[i].mask);
 			return;
 		}
@@ -501,6 +506,12 @@ static void validate_registers() {
 
 static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 	(void)cycles; (void)userdata;
+
+	if (trigger_addr == VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip))
+		trigger_addr = VXT_INVALID_POINTER;
+
+	if (trigger_addr != VXT_INVALID_POINTER)
+		return;
 
 	current_frame.regs[1] = *regs;
 	log(LOG_INFO, "%s: %s (0x%X) @ %0*X:%0*X" NL, current_frame.discard ? "DISCARD" : "VALIDATE", current_frame.name, current_frame.opcode, 4, current_frame.regs[0].cs, 4, current_frame.regs[0].ip);
