@@ -76,6 +76,10 @@ struct vxt_pirepheral *vxtu_create_memory_device(vxt_allocator *alloc, vxt_point
     return p;
 }
 
+void *vxtu_memory_internal_pointer(const struct vxt_pirepheral *p) {
+    return VXT_GET_DEVICE_DATA(memory, p);
+}
+
 bool vxtu_memory_device_fill(const struct vxt_pirepheral *p, const vxt_byte *data, int size) {
     VXT_DEC_DEVICE(m, memory, p);
     ENSURE(data);

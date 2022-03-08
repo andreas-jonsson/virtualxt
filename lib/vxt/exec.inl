@@ -598,6 +598,7 @@ static void int_CE(CONSTSP(cpu) p, INST(inst)) {
 
 static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
+   VALIDATOR_DISCARD(p);
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
    p->regs.flags = pop(p);

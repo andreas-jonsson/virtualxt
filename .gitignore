@@ -58,3 +58,6 @@ build
 docs
 test
 *.trace
+
+scrambler.asm
+scrambler.bin

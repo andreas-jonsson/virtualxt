@@ -238,6 +238,28 @@ pub fn build(b: *Builder) void {
         b.step("libretro", "Build libretro core").dependOn(&libretro.step);
     }
 
+    // -------- scrambler --------
+
+    {
+        const scrambler = b.addExecutable("scrambler", null);
+        scrambler.setBuildMode(mode);
+        scrambler.setTarget(target);
+        scrambler.setOutputDir("build/bin");
+        scrambler.linkLibC();
+
+        scrambler.linkSystemLibrary("gpiod");
+        scrambler.defineCMacroRaw("PI8088");
+
+        scrambler.linkLibrary(build_libvxt(b, mode, target, false));
+        scrambler.addIncludeDir("lib/vxt/include");
+        scrambler.addIncludeDir("lib/vxt");        
+
+        scrambler.addCSourceFile("tools/validator/pi8088/scrambler.c", opt);
+        scrambler.addCSourceFile("tools/validator/pi8088/pi8088.c", opt);
+
+        b.step("scrambler", "Build scrambler for RaspberryPi").dependOn(&scrambler.step);
+    }
+
     // -------- test --------
 
     {

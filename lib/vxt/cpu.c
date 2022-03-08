@@ -500,6 +500,7 @@ void cpu_reset(CONSTSP(cpu) p) {
       p->regs.flags = 0xF802;
    #endif
    p->regs.cs = 0xFFFF;
+   p->regs.debug = false;
    cpu_reset_cycle_count(p);
 }
 
