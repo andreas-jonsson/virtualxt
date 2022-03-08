@@ -57,6 +57,7 @@ struct cpu {
 
    vxt_word seg;
    bool seg_override;
+   bool has_prefix;
 
    const struct vxt_validator *validator;
    struct vxt_pirepheral *pic;

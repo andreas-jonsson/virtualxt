@@ -99,12 +99,12 @@ vxt_error _vxt_system_initialize(CONSTP(vxt_system) s) {
     return VXT_NO_ERROR;
 }
 
-TEST(system_initialize, {
+TEST(system_initialize,
     CONSTP(vxt_system) sp = vxt_system_create(TALLOC, NULL);
     TENSURE(sp);
     TENSURE_NO_ERR(vxt_system_initialize(sp));
     vxt_system_destroy(sp);
-})
+)
 
 vxt_error vxt_system_destroy(CONSTP(vxt_system) s) {
     if (s->cpu.validator)

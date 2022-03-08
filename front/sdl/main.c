@@ -35,9 +35,18 @@
 #include "main.h"
 #include "docopt.h"
 
+#define SYNC(...) {						\
+	while (SDL_LockMutex(emu_mutex));	\
+	{ __VA_ARGS__ }						\
+	SDL_UnlockMutex(emu_mutex); }		\
+
 #ifdef PI8088
 	extern struct vxt_validator *pi8088_validator();
 #endif
+
+SDL_atomic_t running;
+SDL_mutex *emu_mutex = NULL;
+SDL_Thread *emu_thread = NULL;
 
 static const char *getline() {
 	static char buffer[1024] = {0};
@@ -90,6 +99,22 @@ static bool pdisasm(vxt_system *s, const char *file, vxt_pointer start, int size
 	free(buffer);
 	remove(name);
 	return ret;
+}
+
+static int emu_loop(void *ptr) {
+	vxt_system *vxt = (vxt_system*)ptr;
+	while (SDL_AtomicGet(&running)) {
+		SYNC(
+			struct vxt_step res = vxt_system_step(vxt, 0);
+			if (res.err != VXT_NO_ERROR) {
+				if (res.err == VXT_USER_TERMINATION)
+					SDL_AtomicSet(&running, 0);
+				else
+					printf("step error: %s", vxt_error_str(res.err));
+			}
+		);
+	}
+	return 0;
 }
 
 int ENTRY(int argc, char *argv[]) {
@@ -194,11 +219,22 @@ int ENTRY(int argc, char *argv[]) {
 	//r->cs = 0xF000;
     //r->ip = 0xFFF0;
 
-	for (bool run = true; run;) {
+	SDL_AtomicSet(&running, 1);
+	if (!(emu_mutex = SDL_CreateMutex())) {
+		printf("SDL_CreateMutex failed!\n");
+		return -1;
+	}
+
+	if (!(emu_thread = SDL_CreateThread(&emu_loop, "emulator loop", vxt))) {
+		printf("SDL_CreateThread failed!\n");
+		return -1;
+	}
+
+	while (SDL_AtomicGet(&running)) {
 		for (SDL_Event e; SDL_PollEvent(&e);) {
 			switch (e.type) {
 				case SDL_QUIT:
-					run = false;
+					SDL_AtomicSet(&running, 0);
 					break;
 				case SDL_MOUSEMOTION:
 					break;
@@ -208,24 +244,19 @@ int ENTRY(int argc, char *argv[]) {
 					break;
 				case SDL_KEYDOWN:
 					if (args.debug && e.key.keysym.sym == SDLK_F12 && (e.key.keysym.mod & KMOD_ALT))
-						vxtu_debugger_interrupt(dbg);
+						SYNC(vxtu_debugger_interrupt(dbg);)
 					break;
 				case SDL_KEYUP:
 					break;
 			}
 		}
 
-		struct vxt_step res = vxt_system_step(vxt, 0);
-		if (res.err != VXT_NO_ERROR) {
-			if (res.err == VXT_USER_TERMINATION)
-				run = false;
-			else
-				printf("step error: %s", vxt_error_str(res.err));
-		}
-
 		SDL_RenderClear(renderer);
 		SDL_RenderPresent(renderer);
 	}
+
+	SDL_WaitThread(emu_thread, NULL);
+	SDL_DestroyMutex(emu_mutex);
 
 	vxt_system_destroy(vxt);
 

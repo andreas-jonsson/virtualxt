@@ -22,7 +22,6 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <unistd.h>
 
 #define VXT_CLIB_IO
 #include <vxt/vxt.h>
@@ -33,10 +32,7 @@ freely, subject to the following restrictions:
 #define NUM_INVALID_FETCHES 6
 #define NUM_MEM_OPS 16
 #define CONSUMER "pi8088"
-
-// Fall/rise edge delay in microseconds.
-//#define EDGE_WAIT usleep(1000)
-#define EDGE_WAIT
+#define HW_REVISION 1
 
 #define NL "\n"
 #define DEBUG(...) log(LOG_DEBUG, __VA_ARGS__)
@@ -75,9 +71,11 @@ struct frame {
 	vxt_byte opcode;
 	bool modregrm;
 	bool discard;
+	bool next_fetch;
 	int num_nop;
 	struct vxt_registers regs[2];
 
+	vxt_pointer prefetch_addr[NUM_INVALID_FETCHES];
 	struct mem_op reads[NUM_MEM_OPS];
 	struct mem_op writes[NUM_MEM_OPS];
 };
@@ -135,7 +133,7 @@ static int log(const enum log_level lv, const char *fmt, ...) {
 	if (lv >= level)
 		ret = vfprintf(lv == LOG_ERROR ? stderr : stdout, fmt, va);
 
-	if (lv == LOG_DEBUG) {
+	if (level == LOG_DEBUG) {
 		fflush(stdout);
 		fflush(stderr);
 	}
@@ -152,9 +150,7 @@ static int check(int line) {
 static void pulse_clock(int ticks) {
 	for (int i = 0; i < ticks; i++) {
 		check(gpiod_line_set_value(clock_line, 1));
-		EDGE_WAIT;
 		check(gpiod_line_set_value(clock_line, 0));
-		EDGE_WAIT;
 		cycle_count++;
 	}
 
@@ -200,24 +196,14 @@ static void latch_address() {
 }
 
 static void set_bus_direction_out() {
-	for (int i = 0; i < 8; i++) {
-		struct gpiod_line **ln = &ad_0_7_line[i];
-		gpiod_line_release(*ln);
-		*ln = gpiod_chip_get_line(chip, i);
-		ENSURE(*ln);
-		check(gpiod_line_request_input(*ln, CONSUMER));
-	}
+	for (int i = 0; i < 8; i++)
+		check(gpiod_line_set_config(ad_0_7_line[i], GPIOD_LINE_REQUEST_DIRECTION_INPUT, 0, 0));
 }
 
 static void set_bus_direction_in(vxt_byte data) {
 	ENSURE(rd_signal);
-	for (int i = 0; i < 8; i++) {
-		struct gpiod_line **ln = &ad_0_7_line[i]; 
-		gpiod_line_release(*ln);
-		*ln = gpiod_chip_get_line(chip, i);
-		ENSURE(*ln);
-		check(gpiod_line_request_output(*ln, CONSUMER, (data >> i) & 1));
-	}
+	for (int i = 0; i < 8; i++)
+		check(gpiod_line_set_config(ad_0_7_line[i], GPIOD_LINE_REQUEST_DIRECTION_OUTPUT, 0, (data >> i) & 1));
 }
 
 static vxt_byte read_cpu_pins() {
@@ -281,21 +267,25 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 		}
 		case STATE_EXECUTE:
 		{
-			const struct vxt_registers *r = &current_frame.regs[1];
-			if (addr != VXT_POINTER(r->cs, r->ip)) {
-				for (int i = 0; i < NUM_MEM_OPS; i++) {
-					struct mem_op *op = &current_frame.reads[i];
-					if (!(op->flags & MOF_PI8088) && (op->flags & MOF_EMULATOR)) {
-						if (op->addr == addr) { // YES: This is a valid read!
-							op->flags |= MOF_PI8088;
-							DEBUG("0x%X" NL, op->data);
-							return op->data;
-						}
+			for (int i = 0; i < NUM_MEM_OPS; i++) {
+				struct mem_op *op = &current_frame.reads[i];
+				if (!(op->flags & MOF_PI8088) && (op->flags & MOF_EMULATOR)) {
+					if (op->addr == addr) { // YES: This is a valid read!
+						op->flags |= MOF_PI8088;
+						DEBUG("0x%X" NL, op->data);
+						return op->data;
 					}
 				}
+			}
+
+			if (cpu_memory_access == ACC_CODE_OR_NONE) {
+				if (addr == VXT_POINTER(current_frame.regs[1].cs, current_frame.regs[1].ip))
+					current_frame.next_fetch = true;
 
 				// Allow for N invalid fetches that we assume is the prefetch.
-				if (current_frame.num_nop++ < NUM_INVALID_FETCHES) {
+				// This is intended to fill the prefetch queue so the instruction can finish.
+				if (current_frame.num_nop < NUM_INVALID_FETCHES) {
+					current_frame.prefetch_addr[current_frame.num_nop++] = addr;
 					DEBUG("NOP" NL);
 					return 0x90; // NOP
 				}
@@ -313,6 +303,7 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 		{
 			// Assume this is prefetch.
 			if (readback_ptr >= store_code_size) {
+				ENSURE(cpu_memory_access == ACC_CODE_OR_NONE);
 				DEBUG("NOP" NL);
 				return 0x90; // NOP
 			}
@@ -324,6 +315,7 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 		}
 		case STATE_FINISHED:
 		{
+			ENSURE(cpu_memory_access == ACC_CODE_OR_NONE);
 			DEBUG("NOP" NL);
 			return 0x90; // NOP
 		}
@@ -424,14 +416,16 @@ static void begin(const char *name, vxt_byte opcode, bool modregrm, struct vxt_r
 	current_frame.opcode = opcode;
 	current_frame.modregrm = modregrm;
 	current_frame.num_nop = 0;
+	current_frame.next_fetch = false;
 	current_frame.discard = false;
 	current_frame.regs[0] = *regs;
+	
+	memset(current_frame.prefetch_addr, 0, sizeof(current_frame.prefetch_addr));
+	memset(current_frame.reads, 0, sizeof(current_frame.reads));
+	memset(current_frame.writes, 0, sizeof(current_frame.writes));
 
 	// Correct for fetch.
 	current_frame.regs->ip--;
-	
-	for (int i = 0; i < NUM_MEM_OPS; i++)
-		current_frame.reads[i].flags = current_frame.writes[i].flags = MOF_UNUSED;
 	current_frame.reads[0] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), opcode, MOF_EMULATOR};
 
 	// We must discard the first instruction after boot.
@@ -443,19 +437,22 @@ static void validate_mem_op(struct mem_op *op) {
 	ENSURE(state == STATE_FINISHED);
 	if (op->flags && op->flags != (MOF_EMULATOR | MOF_PI8088)) {
 		// TODO: Print more info.
-		ERROR("Operations do not match!" NL);
+		ERROR("Memory operations do not match!" NL);
 	}
 }
 
 static void mask_undefined_flags(vxt_word *flags) {
 	for (int i = 0; flag_mask_lookup[i].opcode != -1; i++) {
 		if (flag_mask_lookup[i].opcode == (int)current_frame.opcode) {
-			if (current_frame.modregrm) {
-				int ext_op = (current_frame.reads[1].data >> 3) & 7;
+			if (flag_mask_lookup[i].ext != -1) {
+				ENSURE(current_frame.modregrm);
+				volatile int ext_op = (current_frame.reads[1].data >> 3) & 7;
 				for (; flag_mask_lookup[i].opcode != -1; i++) {
 					if (flag_mask_lookup[i].ext == ext_op)
 						break;
-					ERROR("Could not find mask!" NL);
+
+					// Nothing to mask!
+					return;
 				}
 			}
 
@@ -468,18 +465,24 @@ static void mask_undefined_flags(vxt_word *flags) {
 static void validate_registers() {
 	ENSURE(state == STATE_FINISHED);
 	struct vxt_registers *r = &current_frame.regs[1];
-	int offset = 0;
+	int offset = 2;
 
-	mask_undefined_flags((vxt_word*)scratchpad);
-	mask_undefined_flags(&r->flags);
+	vxt_word cpu_flags = *(vxt_word*)scratchpad; 
+	mask_undefined_flags(&cpu_flags);
+	vxt_word emu_flags = r->flags;
+	mask_undefined_flags(&emu_flags);
+
+	ASSERT(current_frame.next_fetch, "Next instruction was never fetched! Possible bad jump.");
+
+	if (cpu_flags != emu_flags)
+		ERROR("Flags error! EMU: 0x%X (0x%X) != CPU: 0x%X (0x%X)" NL, emu_flags, r->flags, cpu_flags, *(vxt_word*)scratchpad);
 
 	#define TEST(reg) {																			\
 		vxt_word v = *(vxt_word*)&scratchpad[offset];											\
 		offset += 2;																			\
-		ASSERT(r->reg == v, "'" #reg "' do not match! EMU: 0x%X != CPU: 0x%X\n", r->reg, v);	\
+		ASSERT(r->reg == v, "'" #reg "' do not match! EMU: 0x%X != CPU: 0x%X" NL, r->reg, v);	\
 	}																							\
 	
-	TEST(flags);
 	TEST(ax);
 	TEST(bx);
 	TEST(cx);
@@ -500,10 +503,10 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 	(void)cycles; (void)userdata;
 
 	current_frame.regs[1] = *regs;
+	log(LOG_INFO, "%s: %s (0x%X) @ %0*X:%0*X" NL, current_frame.discard ? "DISCARD" : "VALIDATE", current_frame.name, current_frame.opcode, 4, current_frame.regs[0].cs, 4, current_frame.regs[0].ip);
+
 	if (current_frame.discard)
 		return;
-
-	log(LOG_INFO, "VALIDATE: %s (0x%X) @ %0*X:%0*X" NL, current_frame.name, current_frame.opcode, 4, current_frame.regs[0].cs, 4, current_frame.regs[0].ip);
 
 	// Create scratchpad.
 	memset(scratchpad, 0, sizeof(scratchpad));
@@ -544,8 +547,8 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 		next_bus_cycle();
 	}
 
-	if (executed_cycles != cycles)
-		log(LOG_WARNING, "WARNING: Unexpected cycle timing! EMU: %d, CPU: %d" NL, cycles, executed_cycles);
+	//if (executed_cycles != cycles)
+	//	log(LOG_WARNING, "WARNING: Unexpected cycle timing! EMU: %d, CPU: %d" NL, cycles, executed_cycles);
 
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		validate_mem_op(&current_frame.reads[i]);
@@ -585,6 +588,8 @@ static void discard(void *userdata) {
 
 static vxt_error initialize(vxt_system *s, void *userdata) {
 	(void)s; (void)userdata;
+
+	printf("VirtualXT Hardware Validator\nRev: %d\n\n", HW_REVISION);
 	if (!(chip = gpiod_chip_open_by_name("gpiochip0"))) {
 		log(LOG_ERROR, "Could not connect GPIO chip!" NL);
 		return -1;

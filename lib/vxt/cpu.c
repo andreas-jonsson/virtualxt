@@ -266,36 +266,21 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
 #define NARROW(f) f(byte, 8)
 #define WIDE(f) f(word, 16)
 
-#define READ_SOURCE_FUNC(a, b)                                    \
-   static vxt_ ## a read_source ## b (CONSTSP(cpu) p) {           \
-      if (p->rm_to_reg) {                                         \
-         if (p->mode.mod < 3) {                                   \
-            vxt_pointer ea = get_effective_address(p);            \
-            return vxt_system_read_ ## a ((p)->s, ea);            \
-         } else {                                                 \
-            return reg_read ## b (&(p)->regs, (p)->mode.rm);      \
-         }                                                        \
+#define READ_DESTINATION_FUNC(a, b)                               \
+   static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {               \
+      if (p->mode.mod < 3) {                                      \
+         vxt_pointer ea = get_effective_address(p);               \
+         return vxt_system_read_ ## a (p->s, ea);                 \
       } else {                                                    \
-         return reg_read ## b (&(p)->regs, (p)->mode.reg);        \
+         return reg_read ## b (&p->regs, p->mode.rm);             \
       }                                                           \
    }                                                              \
-
-NARROW(READ_SOURCE_FUNC)
-WIDE(READ_SOURCE_FUNC)
-#undef READ_SOURCE_FUNC
-
-#define READ_DESTINATION_FUNC(a, b)                               \
+                                                                  \
    static vxt_ ## a read_dest ## b (CONSTSP(cpu) p) {             \
-      if (p->rm_to_reg) {                                         \
-         return reg_read ## b (&(p)->regs, (p)->mode.reg);        \
-      } else {                                                    \
-         if (p->mode.mod < 3) {                                   \
-            vxt_pointer ea = get_effective_address(p);            \
-            return vxt_system_read_ ## a ((p)->s, ea);            \
-         } else {                                                 \
-            return reg_read ## b (&(p)->regs, (p)->mode.rm);      \
-         }                                                        \
-      }                                                           \
+      if (p->rm_to_reg)                                           \
+         return reg_read ## b (&p->regs, p->mode.reg);            \
+      else                                                        \
+         return rm_read ## b (p);                                 \
    }                                                              \
 
 NARROW(READ_DESTINATION_FUNC)
@@ -303,22 +288,37 @@ WIDE(READ_DESTINATION_FUNC)
 #undef READ_DESTINATION_FUNC
 
 #define WRITE_DESTINATION_FUNC(a, b)                                 \
-   static void write_dest ## b (CONSTSP(cpu) p, vxt_ ## a data) {    \
-      if (p->rm_to_reg) {                                            \
-         reg_write ## b (&(p)->regs, (p)->mode.reg, data);           \
+   static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {      \
+      if (p->mode.mod < 3) {                                         \
+         vxt_pointer ea = get_effective_address(p);                  \
+         vxt_system_write_ ## a (p->s, ea, data);                    \
       } else {                                                       \
-         if (p->mode.mod < 3) {                                      \
-            vxt_pointer ea = get_effective_address(p);               \
-            vxt_system_write_ ## a ((p)->s, ea, data);               \
-         } else {                                                    \
-            reg_write ## b (&(p)->regs, (p)->mode.rm, data);         \
-         }                                                           \
+         reg_write ## b (&p->regs, p->mode.rm, data);                \
       }                                                              \
+   }                                                                 \
+                                                                     \
+   static void write_dest ## b (CONSTSP(cpu) p, vxt_ ## a data) {    \
+      if (p->rm_to_reg)                                              \
+         reg_write ## b (&p->regs, p->mode.reg, data);               \
+      else                                                           \
+         rm_write ## b (p, data);                                    \
    }                                                                 \
 
 NARROW(WRITE_DESTINATION_FUNC)
 WIDE(WRITE_DESTINATION_FUNC)
 #undef WRITE_DESTINATION_FUNC
+
+#define READ_SOURCE_FUNC(a, b)                                    \
+   static vxt_ ## a read_source ## b (CONSTSP(cpu) p) {           \
+      if (p->rm_to_reg)                                           \
+         return rm_read ## b (p);                                 \
+      else                                                        \
+         return reg_read ## b (&p->regs, p->mode.reg);            \
+   }                                                              \
+
+NARROW(READ_SOURCE_FUNC)
+WIDE(READ_SOURCE_FUNC)
+#undef READ_SOURCE_FUNC
 
 #undef NARROW
 #undef WIDE
@@ -330,7 +330,7 @@ static void push(CONSTSP(cpu) p, vxt_word data) {
 
 static vxt_word pop(CONSTSP(cpu) p) {
    vxt_word data = vxt_system_read_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp));
-   p->regs.sp -= 2;
+   p->regs.sp += 2;
    return data;
 }
 
@@ -398,6 +398,7 @@ static void prep_exec(CONSTSP(cpu) p) {
    p->seg = p->regs.ds;
    p->seg_override = false;
    p->repeat = 0;
+   p->has_prefix = false;
    p->inst_start = p->regs.ip;
 }
 
@@ -405,32 +406,32 @@ static void read_opcode(CONSTSP(cpu) p) {
    for (;;) {
       switch (p->opcode = read_opcode8(p)) {
          case 0x26:
-            VALIDATOR_DISCARD(p);
+            p->has_prefix = true;
             p->seg = p->regs.es;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0x2E:
-            VALIDATOR_DISCARD(p);
+            p->has_prefix = true;
             p->seg = p->regs.cs;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0x36:
-            VALIDATOR_DISCARD(p);
+            p->has_prefix = true;
             p->seg = p->regs.ss;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0x3E:
-            VALIDATOR_DISCARD(p);
+            p->has_prefix = true;
             p->seg = p->regs.ds;
             p->seg_override = true;
             p->cycles += 2;
             break;
          case 0xF2: // REPNE/REPNZ
          case 0xF3: // REP/REPE/REPZ
-            VALIDATOR_DISCARD(p);
+            p->has_prefix = true;
             p->repeat = p->opcode;
             p->cycles += 2;
             break;
@@ -454,6 +455,8 @@ static void cpu_exec(CONSTSP(cpu) p) {
    p->ea_cycles = 0;
    VALIDATOR_BEGIN(p, inst->name, p->opcode, inst->modregrm, &p->regs);
 
+   if (p->has_prefix)
+      VALIDATOR_DISCARD(p);
    if (inst->modregrm)
       read_modregrm(p);
    inst->func(p, inst);
@@ -492,7 +495,7 @@ void cpu_reset(CONSTSP(cpu) p) {
    cpu_reset_cycle_count(p);
 }
 
-TEST(register_layout, {
+TEST(register_layout,
     struct vxt_registers regs = {0};
     regs.ax = 0x0102;
     TENSURE(regs.ah == 1);
@@ -517,4 +520,4 @@ TEST(register_layout, {
     TENSURE(regs.dh == 7);
     TENSURE(regs.dl == 8);
     TENSURE(regs.dx == 0x0708);
-})
+)

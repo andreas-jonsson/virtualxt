@@ -79,74 +79,74 @@
 #define COMP_MEM_CHECK(addr, type, value) { TENSURE(vxt_system_read_ ## type (s, (vxt_pointer)(addr)) == (value)); vxt_system_destroy(s); }
 #define NO_CHECK(_) vxt_system_destroy(s)
 
-TEST(blackbox_add, {
+TEST(blackbox_add,
     RUN_BBTEST("tools/testdata/add.bin", CHECK_DIFF, "tools/testdata/res_add.bin", 70);
-})
+)
 
-TEST(blackbox_bcdcnv, {
+TEST(blackbox_bcdcnv,
     RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 38);
-})
+)
 
-TEST(blackbox_bitwise, {
+TEST(blackbox_bitwise,
     RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF, "tools/testdata/res_bitwise.bin", 91);
-})
+)
 
-TEST(blackbox_cmpneg, {
+TEST(blackbox_cmpneg,
     RUN_BBTEST("tools/testdata/cmpneg.bin", CHECK_DIFF, "tools/testdata/res_cmpneg.bin", 53);
-})
+)
 
-TEST(blackbox_control, {
+TEST(blackbox_control,
     RUN_BBTEST("tools/testdata/control.bin", CHECK_DIFF, "tools/testdata/res_control.bin", 0);
-})
+)
 
-TEST(blackbox_datatrnf, {
+TEST(blackbox_datatrnf,
     RUN_BBTEST("tools/testdata/datatrnf.bin", CHECK_DIFF, "tools/testdata/res_datatrnf.bin", 11);
-})
+)
 
-//TEST(blackbox_div, {
+//TEST(blackbox_div,
 //    RUN_BBTEST("tools/testdata/div.bin", CHECK_DIFF, "tools/testdata/res_div.bin", 0);
-//})
+//)
 
-//TEST(blackbox_interrupt, {
+//TEST(blackbox_interrupt,
 //    RUN_BBTEST("tools/testdata/interrupt.bin", CHECK_DIFF, "tools/testdata/res_interrupt.bin", 0);
-//})
+//)
 
-//TEST(blackbox_jmpmov, {
+//TEST(blackbox_jmpmov,
 //    RUN_BBTEST("tools/testdata/jmpmov.bin", COMP_MEM_CHECK, 0, word, 0x4001);
-//})
+//)
 
-TEST(blackbox_jump1, {
+TEST(blackbox_jump1,
     RUN_BBTEST("tools/testdata/jump1.bin", CHECK_DIFF, "tools/testdata/res_jump1.bin", 2);
-})
+)
 
-//TEST(blackbox_jump2, {
+//TEST(blackbox_jump2,
 //    RUN_BBTEST("tools/testdata/jump2.bin", CHECK_DIFF, "tools/testdata/res_jump2.bin", 0);
-//})
+//)
 
-TEST(blackbox_mul, {
+TEST(blackbox_mul,
     RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 93);
-})
+)
 
-//TEST(blackbox_rep, {
+//TEST(blackbox_rep,
 //    RUN_BBTEST("tools/testdata/rep.bin", CHECK_DIFF, "tools/testdata/res_rep.bin", 0);
-//})
+//)
 
-TEST(blackbox_rotate, {
+TEST(blackbox_rotate,
     RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 99);
-})
+)
 
-//TEST(blackbox_segpr, {
+//TEST(blackbox_segpr,
 //    RUN_BBTEST("tools/testdata/segpr.bin", CHECK_DIFF, "tools/testdata/res_segpr.bin", 0);
-//})
+//)
 
-//TEST(blackbox_shift, {
+//TEST(blackbox_shift,
 //    RUN_BBTEST("tools/testdata/shift.bin", CHECK_DIFF, "tools/testdata/res_shift.bin", 0);
-//})
+//)
 
-//TEST(blackbox_strings, {
+//TEST(blackbox_strings,
 //    RUN_BBTEST("tools/testdata/strings.bin", CHECK_DIFF, "tools/testdata/res_strings.bin", 0);
-//})
+//)
 
-TEST(blackbox_sub, {
+TEST(blackbox_sub,
     RUN_BBTEST("tools/testdata/sub.bin", CHECK_DIFF, "tools/testdata/res_sub.bin", 88);
-})
+)

@@ -121,7 +121,7 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         "lib/vxt/cpu.c",
         "lib/vxt/pic.c",
         "lib/vxt/debugger.c",
-        "lib/vxt/testsuit.c",
+        //"lib/vxt/testsuit.c",
     };
 
     for (files) |file| {
@@ -215,7 +215,7 @@ pub fn build(b: *Builder) void {
     if (validator) {
         exe_sdl.linkSystemLibrary("gpiod");
         exe_sdl.defineCMacroRaw("PI8088");
-        exe_sdl.addCSourceFile("tools/validator/pi8088/pi8088.c", c_options);
+        exe_sdl.addCSourceFile("tools/validator/pi8088/pi8088.c", opt);
     }
 
     // -------- virtualxt libretro --------
