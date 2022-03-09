@@ -92,8 +92,14 @@ static void or_D(CONSTSP(cpu) p, INST(inst)) {
 }
 
 static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(p); UNUSED(inst);
    VALIDATOR_DISCARD(p);
+   #ifdef VXT_CPU_286
+      UNUSED(inst);
+      p->regs.ip = p->inst_start;
+      call_int(p, 6);
+   #else
+      LOG("invalid opcode: 0x%X", inst->opcode);
+   #endif
 }
 
 static void invalid_prefix(CONSTSP(cpu) p, INST(inst)) {
@@ -650,6 +656,15 @@ static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
    p->regs.al = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, p->regs.bx + p->regs.al));
 }
 
+static void salc_D6(CONSTSP(cpu) p, INST(inst)) {
+   #ifdef VXT_CPU_286
+      xlat_D7(p, inst);
+   #else
+      UNUSED(inst);
+      p->regs.al = (p->regs.flags & VXT_CARRY) ? 0xFF : 0x0;
+   #endif
+}
+
 static void fpu_dummy(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(p); UNUSED(inst);
    VALIDATOR_DISCARD(p);
@@ -760,13 +775,17 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          flag_szp8(&p->regs, (vxt_byte)res);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
-         p->regs.flags &= ~VXT_ZERO; // 8088 always clears zero flag.
+         #ifndef VXT_CPU_286
+            p->regs.flags &= ~VXT_ZERO;
+         #endif
          break;
       }
       case 5: // IMUL
          p->regs.ax = (vxt_word)((vxt_dword)SIGNEXT16(v) * (vxt_dword)SIGNEXT16(p->regs.al));
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
-         p->regs.flags &= ~VXT_ZERO; // 8088 always clears zero flag.
+         #ifndef VXT_CPU_286
+            p->regs.flags &= ~VXT_ZERO;
+         #endif
          break;
       case 6: // DIV
       {
@@ -841,7 +860,9 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          flag_szp16(&p->regs, (vxt_byte)res);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.dx);
-         p->regs.flags &= ~VXT_ZERO; // 8088 always clears zero flag.
+         #ifndef VXT_CPU_286
+            p->regs.flags &= ~VXT_ZERO;
+         #endif
          break;
       }
       case 5: // IMUL
@@ -850,7 +871,9 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          p->regs.dx = (vxt_word)(res >> 16);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.dx);
-         p->regs.flags &= ~VXT_ZERO; // 8088 always clears zero flag.
+         #ifndef VXT_CPU_286
+            p->regs.flags &= ~VXT_ZERO;
+         #endif
          break;
       }
       case 6: // DIV
@@ -1216,7 +1239,7 @@ static struct instruction const opcode_table[0x100] = {
    {0xD3, "GRP2 Ev CL", true, X, &grp2_D3},
    {0xD4, "AAM I0", false, 83, &aam_D4},
    {0xD5, "AAD I0", false, 60, &aad_D5},
-   {0xD6, INVALID},
+   {0xD6, "SALC", false, X, &salc_D6},
    {0xD7, "XLAT", false, 11, &xlat_D7},
    {0xD8, "ESC", true, X, &fpu_dummy},
    {0xD9, "ESC", true, X, &fpu_dummy},

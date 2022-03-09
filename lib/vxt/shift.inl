@@ -33,7 +33,11 @@ freely, subject to the following restrictions:
 static vxt_byte bitshift_8(CONSTSP(cpu) p, vxt_byte v, vxt_byte c) {
 	if (c == 0)
 		return v;
-	//c &= 0x1F; // Limit shift. V20
+
+   #ifdef VXT_CPU_286
+	   c &= 0x1F;
+   #endif
+
    vxt_byte o = v;
    vxt_byte s;
 
@@ -113,7 +117,11 @@ static vxt_byte bitshift_8(CONSTSP(cpu) p, vxt_byte v, vxt_byte c) {
 static vxt_word bitshift_16(CONSTSP(cpu) p, vxt_word v, vxt_byte c) {
 	if (c == 0)
 		return v;
-	//c &= 0x1F; // Limit shift. V20
+
+   #ifdef VXT_CPU_286
+	   c &= 0x1F;
+   #endif
+
    vxt_word o = v;
    vxt_word s;
 

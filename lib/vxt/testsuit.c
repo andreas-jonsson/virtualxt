@@ -124,7 +124,7 @@ TEST(blackbox_jump2,
 )
 
 TEST(blackbox_mul,
-    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 23);
+    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 21);
 )
 
 //TEST(blackbox_rep,
@@ -132,7 +132,7 @@ TEST(blackbox_mul,
 //)
 
 TEST(blackbox_rotate,
-    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 10);
+    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 0);
 )
 
 TEST(blackbox_segpr,
