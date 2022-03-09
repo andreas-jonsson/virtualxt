@@ -23,17 +23,18 @@
 #include "testing.h"
 
 #define RUN_BBTEST(bin, check, ...) {                                                                   \
-    struct vxt_pirepheral *ram = vxtu_create_memory_device(TALLOC, 0x0, 0x100000, false);               \
-    struct vxt_pirepheral *rom = vxtu_create_memory_device(TALLOC, 0xF0000, 0x10000, true);             \
+    struct vxt_pirepheral *ram0 = vxtu_create_memory_device(TALLOC, 0x0, 0x100000, false);              \
+    struct vxt_pirepheral *ram1 = vxtu_create_memory_device(TALLOC, 0xF0000, 0x10000, false);           \
                                                                                                         \
     int size = 0;                                                                                       \
     vxt_byte *data = vxtu_read_file(TALLOC, (bin), &size);                                              \
     TENSURE(data);                                                                                      \
-    TENSURE(vxtu_memory_device_fill(rom, data, size));                                                  \
+    TENSURE(vxtu_memory_device_fill(ram1, data, size));                                                 \
     TFREE(data);                                                                                        \
                                                                                                         \
     struct vxt_pirepheral *devices[] = {                                                                \
-        ram, rom,                                                                                       \
+        ram0, ram1,                                                                                     \
+        vxtu_create_pic(TALLOC),                                                                        \
         NULL                                                                                            \
     };                                                                                                  \
                                                                                                         \
@@ -45,7 +46,6 @@
     r->ip = 0xFFF0;                                                                                     \
                                                                                                         \
     for (;;) {                                                                                          \
-        TENSURE(VXT_POINTER(r->cs, r->ip) < 0xFFFFE);                                                   \
         struct vxt_step step = vxt_system_step(s, 0);                                                   \
         TENSURE_NO_ERR(step.err);                                                                       \
         if (step.halted)                                                                                \
@@ -80,19 +80,19 @@
 #define NO_CHECK(_) vxt_system_destroy(s)
 
 TEST(blackbox_add,
-    RUN_BBTEST("tools/testdata/add.bin", CHECK_DIFF, "tools/testdata/res_add.bin", 70);
+    RUN_BBTEST("tools/testdata/add.bin", CHECK_DIFF, "tools/testdata/res_add.bin", 0);
 )
 
 TEST(blackbox_bcdcnv,
-    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 38);
+    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 11);
 )
 
 TEST(blackbox_bitwise,
-    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF, "tools/testdata/res_bitwise.bin", 91);
+    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF, "tools/testdata/res_bitwise.bin", 5);
 )
 
 TEST(blackbox_cmpneg,
-    RUN_BBTEST("tools/testdata/cmpneg.bin", CHECK_DIFF, "tools/testdata/res_cmpneg.bin", 53);
+    RUN_BBTEST("tools/testdata/cmpneg.bin", CHECK_DIFF, "tools/testdata/res_cmpneg.bin", 0);
 )
 
 TEST(blackbox_control,
@@ -103,28 +103,28 @@ TEST(blackbox_datatrnf,
     RUN_BBTEST("tools/testdata/datatrnf.bin", CHECK_DIFF, "tools/testdata/res_datatrnf.bin", 11);
 )
 
-//TEST(blackbox_div,
-//    RUN_BBTEST("tools/testdata/div.bin", CHECK_DIFF, "tools/testdata/res_div.bin", 0);
-//)
+TEST(blackbox_div,
+    RUN_BBTEST("tools/testdata/div.bin", CHECK_DIFF, "tools/testdata/res_div.bin", 3);
+)
 
-//TEST(blackbox_interrupt,
-//    RUN_BBTEST("tools/testdata/interrupt.bin", CHECK_DIFF, "tools/testdata/res_interrupt.bin", 0);
-//)
+TEST(blackbox_interrupt,
+    RUN_BBTEST("tools/testdata/interrupt.bin", CHECK_DIFF, "tools/testdata/res_interrupt.bin", 0);
+)
 
-//TEST(blackbox_jmpmov,
-//    RUN_BBTEST("tools/testdata/jmpmov.bin", COMP_MEM_CHECK, 0, word, 0x4001);
-//)
+TEST(blackbox_jmpmov,
+    RUN_BBTEST("tools/testdata/jmpmov.bin", COMP_MEM_CHECK, 0, word, 0x4001);
+)
 
 TEST(blackbox_jump1,
     RUN_BBTEST("tools/testdata/jump1.bin", CHECK_DIFF, "tools/testdata/res_jump1.bin", 2);
 )
 
-//TEST(blackbox_jump2,
-//    RUN_BBTEST("tools/testdata/jump2.bin", CHECK_DIFF, "tools/testdata/res_jump2.bin", 0);
-//)
+TEST(blackbox_jump2,
+    RUN_BBTEST("tools/testdata/jump2.bin", CHECK_DIFF, "tools/testdata/res_jump2.bin", 0);
+)
 
 TEST(blackbox_mul,
-    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 93);
+    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 23);
 )
 
 //TEST(blackbox_rep,
@@ -132,21 +132,21 @@ TEST(blackbox_mul,
 //)
 
 TEST(blackbox_rotate,
-    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 99);
+    RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 10);
 )
 
-//TEST(blackbox_segpr,
-//    RUN_BBTEST("tools/testdata/segpr.bin", CHECK_DIFF, "tools/testdata/res_segpr.bin", 0);
-//)
+TEST(blackbox_segpr,
+    RUN_BBTEST("tools/testdata/segpr.bin", CHECK_DIFF, "tools/testdata/res_segpr.bin", 8);
+)
 
-//TEST(blackbox_shift,
-//    RUN_BBTEST("tools/testdata/shift.bin", CHECK_DIFF, "tools/testdata/res_shift.bin", 0);
-//)
+TEST(blackbox_shift,
+    RUN_BBTEST("tools/testdata/shifts.bin", CHECK_DIFF, "tools/testdata/res_shifts.bin", 0);
+)
 
-//TEST(blackbox_strings,
-//    RUN_BBTEST("tools/testdata/strings.bin", CHECK_DIFF, "tools/testdata/res_strings.bin", 0);
-//)
+TEST(blackbox_strings,
+    RUN_BBTEST("tools/testdata/strings.bin", CHECK_DIFF, "tools/testdata/res_strings.bin", 0);
+)
 
 TEST(blackbox_sub,
-    RUN_BBTEST("tools/testdata/sub.bin", CHECK_DIFF, "tools/testdata/res_sub.bin", 88);
+    RUN_BBTEST("tools/testdata/sub.bin", CHECK_DIFF, "tools/testdata/res_sub.bin", 2);
 )

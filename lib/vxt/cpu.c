@@ -394,24 +394,49 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
    return modregrm;
 }
 
+static void call_int(CONSTSP(cpu) p, int n) {
+   CONSTSP(vxt_registers) r = &p->regs;
+   #ifdef VXT_CPU_286
+      push(p, (r->flags & ALL_FLAGS) | 0x2);
+   #else
+      push(p, (r->flags & ALL_FLAGS) | 0xF802);
+   #endif
+
+   push(p, r->cs);
+   push(p, r->ip);
+
+   r->ip = vxt_system_read_word(p->s, (vxt_pointer)n * 4);
+   r->cs = vxt_system_read_word(p->s, (vxt_pointer)n * 4 + 2);
+   r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
+}
+
+static void divZero(CONSTSP(cpu) p) {
+   p->regs.ip = p->inst_start;
+   call_int(p, 0);
+}
+
 static void prep_exec(CONSTSP(cpu) p) {
-   if (p->trap) {
-      // INT1
-   }
+   if (p->trap)
+      call_int(p, 1);
+
    p->trap = (p->regs.flags & VXT_TRAP) != 0;
-   if (!p->trap) {
-      // Handle interrupt
+   if (p->pic && !p->trap && (p->regs.flags & VXT_INTERRUPT)) {
+      int n = p->pic->pic.next(p->pic);
+      if (n >= 0) {
+         p->halt = false;
+         call_int(p, n);
+      }
    }
 
    p->seg = p->regs.ds;
    p->seg_override = false;
    p->repeat = 0;
    p->has_prefix = false;
-   p->inst_start = p->regs.ip;
 }
 
 static void read_opcode(CONSTSP(cpu) p) {
    for (;;) {
+      p->inst_start = p->regs.ip;
       switch (p->opcode = read_opcode8(p)) {
          case 0x26:
             p->has_prefix = true;
@@ -459,6 +484,12 @@ static void read_opcode(CONSTSP(cpu) p) {
 static void cpu_exec(CONSTSP(cpu) p) {
    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
    ENSURE(inst->opcode == p->opcode);
+
+   // MOVSx, CMPSx, STOSx, LODSx, SCASx
+   if (p->repeat && !((p->opcode >= 0xA4 && p->opcode <= 0xA7) || (p->opcode >= 0xAA && p->opcode <= 0xAF))) {
+      p->has_prefix = false;
+      p->repeat = 0;
+   }
 
    p->ea_cycles = 0;
    VALIDATOR_BEGIN(p, inst->name, p->opcode, inst->modregrm, &p->regs);

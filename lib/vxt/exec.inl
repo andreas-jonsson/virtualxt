@@ -580,19 +580,19 @@ static void retf_CB(CONSTSP(cpu) p, INST(inst)) {
 
 static void int_CC(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   IRQ(p, 3);
+   call_int(p, 3);
 }
 
 static void int_CD(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   IRQ(p, (int)read_opcode8(p));
+   call_int(p, (int)read_opcode8(p));
 }
 
 static void int_CE(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    if (p->regs.flags & VXT_OVERFLOW) {
       p->cycles += 69;
-      IRQ(p, 4);
+      call_int(p, 4);
    }  
 }
 
@@ -629,7 +629,7 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
    vxt_byte a = p->regs.al;
    vxt_byte b = read_opcode8(p);
    if (!b) {
-      IRQ(p, 0);
+      divZero(p);
       return;
    } else {
       p->regs.al = a % b;
@@ -764,15 +764,15 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          break;
       }
       case 5: // IMUL
-         p->regs.ax = SIGNEXT16(v) * SIGNEXT16(p->regs.al);
+         p->regs.ax = (vxt_word)((vxt_dword)SIGNEXT16(v) * (vxt_dword)SIGNEXT16(p->regs.al));
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
          p->regs.flags &= ~VXT_ZERO; // 8088 always clears zero flag.
          break;
       case 6: // DIV
       {
          vxt_word ax = p->regs.ax;
-         if (!v || (ax / (vxt_word)v) > 0xFF) {
-            IRQ(p, 0);
+         if (!v || ((ax / (vxt_word)v) > 0xFF)) {
+            divZero(p);
             return;
          }
 
@@ -783,7 +783,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       case 7: // IDIV - reference: fake86's - cpu.c
       {
          if (!v) {
-            IRQ(p, 0);
+            divZero(p);
             return;
          }
 
@@ -799,7 +799,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          vxt_word res1 = a / d; 
          vxt_word res2 = a % d;
          if ((res1 & 0xFF00) != 0) {
-            IRQ(p, 0);
+            divZero(p);
             return;
          }
 
@@ -855,9 +855,9 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       }
       case 6: // DIV
       {
-         vxt_dword a = (p->regs.dx << 16) + p->regs.ax;
-         if (!v || (a / (vxt_dword)v) > 0xFFFF) {
-            IRQ(p, 0);
+         vxt_dword a = ((vxt_dword)p->regs.dx << 16) + p->regs.ax;
+         if (!v || ((a / (vxt_dword)v) > 0xFFFF)) {
+            divZero(p);
             return;
          }
 
@@ -868,11 +868,11 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       case 7: // IDIV - reference: fake86's - cpu.c
       {
          if (!v) {
-            IRQ(p, 0);
+            divZero(p);
             return;
          }
 
-         vxt_dword a = (p->regs.dx << 16) + p->regs.ax;
+         vxt_dword a = ((vxt_dword)p->regs.dx << 16) + p->regs.ax;
          vxt_dword d = SIGNEXT32(v);
 	      bool sign = ((a ^ d) & 0x80000000) != 0;
 
@@ -884,7 +884,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          vxt_dword res1 = a / d; 
          vxt_dword res2 = a % d;
          if ((res1 & 0xFFFF0000) != 0) {
-            IRQ(p, 0);
+            divZero(p);
             return;
          }
 
