@@ -82,6 +82,12 @@ Functions</h2></td></tr>
 <tr class="separator:a5101b920f9a48f0b72f4d8e5754f7570"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22e26c8605daa9acc3401f3fa345df8d"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a22e26c8605daa9acc3401f3fa345df8d">vxtu_create_pic</a> (<a class="el" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *alloc)</td></tr>
 <tr class="separator:a22e26c8605daa9acc3401f3fa345df8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27e75d30c4c82266a9240f387dc26e80"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a27e75d30c4c82266a9240f387dc26e80">vxtu_create_mda_device</a> (<a class="el" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *alloc)</td></tr>
+<tr class="separator:a27e75d30c4c82266a9240f387dc26e80"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68e92f29204c49d2594f2a183216006f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a68e92f29204c49d2594f2a183216006f">vxtu_mda_invalidate</a> (struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p)</td></tr>
+<tr class="separator:a68e92f29204c49d2594f2a183216006f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a5af433d5410b1d25ad10e0eb9113d7"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a6a5af433d5410b1d25ad10e0eb9113d7">vxtu_mda_traverse</a> (struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p, int(*f)(int, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>, int, void *), void *userdata)</td></tr>
+<tr class="separator:a6a5af433d5410b1d25ad10e0eb9113d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="af833b417e61bf32840f0a6317edfc14a"></a>
@@ -106,6 +112,24 @@ Functions</h2></td></tr>
           <td></td>
           <td>)</td>
           <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a27e75d30c4c82266a9240f387dc26e80"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a27e75d30c4c82266a9240f387dc26e80">&#9670;&nbsp;</a></span>vxtu_create_mda_device()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a>* vxtu_create_mda_device </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#a0e988123517189df1ad9657099fdeb81">vxt_allocator</a> *&#160;</td>
+          <td class="paramname"><em>alloc</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -182,6 +206,58 @@ Functions</h2></td></tr>
           <td class="paramtype">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td>
           <td class="paramname"><em>dbg</em></td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a68e92f29204c49d2594f2a183216006f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a68e92f29204c49d2594f2a183216006f">&#9670;&nbsp;</a></span>vxtu_mda_invalidate()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void vxtu_mda_invalidate </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td>
+          <td class="paramname"><em>p</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a6a5af433d5410b1d25ad10e0eb9113d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a5af433d5410b1d25ad10e0eb9113d7">&#9670;&nbsp;</a></span>vxtu_mda_traverse()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int vxtu_mda_traverse </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td>
+          <td class="paramname"><em>p</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int(*)(int, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>, int, void *)&#160;</td>
+          <td class="paramname"><em>f</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>userdata</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
