@@ -19,6 +19,7 @@ freely, subject to the following restrictions:
 */
 
 #include <vxt/vxt.h>
+#include <vxt/utils.h>
 
 VXT_PIREPHERAL(mda_video, {
     vxt_byte mem[0x1000];
@@ -61,6 +62,9 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(m, mda_video, p);
     m->is_dirty = true;
     if (port == 0x3B8) {
+        // Toggle blinking.
+        if ((m->mode_ctrl_reg & 0x20) != (data & 0x20))
+            m->is_dirty = true;
         m->mode_ctrl_reg = data;
         return;
     } else if (port & 1) { // 0x3B1, 0x3B3, 0x3B5, 0x3B7
@@ -116,7 +120,7 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 
 static const char *name(struct vxt_pirepheral *p) {
     VXT_UNUSED(p);
-    return "Basic MDA Video Adapter";
+    return "MDA Video Adapter";
 }
 
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
@@ -144,7 +148,7 @@ void vxtu_mda_invalidate(struct vxt_pirepheral *p) {
     m->is_dirty = true;
 }
 
-int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,int,void*), void *userdata) {
+int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata) {
     VXT_DEC_DEVICE(m, mda_video, p);
     int cursor = m->cursor_visible ? (m->cursor_offset & 0x7FF) : -1;
 
@@ -153,10 +157,35 @@ int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,int,void*)
             vxt_byte c = m->mem[i*2];
             vxt_byte a = m->mem[i*2+1];
 
-            if ((a == 0x0) || (a == 0x8) || (a == 0x80) || (a == 0x88))
-                c = ' ';
+            enum vxtu_mda_attrib attrib = 0;
+            if ((a & 7) == 1)
+                attrib |= VXTU_MDA_UNDELINE;
+            if (a & 8)
+                attrib |= VXTU_MDA_HIGH_INTENSITY;
+            if ((a & 0x80) && (m->mode_ctrl_reg & 0x20))
+                attrib |= VXTU_MDA_BLINK;
 
-            int err = f(i, c, cursor, userdata);
+            switch (a) {
+                case 0x0:
+                case 0x8:
+                case 0x80:
+                case 0x88:
+                    attrib = 0;
+                    c = ' ';
+                    break;
+                case 0x70:
+                case 0x78:
+                    attrib |= VXTU_MDA_INVERSE;
+                    break;
+                case 0xF0:
+                case 0xF8:
+                    attrib |= VXTU_MDA_INVERSE;
+                    if (m->mode_ctrl_reg & 0x20)
+                        attrib |= VXTU_MDA_BLINK;
+                    break;
+            }
+
+            int err = f(i, c, attrib, cursor, userdata);
             if (err != 0)
                 return err;
 

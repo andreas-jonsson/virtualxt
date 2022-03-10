@@ -77,9 +77,16 @@ extern void vxtu_debugger_interrupt(struct vxt_pirepheral *dbg);
 
 extern struct vxt_pirepheral *vxtu_create_pic(vxt_allocator *alloc);
 
+enum vxtu_mda_attrib {
+    VXTU_MDA_UNDELINE       = 0x1,
+    VXTU_MDA_HIGH_INTENSITY = 0x2,
+    VXTU_MDA_BLINK          = 0x4,
+    VXTU_MDA_INVERSE        = 0x8
+};
+
 extern struct vxt_pirepheral *vxtu_create_mda_device(vxt_allocator *alloc);
 extern void vxtu_mda_invalidate(struct vxt_pirepheral *p);
-extern int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,int,void*), void *userdata);
+extern int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata);
 
 #ifdef __cplusplus
 }

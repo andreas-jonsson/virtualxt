@@ -125,17 +125,24 @@ static int emu_loop(void *ptr) {
 	return 0;
 }
 
-int mda_render(int offset, vxt_byte ch, int cursor, void *userdata) {
+int mda_render(int offset, vxt_byte ch, enum vxtu_mda_attrib attrib, int cursor, void *userdata) {
 	int x = offset % 80;
 	int y = offset / 80;
 	int num_pixels = 0;
 	SDL_Point pixels[64];
 
-	if ((cursor >= 0) && (offset == cursor) && ((SDL_GetTicks() / 500) % 2))
+	bool blink = ((SDL_GetTicks() / 500) % 2) != 0;
+	if ((attrib & VXTU_MDA_BLINK) && blink)
+		ch = ' ';
+	
+	if ((offset == cursor) && blink) // Render blinking CRT cursor.
 		ch = '_';
 
 	for (int i = 0; i < 8; i++) {
 		vxt_byte glyphLine = cga_font[ch * 8 + i];
+		if (attrib & VXTU_MDA_INVERSE)
+			glyphLine = ~glyphLine;
+		
 		for (int j = 0; j < 8; j++) {
 			vxt_byte mask = 0x80 >> j;
 			if (glyphLine & mask)
@@ -186,10 +193,11 @@ int ENTRY(int argc, char *argv[]) {
 		printf("SDL_CreateRenderer() failed with error %s\n", SDL_GetError());
 		return -1;
 	}
-	if (SDL_RenderSetLogicalSize(renderer, 640, 200)) {
-		printf("SDL_RenderSetLogicalSize() failed with error %s\n", SDL_GetError());
-		return -1;
-	}
+	
+	//if (SDL_RenderSetLogicalSize(renderer, 640, 200)) {
+	//	printf("SDL_RenderSetLogicalSize() failed with error %s\n", SDL_GetError());
+	//	return -1;
+	//}
 
 	vxt_set_logger(&printf);
 
