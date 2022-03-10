@@ -38,21 +38,17 @@ freely, subject to the following restrictions:
    #include <stddef.h>
    #include <assert.h>
 
-   #define memclear(p, s) (memset((p), 0, (int)(s)))
    #define ABORT() { assert(0); } // { abort(); }
 #else
    typedef unsigned long long int uintptr_t;
-
-   static void memclear(void *p, int s) {
-      vxt_byte *bp = (vxt_byte*)p;
-      for (int i = 0; i < s; i++)
-         bp[i] = 0;
-   }
 
    static void ABORT(void) {
       for(;;);
    }
 #endif
+
+// TODO: Remove this.
+#define memclear vxt_memclear
 
 // Host to 8088 endian conversion.
 #if !defined(VXT_BIGENDIAN) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
@@ -66,7 +62,9 @@ freely, subject to the following restrictions:
 #define _LOG(...)    { logger(__VA_ARGS__); }
 #define LOG(...)     { _LOG(__VA_ARGS__); _LOG("\n"); }
 
-#define UNUSED(v)    ( (void)(v) )
+// TODO: Remove this.
+#define UNUSED VXT_UNUSED
+
 #define CONSTP(t)    t * const
 #define CONSTSP(t)   struct CONSTP(t)
 

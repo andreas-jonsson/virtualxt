@@ -77,6 +77,10 @@ extern void vxtu_debugger_interrupt(struct vxt_pirepheral *dbg);
 
 extern struct vxt_pirepheral *vxtu_create_pic(vxt_allocator *alloc);
 
+extern struct vxt_pirepheral *vxtu_create_mda_device(vxt_allocator *alloc);
+extern void vxtu_mda_invalidate(struct vxt_pirepheral *p);
+extern int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,int,void*), void *userdata);
+
 #ifdef __cplusplus
 }
 #endif

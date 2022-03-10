@@ -51,6 +51,8 @@ extern "C" {
     typedef uint16_t vxt_word;
     typedef uint32_t vxt_dword;
     typedef uint32_t vxt_pointer;
+
+    #define vxt_memclear(p, s) ( memset((p), 0, (int)(s)) )
 #else
     typedef char vxt_int8;
     typedef short vxt_int16;
@@ -70,6 +72,13 @@ extern "C" {
     #ifndef NULL
         #define NULL ((void*)0)
     #endif
+
+    #define vxt_memclear(p, s) {            \
+        vxt_byte *bp = (vxt_byte*)(p);      \
+        for (int i = 0; i < (int)(s); i++)  \
+            bp[i] = 0;                      \
+    }                                       \
+
 #endif
 
 #if defined(VXT_CLIB_ALLOCATOR) || defined(VXT_LIBC)
@@ -84,6 +93,8 @@ extern "C" {
 #else
    #define VXT_PACK(x) x __attribute__((__packed__))
 #endif
+
+#define VXT_UNUSED(v) ( (void)(v) )
 
 #define VXT_POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
 

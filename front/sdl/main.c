@@ -33,6 +33,7 @@
 #endif
 
 #include "main.h"
+#include "font.h"
 #include "docopt.h"
 
 #define SYNC(...) {						\
@@ -124,6 +125,27 @@ static int emu_loop(void *ptr) {
 	return 0;
 }
 
+int mda_render(int offset, vxt_byte ch, int cursor, void *userdata) {
+	int x = offset % 80;
+	int y = offset / 80;
+	int num_pixels = 0;
+	SDL_Point pixels[64];
+
+	if ((cursor >= 0) && (offset == cursor) && ((SDL_GetTicks() / 500) % 2))
+		ch = '_';
+
+	for (int i = 0; i < 8; i++) {
+		vxt_byte glyphLine = cga_font[ch * 8 + i];
+		for (int j = 0; j < 8; j++) {
+			vxt_byte mask = 0x80 >> j;
+			if (glyphLine & mask)
+				pixels[num_pixels++] = (SDL_Point){x * 8 + j, y * 8 + i};
+		}
+	}
+
+	return SDL_RenderDrawPoints((SDL_Renderer*)userdata, pixels, num_pixels);
+}
+
 int ENTRY(int argc, char *argv[]) {
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
 	args.debug |= (args.halt || args.trace) ? 1 : 0;
@@ -145,27 +167,29 @@ int ENTRY(int argc, char *argv[]) {
 	base_path = base_path ? base_path : "./";
 	printf("Base path: %s\n", base_path);
 
-	SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	SDL_SetHint(SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1");
 	SDL_Window *window = SDL_CreateWindow(
 			"VirtualXT", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-			640, 480, SDL_WINDOW_SHOWN|SDL_WINDOW_ALLOW_HIGHDPI|SDL_WINDOW_RESIZABLE
+			640, 480, SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE
 		);
 
-	if (window == NULL) {
+	if (!window) {
 		printf("SDL_CreateWindow() failed with error %s\n", SDL_GetError());
 		return -1;
 	}
 
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
-	if (renderer == NULL) {
+	if (!renderer) {
 		printf("SDL_CreateRenderer() failed with error %s\n", SDL_GetError());
 		return -1;
 	}
-	SDL_RenderSetLogicalSize(renderer, 640, 200);
+	if (SDL_RenderSetLogicalSize(renderer, 640, 200)) {
+		printf("SDL_RenderSetLogicalSize() failed with error %s\n", SDL_GetError());
+		return -1;
+	}
 
 	vxt_set_logger(&printf);
 
@@ -186,6 +210,8 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
 	//struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
 
+	struct vxt_pirepheral *mda = vxtu_create_mda_device(&vxt_clib_malloc);
+
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		printf("vxtu_memory_device_fill() failed!\n");
 		return -1;
@@ -195,6 +221,7 @@ int ENTRY(int argc, char *argv[]) {
 		vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false),
 		rom, // RAM & ROM should be initialized first.
 		vxtu_create_pic(&vxt_clib_malloc),
+		mda,
 		dbg, // Must be the last device in list.
 		NULL
 	};
@@ -258,7 +285,15 @@ int ENTRY(int argc, char *argv[]) {
 			}
 		}
 
+		SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
 		SDL_RenderClear(renderer);
+		SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
+		SYNC(
+			vxtu_mda_invalidate(mda);
+			vxtu_mda_traverse(mda, &mda_render, renderer);
+		);
+
 		SDL_RenderPresent(renderer);
 	}
 
