@@ -54,6 +54,7 @@ $(document).ready(function(){initNavTree('utils_8h.html',''); initResizable(); }
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
+<a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">utils.h File Reference</div>  </div>
@@ -67,6 +68,15 @@ $(document).ready(function(){initNavTree('utils_8h.html',''); initResizable(); }
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxtu__debugger__interface.html">vxtu_debugger_interface</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:a1ef133d741079472a623d46d9c4a6e7e"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a1ef133d741079472a623d46d9c4a6e7e">vxtu_mda_attrib</a> { <a class="el" href="utils_8h.html#a1ef133d741079472a623d46d9c4a6e7ea2481a44185beb49291786e7a693d93eb">VXTU_MDA_UNDELINE</a> = 0x1, 
+<a class="el" href="utils_8h.html#a1ef133d741079472a623d46d9c4a6e7eabe9c8d348a29d4a98abc5fe4144003b0">VXTU_MDA_HIGH_INTENSITY</a> = 0x2, 
+<a class="el" href="utils_8h.html#a1ef133d741079472a623d46d9c4a6e7ea94fe7194ff62f6811f00c4bc22c434a7">VXTU_MDA_BLINK</a> = 0x4, 
+<a class="el" href="utils_8h.html#a1ef133d741079472a623d46d9c4a6e7ea5ffdf689ffaa7e6ef91fe042a48624b5">VXTU_MDA_INVERSE</a> = 0x8
+ }</td></tr>
+<tr class="separator:a1ef133d741079472a623d46d9c4a6e7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -86,9 +96,30 @@ Functions</h2></td></tr>
 <tr class="separator:a27e75d30c4c82266a9240f387dc26e80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a68e92f29204c49d2594f2a183216006f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a68e92f29204c49d2594f2a183216006f">vxtu_mda_invalidate</a> (struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p)</td></tr>
 <tr class="separator:a68e92f29204c49d2594f2a183216006f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a5af433d5410b1d25ad10e0eb9113d7"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a6a5af433d5410b1d25ad10e0eb9113d7">vxtu_mda_traverse</a> (struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p, int(*f)(int, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>, int, void *), void *userdata)</td></tr>
-<tr class="separator:a6a5af433d5410b1d25ad10e0eb9113d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8604c410bfc57310be11504e41a49f86"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a8604c410bfc57310be11504e41a49f86">vxtu_mda_traverse</a> (struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p, int(*f)(int, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>, enum <a class="el" href="utils_8h.html#a1ef133d741079472a623d46d9c4a6e7e">vxtu_mda_attrib</a>, int, void *), void *userdata)</td></tr>
+<tr class="separator:a8604c410bfc57310be11504e41a49f86"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="a1ef133d741079472a623d46d9c4a6e7e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1ef133d741079472a623d46d9c4a6e7e">&#9670;&nbsp;</a></span>vxtu_mda_attrib</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="utils_8h.html#a1ef133d741079472a623d46d9c4a6e7e">vxtu_mda_attrib</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a1ef133d741079472a623d46d9c4a6e7ea2481a44185beb49291786e7a693d93eb"></a>VXTU_MDA_UNDELINE&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a1ef133d741079472a623d46d9c4a6e7eabe9c8d348a29d4a98abc5fe4144003b0"></a>VXTU_MDA_HIGH_INTENSITY&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a1ef133d741079472a623d46d9c4a6e7ea94fe7194ff62f6811f00c4bc22c434a7"></a>VXTU_MDA_BLINK&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a1ef133d741079472a623d46d9c4a6e7ea5ffdf689ffaa7e6ef91fe042a48624b5"></a>VXTU_MDA_INVERSE&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="af833b417e61bf32840f0a6317edfc14a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af833b417e61bf32840f0a6317edfc14a">&#9670;&nbsp;</a></span>vxtu_create_debugger()</h2>
@@ -230,8 +261,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a6a5af433d5410b1d25ad10e0eb9113d7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6a5af433d5410b1d25ad10e0eb9113d7">&#9670;&nbsp;</a></span>vxtu_mda_traverse()</h2>
+<a id="a8604c410bfc57310be11504e41a49f86"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8604c410bfc57310be11504e41a49f86">&#9670;&nbsp;</a></span>vxtu_mda_traverse()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -245,7 +276,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int(*)(int, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>, int, void *)&#160;</td>
+          <td class="paramtype">int(*)(int, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>, enum <a class="el" href="utils_8h.html#a1ef133d741079472a623d46d9c4a6e7e">vxtu_mda_attrib</a>, int, void *)&#160;</td>
           <td class="paramname"><em>f</em>, </td>
         </tr>
         <tr>
