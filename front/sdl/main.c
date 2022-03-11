@@ -38,6 +38,10 @@
 
 #define CPU_NAME "8088"
 
+#define SET_WHITE(r) ( SDL_SetRenderDrawColor((r), 0xFF, 0xFF, 0xFF, 0xFF) )
+#define SET_BLACK(r) ( SDL_SetRenderDrawColor((r), 0x0, 0x0, 0x0, 0xFF) )
+#define SET_COLOR(r, c) ( c ? SET_WHITE((r)) : SET_BLACK((r)) )
+
 #define SYNC(...) {						\
 	while (SDL_LockMutex(emu_mutex));	\
 	{ __VA_ARGS__ ; }					\
@@ -139,13 +143,8 @@ int mda_render(int offset, vxt_byte ch, enum vxtu_mda_attrib attrib, int cursor,
 	bool blink = ((SDL_GetTicks() / 500) % 2) != 0;
 	SDL_Point pixels[64];
 	
-	// Interpret all attributes (except inverse) as blinking.
-	if ((attrib & (VXTU_MDA_BLINK|VXTU_MDA_HIGH_INTENSITY|VXTU_MDA_UNDELINE)) && blink)
+	if ((attrib & VXTU_MDA_BLINK) && blink)
 		ch = ' ';
-	
-	// Render blinking CRT cursor.
-	if ((offset == cursor) && blink)
-		ch = '_';
 
 	for (int i = 0; i < 8; i++) {
 		vxt_byte glyphLine = cga_font[ch * 8 + i];
@@ -159,7 +158,20 @@ int mda_render(int offset, vxt_byte ch, enum vxtu_mda_attrib attrib, int cursor,
 		}
 	}
 
-	return SDL_RenderDrawPoints((SDL_Renderer*)userdata, pixels, num_pixels);
+	// Draw character.
+	int err = SDL_RenderDrawPoints((SDL_Renderer*)userdata, pixels, num_pixels);
+	if (err) return err;
+
+	// Render blinking CRT cursor and underlines.
+	bool is_cursor = offset == cursor;
+	if (is_cursor || (attrib & VXTU_MDA_UNDELINE)) {
+		SET_COLOR((SDL_Renderer*)userdata, is_cursor && blink);
+		for (int i = 0; i < 8; i++)
+			pixels[i] = (SDL_Point){x * 8 + i, y * 8 + 7};
+		err = SDL_RenderDrawPoints((SDL_Renderer*)userdata, pixels, 8);
+		SET_WHITE((SDL_Renderer*)userdata);
+	}
+	return err;
 }
 
 int ENTRY(int argc, char *argv[]) {
@@ -322,9 +334,9 @@ int ENTRY(int argc, char *argv[]) {
 			SDL_SetWindowTitle(window, buffer);
 		}
 
-		SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
+		SET_BLACK(renderer);
 		SDL_RenderClear(renderer);
-		SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+		SET_WHITE(renderer);
 
 		SYNC(
 			vxtu_mda_invalidate(mda);
