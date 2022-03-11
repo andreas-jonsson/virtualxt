@@ -25,6 +25,102 @@ extern "C" {
 
 #include "vxt.h"
 
+enum vxtu_scancode {
+    VXTU_SCAN_INVALID,
+    VXTU_SCAN_ESCAPE,
+    VXTU_SCAN_1,
+    VXTU_SCAN_2,
+    VXTU_SCAN_3,
+    VXTU_SCAN_4,
+    VXTU_SCAN_5,
+    VXTU_SCAN_6,
+    VXTU_SCAN_7,
+    VXTU_SCAN_8,
+    VXTU_SCAN_9,
+    VXTU_SCAN_0,
+    VXTU_SCAN_MINUS,
+    VXTU_SCAN_EQUAL,
+    VXTU_SCAN_BACKSPACE,
+    VXTU_SCAN_TAB,
+	VXTU_SCAN_Q,
+	VXTU_SCAN_W,
+	VXTU_SCAN_E,
+	VXTU_SCAN_R,
+	VXTU_SCAN_T,
+	VXTU_SCAN_Y,
+	VXTU_SCAN_U,
+	VXTU_SCAN_I,
+	VXTU_SCAN_O,
+	VXTU_SCAN_P,
+	VXTU_SCAN_LBRACKET,
+	VXTU_SCAN_RBRACKET,
+	VXTU_SCAN_ENTER,
+	VXTU_SCAN_CONTROL,
+	VXTU_SCAN_A,
+	VXTU_SCAN_S,
+	VXTU_SCAN_D,
+	VXTU_SCAN_F,
+	VXTU_SCAN_G,
+	VXTU_SCAN_H,
+	VXTU_SCAN_J,
+	VXTU_SCAN_K,
+	VXTU_SCAN_L,
+	VXTU_SCAN_SEMICOLON,
+	VXTU_SCAN_QUOTE,
+	VXTU_SCAN_BACKQUOTE,
+	VXTU_SCAN_LSHIFT,
+	VXTU_SCAN_BACKSLASH,
+	VXTU_SCAN_Z,
+	VXTU_SCAN_X,
+	VXTU_SCAN_C,
+	VXTU_SCAN_V,
+	VXTU_SCAN_B,
+	VXTU_SCAN_N,
+	VXTU_SCAN_M,
+	VXTU_SCAN_COMMA,
+	VXTU_SCAN_PERIOD,
+	VXTU_SCAN_SLASH,
+	VXTU_SCAN_RSHIFT,
+	VXTU_SCAN_PRINT,
+	VXTU_SCAN_ALT,
+	VXTU_SCAN_SPACE,
+	VXTU_SCAN_CAPSLOCK,
+	VXTU_SCAN_F1,
+	VXTU_SCAN_F2,
+	VXTU_SCAN_F3,
+	VXTU_SCAN_F4,
+	VXTU_SCAN_F5,
+	VXTU_SCAN_F6,
+	VXTU_SCAN_F7,
+	VXTU_SCAN_F8,
+	VXTU_SCAN_F9,
+	VXTU_SCAN_F10,
+	VXTU_SCAN_NUMLOCK,
+	VXTU_SCAN_SCRLOCK,
+	VXTU_SCAN_KP_HOME,
+	VXTU_SCAN_KP_UP,
+	VXTU_SCAN_KP_PAGEUP,
+	VXTU_SCAN_KP_MINUS,
+	VXTU_SCAN_KP_LEFT,
+	VXTU_SCAN_KP_5,
+	VXTU_SCAN_KP_RIGHT,
+	VXTU_SCAN_KP_PLUS,
+	VXTU_SCAN_KP_END,
+	VXTU_SCAN_KP_DOWN,
+	VXTU_SCAN_KP_PAGEDOWN,
+	VXTU_SCAN_KP_INSERT,
+	VXTU_SCAN_KP_DELETE
+};
+
+static const enum vxtu_scancode VXTU_KEY_UP_MASK = 0x80;
+
+enum vxtu_mda_attrib {
+    VXTU_MDA_UNDELINE       = 0x1,
+    VXTU_MDA_HIGH_INTENSITY = 0x2,
+    VXTU_MDA_BLINK          = 0x4,
+    VXTU_MDA_INVERSE        = 0x8
+};
+
 struct vxtu_debugger_interface {
     const char *trace;
     bool (*pdisasm)(vxt_system*, const char*, vxt_pointer, int, int);
@@ -76,14 +172,9 @@ extern struct vxt_pirepheral *vxtu_create_debugger(vxt_allocator *alloc, const s
 extern void vxtu_debugger_interrupt(struct vxt_pirepheral *dbg);
 
 extern struct vxt_pirepheral *vxtu_create_pic(vxt_allocator *alloc);
-extern struct vxt_pirepheral *vxtu_create_ppi(vxt_allocator *alloc);
 
-enum vxtu_mda_attrib {
-    VXTU_MDA_UNDELINE       = 0x1,
-    VXTU_MDA_HIGH_INTENSITY = 0x2,
-    VXTU_MDA_BLINK          = 0x4,
-    VXTU_MDA_INVERSE        = 0x8
-};
+extern struct vxt_pirepheral *vxtu_create_ppi(vxt_allocator *alloc);
+extern bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force);
 
 extern struct vxt_pirepheral *vxtu_create_mda_device(vxt_allocator *alloc);
 extern void vxtu_mda_invalidate(struct vxt_pirepheral *p);

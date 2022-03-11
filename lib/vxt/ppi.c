@@ -85,3 +85,16 @@ struct vxt_pirepheral *vxtu_create_ppi(vxt_allocator *alloc) {
     p->io.out = &out;
     return p;
 }
+
+bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force) {
+    VXT_DEC_DEVICE(c, ppi, p);
+    bool has_scan = c->command_port & 2;
+    if (force || !has_scan) {
+    	c->command_port |= 2;
+		c->data_port = (vxt_byte)key;
+        if (!has_scan)
+            vxt_system_interrupt(vxt_pirepheral_system(p), 1);
+        return true;
+    }
+    return false;
+}

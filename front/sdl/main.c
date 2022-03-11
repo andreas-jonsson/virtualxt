@@ -34,6 +34,7 @@
 
 #include "main.h"
 #include "font.h"
+#include "keys.h"
 #include "docopt.h"
 
 #define CPU_NAME "8088"
@@ -240,6 +241,7 @@ int ENTRY(int argc, char *argv[]) {
 	//struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
 
 	struct vxt_pirepheral *mda = vxtu_create_mda_device(&vxt_clib_malloc);
+	struct vxt_pirepheral *ppi = vxtu_create_ppi(&vxt_clib_malloc);
 
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		printf("vxtu_memory_device_fill() failed!\n");
@@ -250,7 +252,7 @@ int ENTRY(int argc, char *argv[]) {
 		vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false),
 		rom, // RAM & ROM should be initialized first.
 		vxtu_create_pic(&vxt_clib_malloc),
-		vxtu_create_ppi(&vxt_clib_malloc),
+		ppi,
 		mda,
 		dbg, // Must be the last device in list.
 		NULL
@@ -307,10 +309,14 @@ int ENTRY(int argc, char *argv[]) {
 				case SDL_MOUSEBUTTONUP:
 					break;
 				case SDL_KEYDOWN:
-					if (args.debug && e.key.keysym.sym == SDLK_F12 && (e.key.keysym.mod & KMOD_ALT))
-						SYNC(vxtu_debugger_interrupt(dbg);)
+					if (args.debug && (e.key.keysym.sym == SDLK_F12) && (e.key.keysym.mod & KMOD_ALT))
+						SYNC(vxtu_debugger_interrupt(dbg));
+					for (bool success = false; !success;)
+						SYNC(success = vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
+					for (bool success = false; !success;)
+						SYNC(success = vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTU_KEY_UP_MASK, false));
 					break;
 			}
 		}
