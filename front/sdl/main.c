@@ -36,14 +36,19 @@
 #include "font.h"
 #include "docopt.h"
 
+#define CPU_NAME "8088"
+
 #define SYNC(...) {						\
 	while (SDL_LockMutex(emu_mutex));	\
-	{ __VA_ARGS__ }						\
+	{ __VA_ARGS__ ; }					\
 	SDL_UnlockMutex(emu_mutex); }		\
 
 #ifdef PI8088
 	extern struct vxt_validator *pi8088_validator();
 #endif
+
+Uint32 last_title_update = 0;
+int cycle_count = 0;
 
 SDL_atomic_t running;
 SDL_mutex *emu_mutex = NULL;
@@ -116,11 +121,13 @@ static int emu_loop(void *ptr) {
 				else
 					printf("step error: %s", vxt_error_str(res.err));
 			}
+			cycle_count += res.cycles;
 		);
 
 		//const Uint64 freq = 4772726ul; // 4.77 Mhz
-		const Uint64 freq = 477272600ul; // 400.77 Mhz
-		while (((SDL_GetPerformanceCounter() - start) / (SDL_GetPerformanceFrequency() / freq)) < (Uint64)res.cycles);
+		const Uint64 freq = 0;
+		if (freq > 0)
+			while (((SDL_GetPerformanceCounter() - start) / (SDL_GetPerformanceFrequency() / freq)) < (Uint64)res.cycles);
 	}
 	return 0;
 }
@@ -129,13 +136,15 @@ int mda_render(int offset, vxt_byte ch, enum vxtu_mda_attrib attrib, int cursor,
 	int x = offset % 80;
 	int y = offset / 80;
 	int num_pixels = 0;
-	SDL_Point pixels[64];
-
 	bool blink = ((SDL_GetTicks() / 500) % 2) != 0;
-	if ((attrib & VXTU_MDA_BLINK) && blink)
+	SDL_Point pixels[64];
+	
+	// Interpret all attributes (except inverse) as blinking.
+	if ((attrib & (VXTU_MDA_BLINK|VXTU_MDA_HIGH_INTENSITY|VXTU_MDA_UNDELINE)) && blink)
 		ch = ' ';
 	
-	if ((offset == cursor) && blink) // Render blinking CRT cursor.
+	// Render blinking CRT cursor.
+	if ((offset == cursor) && blink)
 		ch = '_';
 
 	for (int i = 0; i < 8; i++) {
@@ -193,7 +202,7 @@ int ENTRY(int argc, char *argv[]) {
 		printf("SDL_CreateRenderer() failed with error %s\n", SDL_GetError());
 		return -1;
 	}
-	
+
 	//if (SDL_RenderSetLogicalSize(renderer, 640, 200)) {
 	//	printf("SDL_RenderSetLogicalSize() failed with error %s\n", SDL_GetError());
 	//	return -1;
@@ -229,6 +238,7 @@ int ENTRY(int argc, char *argv[]) {
 		vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false),
 		rom, // RAM & ROM should be initialized first.
 		vxtu_create_pic(&vxt_clib_malloc),
+		vxtu_create_ppi(&vxt_clib_malloc),
 		mda,
 		dbg, // Must be the last device in list.
 		NULL
@@ -247,7 +257,7 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	printf("Installed pirepherals:\n");
-	for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
+	for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
 		struct vxt_pirepheral *device = vxt_system_pirepheral(vxt, (vxt_byte)i);
 		if (device)
 			printf("%d - %s\n", i, vxt_pirepheral_name(device));
@@ -291,6 +301,25 @@ int ENTRY(int argc, char *argv[]) {
 				case SDL_KEYUP:
 					break;
 			}
+		}
+
+		Uint32 ticks = SDL_GetTicks();
+		if ((ticks - last_title_update) > 1000) {
+			last_title_update = ticks;
+
+			char buffer[100];
+			double mhz;
+
+			SYNC(
+				mhz = (double)cycle_count / 1000000.0;
+				cycle_count = 0;
+			);
+
+			if (mhz > 10.0)
+				snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%d Mhz", (int)mhz);
+			else
+				snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%.2f Mhz", mhz);
+			SDL_SetWindowTitle(window, buffer);
 		}
 
 		SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);

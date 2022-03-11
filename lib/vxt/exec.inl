@@ -93,6 +93,7 @@ static void or_D(CONSTSP(cpu) p, INST(inst)) {
 
 static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
    VALIDATOR_DISCARD(p);
+   p->regs.debug = true;
    #ifdef VXT_CPU_286
       UNUSED(inst);
       p->regs.ip = p->inst_start;
@@ -1039,7 +1040,7 @@ static struct instruction const opcode_table[0x100] = {
    {0xB, "OR Gv Ev", true, X, &or_9_B},
    {0xC, "OR AL Ib", false, 4, &or_C},
    {0xD, "OR AX Iv", false, 4, &or_D},
-   {0xE, "PUSH CS", false, 10, &push_es},
+   {0xE, "PUSH CS", false, 10, &push_cs},
    {0xF, INVALID},
    {0x10, "ADC Eb Gb", true, X, &add_0_2_10_12},
    {0x11, "ADC Ev Gv", true, X, &add_1_3_11_13},

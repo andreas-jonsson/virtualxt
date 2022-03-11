@@ -120,7 +120,7 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 
 static const char *name(struct vxt_pirepheral *p) {
     VXT_UNUSED(p);
-    return "MDA Video Adapter";
+    return "MDA Compatible Video Adapter";
 }
 
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {

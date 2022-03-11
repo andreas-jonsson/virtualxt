@@ -76,6 +76,7 @@ extern struct vxt_pirepheral *vxtu_create_debugger(vxt_allocator *alloc, const s
 extern void vxtu_debugger_interrupt(struct vxt_pirepheral *dbg);
 
 extern struct vxt_pirepheral *vxtu_create_pic(vxt_allocator *alloc);
+extern struct vxt_pirepheral *vxtu_create_ppi(vxt_allocator *alloc);
 
 enum vxtu_mda_attrib {
     VXTU_MDA_UNDELINE       = 0x1,
