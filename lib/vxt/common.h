@@ -31,20 +31,20 @@ freely, subject to the following restrictions:
    #define UNLIKELY(x) __builtin_expect((x), 0)
 #endif
 
+extern void (*breakpoint)(void);
+
 #ifdef VXT_LIBC
    #include <string.h>
    #include <stdio.h>
    #include <stdlib.h>
    #include <stddef.h>
-   #include <assert.h>
 
-   #define ABORT() { assert(0); } // { abort(); }
+   #define ABORT() { breakpoint(); abort(); }
 #else
    typedef unsigned long long int uintptr_t;
 
-   static void ABORT(void) {
-      for(;;);
-   }
+   static volatile int *_just_null = NULL;
+   #define ABORT() { breakpoint(); *_just_null = 0; for(;;); }
 #endif
 
 // TODO: Remove this.

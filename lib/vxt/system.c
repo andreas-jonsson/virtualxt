@@ -38,6 +38,9 @@
    int (*logger)(const char*, ...) = &no_print;
 #endif
 
+static void no_breakpoint(void) {}
+void (*breakpoint)(void) = &no_breakpoint;
+
 const char *vxt_error_str(vxt_error err) {
     #define ERROR_TEXT(id, name, text) case id: return text;
     switch (err) {
@@ -51,12 +54,12 @@ int vxt_lib_version_major(void) { return VXT_VERSION_MAJOR; }
 int vxt_lib_version_minor(void) { return VXT_VERSION_MINOR; }
 int vxt_lib_version_patch(void) { return VXT_VERSION_PATCH; }
 
-int _vxt_system_register_size(void) {
-    return sizeof(struct vxt_registers);
-}
-
 void vxt_set_logger(int (*f)(const char*, ...)) {
     logger = f;
+}
+
+void vxt_set_breakpoint(void (*f)(void)) {
+    breakpoint = f;
 }
 
 vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral * const devs[]) {
@@ -80,7 +83,14 @@ vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral * cons
     return s;
 }
 
-vxt_error _vxt_system_initialize(CONSTP(vxt_system) s) {
+vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, unsigned reg_size, int v_major, int v_minor) {
+    if (sizeof(struct vxt_registers) != reg_size)
+        return VXT_INVALID_REGISTER_PACKING;
+
+    //if (VXT_VERSION_MAJOR != v_major || VXT_VERSION_MINOR < v_minor)
+    if (VXT_VERSION_MAJOR != v_major || VXT_VERSION_MINOR != v_minor)
+        return VXT_INVALID_VERSION;
+
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_pirepheral) d = s->devices[i];
         if (d->install) {

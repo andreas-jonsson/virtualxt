@@ -59,6 +59,10 @@ SDL_atomic_t running;
 SDL_mutex *emu_mutex = NULL;
 SDL_Thread *emu_thread = NULL;
 
+static void trigger_breakpoint(void) {
+	SDL_TriggerBreakpoint();
+}
+
 static const char *getline() {
 	static char buffer[1024] = {0};
 	char *str = fgets(buffer, sizeof(buffer), stdin);
@@ -222,6 +226,7 @@ int ENTRY(int argc, char *argv[]) {
 	//}
 
 	vxt_set_logger(&printf);
+	vxt_set_breakpoint(&trigger_breakpoint);
 
 	struct vxt_pirepheral *dbg = NULL;
 	if (args.debug) {

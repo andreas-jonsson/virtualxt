@@ -235,30 +235,17 @@ struct vxt_validator {
 };
 
 /// @private
-extern int _vxt_system_register_size(void);
+extern vxt_error _vxt_system_initialize(vxt_system *s, unsigned reg_size, int v_major, int v_minor);
 
-/// @private
-extern vxt_error _vxt_system_initialize(vxt_system *s);
-
-extern vxt_allocator *vxt_static_allocator(void *mem, int size);
+#define vxt_system_initialize(s) _vxt_system_initialize((s), sizeof(struct vxt_registers), VXT_VERSION_MAJOR, VXT_VERSION_MINOR)
 
 extern const char *vxt_error_str(vxt_error err);
 extern const char *vxt_lib_version(void);
 extern void vxt_set_logger(int (*f)(const char*, ...));
+extern void vxt_set_breakpoint(void (*f)(void));
 extern int vxt_lib_version_major(void);
 extern int vxt_lib_version_minor(void);
 extern int vxt_lib_version_patch(void);
-/*
-static vxt_error vxt_system_initialize(vxt_system *s) {
-    if (_vxt_system_register_size() != sizeof(struct vxt_registers))
-        return VXT_INVALID_REGISTER_PACKING;
-    //if (vxt_lib_version_major() != VXT_VERSION_MAJOR || vxt_lib_version_minor() < VXT_VERSION_MINOR)
-    if (vxt_lib_version_major() != VXT_VERSION_MAJOR || vxt_lib_version_minor() != VXT_VERSION_MINOR)
-        return VXT_INVALID_VERSION;
-    return _vxt_system_initialize(s);
-}
-*/
-#define vxt_system_initialize _vxt_system_initialize
 
 extern const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
 extern enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
