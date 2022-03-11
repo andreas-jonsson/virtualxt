@@ -18,8 +18,8 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#include <vxt/vxt.h>
 #include <vxt/utils.h>
+#include "common.h"
 
 VXT_PIREPHERAL(mda_video, {
     vxt_byte mem[0x1000];
