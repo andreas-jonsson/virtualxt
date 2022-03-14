@@ -130,8 +130,11 @@ static void sub_1D_2D(CONSTSP(cpu) p, INST(inst)) {
 
 static void das_2F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   if (((p->regs.al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
-      vxt_word v = ((vxt_word)p->regs.al) - 6;
+   vxt_byte al = p->regs.al;
+   vxt_word cf = p->regs.flags & VXT_CARRY;
+
+   if (((al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
+      vxt_word v = ((vxt_word)al) - 6;
       p->regs.al = (vxt_byte)(v & 0xFF);
       SET_FLAG_IF(p->regs.flags, VXT_CARRY, v & 0xFF00);
    	p->regs.flags |= VXT_AUXILIARY;
@@ -139,7 +142,7 @@ static void das_2F(CONSTSP(cpu) p, INST(inst)) {
       p->regs.flags &= ~VXT_AUXILIARY;
 	}
 
-   if (((p->regs.al & 0xF0) > 0x90) || FLAGS(p->regs.flags, VXT_CARRY) ) {
+   if ((al > 0x99) || cf) {
       p->regs.al -= 0x60;
       p->regs.flags |= VXT_CARRY;
    } else {
@@ -368,12 +371,12 @@ static void grp1_81_83(CONSTSP(cpu) p, INST(inst)) {
 
 static void test_84(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   flag_logic8(&p->regs, reg_read8(&p->regs, p->mode.reg) & read_source8(p));
+   flag_logic8(&p->regs, reg_read8(&p->regs, p->mode.reg) & rm_read8(p));
 }
 
 static void test_85(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   flag_logic16(&p->regs, reg_read16(&p->regs, p->mode.reg) & read_source16(p));
+   flag_logic16(&p->regs, reg_read16(&p->regs, p->mode.reg) & rm_read16(p));
 }
 
 static void xchg_86(CONSTSP(cpu) p, INST(inst)) {
@@ -471,7 +474,7 @@ static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
    #ifdef VXT_CPU_286
       push(p, (p->regs.flags & ALL_FLAGS) | 0x2);
    #else
-      push(p, (p->regs.flags & ALL_FLAGS) | 0xF802);
+      push(p, (p->regs.flags & ALL_FLAGS) | 0xF002);
    #endif
 }
 
@@ -481,7 +484,7 @@ static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    #ifdef VXT_CPU_286
       p->regs.flags |= 0x2;
    #else
-      p->regs.flags |= 0xF802;
+      p->regs.flags |= 0xF002;
    #endif
 }
 

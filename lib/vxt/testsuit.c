@@ -84,11 +84,11 @@ TEST(blackbox_add,
 )
 
 TEST(blackbox_bcdcnv,
-    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 11);
+    RUN_BBTEST("tools/testdata/bcdcnv.bin", CHECK_DIFF, "tools/testdata/res_bcdcnv.bin", 9);
 )
 
 TEST(blackbox_bitwise,
-    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF, "tools/testdata/res_bitwise.bin", 5);
+    RUN_BBTEST("tools/testdata/bitwise.bin", CHECK_DIFF, "tools/testdata/res_bitwise.bin", 0);
 )
 
 TEST(blackbox_cmpneg,
@@ -127,16 +127,16 @@ TEST(blackbox_mul,
     RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 21);
 )
 
-//TEST(blackbox_rep,
-//    RUN_BBTEST("tools/testdata/rep.bin", CHECK_DIFF, "tools/testdata/res_rep.bin", 0);
-//)
+TEST(blackbox_rep,
+    RUN_BBTEST("tools/testdata/rep.bin", CHECK_DIFF, "tools/testdata/res_rep.bin", 0);
+)
 
 TEST(blackbox_rotate,
     RUN_BBTEST("tools/testdata/rotate.bin", CHECK_DIFF, "tools/testdata/res_rotate.bin", 0);
 )
 
 TEST(blackbox_segpr,
-    RUN_BBTEST("tools/testdata/segpr.bin", CHECK_DIFF, "tools/testdata/res_segpr.bin", 8);
+    RUN_BBTEST("tools/testdata/segpr.bin", CHECK_DIFF, "tools/testdata/res_segpr.bin", 0);
 )
 
 TEST(blackbox_shift,

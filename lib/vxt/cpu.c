@@ -395,11 +395,13 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
 }
 
 static void call_int(CONSTSP(cpu) p, int n) {
+   VALIDATOR_DISCARD(p);
    CONSTSP(vxt_registers) r = &p->regs;
+
    #ifdef VXT_CPU_286
       push(p, (r->flags & ALL_FLAGS) | 0x2);
    #else
-      push(p, (r->flags & ALL_FLAGS) | 0xF802);
+      push(p, (r->flags & ALL_FLAGS) | 0xF002);
    #endif
 
    push(p, r->cs);
@@ -435,8 +437,8 @@ static void prep_exec(CONSTSP(cpu) p) {
 }
 
 static void read_opcode(CONSTSP(cpu) p) {
+   p->inst_start = p->regs.ip;
    for (;;) {
-      p->inst_start = p->regs.ip;
       switch (p->opcode = read_opcode8(p)) {
          case 0x26:
             p->has_prefix = true;
@@ -528,7 +530,7 @@ void cpu_reset(CONSTSP(cpu) p) {
    #ifdef VXT_CPU_286
       p->regs.flags = 0x2;
    #else
-      p->regs.flags = 0xF802;
+      p->regs.flags = 0xF002;
    #endif
    p->regs.cs = 0xFFFF;
    p->regs.debug = false;
