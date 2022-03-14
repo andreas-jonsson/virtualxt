@@ -405,7 +405,7 @@ static void mov_89_8B(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_8C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest16(p, seg_read16(p));
+   rm_write16(p, seg_read16(p));
 }
 
 static void lea_8D(CONSTSP(cpu) p, INST(inst)) {
@@ -415,12 +415,12 @@ static void lea_8D(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_8E(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   seg_write16(p, read_source16(p));
+   seg_write16(p, rm_read16(p));
 }
 
 static void pop_8F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest16(p, pop(p));
+   rm_write16(p, pop(p));
 }
 
 static void nop_90(CONSTSP(cpu) p, INST(inst)) {
