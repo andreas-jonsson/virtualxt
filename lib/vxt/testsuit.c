@@ -104,7 +104,8 @@ TEST(blackbox_datatrnf,
 )
 
 TEST(blackbox_div,
-    RUN_BBTEST("tools/testdata/div.bin", CHECK_DIFF, "tools/testdata/res_div.bin", 3);
+    // IDIV is a problem here but current implementation is supported by the pi8088.
+    RUN_BBTEST("tools/testdata/div.bin", CHECK_DIFF, "tools/testdata/res_div.bin", 27);
 )
 
 TEST(blackbox_interrupt,

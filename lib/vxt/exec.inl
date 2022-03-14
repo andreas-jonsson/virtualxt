@@ -644,7 +644,7 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
    } else {
       p->regs.al = a % b;
       p->regs.ah = a / b;
-      flag_szp16(&p->regs, p->regs.ax);
+      flag_szp8(&p->regs, p->regs.al);
    }
 }
 
@@ -803,7 +803,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          p->regs.al = (vxt_byte)(ax / (vxt_word)v);
          break;
       }
-      case 7: // IDIV - reference: fake86's - cpu.c
+      case 7: // IDIV
       {
          if (!v) {
             divZero(p);
@@ -812,27 +812,15 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
 
          vxt_word a = p->regs.ax;
          vxt_word d = SIGNEXT16(v);
-	      bool sign = ((a ^ d) & 0x8000) != 0;
+         vxt_word r = a / d;
 
-         if (a >= 0x8000)
-            a = ~a + 1;
-         if (d >= 0x8000)
-            d = ~d + 1;
-
-         vxt_word res1 = a / d; 
-         vxt_word res2 = a % d;
-         if ((res1 & 0xFF00) != 0) {
+         if (r < 0x80) {
             divZero(p);
             return;
          }
 
-         if (sign) {
-            res1 = (~res1 + 1) & 0xFF;
-            res2 = (~res2 + 1) & 0xFF;
-         }
-
-         p->regs.al = (vxt_byte)res1;
-         p->regs.ah = (vxt_byte)res2;
+         p->regs.al = (vxt_byte)r;
+         p->regs.ah = (vxt_byte)(a % d);
          break;
       }
    }
@@ -892,7 +880,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = (vxt_word)(a / (vxt_dword)v);
          break;
       }
-      case 7: // IDIV - reference: fake86's - cpu.c
+      case 7: // IDIV
       {
          if (!v) {
             divZero(p);
@@ -901,27 +889,15 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
 
          vxt_dword a = ((vxt_dword)p->regs.dx << 16) + p->regs.ax;
          vxt_dword d = SIGNEXT32(v);
-	      bool sign = ((a ^ d) & 0x80000000) != 0;
+         vxt_dword r = a / d;
 
-         if (a >= 0x80000000)
-            a = ~a + 1;
-         if (d >= 0x80000000)
-            d = ~d + 1;
-
-         vxt_dword res1 = a / d; 
-         vxt_dword res2 = a % d;
-         if ((res1 & 0xFFFF0000) != 0) {
+         if (r < 0x8000) {
             divZero(p);
             return;
          }
 
-         if (sign) {
-            res1 = (~res1 + 1) & 0xFFFF;
-            res2 = (~res2 + 1) & 0xFFFF;
-         }
-
-         p->regs.ax = (vxt_word)res1;
-         p->regs.dx = (vxt_word)res2;
+         p->regs.ax = (vxt_word)r;
+         p->regs.dx = (vxt_word)(a % d);
          break;
       }
    }
