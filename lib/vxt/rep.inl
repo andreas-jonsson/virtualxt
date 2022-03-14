@@ -54,11 +54,11 @@ REPEAT(stosw_AB, {
    update_di(p, 2);
 })
 REPEAT(lodsb_AC, {
-   p->regs.al = vxt_system_read_byte(p->s, VXT_POINTER(p->regs.es, p->regs.si));
+   p->regs.al = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, p->regs.si));
    update_si(p, 1);
 })
 REPEAT(lodsw_AD, {
-   p->regs.ax = vxt_system_read_word(p->s, VXT_POINTER(p->regs.es, p->regs.si));
+   p->regs.ax = vxt_system_read_word(p->s, VXT_POINTER(p->seg, p->regs.si));
    update_si(p, 2);
 })
 #undef REPEAT

@@ -100,7 +100,7 @@ TEST(blackbox_control,
 )
 
 TEST(blackbox_datatrnf,
-    RUN_BBTEST("tools/testdata/datatrnf.bin", CHECK_DIFF, "tools/testdata/res_datatrnf.bin", 11);
+    RUN_BBTEST("tools/testdata/datatrnf.bin", CHECK_DIFF, "tools/testdata/res_datatrnf.bin", 7);
 )
 
 TEST(blackbox_div,

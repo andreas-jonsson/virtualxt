@@ -114,7 +114,10 @@ int store_code_size = 0;
 vxt_byte scratchpad[0x100000] = {0};
 int readback_ptr = 0;
 
-//vxt_pointer trigger_addr = VXT_POINTER(0xF000, 0xF980);
+// TODO: Fix this issue.
+bool code_as_data_skip = false;
+
+//vxt_pointer trigger_addr = VXT_POINTER(0xF000, 0xE45C);
 vxt_pointer trigger_addr = VXT_INVALID_POINTER;
 
 enum validator_state state = STATE_SETUP;
@@ -270,6 +273,14 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 		}
 		case STATE_EXECUTE:
 		{
+			vxt_pointer next_inst_addr = VXT_POINTER(current_frame.regs[1].cs, current_frame.regs[1].ip);
+
+			// TODO: This is a bug in the validator! The emulator needs to indicate data or code fetch to avoid this.
+			if ((cpu_memory_access != ACC_CODE_OR_NONE) && (abs((int)addr - (int)next_inst_addr) < 6)) {
+				log(LOG_INFO, "Fetching next instruction as data is not supported!" NL);
+				code_as_data_skip = true;
+			}
+
 			for (int i = 0; i < NUM_MEM_OPS; i++) {
 				struct mem_op *op = &current_frame.reads[i];
 				if (!(op->flags & MOF_PI8088) && (op->flags & MOF_EMULATOR)) {
@@ -282,7 +293,7 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 			}
 
 			if (cpu_memory_access == ACC_CODE_OR_NONE) {
-				if (addr == VXT_POINTER(current_frame.regs[1].cs, current_frame.regs[1].ip))
+				if (addr == next_inst_addr)
 					current_frame.next_fetch = true;
 
 				// Allow for N invalid fetches that we assume is the prefetch.
@@ -477,8 +488,6 @@ static void validate_registers() {
 	vxt_word emu_flags = r->flags;
 	mask_undefined_flags(&emu_flags);
 
-	ASSERT(current_frame.next_fetch, "Next instruction was never fetched! Possible bad jump.");
-
 	if (cpu_flags != emu_flags)
 		ERROR("Flags error! EMU: 0x%X (0x%X) != CPU: 0x%X (0x%X)" NL, emu_flags, r->flags, cpu_flags, *(vxt_word*)scratchpad);
 
@@ -502,6 +511,8 @@ static void validate_registers() {
 	TEST(di);
 	
 	#undef TEST
+
+	ASSERT(current_frame.next_fetch, "Next instruction was never fetched! Possible bad jump.");
 }
 
 static void end(int cycles, struct vxt_registers *regs, void *userdata) {
@@ -552,11 +563,16 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 	for (unsigned i = 0; i < sizeof(jmp); i++)
 		scratchpad[0xFFFF0 + i] = jmp[i];
 
+	code_as_data_skip = false;
+
 	reset_sequence();
 	for (state = STATE_SETUP; state != STATE_FINISHED;) {
 		execute_bus_cycle();
 		next_bus_cycle();
 	}
+
+	if (code_as_data_skip)
+		return;
 
 	//if (executed_cycles != cycles)
 	//	log(LOG_WARNING, "WARNING: Unexpected cycle timing! EMU: %d, CPU: %d" NL, cycles, executed_cycles);

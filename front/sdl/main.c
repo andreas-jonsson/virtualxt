@@ -53,7 +53,7 @@
 #endif
 
 Uint32 last_title_update = 0;
-int cycle_count = 0;
+int num_cycles = 0;
 
 SDL_atomic_t running;
 SDL_mutex *emu_mutex = NULL;
@@ -134,7 +134,7 @@ static int emu_loop(void *ptr) {
 				else
 					printf("step error: %s", vxt_error_str(res.err));
 			}
-			cycle_count += res.cycles;
+			num_cycles += res.cycles;
 		);
 
 		//const Uint64 freq = 4772726ul; // 4.77 Mhz
@@ -339,8 +339,8 @@ int ENTRY(int argc, char *argv[]) {
 			double mhz;
 
 			SYNC(
-				mhz = (double)cycle_count / 1000000.0;
-				cycle_count = 0;
+				mhz = (double)num_cycles / 1000000.0;
+				num_cycles = 0;
 			);
 
 			if (mhz > 10.0)

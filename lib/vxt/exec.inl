@@ -379,15 +379,15 @@ static void test_85(CONSTSP(cpu) p, INST(inst)) {
 static void xchg_86(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_byte v = reg_read8(&p->regs, p->mode.reg);
-   reg_write8(&p->regs, p->mode.reg, read_dest8(p));
-   write_dest8(p, v);
+   reg_write8(&p->regs, p->mode.reg, rm_read8(p));
+   rm_write8(p, v);
 }
 
 static void xchg_87(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word v = reg_read16(&p->regs, p->mode.reg);
-   reg_write16(&p->regs, p->mode.reg, read_dest16(p));
-   write_dest16(p, v);
+   reg_write16(&p->regs, p->mode.reg, rm_read16(p));
+   rm_write16(p, v);
 }
 
 static void mov_88_8A(CONSTSP(cpu) p, INST(inst)) {
