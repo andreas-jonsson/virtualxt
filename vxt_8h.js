@@ -23,7 +23,6 @@ var vxt_8h =
     [ "VXT_PIREPHERAL_WITH_DATA", "vxt_8h.html#ae08ded49754ca882907c28e33a0facc2", null ],
     [ "VXT_POINTER", "vxt_8h.html#a84f0b9a641d0c29c80fbe58d2078f2c9", null ],
     [ "vxt_system_initialize", "vxt_8h.html#aa9a535784185704cea1333b728f21dd7", null ],
-    [ "VXT_UNUSED", "vxt_8h.html#aab601beb794e83ad9419bc24fad12244", null ],
     [ "VXT_VERSION", "vxt_8h.html#ac3d9aeef44ef000c6bb367613239bc4e", null ],
     [ "VXT_VERSION_MAJOR", "vxt_8h.html#a1dda08b7c7b99cc4abd17f1e5ac18179", null ],
     [ "VXT_VERSION_MINOR", "vxt_8h.html#ab8216dbfb8be4e92f22aef22bfb426a8", null ],
