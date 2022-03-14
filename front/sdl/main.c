@@ -63,6 +63,10 @@ static void trigger_breakpoint(void) {
 	SDL_TriggerBreakpoint();
 }
 
+long long ustimer(void) {
+	return SDL_GetPerformanceCounter() / (SDL_GetPerformanceFrequency() / 1000000);
+}
+
 static const char *getline() {
 	static char buffer[1024] = {0};
 	char *str = fgets(buffer, sizeof(buffer), stdin);
@@ -245,7 +249,7 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
 	//struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
 
-	struct vxt_pirepheral *mda = vxtu_create_mda_device(&vxt_clib_malloc);
+	struct vxt_pirepheral *mda = vxtu_create_mda(&vxt_clib_malloc);
 	struct vxt_pirepheral *ppi = vxtu_create_ppi(&vxt_clib_malloc);
 
 	if (!vxtu_memory_device_fill(rom, data, size)) {
@@ -257,6 +261,7 @@ int ENTRY(int argc, char *argv[]) {
 		vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false),
 		rom, // RAM & ROM should be initialized first.
 		vxtu_create_pic(&vxt_clib_malloc),
+		vxtu_create_pit(&vxt_clib_malloc, &ustimer),
 		ppi,
 		mda,
 		dbg, // Must be the last device in list.

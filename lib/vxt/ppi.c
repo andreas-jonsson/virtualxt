@@ -24,6 +24,7 @@ freely, subject to the following restrictions:
 VXT_PIREPHERAL(ppi, {
 	vxt_byte data_port;
     vxt_byte command_port;
+    vxt_byte port_61;
 })
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
@@ -33,7 +34,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
             c->command_port = 0;
             return c->data_port;
         case 0x61:
-            return 4;
+            return c->port_61;
         case 0x62:
             // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
             //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
@@ -47,7 +48,8 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_UNUSED(p); VXT_UNUSED(port); VXT_UNUSED(data);
+    if (port == 0x61)
+        (VXT_GET_DEVICE(ppi, p))->port_61 = data;
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
@@ -61,6 +63,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, ppi, p);
     c->command_port = c->data_port = 0;
+    c->port_61 = 4;
     return VXT_NO_ERROR;
 }
 
@@ -93,7 +96,7 @@ bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool f
     	c->command_port |= 2;
 		c->data_port = (vxt_byte)key;
         if (!has_scan)
-            vxt_system_interrupt(vxt_pirepheral_system(p), 1);
+            vxt_system_interrupt(VXT_GET_SYSTEM(ppi, p), 1);
         return true;
     }
     return false;

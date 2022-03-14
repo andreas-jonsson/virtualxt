@@ -173,10 +173,13 @@ extern void vxtu_debugger_interrupt(struct vxt_pirepheral *dbg);
 
 extern struct vxt_pirepheral *vxtu_create_pic(vxt_allocator *alloc);
 
+extern struct vxt_pirepheral *vxtu_create_pit(vxt_allocator *alloc, long long (*ustics)(void));
+extern double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel);
+
 extern struct vxt_pirepheral *vxtu_create_ppi(vxt_allocator *alloc);
 extern bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force);
 
-extern struct vxt_pirepheral *vxtu_create_mda_device(vxt_allocator *alloc);
+extern struct vxt_pirepheral *vxtu_create_mda(vxt_allocator *alloc);
 extern void vxtu_mda_invalidate(struct vxt_pirepheral *p);
 extern int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata);
 

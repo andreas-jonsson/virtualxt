@@ -36,8 +36,7 @@ VXT_PIREPHERAL(mda_video, {
 })
 
 static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    VXT_DEC_DEVICE(m, mda_video, p);
-    return m->mem[(addr - 0xB0000) & 0xFFF];
+    return (VXT_GET_DEVICE(mda_video, p))->mem[(addr - 0xB0000) & 0xFFF];
 }
 
 static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
@@ -119,15 +118,15 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 }
 
 static const char *name(struct vxt_pirepheral *p) {
-    VXT_UNUSED(p);
+    UNUSED(p);
     return "MDA Compatible Video Adapter";
 }
 
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    VXT_UNUSED(p); return VXT_PCLASS_VIDEO;
+    UNUSED(p); return VXT_PCLASS_VIDEO;
 }
 
-struct vxt_pirepheral *vxtu_create_mda_device(vxt_allocator *alloc) {
+struct vxt_pirepheral *vxtu_create_mda(vxt_allocator *alloc) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(mda_video));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(mda_video));
 
@@ -144,8 +143,7 @@ struct vxt_pirepheral *vxtu_create_mda_device(vxt_allocator *alloc) {
 }
 
 void vxtu_mda_invalidate(struct vxt_pirepheral *p) { 
-    VXT_DEC_DEVICE(m, mda_video, p);
-    m->is_dirty = true;
+    (VXT_GET_DEVICE(mda_video, p))->is_dirty = true;
 }
 
 int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata) {

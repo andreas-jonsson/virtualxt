@@ -57,7 +57,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
                 c->read_mode = data & 2;
 
             if (data & 0x20) {
-                for (vxt_byte i = 0; i < 8; i++) {
+                for (int i = 0; i < 8; i++) {
                     if ((c->service_reg >> i) & 1) {
                         c->service_reg ^= (1 << i);
                         if (!i)

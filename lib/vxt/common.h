@@ -41,8 +41,6 @@ extern void (*breakpoint)(void);
 
    #define ABORT() { breakpoint(); abort(); }
 #else
-   typedef unsigned long long int uintptr_t;
-
    static volatile int *_just_null = NULL;
    #define ABORT() { breakpoint(); *_just_null = 0; for(;;); }
 #endif
@@ -62,8 +60,7 @@ extern void (*breakpoint)(void);
 #define _LOG(...)    { logger(__VA_ARGS__); }
 #define LOG(...)     { _LOG(__VA_ARGS__); _LOG("\n"); }
 
-// TODO: Remove this.
-#define UNUSED VXT_UNUSED
+#define UNUSED(v) ( (void)(v) )
 
 #define CONSTP(t)    t * const
 #define CONSTSP(t)   struct CONSTP(t)
