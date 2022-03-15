@@ -28,6 +28,11 @@ const c_options = &[_][]const u8{
     "-Wall",
     "-Wextra",
     "-Werror",
+
+    // Looks like there is some kind of bug that prevents you from only using 'unsigned-integer-overflow'.
+    // Normally 'signed-integer-overflow' should be sanitized.
+    "-fno-sanitize=signed-integer-overflow",
+    "-fno-sanitize=unsigned-integer-overflow",
 };
 
 const CTest = struct {

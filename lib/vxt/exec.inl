@@ -775,9 +775,8 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       }
       case 4: // MUL
       {
-         vxt_dword res = (vxt_dword)v * (vxt_dword)p->regs.al;
-         p->regs.ax = (vxt_word)(res & 0xFFFF);
-         flag_szp8(&p->regs, (vxt_byte)res);
+         p->regs.ax = (vxt_word)v * (vxt_word)p->regs.al;
+         flag_szp8(&p->regs, (vxt_byte)p->regs.al);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
          #ifndef VXT_CPU_286
             p->regs.flags &= ~VXT_ZERO;
@@ -786,10 +785,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       }
       case 5: // IMUL
       {
-         vxt_word a = SIGNEXT16(v);
-         vxt_word b = SIGNEXT16(p->regs.al);
-         p->regs.ax = (vxt_dword)a * (vxt_dword)b;
-
+         p->regs.ax = SIGNEXT16(v) * SIGNEXT16(p->regs.al);
          #ifndef VXT_CPU_286
             p->regs.flags &= ~VXT_ZERO;
          #endif
@@ -855,7 +851,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          vxt_dword res = (vxt_dword)v * (vxt_dword)p->regs.ax;
          p->regs.dx = (vxt_word)(res >> 16);
          p->regs.ax = (vxt_word)(res & 0xFFFF);
-         flag_szp16(&p->regs, (vxt_byte)res);
+         flag_szp16(&p->regs, p->regs.ax);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.dx);
          #ifndef VXT_CPU_286
             p->regs.flags &= ~VXT_ZERO;

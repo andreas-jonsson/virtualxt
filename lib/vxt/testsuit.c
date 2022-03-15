@@ -125,7 +125,7 @@ TEST(blackbox_jump2,
 )
 
 TEST(blackbox_mul,
-    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 17);
+    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 15);
 )
 
 //TEST(blackbox_rep,
