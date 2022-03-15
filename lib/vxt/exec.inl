@@ -651,7 +651,7 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
 static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ax = ((vxt_word)p->regs.ah * (vxt_word)read_opcode8(p) + (vxt_word)p->regs.al) & 0xFF;
-   flag_szp16(&p->regs, p->regs.ax);
+   flag_szp8(&p->regs, p->regs.al);
    SET_FLAG(p->regs.flags, VXT_ZERO, 0);
 }
 
@@ -785,12 +785,17 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          break;
       }
       case 5: // IMUL
-         p->regs.ax = (vxt_word)((vxt_dword)SIGNEXT16(v) * (vxt_dword)SIGNEXT16(p->regs.al));
-         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
+      {
+         vxt_word a = SIGNEXT16(v);
+         vxt_word b = SIGNEXT16(p->regs.al);
+         p->regs.ax = (vxt_dword)a * (vxt_dword)b;
+
          #ifndef VXT_CPU_286
             p->regs.flags &= ~VXT_ZERO;
          #endif
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ax != SIGNEXT16(p->regs.al));
          break;
+      }
       case 6: // DIV
       {
          vxt_word ax = p->regs.ax;
@@ -862,10 +867,11 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          vxt_dword res = SIGNEXT32(v) * SIGNEXT32(p->regs.ax);
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          p->regs.dx = (vxt_word)(res >> 16);
-         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.dx);
+
          #ifndef VXT_CPU_286
             p->regs.flags &= ~VXT_ZERO;
          #endif
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != SIGNEXT32(p->regs.ax));
          break;
       }
       case 6: // DIV
@@ -1002,6 +1008,7 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
 #define INVALID "INVALID", false, X, &invalid_op
 
 // References: http://mlsite.net/8086/
+//             https://www.felixcloutier.com/x86/index.html
 //             http://aturing.umcs.maine.edu/~meadow/courses/cos335/80x86-Integer-Instruction-Set-Clocks.pdf
 
 static struct instruction const opcode_table[0x100] = {
