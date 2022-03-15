@@ -37,6 +37,9 @@
 #include "keys.h"
 #include "docopt.h"
 
+//const char *bb_test = "tools/testdata/mul.bin";
+const char *bb_test = NULL;
+
 #define CPU_NAME "8088"
 
 #define SET_WHITE(r) ( SDL_SetRenderDrawColor((r), 0xFF, 0xFF, 0xFF, 0xFF) )
@@ -239,34 +242,47 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	int size = 0;
-	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "bios/pcxtbios.bin", &size);
-	//vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, "tools/testdata/control.bin", &size);
+	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, bb_test ? bb_test : "bios/pcxtbios.bin", &size);
 	if (!data) {
 		printf("vxtu_read_file() failed!\n");
 		return -1;
 	}
 	
-	struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xFE000, size, true);
-	//struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, 0xF0000, size, true);
-
-	struct vxt_pirepheral *mda = vxtu_create_mda(&vxt_clib_malloc);
-	struct vxt_pirepheral *ppi = vxtu_create_ppi(&vxt_clib_malloc);
-
+	struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, bb_test ? 0xF0000 : 0xFE000, size, true);
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		printf("vxtu_memory_device_fill() failed!\n");
 		return -1;
 	}
 
-	struct vxt_pirepheral *devices[] = {
-		vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false),
-		rom, // RAM & ROM should be initialized first.
-		vxtu_create_pic(&vxt_clib_malloc),
-		vxtu_create_pit(&vxt_clib_malloc, &ustimer),
-		ppi,
-		mda,
-		dbg, // Must be the last device in list.
-		NULL
-	};
+	data = vxtu_read_file(&vxt_clib_malloc, "bios/vxtx.bin", &size);
+	if (!data) {
+		printf("vxtu_read_file() failed!\n");
+		return -1;
+	}
+	
+	struct vxt_pirepheral *rom_ext = vxtu_create_memory_device(&vxt_clib_malloc, 0xE0000, size, bb_test == NULL);
+	if (!bb_test && !vxtu_memory_device_fill(rom_ext, data, size)) {
+		printf("vxtu_memory_device_fill() failed!\n");
+		return -1;
+	}
+
+	struct vxt_pirepheral *mda = vxtu_create_mda(&vxt_clib_malloc);
+	struct vxt_pirepheral *ppi = vxtu_create_ppi(&vxt_clib_malloc);
+
+	struct vxt_pirepheral *devices[16] = {vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
+	
+	int i = 2;
+	if (!bb_test) {
+		//devices[i++] = rom_ext;
+		devices[i++] = vxtu_create_pic(&vxt_clib_malloc);
+		devices[i++] = vxtu_create_pit(&vxt_clib_malloc, &ustimer);
+		devices[i++] = ppi;
+		devices[i++] = mda;
+	} else {
+		devices[i++] = vxtu_create_pic(&vxt_clib_malloc);
+	}
+	devices[i++] = dbg;
+	devices[i] = NULL;
 
 	vxt_system *vxt = vxt_system_create(&vxt_clib_malloc, devices);
 
@@ -290,10 +306,11 @@ int ENTRY(int argc, char *argv[]) {
 	vxt_system_reset(vxt);
 	vxt_system_registers(vxt)->debug = (bool)args.halt;
 
-	// For running testdata.
-	//struct vxt_registers *r = vxt_system_registers(vxt);
-	//r->cs = 0xF000;
-    //r->ip = 0xFFF0;
+	if (bb_test) {
+		struct vxt_registers *r = vxt_system_registers(vxt);
+		r->cs = 0xF000;
+    	r->ip = 0xFFF0;
+	}
 
 	SDL_AtomicSet(&running, 1);
 	if (!(emu_mutex = SDL_CreateMutex())) {

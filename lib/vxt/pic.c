@@ -48,8 +48,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             if (data & 0x10) {
                 c->icw_step = 1;
                 c->mask_reg = 0;
-                c->icw[c->icw_step] = data;
-                c->icw_step++;
+                c->icw[c->icw_step++] = data;
                 return;
             }
 
@@ -60,8 +59,6 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
                 for (int i = 0; i < 8; i++) {
                     if ((c->service_reg >> i) & 1) {
                         c->service_reg ^= (1 << i);
-                        if (!i)
-                            c->request_reg |= 1;
                         return;
                     }
                 }
@@ -72,8 +69,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
                 c->icw_step = 4;
 
             if (c->icw_step < 5) {
-                c->icw[c->icw_step] = data;
-                c->icw_step++;
+                c->icw[c->icw_step++] = data;
                 return;
             }
 
