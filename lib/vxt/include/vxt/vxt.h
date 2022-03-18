@@ -107,8 +107,11 @@ extern "C" {
     x(4, VXT_NO_PIC,                    "could not find interrupt controller")  \
 
 #define _VXT_ERROR_ENUM(id, name, text) name = id,
-typedef enum {_VXT_ERROR_CODES(_VXT_ERROR_ENUM)} vxt_error;
+typedef enum {_VXT_ERROR_CODES(_VXT_ERROR_ENUM) _VXT_NUM_ERRORS} vxt_error;
 #undef _VXT_ERROR_ENUM
+
+#define VXT_USER_ERROR(e) ((vxt_error)(e) + _VXT_NUM_ERRORS)
+#define VXT_GET_USER_ERROR(e) ((vxt_error)(e) - _VXT_NUM_ERRORS)
 
 typedef vxt_byte vxt_device_id;
 

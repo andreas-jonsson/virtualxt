@@ -185,6 +185,20 @@ pub fn build(b: *Builder) void {
     microui.addIncludeDir("lib/microui/src");
     microui.addCSourceFile("lib/microui/src/microui.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
 
+    // -------- pirepheral --------
+
+    const pirepheral = b.addStaticLibrary("pirepheral", null);
+    {
+        pirepheral.setBuildMode(mode);
+        pirepheral.setTarget(target);
+        pirepheral.linkLibC();
+        pirepheral.addIncludeDir("lib/pirepheral");
+        pirepheral.addIncludeDir("lib/vxt/include");
+
+        const opt = c_options ++ &[_][]const u8{"-std=c11", "-pedantic"};
+        pirepheral.addCSourceFile("lib/pirepheral/disk.c", opt);
+    }
+
     // -------- virtualxt sdl --------
 
     const exe_sdl = b.addExecutable("virtualxt", "front/sdl/main.zig");
@@ -213,6 +227,9 @@ pub fn build(b: *Builder) void {
 
     exe_sdl.linkLibrary(libvxt);
     exe_sdl.addIncludeDir("lib/vxt/include");
+
+    exe_sdl.linkLibrary(pirepheral);
+    exe_sdl.addIncludeDir("lib/pirepheral");
 
     exe_sdl.linkLibC();
 

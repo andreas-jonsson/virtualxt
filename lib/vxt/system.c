@@ -45,8 +45,10 @@ const char *vxt_error_str(vxt_error err) {
     #define ERROR_TEXT(id, name, text) case id: return text;
     switch (err) {
         _VXT_ERROR_CODES(ERROR_TEXT)
+        case _VXT_NUM_ERRORS: break;
     }
-    return "unknown error";
+    #undef ERROR_TEXT
+    return "user error";
 }
 
 const char *vxt_lib_version(void) { return VXT_VERSION; }

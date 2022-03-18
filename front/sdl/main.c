@@ -26,6 +26,8 @@
 #include <vxt/vxt.h>
 #include <vxt/utils.h>
 
+#include <pirepheral.h>
+
 #ifdef _WIN32
 	#include <SDL.h>
 #else
@@ -270,12 +272,18 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *ppi = vxtu_create_ppi(&vxt_clib_malloc);
 
 	struct vxt_pirepheral *devices[16] = {vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
+
+	const char *files[] = {
+		"0*boot/freedos.img",
+		NULL
+	};
 	
 	int i = 2;
 	if (!bb_test) {
-		//devices[i++] = rom_ext;
+		devices[i++] = rom_ext;
 		devices[i++] = vxtu_create_pic(&vxt_clib_malloc);
 		devices[i++] = vxtu_create_pit(&vxt_clib_malloc, &ustimer);
+		devices[i++] = create_disk_controller(&vxt_clib_malloc, files);
 		devices[i++] = ppi;
 		devices[i++] = mda;
 	} else {
