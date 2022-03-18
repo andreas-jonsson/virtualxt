@@ -11,6 +11,7 @@ var vxt_8h =
     [ "VXT_GET_DEVICE", "vxt_8h.html#a5b8462ad190ca575fee53b3b3bae89b0", null ],
     [ "VXT_GET_DEVICE_DATA", "vxt_8h.html#a1ee79160f5a72f2ace3eeb0470b2c5f6", null ],
     [ "VXT_GET_SYSTEM", "vxt_8h.html#a2fb1b08853764e42353e716b5d5827b3", null ],
+    [ "VXT_GET_USER_ERROR", "vxt_8h.html#a75df28fc6093a280beb17ed80e562813", null ],
     [ "VXT_INVALID_DEVICE_ID", "vxt_8h.html#aedee3310691d61f01335d01cb93a0752", null ],
     [ "VXT_INVALID_POINTER", "vxt_8h.html#af5b876880e067c418ea0cf9a93f97117", null ],
     [ "VXT_IO_MAP_SIZE", "vxt_8h.html#a0805f80bc96947fff1919912df1e8d5e", null ],
@@ -23,6 +24,7 @@ var vxt_8h =
     [ "VXT_PIREPHERAL_WITH_DATA", "vxt_8h.html#ae08ded49754ca882907c28e33a0facc2", null ],
     [ "VXT_POINTER", "vxt_8h.html#a84f0b9a641d0c29c80fbe58d2078f2c9", null ],
     [ "vxt_system_initialize", "vxt_8h.html#aa9a535784185704cea1333b728f21dd7", null ],
+    [ "VXT_USER_ERROR", "vxt_8h.html#a286a2e46fc5fc0831d53f9fe55e655db", null ],
     [ "VXT_VERSION", "vxt_8h.html#ac3d9aeef44ef000c6bb367613239bc4e", null ],
     [ "VXT_VERSION_MAJOR", "vxt_8h.html#a1dda08b7c7b99cc4abd17f1e5ac18179", null ],
     [ "VXT_VERSION_MINOR", "vxt_8h.html#ab8216dbfb8be4e92f22aef22bfb426a8", null ],
@@ -52,7 +54,8 @@ var vxt_8h =
       [ "VXT_INVALID_VERSION", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ae0b9ce2aef425ed0ed1e06daf943d9c2", null ],
       [ "VXT_INVALID_REGISTER_PACKING", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ab6543bc82279c3921f82ffe4d9ccfcb8", null ],
       [ "VXT_USER_TERMINATION", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047aebc9bde81021d51eb886bfea944c558c", null ],
-      [ "VXT_NO_PIC", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a80ff11543be9e05d7582d046639c7d98", null ]
+      [ "VXT_NO_PIC", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a80ff11543be9e05d7582d046639c7d98", null ],
+      [ "__VXT_NUM_ERRORS", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ac6a3e5326ad48de3d6b4283d9acdeecd", null ]
     ] ],
     [ "vxt_pclass", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7", [
       [ "VXT_PCLASS_GENERIC", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7a77eada4e490e3da25d6a21f419528a09", null ],

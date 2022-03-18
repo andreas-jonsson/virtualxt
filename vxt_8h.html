@@ -103,6 +103,10 @@ Macros</h2></td></tr>
 <tr class="separator:af5b876880e067c418ea0cf9a93f97117"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aedee3310691d61f01335d01cb93a0752"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#aedee3310691d61f01335d01cb93a0752">VXT_INVALID_DEVICE_ID</a>&#160;&#160;&#160;((<a class="el" href="vxt_8h.html#a571d86caa501fa57b72a107c1ca14bfb">vxt_device_id</a>)0xFF)</td></tr>
 <tr class="separator:aedee3310691d61f01335d01cb93a0752"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a286a2e46fc5fc0831d53f9fe55e655db"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a286a2e46fc5fc0831d53f9fe55e655db">VXT_USER_ERROR</a>(e)&#160;&#160;&#160;((<a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047">vxt_error</a>)(e) + _VXT_NUM_ERRORS)</td></tr>
+<tr class="separator:a286a2e46fc5fc0831d53f9fe55e655db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a75df28fc6093a280beb17ed80e562813"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a75df28fc6093a280beb17ed80e562813">VXT_GET_USER_ERROR</a>(e)&#160;&#160;&#160;((<a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047">vxt_error</a>)(e) - _VXT_NUM_ERRORS)</td></tr>
+<tr class="separator:a75df28fc6093a280beb17ed80e562813"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0805f80bc96947fff1919912df1e8d5e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a0805f80bc96947fff1919912df1e8d5e">VXT_IO_MAP_SIZE</a>&#160;&#160;&#160;0x10000</td></tr>
 <tr class="separator:a0805f80bc96947fff1919912df1e8d5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cdd4ee72c72a2d4a86a9fafa8eb4a25"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a4cdd4ee72c72a2d4a86a9fafa8eb4a25">VXT_MEM_MAP_SIZE</a>&#160;&#160;&#160;0x100000</td></tr>
@@ -159,7 +163,8 @@ Enumerations</h2></td></tr>
 <a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047ab6543bc82279c3921f82ffe4d9ccfcb8">VXT_INVALID_REGISTER_PACKING</a> = 2, 
 <a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047aebc9bde81021d51eb886bfea944c558c">VXT_USER_TERMINATION</a> = 3, 
 <br />
-&#160;&#160;<a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047a80ff11543be9e05d7582d046639c7d98">VXT_NO_PIC</a> = 4
+&#160;&#160;<a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047a80ff11543be9e05d7582d046639c7d98">VXT_NO_PIC</a> = 4, 
+<a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047ac6a3e5326ad48de3d6b4283d9acdeecd">__VXT_NUM_ERRORS</a>
 <br />
  }</td></tr>
 <tr class="separator:a92d453d4948af479acd4592cd50ac047"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -383,6 +388,24 @@ Functions</h2></td></tr>
           <td></td>
           <td>)</td>
           <td></td><td>&#160;&#160;&#160;((struct _ ## type*)(pir))-&gt;p.s</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a75df28fc6093a280beb17ed80e562813"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a75df28fc6093a280beb17ed80e562813">&#9670;&nbsp;</a></span>VXT_GET_USER_ERROR</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXT_GET_USER_ERROR</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">e</td><td>)</td>
+          <td>&#160;&#160;&#160;((<a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047">vxt_error</a>)(e) - _VXT_NUM_ERRORS)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -649,6 +672,24 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a286a2e46fc5fc0831d53f9fe55e655db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a286a2e46fc5fc0831d53f9fe55e655db">&#9670;&nbsp;</a></span>VXT_USER_ERROR</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXT_USER_ERROR</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">e</td><td>)</td>
+          <td>&#160;&#160;&#160;((<a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047">vxt_error</a>)(e) + _VXT_NUM_ERRORS)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ac3d9aeef44ef000c6bb367613239bc4e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac3d9aeef44ef000c6bb367613239bc4e">&#9670;&nbsp;</a></span>VXT_VERSION</h2>
 
@@ -903,6 +944,7 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="a92d453d4948af479acd4592cd50ac047ab6543bc82279c3921f82ffe4d9ccfcb8"></a>VXT_INVALID_REGISTER_PACKING&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a92d453d4948af479acd4592cd50ac047aebc9bde81021d51eb886bfea944c558c"></a>VXT_USER_TERMINATION&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a92d453d4948af479acd4592cd50ac047a80ff11543be9e05d7582d046639c7d98"></a>VXT_NO_PIC&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a92d453d4948af479acd4592cd50ac047ac6a3e5326ad48de3d6b4283d9acdeecd"></a>__VXT_NUM_ERRORS&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
 </div>
