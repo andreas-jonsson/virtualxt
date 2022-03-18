@@ -25,7 +25,7 @@ freely, subject to the following restrictions:
 
 #define VXTU_CLIB_IO
 #include <vxt/vxt.h>
-#include <vxt/utils.h>
+#include <vxt/vxtu.h>
 
 #include "udmask.h"
 
@@ -117,7 +117,7 @@ int readback_ptr = 0;
 // TODO: Fix this issue.
 bool code_as_data_skip = false;
 
-//vxt_pointer trigger_addr = VXT_POINTER(0xF000, 0xE45C);
+//vxt_pointer trigger_addr = VXT_POINTER(0x0, 0x7C00);
 vxt_pointer trigger_addr = VXT_INVALID_POINTER;
 
 enum validator_state state = STATE_SETUP;
@@ -586,6 +586,8 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 
 static void read_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
 	(void)userdata;
+	if (current_frame.discard)
+		return;
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		struct mem_op *op = &current_frame.reads[i];
 		if (!op->flags) {
@@ -598,6 +600,8 @@ static void read_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
 
 static void write_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
 	(void)userdata;
+	if (current_frame.discard)
+		return;
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		struct mem_op *op = &current_frame.writes[i];
 		if (!op->flags) {
