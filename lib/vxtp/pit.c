@@ -140,7 +140,7 @@ static const char *name(struct vxt_pirepheral *p) {
     return "PIT (Intel 8253)";
 }
 
-struct vxt_pirepheral *vxtp_create_pit(vxt_allocator *alloc, INT64 (*ustics)(void)) {
+struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, INT64 (*ustics)(void)) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(pit));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(pit));
     (VXT_GET_DEVICE(pit, p))->get_ticks = ustics;

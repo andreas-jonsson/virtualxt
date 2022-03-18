@@ -121,7 +121,7 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "PIC (Intel 8259)";
 }
 
-struct vxt_pirepheral *vxtp_create_pic(vxt_allocator *alloc) {
+struct vxt_pirepheral *vxtp_pic_create(vxt_allocator *alloc) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(pic));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(pic));
 

@@ -58,7 +58,7 @@ static const char *name(struct vxt_pirepheral *p) {
     return m->read_only ? "ROM" : "RAM";
 }
 
-struct vxt_pirepheral *vxtu_create_memory_device(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
+struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
     int size = VXT_PIREPHERAL_SIZE(memory) + amount;
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, size);
     memclear(p, size);

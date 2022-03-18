@@ -234,7 +234,7 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *dbg = NULL;
 	if (args.debug) {
 		struct vxtu_debugger_interface dbgif = {&pdisasm, &getline, &printf};
-		dbg = vxtu_create_debugger(&vxt_clib_malloc, &dbgif);
+		dbg = vxtu_debugger_create(&vxt_clib_malloc, &dbgif);
 	}
 
 	int size = 0;
@@ -244,7 +244,7 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 	
-	struct vxt_pirepheral *rom = vxtu_create_memory_device(&vxt_clib_malloc, bb_test ? 0xF0000 : 0xFE000, size, true);
+	struct vxt_pirepheral *rom = vxtu_memory_create(&vxt_clib_malloc, bb_test ? 0xF0000 : 0xFE000, size, true);
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		printf("vxtu_memory_device_fill() failed!\n");
 		return -1;
@@ -256,16 +256,16 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 	
-	struct vxt_pirepheral *rom_ext = vxtu_create_memory_device(&vxt_clib_malloc, 0xE0000, size, bb_test == NULL);
+	struct vxt_pirepheral *rom_ext = vxtu_memory_create(&vxt_clib_malloc, 0xE0000, size, bb_test == NULL);
 	if (!bb_test && !vxtu_memory_device_fill(rom_ext, data, size)) {
 		printf("vxtu_memory_device_fill() failed!\n");
 		return -1;
 	}
 
-	struct vxt_pirepheral *mda = vxtp_create_mda(&vxt_clib_malloc);
-	struct vxt_pirepheral *ppi = vxtp_create_ppi(&vxt_clib_malloc);
+	struct vxt_pirepheral *mda = vxtp_mda_create(&vxt_clib_malloc);
+	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc);
 
-	struct vxt_pirepheral *devices[16] = {vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
+	struct vxt_pirepheral *devices[16] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
 
 	const char *files[] = {
 		"0*boot/freedos.img",
@@ -275,13 +275,13 @@ int ENTRY(int argc, char *argv[]) {
 	int i = 2;
 	if (!bb_test) {
 		devices[i++] = rom_ext;
-		devices[i++] = vxtp_create_pic(&vxt_clib_malloc);
-		devices[i++] = vxtp_create_pit(&vxt_clib_malloc, &ustimer);
-		devices[i++] = vxtp_create_disk_controller(&vxt_clib_malloc, files);
+		devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
+		devices[i++] = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
+		devices[i++] = vxtp_disk_create(&vxt_clib_malloc, files);
 		devices[i++] = ppi;
 		devices[i++] = mda;
 	} else {
-		devices[i++] = vxtp_create_pic(&vxt_clib_malloc);
+		devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 	}
 	devices[i++] = dbg;
 	devices[i] = NULL;

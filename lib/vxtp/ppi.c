@@ -18,8 +18,6 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#include <stdio.h>
-
 #include "vxtp.h"
 
 VXT_PIREPHERAL(ppi, {
@@ -39,8 +37,6 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
         case 0x62:
             // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
             //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
-
-            printf("reading DIP switches!\n");
             return 0x3; // TODO: Return other then MDA video bits.
         case 0x64:
             return c->command_port;
@@ -77,7 +73,7 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "PPI (Intel 8255)";
 }
 
-struct vxt_pirepheral *vxtp_create_ppi(vxt_allocator *alloc) {
+struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(ppi));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(ppi));
 

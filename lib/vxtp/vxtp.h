@@ -121,19 +121,19 @@ enum vxtp_mda_attrib {
     VXTP_MDA_INVERSE        = 0x8
 };
 
-extern struct vxt_pirepheral *vxtp_create_pic(vxt_allocator *alloc);
+extern struct vxt_pirepheral *vxtp_pic_create(vxt_allocator *alloc);
 
-extern struct vxt_pirepheral *vxtp_create_pit(vxt_allocator *alloc, long long (*ustics)(void));
+extern struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, long long (*ustics)(void));
 extern double vxtp_pit_get_frequency(struct vxt_pirepheral *p, int channel);
 
-extern struct vxt_pirepheral *vxtp_create_ppi(vxt_allocator *alloc);
+extern struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc);
 extern bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool force);
 
-extern struct vxt_pirepheral *vxtp_create_mda(vxt_allocator *alloc);
+extern struct vxt_pirepheral *vxtp_mda_create(vxt_allocator *alloc);
 extern void vxtp_mda_invalidate(struct vxt_pirepheral *p);
 extern int vxtp_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtp_mda_attrib,int,void*), void *userdata);
 
-extern struct vxt_pirepheral *vxtp_create_disk_controller(vxt_allocator *alloc, const char *files[]);
+extern struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const char *files[]);
 
 #ifdef __cplusplus
 }

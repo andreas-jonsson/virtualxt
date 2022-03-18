@@ -320,7 +320,7 @@ void vxtu_debugger_interrupt(struct vxt_pirepheral *p) {
     dbg->print("\aInterrupted!\n");
 }
 
-struct vxt_pirepheral *vxtu_create_debugger(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface) {
+struct vxt_pirepheral *vxtu_debugger_create(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(debugger));
     memclear(p, VXT_PIREPHERAL_SIZE(debugger));
     VXT_DEC_DEVICE(d, debugger, p);

@@ -23,8 +23,8 @@
 #include "testing.h"
 
 #define RUN_BBTEST(bin, check, ...) {                                                                   \
-    struct vxt_pirepheral *ram0 = vxtu_create_memory_device(TALLOC, 0x0, 0x100000, false);              \
-    struct vxt_pirepheral *ram1 = vxtu_create_memory_device(TALLOC, 0xF0000, 0x10000, false);           \
+    struct vxt_pirepheral *ram0 = vxtu_memory_create(TALLOC, 0x0, 0x100000, false);                     \
+    struct vxt_pirepheral *ram1 = vxtu_memory_create(TALLOC, 0xF0000, 0x10000, false);                  \
                                                                                                         \
     int size = 0;                                                                                       \
     vxt_byte *data = vxtu_read_file(TALLOC, (bin), &size);                                              \
