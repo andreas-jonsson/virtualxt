@@ -92,6 +92,7 @@ var vxt_8h =
     [ "vxt_system_read_word", "vxt_8h.html#a3ca1233a86fc3ba67b3c13137cbf9bb2", null ],
     [ "vxt_system_registers", "vxt_8h.html#a61696a0ccc5bd21ffef5fc9035954e76", null ],
     [ "vxt_system_reset", "vxt_8h.html#a631a853df6feb06b074abcc89cd47688", null ],
+    [ "vxt_system_set_tracer", "vxt_8h.html#afaf75d276885578794c4acb676559dd7", null ],
     [ "vxt_system_set_userdata", "vxt_8h.html#a36516effda490fbe2cd950d722f416e9", null ],
     [ "vxt_system_set_validator", "vxt_8h.html#a0fd90e108ccf7dd35c221c7b705de98c", null ],
     [ "vxt_system_step", "vxt_8h.html#a7515cc8e21a8f5d5c05f2cf08c7d8069", null ],

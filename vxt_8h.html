@@ -224,6 +224,8 @@ Functions</h2></td></tr>
 <tr class="separator:a631a853df6feb06b074abcc89cd47688"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61696a0ccc5bd21ffef5fc9035954e76"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structvxt__registers.html">vxt_registers</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a61696a0ccc5bd21ffef5fc9035954e76">vxt_system_registers</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s)</td></tr>
 <tr class="separator:a61696a0ccc5bd21ffef5fc9035954e76"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afaf75d276885578794c4acb676559dd7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#afaf75d276885578794c4acb676559dd7">vxt_system_set_tracer</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, void(*tracer)(<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *, <a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>))</td></tr>
+<tr class="separator:afaf75d276885578794c4acb676559dd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0fd90e108ccf7dd35c221c7b705de98c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a0fd90e108ccf7dd35c221c7b705de98c">vxt_system_set_validator</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, const struct <a class="el" href="structvxt__validator.html">vxt_validator</a> *interface)</td></tr>
 <tr class="separator:a0fd90e108ccf7dd35c221c7b705de98c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a36516effda490fbe2cd950d722f416e9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a36516effda490fbe2cd950d722f416e9">vxt_system_set_userdata</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, void *data)</td></tr>
@@ -1559,6 +1561,34 @@ Functions</h2></td></tr>
           <td class="paramtype"><a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *&#160;</td>
           <td class="paramname"><em>s</em></td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="afaf75d276885578794c4acb676559dd7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afaf75d276885578794c4acb676559dd7">&#9670;&nbsp;</a></span>vxt_system_set_tracer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void vxt_system_set_tracer </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *&#160;</td>
+          <td class="paramname"><em>s</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void(*)(<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *, <a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>)&#160;</td>
+          <td class="paramname"><em>tracer</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
