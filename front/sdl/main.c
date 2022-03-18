@@ -22,11 +22,10 @@
 #include <stdarg.h>
 
 #define VXT_CLIB_ALLOCATOR
-#define VXT_CLIB_IO
+#define VXTU_CLIB_IO
 #include <vxt/vxt.h>
-#include <vxt/utils.h>
-
-#include <pirepheral.h>
+#include <vxt/vxtu.h>
+#include <vxtp.h>
 
 #ifdef _WIN32
 	#include <SDL.h>
@@ -145,19 +144,19 @@ static int emu_loop(void *ptr) {
 	return 0;
 }
 
-int mda_render(int offset, vxt_byte ch, enum vxtu_mda_attrib attrib, int cursor, void *userdata) {
+int mda_render(int offset, vxt_byte ch, enum vxtp_mda_attrib attrib, int cursor, void *userdata) {
 	int x = offset % 80;
 	int y = offset / 80;
 	int num_pixels = 0;
 	bool blink = ((SDL_GetTicks() / 500) % 2) != 0;
 	SDL_Point pixels[64];
 	
-	if ((attrib & VXTU_MDA_BLINK) && blink)
+	if ((attrib & VXTP_MDA_BLINK) && blink)
 		ch = ' ';
 
 	for (int i = 0; i < 8; i++) {
 		vxt_byte glyphLine = cga_font[ch * 8 + i];
-		if (attrib & VXTU_MDA_INVERSE)
+		if (attrib & VXTP_MDA_INVERSE)
 			glyphLine = ~glyphLine;
 		
 		for (int j = 0; j < 8; j++) {
@@ -173,7 +172,7 @@ int mda_render(int offset, vxt_byte ch, enum vxtu_mda_attrib attrib, int cursor,
 
 	// Render blinking CRT cursor and underlines.
 	bool is_cursor = offset == cursor;
-	if (is_cursor || (attrib & VXTU_MDA_UNDELINE)) {
+	if (is_cursor || (attrib & VXTP_MDA_UNDELINE)) {
 		SET_COLOR((SDL_Renderer*)userdata, is_cursor && blink);
 		for (int i = 0; i < 8; i++)
 			pixels[i] = (SDL_Point){x * 8 + i, y * 8 + 7};
@@ -263,8 +262,8 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 
-	struct vxt_pirepheral *mda = vxtu_create_mda(&vxt_clib_malloc);
-	struct vxt_pirepheral *ppi = vxtu_create_ppi(&vxt_clib_malloc);
+	struct vxt_pirepheral *mda = vxtp_create_mda(&vxt_clib_malloc);
+	struct vxt_pirepheral *ppi = vxtp_create_ppi(&vxt_clib_malloc);
 
 	struct vxt_pirepheral *devices[16] = {vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
 
@@ -276,13 +275,13 @@ int ENTRY(int argc, char *argv[]) {
 	int i = 2;
 	if (!bb_test) {
 		devices[i++] = rom_ext;
-		devices[i++] = vxtu_create_pic(&vxt_clib_malloc);
-		devices[i++] = vxtu_create_pit(&vxt_clib_malloc, &ustimer);
-		devices[i++] = create_disk_controller(&vxt_clib_malloc, files);
+		devices[i++] = vxtp_create_pic(&vxt_clib_malloc);
+		devices[i++] = vxtp_create_pit(&vxt_clib_malloc, &ustimer);
+		devices[i++] = vxtp_create_disk_controller(&vxt_clib_malloc, files);
 		devices[i++] = ppi;
 		devices[i++] = mda;
 	} else {
-		devices[i++] = vxtu_create_pic(&vxt_clib_malloc);
+		devices[i++] = vxtp_create_pic(&vxt_clib_malloc);
 	}
 	devices[i++] = dbg;
 	devices[i] = NULL;
@@ -350,11 +349,11 @@ int ENTRY(int argc, char *argv[]) {
 					if (args.debug && (e.key.keysym.sym == SDLK_F12) && (e.key.keysym.mod & KMOD_ALT))
 						SYNC(vxtu_debugger_interrupt(dbg));
 					for (bool success = false; !success;)
-						SYNC(success = vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
+						SYNC(success = vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
 					for (bool success = false; !success;)
-						SYNC(success = vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTU_KEY_UP_MASK, false));
+						SYNC(success = vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, false));
 					break;
 			}
 		}
@@ -383,8 +382,8 @@ int ENTRY(int argc, char *argv[]) {
 		SET_WHITE(renderer);
 
 		SYNC(
-			vxtu_mda_invalidate(mda);
-			vxtu_mda_traverse(mda, &mda_render, renderer);
+			vxtp_mda_invalidate(mda);
+			vxtp_mda_traverse(mda, &mda_render, renderer);
 		);
 
 		SDL_RenderPresent(renderer);

@@ -18,8 +18,7 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#include <vxt/utils.h>
-#include "common.h"
+#include "vxtp.h"
 
 VXT_PIREPHERAL(pic, {
 	vxt_byte mask_reg;
@@ -105,7 +104,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
 
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, pic, p);
-    memclear(c, sizeof(struct pic));
+    vxt_memclear(c, sizeof(struct pic));
     return VXT_NO_ERROR;
 }
 
@@ -115,16 +114,16 @@ static vxt_error destroy(struct vxt_pirepheral *p) {
 }
 
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    UNUSED(p); return VXT_PCLASS_PIC;
+    (void)p; return VXT_PCLASS_PIC;
 }
 
 static const char *name(struct vxt_pirepheral *p) {
-    UNUSED(p); return "PIC (Intel 8259)";
+    (void)p; return "PIC (Intel 8259)";
 }
 
-struct vxt_pirepheral *vxtu_create_pic(vxt_allocator *alloc) {
+struct vxt_pirepheral *vxtp_create_pic(vxt_allocator *alloc) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(pic));
-    memclear(p, VXT_PIREPHERAL_SIZE(pic));
+    vxt_memclear(p, VXT_PIREPHERAL_SIZE(pic));
 
     p->install = &install;
     p->destroy = &destroy;

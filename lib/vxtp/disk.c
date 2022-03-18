@@ -21,7 +21,7 @@ freely, subject to the following restrictions:
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "pirepheral.h"
+#include "vxtp.h"
 
 #define SECTOR_SIZE 512
 
@@ -286,7 +286,7 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "Disk Controller";
 }
 
-struct vxt_pirepheral *create_disk_controller(vxt_allocator *alloc, const char *files[]) {
+struct vxt_pirepheral *vxtp_create_disk_controller(vxt_allocator *alloc, const char *files[]) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(disk));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(disk));
     VXT_DEC_DEVICE(c, disk, p);

@@ -16,7 +16,7 @@
 //    misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include <vxt/utils.h>
+#include <vxt/vxtu.h>
 
 #include "common.h"
 #include "system.h"
@@ -34,7 +34,6 @@
                                                                                                         \
     struct vxt_pirepheral *devices[] = {                                                                \
         ram0, ram1,                                                                                     \
-        vxtu_create_pic(TALLOC),                                                                        \
         NULL                                                                                            \
     };                                                                                                  \
                                                                                                         \

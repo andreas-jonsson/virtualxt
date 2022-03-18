@@ -22,7 +22,7 @@
 #include <stdarg.h>
 
 #define VXT_CLIB_ALLOCATOR
-#define VXT_CLIB_IO
+#define VXTU_CLIB_IO
 #include <vxt/vxt.h>
 #include <vxt/utils.h>
 

@@ -124,10 +124,6 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         "lib/vxt/dummy.c",
         "lib/vxt/memory.c",
         "lib/vxt/cpu.c",
-        "lib/vxt/pic.c",
-        "lib/vxt/ppi.c",
-        "lib/vxt/pit.c",
-        "lib/vxt/mda.c",
         "lib/vxt/debugger.c",
         "lib/vxt/testsuit.c",
     };
@@ -187,16 +183,20 @@ pub fn build(b: *Builder) void {
 
     // -------- pirepheral --------
 
-    const pirepheral = b.addStaticLibrary("pirepheral", null);
+    const pirepheral = b.addStaticLibrary("vxtp", null);
     {
         pirepheral.setBuildMode(mode);
         pirepheral.setTarget(target);
         pirepheral.linkLibC();
-        pirepheral.addIncludeDir("lib/pirepheral");
+        pirepheral.addIncludeDir("lib/vxtp");
         pirepheral.addIncludeDir("lib/vxt/include");
 
         const opt = c_options ++ &[_][]const u8{"-std=c11", "-pedantic"};
-        pirepheral.addCSourceFile("lib/pirepheral/disk.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/disk.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/pic.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/ppi.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/pit.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/mda.c", opt);
     }
 
     // -------- virtualxt sdl --------
@@ -229,7 +229,7 @@ pub fn build(b: *Builder) void {
     exe_sdl.addIncludeDir("lib/vxt/include");
 
     exe_sdl.linkLibrary(pirepheral);
-    exe_sdl.addIncludeDir("lib/pirepheral");
+    exe_sdl.addIncludeDir("lib/vxtp");
 
     exe_sdl.linkLibC();
 

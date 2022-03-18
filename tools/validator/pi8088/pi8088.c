@@ -23,7 +23,7 @@ freely, subject to the following restrictions:
 #include <stdint.h>
 #include <string.h>
 
-#define VXT_CLIB_IO
+#define VXTU_CLIB_IO
 #include <vxt/vxt.h>
 #include <vxt/utils.h>
 

@@ -18,8 +18,7 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#include <vxt/utils.h>
-#include "common.h"
+#include "vxtp.h"
 
 enum chmode {
     MODE_LATCH_COUNT,
@@ -108,7 +107,7 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 }
 
 static vxt_error step(struct vxt_pirepheral *p, int cycles) {
-    UNUSED(cycles);
+    (void)cycles;
     VXT_DEC_DEVICE(c, pit, p);
 
     INT64 ticks = c->get_ticks();
@@ -137,15 +136,13 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
 }
 
 static const char *name(struct vxt_pirepheral *p) {
-    UNUSED(p);
+    (void)p;
     return "PIT (Intel 8253)";
 }
 
-struct vxt_pirepheral *vxtu_create_pit(vxt_allocator *alloc, INT64 (*ustics)(void)) {
+struct vxt_pirepheral *vxtp_create_pit(vxt_allocator *alloc, INT64 (*ustics)(void)) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(pit));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(pit));
-
-    ENSURE(ustics);
     (VXT_GET_DEVICE(pit, p))->get_ticks = ustics;
 
     p->install = &install;
@@ -158,7 +155,8 @@ struct vxt_pirepheral *vxtu_create_pit(vxt_allocator *alloc, INT64 (*ustics)(voi
     return p;
 }
 
-double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
-    ENSURE(channel <= 2 && channel >= 0);
+double vxtp_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
+    if (channel > 2 || channel < 0)
+        return 0.0;
     return (VXT_GET_DEVICE(pit, p))->channels[channel].frequency;
 }

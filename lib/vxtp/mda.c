@@ -18,8 +18,7 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#include <vxt/utils.h>
-#include "common.h"
+#include "vxtp.h"
 
 VXT_PIREPHERAL(mda_video, {
     vxt_byte mem[0x1000];
@@ -118,15 +117,15 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 }
 
 static const char *name(struct vxt_pirepheral *p) {
-    UNUSED(p);
+    (void)p;
     return "MDA Compatible Video Adapter";
 }
 
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    UNUSED(p); return VXT_PCLASS_VIDEO;
+    (void)p; return VXT_PCLASS_VIDEO;
 }
 
-struct vxt_pirepheral *vxtu_create_mda(vxt_allocator *alloc) {
+struct vxt_pirepheral *vxtp_create_mda(vxt_allocator *alloc) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(mda_video));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(mda_video));
 
@@ -142,11 +141,11 @@ struct vxt_pirepheral *vxtu_create_mda(vxt_allocator *alloc) {
     return p;
 }
 
-void vxtu_mda_invalidate(struct vxt_pirepheral *p) { 
+void vxtp_mda_invalidate(struct vxt_pirepheral *p) { 
     (VXT_GET_DEVICE(mda_video, p))->is_dirty = true;
 }
 
-int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata) {
+int vxtp_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtp_mda_attrib,int,void*), void *userdata) {
     VXT_DEC_DEVICE(m, mda_video, p);
     int cursor = m->cursor_visible ? (m->cursor_offset & 0x7FF) : -1;
 
@@ -155,13 +154,13 @@ int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_
             vxt_byte c = m->mem[i*2];
             vxt_byte a = m->mem[i*2+1];
 
-            enum vxtu_mda_attrib attrib = 0;
+            enum vxtp_mda_attrib attrib = 0;
             if ((a & 7) == 1)
-                attrib |= VXTU_MDA_UNDELINE;
+                attrib |= VXTP_MDA_UNDELINE;
             if (a & 8)
-                attrib |= VXTU_MDA_HIGH_INTENSITY;
+                attrib |= VXTP_MDA_HIGH_INTENSITY;
             if ((a & 0x80) && (m->mode_ctrl_reg & 0x20))
-                attrib |= VXTU_MDA_BLINK;
+                attrib |= VXTP_MDA_BLINK;
 
             switch (a) {
                 case 0x0:
@@ -173,13 +172,13 @@ int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_
                     break;
                 case 0x70:
                 case 0x78:
-                    attrib |= VXTU_MDA_INVERSE;
+                    attrib |= VXTP_MDA_INVERSE;
                     break;
                 case 0xF0:
                 case 0xF8:
-                    attrib |= VXTU_MDA_INVERSE;
+                    attrib |= VXTP_MDA_INVERSE;
                     if (m->mode_ctrl_reg & 0x20)
-                        attrib |= VXTU_MDA_BLINK;
+                        attrib |= VXTP_MDA_BLINK;
                     break;
             }
 
