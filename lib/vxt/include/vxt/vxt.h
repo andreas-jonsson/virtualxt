@@ -257,6 +257,7 @@ extern struct vxt_step vxt_system_step(vxt_system *s, int cycles);
 extern void vxt_system_reset(vxt_system *s);
 extern struct vxt_registers *vxt_system_registers(vxt_system *s);
 
+extern void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte));
 extern void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *interface);
 extern void vxt_system_set_userdata(vxt_system *s, void *data);
 extern void *vxt_system_userdata(vxt_system *s);

@@ -35,13 +35,16 @@ static vxt_dword signe_extend32(vxt_word v) {
 }
 
 static vxt_byte read_opcode8(CONSTSP(cpu) p) {
-   return vxt_system_read_byte(p->s, VXT_POINTER(p->regs.cs, p->regs.ip++));
+   vxt_word ip = p->regs.ip;
+   vxt_byte data = vxt_system_read_byte(p->s, VXT_POINTER(p->regs.cs, p->regs.ip++));
+   TRACE(p, ip, data);
+   return data;
 }
 
-static vxt_word read_opcode16(CONSTSP(cpu) p){
-   vxt_word data = vxt_system_read_word(p->s, VXT_POINTER(p->regs.cs, p->regs.ip));
-   p->regs.ip += 2;
-   return data;
+static vxt_word read_opcode16(CONSTSP(cpu) p) {
+   vxt_byte l = read_opcode8(p);
+   vxt_byte h = read_opcode8(p);
+   return WORD(h, l);
 }
 
 static vxt_pointer get_effective_address(CONSTSP(cpu) p) {

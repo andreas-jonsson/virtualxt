@@ -248,7 +248,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
             return VXT_USER_ERROR(0);
         }
 
-        FILE *fp = fopen(buffer, "r+");
+        FILE *fp = fopen(buffer, "rb+");
         if (!fp) {
             fprintf(stderr, "could not open: %s\n", file);
             return VXT_USER_ERROR(1);

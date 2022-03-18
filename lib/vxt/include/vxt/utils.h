@@ -122,8 +122,7 @@ enum vxtu_mda_attrib {
 };
 
 struct vxtu_debugger_interface {
-    const char *trace;
-    bool (*pdisasm)(vxt_system*, const char*, vxt_pointer, int, int);
+    bool (*pdisasm)(vxt_system*, vxt_pointer, int, int);
     const char *(*getline)(void);
     int (*print)(const char*, ...);
 };

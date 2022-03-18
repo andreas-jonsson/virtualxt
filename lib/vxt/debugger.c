@@ -22,13 +22,12 @@ freely, subject to the following restrictions:
 #include "common.h"
 
 VXT_PIREPHERAL(debugger, {
-    const char *trace;
     vxt_pointer cursor;
     vxt_pointer breakpoint;
     vxt_pointer until;
     vxt_pointer watch;
 
-    bool (*pdisasm)(vxt_system*, const char*, vxt_pointer, int, int);
+    bool (*pdisasm)(vxt_system*, vxt_pointer, int, int);
     const char *(*getline)(void);
     int (*print)(const char*, ...);
 
@@ -139,9 +138,9 @@ static vxt_error read_command(vxt_system *s, struct debugger * const dbg) {
         REG1(r ## h)        \
         REG1(r ## x)        \
 
-    #define DISASM(c, z, l)                                                                         \
-        if (dbg->pdisasm && !dbg->pdisasm(s, NULL, (c), (z), (l)))                                  \
-            dbg->print("Unable to disassemble code! Is ndisasm installed?\n");                      \
+    #define DISASM(c, z, l)                                                             \
+        if (dbg->pdisasm && !dbg->pdisasm(s, (c), (z), (l)))                            \
+            dbg->print("Unable to disassemble code! Is ndisasm installed?\n");          \
 
     CONSTSP(vxt_registers) regs = vxt_system_registers(s);
     for (;;) {
@@ -269,9 +268,6 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(dbg, debugger, p);
 
-    if (dbg->trace && dbg->pdisasm)
-        dbg->pdisasm(s, dbg->trace, 0, 0, 0);
-
     const vxt_byte *io = vxt_system_io_map(s);
     for (int i = 0; i < VXT_IO_MAP_SIZE; i++)
         dbg->io_map[i] = io[i];
@@ -302,13 +298,6 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
     vxt_error err = VXT_NO_ERROR;
     if (regs->debug)
         err = read_command(s, dbg);
-
-    if (dbg->trace && dbg->pdisasm) {
-        if (!dbg->pdisasm(s, dbg->trace, VXT_POINTER(regs->cs, regs->ip), 16, 1)) {
-            LOG("Could not write trace!");
-            dbg->trace = NULL;
-        }
-    }
     return err;
 }
 
@@ -336,7 +325,6 @@ struct vxt_pirepheral *vxtu_create_debugger(vxt_allocator *alloc, const struct v
     memclear(p, VXT_PIREPHERAL_SIZE(debugger));
     VXT_DEC_DEVICE(d, debugger, p);
 
-    d->trace = interface->trace;
     d->pdisasm = interface->pdisasm;
     d->getline = interface->getline;
     d->print = interface->print;

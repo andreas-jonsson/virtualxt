@@ -41,6 +41,7 @@
 
 //const char *bb_test = "tools/testdata/mul.bin";
 const char *bb_test = NULL;
+FILE *trace_op_output = NULL;
 
 #define CPU_NAME "8088"
 
@@ -84,12 +85,7 @@ static const char *getline() {
 	return str;
 }
 
-static bool pdisasm(vxt_system *s, const char *file, vxt_pointer start, int size, int lines) {
-	if (file && !size) {
-		remove(file);
-		return true;
-	}
-
+static bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) {
 	char *name = tmpnam(NULL);
 	if (!name)
 		return false;
@@ -109,20 +105,19 @@ static bool pdisasm(vxt_system *s, const char *file, vxt_pointer start, int size
 	fclose(tmpf);
 
 	char *buffer = NULL;
-	if (file) {
-		const char *cmd = "ndisasm -i -b 16 -o %d \"%s\" | head -%d >> \"%s\"";
-		buffer = (char*)malloc(strlen(name) + strlen(cmd) + strlen(file));
-		sprintf(buffer, cmd, start, name, lines, file);
-	} else {
-		const char *cmd = "ndisasm -i -b 16 -o %d \"%s\" | head -%d";
-		buffer = (char*)malloc(strlen(name) + strlen(cmd));
-		sprintf(buffer, cmd, start, name, lines);
-	}
+	const char *cmd = "ndisasm -i -b 16 -o %d \"%s\" | head -%d";
+	buffer = (char*)malloc(strlen(name) + strlen(cmd));
+	sprintf(buffer, cmd, start, name, lines);
 
 	bool ret = system(buffer) == 0;
 	free(buffer);
 	remove(name);
 	return ret;
+}
+
+static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
+	(void)s; (void)addr;
+	fwrite(&data, 1, 1, trace_op_output);
 }
 
 static int emu_loop(void *ptr) {
@@ -190,7 +185,7 @@ int mda_render(int offset, vxt_byte ch, enum vxtu_mda_attrib attrib, int cursor,
 
 int ENTRY(int argc, char *argv[]) {
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
-	args.debug |= (args.halt || args.trace) ? 1 : 0;
+	args.debug |= args.halt;
 	if (args.manual) {
 		// TODO
 		return 0;
@@ -239,7 +234,7 @@ int ENTRY(int argc, char *argv[]) {
 
 	struct vxt_pirepheral *dbg = NULL;
 	if (args.debug) {
-		struct vxtu_debugger_interface dbgif = {args.trace, &pdisasm, &getline, &printf};
+		struct vxtu_debugger_interface dbgif = {&pdisasm, &getline, &printf};
 		dbg = vxtu_create_debugger(&vxt_clib_malloc, &dbgif);
 	}
 
@@ -293,6 +288,14 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i] = NULL;
 
 	vxt_system *vxt = vxt_system_create(&vxt_clib_malloc, devices);
+
+	if (args.trace) {
+		if (!(trace_op_output = fopen(args.trace, "wb"))) {
+			printf("Could not open: %s\n", args.trace);
+			return -1;
+		}
+		vxt_system_set_tracer(vxt, &tracer);
+	}
 
 	#ifdef PI8088
 		vxt_system_set_validator(vxt, pi8088_validator());
@@ -391,6 +394,8 @@ int ENTRY(int argc, char *argv[]) {
 	SDL_DestroyMutex(emu_mutex);
 
 	vxt_system_destroy(vxt);
+	if (trace_op_output)
+		fclose(trace_op_output);
 
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);

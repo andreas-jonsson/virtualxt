@@ -105,9 +105,6 @@ vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, unsigned reg_size, int v_
 
     if (s->cpu.validator)
         s->cpu.validator->initialize(s, s->cpu.validator->userdata);
-    
-    if (!s->cpu.pic)
-        LOG("WARNING: No interrupt controller attached!");
     return VXT_NO_ERROR;
 }
 
@@ -173,6 +170,10 @@ struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
         if (newc >= cycles)
             return step;
     }
+}
+
+void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte)) {
+    s->cpu.tracer = tracer;
 }
 
 void vxt_system_set_validator(CONSTP(vxt_system) s, const struct vxt_validator *interface) {

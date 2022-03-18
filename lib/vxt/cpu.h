@@ -35,6 +35,8 @@ freely, subject to the following restrictions:
 #define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr), (data), (p)->validator->userdata); }
 #define VALIDATOR_DISCARD(p) { if ((p)->validator) (p)->validator->discard((p)->validator->userdata); }
 
+#define TRACE(p, ip, data) { if ((p)->tracer) (p)->tracer((p)->s, VXT_POINTER((p)->regs.cs, (ip)), (data)); }
+
 #define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq((p)->pic, (n)); }
 
 #define INST(n) const struct instruction * const n
@@ -59,6 +61,7 @@ struct cpu {
    bool seg_override;
    bool has_prefix;
 
+   void (*tracer)(vxt_system*,vxt_pointer,vxt_byte);
    const struct vxt_validator *validator;
    struct vxt_pirepheral *pic;
    vxt_system *s;
