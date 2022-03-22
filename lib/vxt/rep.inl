@@ -93,12 +93,12 @@ REPEATF(cmpsw_A7, {
 })
 REPEATF(scasb_AE, {
    vxt_byte v = vxt_system_read_byte(p->s, VXT_POINTER(p->regs.es, p->regs.di));
-   update_di_si(p, 1);
+   update_di(p, 1);
    flag_sub_sbb8(&p->regs, p->regs.al, v, 0);
 })
 REPEATF(scasw_AF, {
    vxt_word v = vxt_system_read_word(p->s, VXT_POINTER(p->regs.es, p->regs.di));
-   update_di_si(p, 2);
+   update_di(p, 2);
    flag_sub_sbb16(&p->regs, p->regs.ax, v, 0);
 })
 #undef REPEATF
