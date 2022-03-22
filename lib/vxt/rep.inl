@@ -24,16 +24,13 @@ freely, subject to the following restrictions:
 #define REPEAT(name, op)                                       \
    static void name (CONSTSP(cpu) p, INST(inst)) {             \
       UNUSED(inst);                                            \
-      if (p->repeat && !p->regs.cx) {                          \
-         p->cycles += (p->repeat == 0xF2) ? 5 : 6;             \
-         p->repeat = 0;                                        \
+      if (!p->repeat) {                                        \
+         op                                                    \
          return;                                               \
       }                                                        \
-      op                                                       \
-      if (p->repeat) {                                         \
+      while (p->regs.cx) {                                     \
+         op                                                    \
          p->regs.cx--;                                         \
-         p->regs.ip = p->inst_start;                           \
-         p->cycles += (p->repeat == 0xF2) ? 19 : 18;           \
       }                                                        \
    }                                                           \
 
@@ -63,34 +60,24 @@ REPEAT(lodsw_AD, {
 })
 #undef REPEAT
 
-#define REPEATF(name, op)                                                                    \
-   static void name (CONSTSP(cpu) p, INST(inst)) {                                           \
-      UNUSED(inst);                                                                          \
-      if (p->repeat && !p->regs.cx) {                                                        \
-         p->cycles += (p->repeat == 0xF2) ? 5 : 6;                                           \
-         p->repeat = 0;                                                                      \
-         return;                                                                             \
-      }                                                                                      \
-      op                                                                                     \
-      if (p->repeat) {                                                                       \
-         p->regs.cx--;                                                                       \
-         p->regs.ip = p->inst_start;                                                         \
-         p->cycles += (p->repeat == 0xF2) ? 19 : 18;                                         \
-      }                                                                                      \
-                                                                                             \
-		if (((p->repeat == 0xF3) && !FLAGS(p->regs.flags, VXT_ZERO)) ||                        \
-			((p->repeat == 0xF2) && FLAGS(p->regs.flags, VXT_ZERO)))                            \
-      {                                                                                      \
-         p->cycles += (p->repeat == 0xF2) ? 5 : 6;                                           \
-         p->repeat = 0;                                                                      \
-         return;                                                                             \
-      }                                                                                      \
-                                                                                             \
-      if (p->repeat) {                                                                       \
-         p->regs.ip = p->inst_start;                                                         \
-         p->cycles += (p->repeat == 0xF2) ? 19 : 18;                                         \
-      }                                                                                      \
-   }                                                                                         \
+#define REPEATF(name, op)                                                        \
+   static void name (CONSTSP(cpu) p, INST(inst)) {                               \
+      UNUSED(inst);                                                              \
+      if (!p->repeat) {                                                          \
+         op                                                                      \
+         return;                                                                 \
+      }                                                                          \
+      while (p->regs.cx) {                                                       \
+         op                                                                      \
+         p->regs.cx--;                                                           \
+         if (((p->repeat == 0xF3) && !FLAGS(p->regs.flags, VXT_ZERO)) ||         \
+            ((p->repeat == 0xF2) && FLAGS(p->regs.flags, VXT_ZERO)))             \
+         {                                                                       \
+            p->cycles += (p->repeat == 0xF2) ? 5 : 6;                            \
+            break;                                                               \
+         }                                                                       \
+      }                                                                          \
+   }                                                                             \
 
 REPEATF(cmpsb_A6, {
    vxt_byte a = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, p->regs.si));

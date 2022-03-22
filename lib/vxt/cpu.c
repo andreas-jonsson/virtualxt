@@ -437,10 +437,10 @@ static void prep_exec(CONSTSP(cpu) p) {
    p->seg_override = false;
    p->repeat = 0;
    p->has_prefix = false;
+   p->inst_start = p->regs.ip;
 }
 
 static void read_opcode(CONSTSP(cpu) p) {
-   p->inst_start = p->regs.ip;
    for (;;) {
       switch (p->opcode = read_opcode8(p)) {
          case 0x26:
@@ -474,6 +474,12 @@ static void read_opcode(CONSTSP(cpu) p) {
             p->cycles += 2;
             break;
          default:
+            // MOVSx, CMPSx, STOSx, LODSx, SCASx
+            if (p->repeat && !((p->opcode >= 0xA4 && p->opcode <= 0xA7) || (p->opcode >= 0xAA && p->opcode <= 0xAF))) {
+               p->has_prefix = false;
+               p->repeat = 0;
+            }
+
             p->wide_op = (p->opcode & 1) != 0;
 	         p->rm_to_reg = (p->opcode & 2) != 0;
             return;
@@ -489,12 +495,6 @@ static void read_opcode(CONSTSP(cpu) p) {
 static void cpu_exec(CONSTSP(cpu) p) {
    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
    ENSURE(inst->opcode == p->opcode);
-
-   // MOVSx, CMPSx, STOSx, LODSx, SCASx
-   if (p->repeat && !((p->opcode >= 0xA4 && p->opcode <= 0xA7) || (p->opcode >= 0xAA && p->opcode <= 0xAF))) {
-      p->has_prefix = false;
-      p->repeat = 0;
-   }
 
    p->ea_cycles = 0;
    VALIDATOR_BEGIN(p, inst->name, p->opcode, inst->modregrm, &p->regs);
@@ -513,10 +513,8 @@ static void cpu_exec(CONSTSP(cpu) p) {
 int cpu_step(CONSTSP(cpu) p) {
    prep_exec(p);
    if (!p->halt) {
-      do {
-         read_opcode(p);
-         cpu_exec(p);
-      } while (p->repeat);
+      read_opcode(p);
+      cpu_exec(p);
    } else {
       p->cycles++;
    }
