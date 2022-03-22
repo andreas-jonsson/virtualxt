@@ -641,11 +641,10 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
    if (!b) {
       divZero(p);
       return;
-   } else {
-      p->regs.al = a % b;
-      p->regs.ah = a / b;
-      flag_szp8(&p->regs, p->regs.al);
    }
+   p->regs.al = a % b;
+   p->regs.ah = a / b;
+   flag_szp8(&p->regs, p->regs.al);
 }
 
 static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
@@ -775,8 +774,8 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       }
       case 4: // MUL
       {
-         p->regs.ax = (vxt_word)v * (vxt_word)p->regs.al;
-         flag_szp8(&p->regs, (vxt_byte)p->regs.al);
+         p->regs.ax = ((vxt_word)v) * ((vxt_word)p->regs.al);
+         flag_szp8(&p->regs, p->regs.al);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
          #ifndef VXT_CPU_286
             p->regs.flags &= ~VXT_ZERO;
@@ -785,26 +784,20 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       }
       case 5: // IMUL
       {
-         p->regs.ax = SIGNEXT16(v) * SIGNEXT16(p->regs.al);
+         vxt_int8 a = p->regs.al;
+         vxt_int8 b = v;
+         vxt_int16 res = a * b;
+         vxt_byte res8 = (res & 0xFF);
+
+         p->regs.ax = res;
+         flag_szp8(&p->regs, res8);
          #ifndef VXT_CPU_286
             p->regs.flags &= ~VXT_ZERO;
          #endif
-         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ax != SIGNEXT16(p->regs.al));
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int8)res));
          break;
       }
       case 6: // DIV
-      {
-         vxt_word ax = p->regs.ax;
-         if (!v || ((ax / (vxt_word)v) > 0xFF)) {
-            divZero(p);
-            return;
-         }
-
-         p->regs.ah = (vxt_byte)(ax % (vxt_word)v);
-         p->regs.al = (vxt_byte)(ax / (vxt_word)v);
-         break;
-      }
-      case 7: // IDIV
       {
          if (!v) {
             divZero(p);
@@ -812,16 +805,44 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          }
 
          vxt_word a = p->regs.ax;
-         vxt_word d = SIGNEXT16(v);
-         vxt_word r = a / d;
+         vxt_word q = a / v;
+         vxt_byte r = a % v;
+         vxt_byte q8 = q & 0xFF;
 
-         if (r < 0x80) {
+         if (q != q8) {
             divZero(p);
             return;
          }
 
-         p->regs.al = (vxt_byte)r;
-         p->regs.ah = (vxt_byte)(a % d);
+         p->regs.ah = (vxt_byte)r;
+         p->regs.al = (vxt_byte)q8;
+         break;
+      }
+      case 7: // IDIV
+      {
+         vxt_int16 a = p->regs.ax;
+         if (a == ((vxt_int16)0x8000)) {
+            divZero(p);
+            return;
+         }
+
+         vxt_int8 b = v;
+         if (!b) {
+            divZero(p);
+            return;
+         }
+
+         vxt_int16 q = a / b;
+         vxt_int8 r = a % b;
+         vxt_word q8 = (q & 0xFF);
+
+         if (q != q8) {
+            divZero(p);
+            return;
+         }
+
+         p->regs.ah = (vxt_byte)r;
+         p->regs.al = (vxt_byte)q8;
          break;
       }
    }
@@ -848,7 +869,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       }
       case 4: // MUL
       {
-         vxt_dword res = (vxt_dword)v * (vxt_dword)p->regs.ax;
+         vxt_dword res = ((vxt_dword)v) * ((vxt_dword)p->regs.ax);
          p->regs.dx = (vxt_word)(res >> 16);
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          flag_szp16(&p->regs, p->regs.ax);
@@ -860,46 +881,66 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       }
       case 5: // IMUL
       {
-         vxt_dword res = SIGNEXT32(v) * SIGNEXT32(p->regs.ax);
+         vxt_int16 a = p->regs.ax;
+         vxt_int16 b = v;
+
+         vxt_int32 res = ((vxt_int32)a) * ((vxt_int32)b);
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          p->regs.dx = (vxt_word)(res >> 16);
 
+         flag_szp16(&p->regs, p->regs.ax);
          #ifndef VXT_CPU_286
             p->regs.flags &= ~VXT_ZERO;
          #endif
-         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != SIGNEXT32(p->regs.ax));
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int16)res));
          break;
       }
       case 6: // DIV
-      {
-         vxt_dword a = ((vxt_dword)p->regs.dx << 16) + p->regs.ax;
-         if (!v || ((a / (vxt_dword)v) > 0xFFFF)) {
-            divZero(p);
-            return;
-         }
-
-         p->regs.dx = (vxt_word)(a % (vxt_dword)v);
-         p->regs.ax = (vxt_word)(a / (vxt_dword)v);
-         break;
-      }
-      case 7: // IDIV
       {
          if (!v) {
             divZero(p);
             return;
          }
 
-         vxt_dword a = ((vxt_dword)p->regs.dx << 16) + p->regs.ax;
-         vxt_dword d = SIGNEXT32(v);
-         vxt_dword r = a / d;
+         vxt_dword a = (((vxt_dword)p->regs.dx) << 16) | ((vxt_dword)p->regs.ax);
+         vxt_dword q = a / v;
+         vxt_word r = a % v;
+         vxt_word q16 = q & 0xFFFF;
 
-         if (r < 0x8000) {
+         if (q != q16) {
             divZero(p);
             return;
          }
 
-         p->regs.ax = (vxt_word)r;
-         p->regs.dx = (vxt_word)(a % d);
+         p->regs.dx = r;
+         p->regs.ax = q16;
+         break;
+      }
+      case 7: // IDIV
+      {
+         vxt_int32 a = (((vxt_dword)p->regs.dx) << 16) | ((vxt_dword)p->regs.ax);
+         if (a == ((vxt_int32)0x80000000)) {
+            divZero(p);
+            return;
+         }
+
+         vxt_int16 b = v;
+         if (!b) {
+            divZero(p);
+            return;
+         }
+
+         vxt_int32 q = a / b;
+         vxt_int16 r = a % b;
+         vxt_int16 q16 = q & 0xFFFF;
+
+         if (q != q16) {
+            divZero(p);
+            return;
+         }
+
+         p->regs.ax = (vxt_word)q16;
+         p->regs.dx = (vxt_word)r;
          break;
       }
    }

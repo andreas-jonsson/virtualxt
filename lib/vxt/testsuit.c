@@ -23,17 +23,17 @@
 #include "testing.h"
 
 #define RUN_BBTEST(bin, check, ...) {                                                                   \
-    struct vxt_pirepheral *ram0 = vxtu_memory_create(TALLOC, 0x0, 0x100000, false);                     \
-    struct vxt_pirepheral *ram1 = vxtu_memory_create(TALLOC, 0xF0000, 0x10000, false);                  \
+    struct vxt_pirepheral *ram = vxtu_memory_create(TALLOC, 0x0, 0x100000, false);                      \
+    struct vxt_pirepheral *rom = vxtu_memory_create(TALLOC, 0xF0000, 0x10000, true);                    \
                                                                                                         \
     int size = 0;                                                                                       \
     vxt_byte *data = vxtu_read_file(TALLOC, (bin), &size);                                              \
     TENSURE(data);                                                                                      \
-    TENSURE(vxtu_memory_device_fill(ram1, data, size));                                                 \
+    TENSURE(vxtu_memory_device_fill(rom, data, size));                                                  \
     TFREE(data);                                                                                        \
                                                                                                         \
     struct vxt_pirepheral *devices[] = {                                                                \
-        ram0, ram1,                                                                                     \
+        ram, rom,                                                                                       \
         NULL                                                                                            \
     };                                                                                                  \
                                                                                                         \
@@ -103,8 +103,7 @@ TEST(blackbox_datatrnf,
 )
 
 TEST(blackbox_div,
-    // IDIV is a problem here but current implementation is supported by the pi8088.
-    RUN_BBTEST("tools/testdata/div.bin", CHECK_DIFF, "tools/testdata/res_div.bin", 27);
+    RUN_BBTEST("tools/testdata/div.bin", CHECK_DIFF, "tools/testdata/res_div.bin", 7);
 )
 
 TEST(blackbox_interrupt,
@@ -124,7 +123,7 @@ TEST(blackbox_jump2,
 )
 
 TEST(blackbox_mul,
-    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 15);
+    RUN_BBTEST("tools/testdata/mul.bin", CHECK_DIFF, "tools/testdata/res_mul.bin", 8);
 )
 
 TEST(blackbox_rep,
