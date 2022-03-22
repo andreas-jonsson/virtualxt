@@ -132,11 +132,12 @@ static void das_2F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_byte al = p->regs.al;
    vxt_word cf = p->regs.flags & VXT_CARRY;
+   p->regs.flags &= ~VXT_CARRY;
 
    if (((al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
       vxt_word v = ((vxt_word)al) - 6;
       p->regs.al = (vxt_byte)(v & 0xFF);
-      SET_FLAG_IF(p->regs.flags, VXT_CARRY, v & 0xFF00);
+      SET_FLAG_IF(p->regs.flags, VXT_CARRY, cf || (v & 0xFF00));
    	p->regs.flags |= VXT_AUXILIARY;
 	} else {
       p->regs.flags &= ~VXT_AUXILIARY;
@@ -174,16 +175,20 @@ static void and_25(CONSTSP(cpu) p, INST(inst)) {
 
 static void daa_27(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
+   vxt_byte al = p->regs.al;
+   vxt_word cf = p->regs.flags & VXT_CARRY;
+   p->regs.flags &= ~VXT_CARRY;
+
    if (((p->regs.al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
       vxt_word v = ((vxt_word)p->regs.al) + 6;
       p->regs.al = (vxt_byte)(v & 0xFF);
-      SET_FLAG_IF(p->regs.flags, VXT_CARRY, v & 0xFF00);
+      SET_FLAG_IF(p->regs.flags, VXT_CARRY, cf || (v & 0xFF00));
    	p->regs.flags |= VXT_AUXILIARY;
 	} else {
       p->regs.flags &= ~VXT_AUXILIARY;
 	}
    
-   if ((p->regs.al > 0x9F) || FLAGS(p->regs.flags, VXT_CARRY)) {
+   if ((al > 0x9F) || cf) {
       p->regs.al += 0x60;
       p->regs.flags |= VXT_CARRY;
    } else {
@@ -217,7 +222,7 @@ static void xor_35(CONSTSP(cpu) p, INST(inst)) {
    static void name (CONSTSP(cpu) p, INST(inst)) {                               \
       UNUSED(inst);                                                              \
       if (((p->regs.al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {     \
-         p->regs.al = p->regs.al op 6;                                           \
+         p->regs.ax = p->regs.ax op 6;                                           \
          p->regs.ah = p->regs.ah op 1;                                           \
          p->regs.flags |= VXT_AUXILIARY | VXT_CARRY;                             \
       } else {                                                                   \
@@ -446,7 +451,7 @@ XCHG(di, ax)
 
 static void cbw_98(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ah = ((p->regs.al & 0x80) == 0x80) ? 0xFF : 0;
+   p->regs.ah = (p->regs.al & 0x80) ? 0xFF : 0;
 }
 
 static void cwd_99(CONSTSP(cpu) p, INST(inst)) {
