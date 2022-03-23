@@ -93,13 +93,14 @@ static void or_D(CONSTSP(cpu) p, INST(inst)) {
 
 static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
    VALIDATOR_DISCARD(p);
-   p->regs.debug = true;
    #ifdef VXT_CPU_286
       UNUSED(inst);
       p->regs.ip = p->inst_start;
       call_int(p, 6);
    #else
       LOG("invalid opcode: 0x%X", inst->opcode);
+      p->regs.debug = true;
+      breakpoint();
    #endif
 }
 
@@ -579,7 +580,6 @@ static void mov_C7(CONSTSP(cpu) p, INST(inst)) {
 
 static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   VALIDATOR_DISCARD(p);
    vxt_word sp = read_opcode16(p);
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
@@ -588,7 +588,6 @@ static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
 
 static void retf_CB(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   VALIDATOR_DISCARD(p);
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
 }

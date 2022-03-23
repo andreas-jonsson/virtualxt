@@ -117,6 +117,9 @@ int readback_ptr = 0;
 // TODO: Fix this issue.
 bool code_as_data_skip = false;
 
+const bool visit_once = false;
+bool visited[0x100000] = {false};
+
 //vxt_pointer trigger_addr = VXT_POINTER(0x0, 0x7C00);
 vxt_pointer trigger_addr = VXT_INVALID_POINTER;
 
@@ -456,6 +459,7 @@ static void validate_mem_op(struct mem_op *op) {
 }
 
 static void mask_undefined_flags(vxt_word *flags) {
+	*flags &= 0xCD5; // Ignore I and T.
 	for (int i = 0; flag_mask_lookup[i].opcode != -1; i++) {
 		int iop = (int)current_frame.opcode;
 		if (flag_mask_lookup[i].opcode == iop) {
@@ -518,11 +522,16 @@ static void validate_registers() {
 static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 	(void)cycles; (void)userdata;
 
-	if (trigger_addr == VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip))
+	vxt_pointer ip_addr = VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip);
+	if (trigger_addr == ip_addr)
 		trigger_addr = VXT_INVALID_POINTER;
 
 	if (trigger_addr != VXT_INVALID_POINTER)
 		return;
+
+	if (visit_once && visited[ip_addr])
+		return;
+	visited[ip_addr] = true;
 
 	current_frame.regs[1] = *regs;
 	log(LOG_INFO, "%s: %s (0x%X) @ %0*X:%0*X" NL, current_frame.discard ? "DISCARD" : "VALIDATE", current_frame.name, current_frame.opcode, 4, current_frame.regs[0].cs, 4, current_frame.regs[0].ip);
@@ -584,13 +593,10 @@ static void end(int cycles, struct vxt_registers *regs, void *userdata) {
 	validate_registers();
 }
 
-static void read_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
-	(void)userdata;
-	if (current_frame.discard)
-		return;
+static void rw_byte(struct mem_op *rw_op, vxt_pointer addr, vxt_byte data) {
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
-		struct mem_op *op = &current_frame.reads[i];
-		if (!op->flags) {
+		struct mem_op *op = &rw_op[i];
+		if (!op->flags || ((op->flags & MOF_EMULATOR) && (op->addr == addr) && (op->data == data))) {
 			*op = (struct mem_op){addr, data, MOF_EMULATOR};
 			return;
 		}
@@ -598,18 +604,18 @@ static void read_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
 	ERROR(NL);
 }
 
+static void read_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
+	(void)userdata;
+	if (current_frame.discard)
+		return;
+	rw_byte(current_frame.reads, addr, data);
+}
+
 static void write_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
 	(void)userdata;
 	if (current_frame.discard)
 		return;
-	for (int i = 0; i < NUM_MEM_OPS; i++) {
-		struct mem_op *op = &current_frame.writes[i];
-		if (!op->flags) {
-			*op = (struct mem_op){addr, data, MOF_EMULATOR};
-			return;
-		}
-	}
-	ERROR(NL);
+	rw_byte(current_frame.writes, addr, data);
 }
 
 static void discard(void *userdata) {

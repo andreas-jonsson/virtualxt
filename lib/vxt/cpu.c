@@ -491,6 +491,16 @@ static void cpu_exec(CONSTSP(cpu) p) {
    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
    ENSURE(inst->opcode == p->opcode);
 
+   if (!p->opcode) {
+      // Unlikely to be correct.
+      if (++p->opcode_zero_count > 5) {
+         breakpoint();
+         p->opcode_zero_count = 0;
+      }
+   } else {
+      p->opcode_zero_count = 0;
+   }
+
    p->ea_cycles = 0;
    VALIDATOR_BEGIN(p, inst->name, p->opcode, inst->modregrm, &p->regs);
 

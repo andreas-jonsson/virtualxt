@@ -52,6 +52,8 @@ struct cpu {
    int cycles, ea_cycles;
    vxt_word inst_start;
 
+   int opcode_zero_count;
+
    vxt_byte opcode, repeat;
    bool wide_op, rm_to_reg;
 
