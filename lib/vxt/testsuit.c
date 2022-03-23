@@ -16,11 +16,20 @@
 //    misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
 
+#define VXT_LIBC
+#define VXTU_LIBC_IO
 #include <vxt/vxtu.h>
 
 #include "common.h"
 #include "system.h"
 #include "testing.h"
+
+#ifdef PI8088
+	extern struct vxt_validator *pi8088_validator(void);
+    #define VALIDATOR vxt_system_set_validator(s, pi8088_validator())
+#else
+    #define VALIDATOR
+#endif
 
 #define RUN_BBTEST(bin, check, ...) {                                                                   \
     struct vxt_pirepheral *ram = vxtu_memory_create(TALLOC, 0x0, 0x100000, false);                      \
@@ -38,6 +47,7 @@
     };                                                                                                  \
                                                                                                         \
     CONSTP(vxt_system) s = vxt_system_create(TALLOC, devices);                                          \
+    VALIDATOR;                                                                                          \
     TENSURE_NO_ERR(vxt_system_initialize(s));                                                           \
     vxt_system_reset(s);                                                                                \
     struct vxt_registers *r = vxt_system_registers(s);                                                  \

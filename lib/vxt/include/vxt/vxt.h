@@ -81,7 +81,7 @@ extern "C" {
 
 #endif
 
-#if defined(VXT_CLIB_ALLOCATOR) || defined(VXT_LIBC)
+#if defined(VXT_LIBC) && defined(VXT_LIBC_ALLOCATOR) 
     #include <stdlib.h>
     static void *vxt_clib_malloc(void *p, int s) {
         return realloc(p, s);

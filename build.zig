@@ -125,7 +125,6 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         "lib/vxt/memory.c",
         "lib/vxt/cpu.c",
         "lib/vxt/debugger.c",
-        "lib/vxt/testsuit.c",
     };
 
     for (files) |file| {
@@ -133,6 +132,11 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         if (testing) {
             parse_file(file) catch unreachable;
         }
+    }
+    if (testing) {
+        const file = "lib/vxt/testsuit.c";
+        lib.addCSourceFile(file, opt);
+        parse_file(file) catch unreachable;
     }
     return lib;
 }
@@ -297,7 +301,14 @@ pub fn build(b: *Builder) void {
         tests.defineCMacroRaw("VXT_CPU_286");
         tests.addIncludeDir("test");
 
-        tests.linkLibrary(build_libvxt(b, mode, target, true));
+        const lib_vxt = build_libvxt(b, mode, target, true);
+        if (validator) {
+            lib_vxt.linkSystemLibrary("gpiod");
+            lib_vxt.defineCMacroRaw("PI8088");
+            lib_vxt.addCSourceFile("tools/validator/pi8088/pi8088.c", opt);
+        }
+
+        tests.linkLibrary(lib_vxt);
         tests.addIncludeDir("lib/vxt/include");
         tests.addIncludeDir("lib/vxt");
 

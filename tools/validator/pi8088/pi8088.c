@@ -23,7 +23,8 @@ freely, subject to the following restrictions:
 #include <stdint.h>
 #include <string.h>
 
-#define VXTU_CLIB_IO
+#define VXT_LIBC
+#define VXTU_LIBC_IO
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 
@@ -677,7 +678,7 @@ static vxt_error destroy(void *userdata) {
 
 struct vxt_validator pi8088 = {0};
 
-struct vxt_validator *pi8088_validator() {
+struct vxt_validator *pi8088_validator(void) {
 	pi8088.initialize = &initialize;
 	pi8088.destroy = &destroy;
 	pi8088.begin = &begin;

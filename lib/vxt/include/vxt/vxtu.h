@@ -25,7 +25,7 @@ extern "C" {
 
 #include "vxt.h"
 
-#if defined(VXT_LIBC) || defined(VXTU_CLIB_IO)
+#if defined(VXT_LIBC) && defined(VXTU_LIBC_IO)
     #include <stdio.h>
     #include <string.h>
 

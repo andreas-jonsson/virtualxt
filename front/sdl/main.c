@@ -21,8 +21,9 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
-#define VXT_CLIB_ALLOCATOR
-#define VXTU_CLIB_IO
+#define VXT_LIBC
+#define VXT_LIBC_ALLOCATOR
+#define VXTU_LIBC_IO
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 #include <vxtp.h>
@@ -38,7 +39,7 @@
 #include "keys.h"
 #include "docopt.h"
 
-//const char *bb_test = "tools/testdata/rep.bin";
+//const char *bb_test = "tools/testdata/jump1.bin";
 const char *bb_test = NULL;
 FILE *trace_op_output = NULL;
 
@@ -54,7 +55,7 @@ FILE *trace_op_output = NULL;
 	SDL_UnlockMutex(emu_mutex); }		\
 
 #ifdef PI8088
-	extern struct vxt_validator *pi8088_validator();
+	extern struct vxt_validator *pi8088_validator(void);
 #endif
 
 Uint32 last_title_update = 0;
