@@ -55,8 +55,6 @@ struct cpu {
    int opcode_zero_count;
 
    vxt_byte opcode, repeat;
-   bool wide_op, rm_to_reg;
-
    struct address_mode mode;
 
    vxt_word seg;

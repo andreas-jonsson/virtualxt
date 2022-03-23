@@ -24,12 +24,20 @@ freely, subject to the following restrictions:
 
 #define CARRY (((inst->opcode > 0xF) && (p->regs.flags & VXT_CARRY)) ? 1 : 0)
 
-static void add_0_2_10_12(CONSTSP(cpu) p, INST(inst)) {
-   write_dest8(p, op_add_adc8(&p->regs, read_dest8(p), read_source8(p), CARRY));
+static void add_0_10(CONSTSP(cpu) p, INST(inst)) {
+   rm_write8(p, op_add_adc8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg), CARRY));
 }
 
-static void add_1_3_11_13(CONSTSP(cpu) p, INST(inst)) {
-   write_dest16(p, op_add_adc16(&p->regs, read_dest16(p), read_source16(p), CARRY));
+static void add_1_11(CONSTSP(cpu) p, INST(inst)) {
+   rm_write16(p, op_add_adc16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg), CARRY));
+}
+
+static void add_2_12(CONSTSP(cpu) p, INST(inst)) {
+   reg_write8(&p->regs, p->mode.reg, op_add_adc8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p), CARRY));
+}
+
+static void add_3_13(CONSTSP(cpu) p, INST(inst)) {
+   reg_write16(&p->regs, p->mode.reg, op_add_adc16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p), CARRY));
 }
 
 static void add_4_14(CONSTSP(cpu) p, INST(inst)) {
@@ -71,14 +79,24 @@ static void push_cs(CONSTSP(cpu) p, INST(inst)) {
    push(p, p->regs.cs);
 }
 
-static void or_8_A(CONSTSP(cpu) p, INST(inst)) {
+static void or_8(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest8(p, op_or8(&p->regs, read_dest8(p), read_source8(p)));
+   rm_write8(p, op_or8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));
 }
 
-static void or_9_B(CONSTSP(cpu) p, INST(inst)) {
+static void or_9(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest16(p, op_or16(&p->regs, read_dest16(p), read_source16(p)));
+   rm_write16(p, op_or16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg)));
+}
+
+static void or_A(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   reg_write8(&p->regs, p->mode.reg, op_or8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p)));
+}
+
+static void or_B(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   reg_write16(&p->regs, p->mode.reg, op_or16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p)));
 }
 
 static void or_C(CONSTSP(cpu) p, INST(inst)) {
@@ -111,12 +129,20 @@ static void invalid_prefix(CONSTSP(cpu) p, INST(inst)) {
 
 #define CARRY (((inst->opcode < 0x1F) && (p->regs.flags & VXT_CARRY)) ? 1 : 0)
 
-static void sub_18_1A_28_2A(CONSTSP(cpu) p, INST(inst)) {
-   write_dest8(p, op_sub_sbb8(&p->regs, read_dest8(p), read_source8(p), CARRY));
+static void sub_18_28(CONSTSP(cpu) p, INST(inst)) {
+   rm_write8(p, op_sub_sbb8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg), CARRY));
 }
 
-static void sub_19_1B_29_2B(CONSTSP(cpu) p, INST(inst)) {
-   write_dest16(p, op_sub_sbb16(&p->regs, read_dest16(p), read_source16(p), CARRY));
+static void sub_19_29(CONSTSP(cpu) p, INST(inst)) {
+   rm_write16(p, op_sub_sbb16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg), CARRY));
+}
+
+static void sub_1A_2A(CONSTSP(cpu) p, INST(inst)) {
+   reg_write8(&p->regs, p->mode.reg, op_sub_sbb8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p), CARRY));
+}
+
+static void sub_1B_2B(CONSTSP(cpu) p, INST(inst)) {
+   reg_write16(&p->regs, p->mode.reg, op_sub_sbb16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p), CARRY));
 }
 
 static void sub_1C_2C(CONSTSP(cpu) p, INST(inst)) {
@@ -154,14 +180,24 @@ static void das_2F(CONSTSP(cpu) p, INST(inst)) {
    flag_szp8(&p->regs, p->regs.al);
 }
 
-static void and_20_22(CONSTSP(cpu) p, INST(inst)) {
+static void and_20(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest8(p, op_and8(&p->regs, read_dest8(p), read_source8(p)));
+   rm_write8(p, op_and8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));
 }
 
-static void and_21_23(CONSTSP(cpu) p, INST(inst)) {
+static void and_21(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest16(p, op_and16(&p->regs, read_dest16(p), read_source16(p)));
+   rm_write16(p, op_and16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg)));
+}
+
+static void and_22(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   reg_write8(&p->regs, p->mode.reg, op_and8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p)));
+}
+
+static void and_23(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   reg_write16(&p->regs, p->mode.reg, op_and16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p)));
 }
 
 static void and_24(CONSTSP(cpu) p, INST(inst)) {
@@ -199,14 +235,24 @@ static void daa_27(CONSTSP(cpu) p, INST(inst)) {
    flag_szp8(&p->regs, p->regs.al);
 }
 
-static void xor_30_32(CONSTSP(cpu) p, INST(inst)) {
+static void xor_30(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest8(p, op_xor8(&p->regs, read_dest8(p), read_source8(p)));
+   rm_write8(p, op_xor8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));
 }
 
-static void xor_31_33(CONSTSP(cpu) p, INST(inst)) {
+static void xor_31(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest16(p, op_xor16(&p->regs, read_dest16(p), read_source16(p)));
+   rm_write16(p, op_xor16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg)));
+}
+
+static void xor_32(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   reg_write8(&p->regs, p->mode.reg, op_xor8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p)));
+}
+
+static void xor_33(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   reg_write16(&p->regs, p->mode.reg, op_xor16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p)));
 }
 
 static void xor_34(CONSTSP(cpu) p, INST(inst)) {
@@ -236,14 +282,24 @@ ASCII(aaa_37, +)
 ASCII(aas_3F, -)
 #undef ASCII
 
-static void cmp_38_3A(CONSTSP(cpu) p, INST(inst)) {
+static void cmp_38(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   flag_sub_sbb8(&p->regs, read_dest8(p), read_source8(p), 0);
+   flag_sub_sbb8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg), 0);
 }
 
-static void cmp_39_3B(CONSTSP(cpu) p, INST(inst)) {
+static void cmp_39(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   flag_sub_sbb16(&p->regs, read_dest16(p), read_source16(p), 0);
+   flag_sub_sbb16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg), 0);
+}
+
+static void cmp_3A(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   flag_sub_sbb8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p), 0);
+}
+
+static void cmp_3B(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   flag_sub_sbb16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p), 0);
 }
 
 static void cmp_3C(CONSTSP(cpu) p, INST(inst)) {
@@ -399,14 +455,24 @@ static void xchg_87(CONSTSP(cpu) p, INST(inst)) {
    rm_write16(p, v);
 }
 
-static void mov_88_8A(CONSTSP(cpu) p, INST(inst)) {
+static void mov_88(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest8(p, read_source8(p));
+   rm_write8(p, reg_read8(&p->regs, p->mode.reg));
 }
 
-static void mov_89_8B(CONSTSP(cpu) p, INST(inst)) {
+static void mov_89(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   write_dest16(p, read_source16(p));
+   rm_write16(p, reg_read16(&p->regs, p->mode.reg));
+}
+
+static void mov_8A(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   reg_write8(&p->regs, p->mode.reg, rm_read8(p));
+}
+
+static void mov_8B(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   reg_write16(&p->regs, p->mode.reg, rm_read16(p));
 }
 
 static void mov_8C(CONSTSP(cpu) p, INST(inst)) {
@@ -1053,66 +1119,66 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
 //             http://aturing.umcs.maine.edu/~meadow/courses/cos335/80x86-Integer-Instruction-Set-Clocks.pdf
 
 static struct instruction const opcode_table[0x100] = {
-   {0x0, "ADD Eb Gb", true, X, &add_0_2_10_12},
-   {0x1, "ADD Ev Gv", true, X, &add_1_3_11_13},
-   {0x2, "ADD Gb Eb", true, X, &add_0_2_10_12},
-   {0x3, "ADD Gv Ev", true, X, &add_1_3_11_13},
+   {0x0, "ADD Eb Gb", true, X, &add_0_10},
+   {0x1, "ADD Ev Gv", true, X, &add_1_11},
+   {0x2, "ADD Gb Eb", true, X, &add_2_12},
+   {0x3, "ADD Gv Ev", true, X, &add_3_13},
    {0x4, "ADD AL Ib", false, 4, &add_4_14},
    {0x5, "ADD AX Iv", false, 4, &add_5_15},
    {0x6, "PUSH ES", false, 10, &push_es},
    {0x7, "POP ES", false, 8, &pop_es},
-   {0x8, "OR Eb Gb", true, X, &or_8_A},
-   {0x9, "OR Ev Gv", true, X, &or_9_B},
-   {0xA, "OR Gb Eb", true, X, &or_8_A},
-   {0xB, "OR Gv Ev", true, X, &or_9_B},
+   {0x8, "OR Eb Gb", true, X, &or_8},
+   {0x9, "OR Ev Gv", true, X, &or_9},
+   {0xA, "OR Gb Eb", true, X, &or_A},
+   {0xB, "OR Gv Ev", true, X, &or_B},
    {0xC, "OR AL Ib", false, 4, &or_C},
    {0xD, "OR AX Iv", false, 4, &or_D},
    {0xE, "PUSH CS", false, 10, &push_cs},
    {0xF, INVALID},
-   {0x10, "ADC Eb Gb", true, X, &add_0_2_10_12},
-   {0x11, "ADC Ev Gv", true, X, &add_1_3_11_13},
-   {0x12, "ADC Gb Eb", true, X, &add_0_2_10_12},
-   {0x13, "ADC Gv Ev", true, X, &add_1_3_11_13},
+   {0x10, "ADC Eb Gb", true, X, &add_0_10},
+   {0x11, "ADC Ev Gv", true, X, &add_1_11},
+   {0x12, "ADC Gb Eb", true, X, &add_2_12},
+   {0x13, "ADC Gv Ev", true, X, &add_3_13},
    {0x14, "ADC AL Ib", false, 4, &add_4_14},
    {0x15, "ADC AX Iv", false, 4, &add_5_15},
    {0x16, "PUSH SS", false, 10, &push_ss},
    {0x17, "POP SS", false, 8, &pop_ss},
-   {0x18, "SBB Eb Gb", true, X, &sub_18_1A_28_2A},
-   {0x19, "SBB Ev Gv", true, X, &sub_19_1B_29_2B},
-   {0x1A, "SBB Gb Eb", true, X, &sub_18_1A_28_2A},
-   {0x1B, "SBB Gv Ev", true, X, &sub_19_1B_29_2B},
+   {0x18, "SBB Eb Gb", true, X, &sub_18_28},
+   {0x19, "SBB Ev Gv", true, X, &sub_19_29},
+   {0x1A, "SBB Gb Eb", true, X, &sub_1A_2A},
+   {0x1B, "SBB Gv Ev", true, X, &sub_1B_2B},
    {0x1C, "SBB AL Ib", false, 4, &sub_1C_2C},
    {0x1D, "SBB AX Iv", false, 4, &sub_1D_2D},
    {0x1E, "PUSH DS", false, 10, &push_ds},
    {0x1F, "POP DS", false, 8, &pop_ds},
-   {0x20, "AND Eb Gb", true, X, &and_20_22},
-   {0x21, "AND Ev Gv", true, X, &and_21_23},
-   {0x22, "AND Gb Eb", true, X, &and_20_22},
-   {0x23, "AND Gv Ev", true, X, &and_21_23},
+   {0x20, "AND Eb Gb", true, X, &and_20},
+   {0x21, "AND Ev Gv", true, X, &and_21},
+   {0x22, "AND Gb Eb", true, X, &and_22},
+   {0x23, "AND Gv Ev", true, X, &and_23},
    {0x24, "AND AL Ib", false, 4, &and_24},
    {0x25, "AND AX Iv", false, 4, &and_25},
    {0x26, "PREFIX", false, X, &invalid_prefix},
    {0x27, "DAA", false, 4, daa_27},
-   {0x28, "SUB Eb Gb", true, X, &sub_18_1A_28_2A},
-   {0x29, "SUB Ev Gv", true, X, &sub_19_1B_29_2B},
-   {0x2A, "SUB Gb Eb", true, X, &sub_18_1A_28_2A},
-   {0x2B, "SUB Gv Ev", true, X, &sub_19_1B_29_2B},
+   {0x28, "SUB Eb Gb", true, X, &sub_18_28},
+   {0x29, "SUB Ev Gv", true, X, &sub_19_29},
+   {0x2A, "SUB Gb Eb", true, X, &sub_1A_2A},
+   {0x2B, "SUB Gv Ev", true, X, &sub_1B_2B},
    {0x2C, "SUB AL Ib", false, 4, &sub_1C_2C},
    {0x2D, "SUB AX Iv", false, 4, &sub_1D_2D},
    {0x2E, "PREFIX", false, X, &invalid_prefix},
    {0x2F, "DAS", false, 4, das_2F},
-   {0x30, "XOR Eb Gb", true, X, &xor_30_32},
-   {0x31, "XOR Ev Gv", true, X, &xor_31_33},
-   {0x32, "XOR Gb Eb", true, X, &xor_30_32},
-   {0x33, "XOR Gv Ev", true, X, &xor_31_33},
+   {0x30, "XOR Eb Gb", true, X, &xor_30},
+   {0x31, "XOR Ev Gv", true, X, &xor_31},
+   {0x32, "XOR Gb Eb", true, X, &xor_32},
+   {0x33, "XOR Gv Ev", true, X, &xor_33},
    {0x34, "XOR AL Ib", false, 4, &xor_34},
    {0x35, "XOR AX Iv", false, 4, &xor_35},
    {0x36, "PREFIX", false, X, &invalid_prefix},
    {0x37, "AAA", false, 8, aaa_37},
-   {0x38, "CMP Eb Gb", true, X, cmp_38_3A},
-   {0x39, "CMP Ev Gv", true, X, cmp_39_3B},
-   {0x3A, "CMP Gb Eb", true, X, cmp_38_3A},
-   {0x3B, "CMP Gv Ev", true, X, cmp_39_3B},
+   {0x38, "CMP Eb Gb", true, X, cmp_38},
+   {0x39, "CMP Ev Gv", true, X, cmp_39},
+   {0x3A, "CMP Gb Eb", true, X, cmp_3A},
+   {0x3B, "CMP Gv Ev", true, X, cmp_3B},
    {0x3C, "CMP AL Ib", false, 4, &cmp_3C},
    {0x3D, "CMP AX Iv", false, 4, &cmp_3D},
    {0x3E, "PREFIX", false, X, &invalid_prefix},
@@ -1189,10 +1255,10 @@ static struct instruction const opcode_table[0x100] = {
    {0x85, "TEST Gv Ev", true, X, &test_85},
    {0x86, "XCHG Gb Eb", true, X, &xchg_86},
    {0x87, "XCHG Gv Ev", true, X, &xchg_87},
-   {0x88, "MOV Eb Gb", true, X, &mov_88_8A},
-   {0x89, "MOV Ev Gv", true, X, &mov_89_8B},
-   {0x8A, "MOV Gb Eb", true, X, &mov_88_8A},
-   {0x8B, "MOV Gv Ev", true, X, &mov_89_8B},
+   {0x88, "MOV Eb Gb", true, X, &mov_88},
+   {0x89, "MOV Ev Gv", true, X, &mov_89},
+   {0x8A, "MOV Gb Eb", true, X, &mov_8A},
+   {0x8B, "MOV Gv Ev", true, X, &mov_8B},
    {0x8C, "MOV Ew Sw", true, X, &mov_8C},
    {0x8D, "LEA Gv M", true, 2, &lea_8D},
    {0x8E, "MOV Sw Ew", true, X, &mov_8E},
