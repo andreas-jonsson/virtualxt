@@ -24,14 +24,9 @@ freely, subject to the following restrictions:
 #include "testing.h"
 
 #define SIGNEXT16(v) signe_extend16(v)
-#define SIGNEXT32(v) signe_extend32(v)
 
 static vxt_word signe_extend16(vxt_byte v) {
    return (v & 0x80) ? ((vxt_word)v) | 0xFF00 : (vxt_word)v;
-}
-
-static vxt_dword signe_extend32(vxt_word v) {
-   return (v & 0x8000) ? ((vxt_dword)v) | 0xFFFF0000 : (vxt_dword)v;
 }
 
 static vxt_byte read_opcode8(CONSTSP(cpu) p) {

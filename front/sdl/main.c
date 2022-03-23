@@ -38,7 +38,7 @@
 #include "keys.h"
 #include "docopt.h"
 
-//const char *bb_test = "tools/testdata/mul.bin";
+//const char *bb_test = "tools/testdata/rep.bin";
 const char *bb_test = NULL;
 FILE *trace_op_output = NULL;
 
@@ -249,6 +249,7 @@ int ENTRY(int argc, char *argv[]) {
 		printf("vxtu_memory_device_fill() failed!\n");
 		return -1;
 	}
+	vxt_clib_malloc(data, 0);
 
 	data = vxtu_read_file(&vxt_clib_malloc, "bios/vxtx.bin", &size);
 	if (!data) {
@@ -261,6 +262,7 @@ int ENTRY(int argc, char *argv[]) {
 		printf("vxtu_memory_device_fill() failed!\n");
 		return -1;
 	}
+	vxt_clib_malloc(data, 0);
 
 	struct vxt_pirepheral *mda = vxtp_mda_create(&vxt_clib_malloc);
 	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc);
