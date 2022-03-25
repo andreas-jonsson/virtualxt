@@ -42,7 +42,11 @@
 const char *bb_test = NULL;
 FILE *trace_op_output = NULL;
 
-#define CPU_NAME "8088"
+#ifdef VXT_CPU_286
+	#define CPU_NAME "286"
+#else
+	#define CPU_NAME "8088"
+#endif
 
 #define SET_WHITE(r) ( SDL_SetRenderDrawColor((r), 0xFF, 0xFF, 0xFF, 0xFF) )
 #define SET_BLACK(r) ( SDL_SetRenderDrawColor((r), 0x0, 0x0, 0x0, 0xFF) )
