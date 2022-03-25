@@ -139,7 +139,7 @@ $(document).ready(function(){initNavTree('vxt_8h_source.html',''); initResizable
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor"></span> </div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="preprocessor">#if defined(VXT_CLIB_ALLOCATOR) || defined(VXT_LIBC)</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="preprocessor">#if defined(VXT_LIBC) &amp;&amp; defined(VXT_LIBC_ALLOCATOR) </span></div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor">    #include &lt;stdlib.h&gt;</span></div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> *vxt_clib_malloc(<span class="keywordtype">void</span> *p, <span class="keywordtype">int</span> s) {</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keywordflow">return</span> realloc(p, s);</div>
