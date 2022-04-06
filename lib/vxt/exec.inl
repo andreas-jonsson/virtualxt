@@ -118,7 +118,6 @@ static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
    #else
       LOG("invalid opcode: 0x%X", inst->opcode);
       p->regs.debug = true;
-      breakpoint();
    #endif
 }
 

@@ -457,10 +457,11 @@ static void cpu_exec(CONSTSP(cpu) p) {
    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
    ENSURE(inst->opcode == p->opcode);
 
+   // TODO: Remove this debug code.
    if (!p->opcode) {
       // Unlikely to be correct.
       if (++p->opcode_zero_count > 5) {
-         breakpoint();
+         p->regs.debug = true;
          p->opcode_zero_count = 0;
       }
    } else {
