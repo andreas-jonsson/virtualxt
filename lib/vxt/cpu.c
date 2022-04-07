@@ -377,6 +377,8 @@ static void call_int(CONSTSP(cpu) p, int n) {
    r->ip = vxt_system_read_word(p->s, (vxt_pointer)n * 4);
    r->cs = vxt_system_read_word(p->s, (vxt_pointer)n * 4 + 2);
    r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
+
+   p->irs = true;
 }
 
 static void divZero(CONSTSP(cpu) p) {
@@ -498,7 +500,7 @@ void cpu_reset_cycle_count(CONSTSP(cpu) p) {
 }
 
 void cpu_reset(CONSTSP(cpu) p) {
-	p->trap = false;
+	p->trap = p->irs = false;
    memclear(&p->regs, sizeof(p->regs));
    #ifdef VXT_CPU_286
       p->regs.flags = 0x2;

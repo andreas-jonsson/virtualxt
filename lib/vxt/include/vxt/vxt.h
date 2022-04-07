@@ -261,6 +261,7 @@ extern void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_
 extern void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *interface);
 extern void vxt_system_set_userdata(vxt_system *s, void *data);
 extern void *vxt_system_userdata(vxt_system *s);
+extern bool vxt_system_isr_flag(vxt_system *s);
 extern vxt_allocator *vxt_system_allocator(vxt_system *s);
 
 extern const vxt_byte *vxt_system_io_map(vxt_system *s);

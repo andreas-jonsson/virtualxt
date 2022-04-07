@@ -188,6 +188,10 @@ void *vxt_system_userdata(CONSTP(vxt_system) s) {
     return s->userdata;
 }
 
+bool vxt_system_isr_flag(CONSTP(vxt_system) s) {
+    return s->cpu.irs;
+}
+
 const vxt_byte *vxt_system_io_map(vxt_system *s) {
     return s->io_map;
 }

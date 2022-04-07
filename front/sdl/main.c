@@ -39,9 +39,10 @@
 #include "keys.h"
 #include "docopt.h"
 
-//const char *bb_test = "tools/testdata/jump1.bin";
+//const char *bb_test = "tools/testdata/bcdcnv.bin";
 const char *bb_test = NULL;
 FILE *trace_op_output = NULL;
+FILE *trace_offset_output = NULL;
 
 #ifdef VXT_CPU_286
 	#define CPU_NAME "286"
@@ -122,6 +123,9 @@ static bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) {
 static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
 	(void)s; (void)addr;
 	fwrite(&data, 1, 1, trace_op_output);
+	fwrite(&addr, sizeof(vxt_pointer), 1, trace_offset_output);
+	data = vxt_system_isr_flag(s) ? 1 : 0;
+	fwrite(&data, 1, 1, trace_offset_output);
 }
 
 static int emu_loop(void *ptr) {
@@ -300,6 +304,12 @@ int ENTRY(int argc, char *argv[]) {
 			printf("Could not open: %s\n", args.trace);
 			return -1;
 		}
+		static char buffer[512] = {0};
+		snprintf(buffer, sizeof(buffer), "%s.offset", args.trace);
+		if (!(trace_offset_output = fopen(buffer, "wb"))) {
+			printf("Could not open: %s\n", buffer);
+			return -1;
+		}
 		vxt_system_set_tracer(vxt, &tracer);
 	}
 
@@ -400,8 +410,11 @@ int ENTRY(int argc, char *argv[]) {
 	SDL_DestroyMutex(emu_mutex);
 
 	vxt_system_destroy(vxt);
+
 	if (trace_op_output)
 		fclose(trace_op_output);
+	if (trace_offset_output)
+		fclose(trace_offset_output);
 
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
