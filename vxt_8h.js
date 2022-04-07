@@ -86,6 +86,7 @@ var vxt_8h =
     [ "vxt_system_install_mem_at", "vxt_8h.html#a4b9a1de96a7e339759c73bab185d2fe2", null ],
     [ "vxt_system_interrupt", "vxt_8h.html#aa4e925ab4bc7c7799954a4f11b329c73", null ],
     [ "vxt_system_io_map", "vxt_8h.html#abf857e6f9933550b882bdcc3d428d407", null ],
+    [ "vxt_system_isr_flag", "vxt_8h.html#a377528eb5f482474f2cb75d851eb1544", null ],
     [ "vxt_system_mem_map", "vxt_8h.html#a509e6644bbf9c6d8a1c17007f6860cba", null ],
     [ "vxt_system_pirepheral", "vxt_8h.html#a8601c415f7174080560d1c3b6165f0db", null ],
     [ "vxt_system_read_byte", "vxt_8h.html#ac1836055f5d57469eb7199cdc142ec41", null ],
