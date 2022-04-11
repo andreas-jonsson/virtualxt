@@ -117,7 +117,9 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
 		INT64 next = 1000000ll / (INT64)ch->frequency;
 		if (ticks >= (c->ticks + next)) {
 			c->ticks = ticks;
-            vxt_system_interrupt(VXT_GET_SYSTEM(pit, p), 0);
+            #ifndef PI8088
+                vxt_system_interrupt(VXT_GET_SYSTEM(pit, p), 0);
+            #endif
 		}
 	}
 

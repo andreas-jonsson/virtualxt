@@ -70,6 +70,7 @@ struct mem_op {
 struct frame {
 	const char *name;
 	vxt_byte opcode;
+	vxt_byte ext_opcode;
 	bool modregrm;
 	bool discard;
 	bool next_fetch;
@@ -283,6 +284,8 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 			if ((cpu_memory_access != ACC_CODE_OR_NONE) && (abs((int)addr - (int)next_inst_addr) < 6)) {
 				log(LOG_INFO, "Fetching next instruction as data is not supported!" NL);
 				code_as_data_skip = true;
+				state = STATE_FINISHED;
+				return 0;
 			}
 
 			for (int i = 0; i < NUM_MEM_OPS; i++) {
@@ -437,23 +440,13 @@ static void begin(struct vxt_registers *regs, void *userdata) {
 	if (trigger_addr == ip_addr)
 		trigger_addr = VXT_INVALID_POINTER;
 
-	if (trigger_addr != VXT_INVALID_POINTER) {
+	if ((trigger_addr != VXT_INVALID_POINTER) || (visit_once && visited[ip_addr])) {
 		current_frame.discard = true;
 		return;
 	}
-
-	if (visit_once && visited[ip_addr]) {
-		current_frame.discard = true;
-		return;
-	}
-	visited[ip_addr] = true;
 	
 	memset(current_frame.reads, 0, sizeof(current_frame.reads));
 	memset(current_frame.writes, 0, sizeof(current_frame.writes));
-
-	// We must discard the first instructions after boot.
-	if ((ip_addr >= 0xFFFF0) || (ip_addr <= 0xFF))
-		current_frame.discard = true;
 }
 
 static void validate_mem_op(struct mem_op *op) {
@@ -471,9 +464,8 @@ static void mask_undefined_flags(vxt_word *flags) {
 		if (flag_mask_lookup[i].opcode == iop) {
 			if (flag_mask_lookup[i].ext != -1) {
 				ENSURE(current_frame.modregrm);
-				int ext_op = (current_frame.reads[1].data >> 3) & 7;
 				for (; flag_mask_lookup[i].opcode == iop; i++) {
-					if (flag_mask_lookup[i].ext == ext_op)
+					if (flag_mask_lookup[i].ext == (int)current_frame.ext_opcode)
 						goto mask;
 				}
 
@@ -490,16 +482,10 @@ mask:
 
 static void validate_registers() {
 	ENSURE(state == STATE_FINISHED);
+	ASSERT(current_frame.next_fetch, "Next instruction was never fetched! Possible bad jump.");
+
 	struct vxt_registers *r = &current_frame.regs[1];
 	int offset = 2;
-
-	vxt_word cpu_flags = *(vxt_word*)scratchpad; 
-	mask_undefined_flags(&cpu_flags);
-	vxt_word emu_flags = r->flags;
-	mask_undefined_flags(&emu_flags);
-
-	if (cpu_flags != emu_flags)
-		ERROR("Flags error! EMU: 0x%X (0x%X) != CPU: 0x%X (0x%X)" NL, emu_flags, r->flags, cpu_flags, *(vxt_word*)scratchpad);
 
 	#define TEST(reg) {																			\
 		vxt_word v = *(vxt_word*)&scratchpad[offset];											\
@@ -522,24 +508,46 @@ static void validate_registers() {
 	
 	#undef TEST
 
-	ASSERT(current_frame.next_fetch, "Next instruction was never fetched! Possible bad jump.");
+	vxt_word cpu_flags = *(vxt_word*)scratchpad; 
+	mask_undefined_flags(&cpu_flags);
+	vxt_word emu_flags = r->flags;
+	mask_undefined_flags(&emu_flags);
+
+	if (cpu_flags != emu_flags)
+		ERROR("Flags error! EMU: 0x%X (0x%X) != CPU: 0x%X (0x%X)" NL, emu_flags, r->flags, cpu_flags, *(vxt_word*)scratchpad);
 }
 
 static void end(const char *name, vxt_byte opcode, bool modregrm, int cycles, struct vxt_registers *regs, void *userdata) {
 	(void)cycles; (void)userdata;
 
-	if (trigger_addr != VXT_INVALID_POINTER)
+	vxt_pointer ip_addr = VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip);
+	if ((trigger_addr != VXT_INVALID_POINTER) || (visit_once && visited[ip_addr]))
 		return;
+
+	visited[ip_addr] = true;
 
 	current_frame.name = name;
 	current_frame.opcode = opcode;
+	current_frame.ext_opcode = 0xFF;
 	current_frame.modregrm = modregrm;
 	current_frame.num_nop = 0;
 	current_frame.next_fetch = false;
 	current_frame.regs[1] = *regs;
 
-	log(LOG_INFO, "%s: %s (0x%X) @ %0*X:%0*X" NL, current_frame.discard ? "DISCARD" : "VALIDATE", name, opcode, 4, current_frame.regs[0].cs, 4, current_frame.regs[0].ip);
+	if (modregrm) {
+		for (int i = 0; i < (NUM_MEM_OPS - 1); i++) {
+			if (current_frame.reads[i].data == opcode) {
+				current_frame.ext_opcode = (current_frame.reads[i + 1].data >> 3) & 7;
+				break;
+			}
+		}
+	}
 
+	// We must discard the first instructions after boot.
+	if ((ip_addr >= 0xFFFF0) || (ip_addr <= 0xFF))
+		current_frame.discard = true;
+
+	log(LOG_INFO, "%s: %s (0x%X) @ %0*X:%0*X" NL, current_frame.discard ? "DISCARD" : "VALIDATE", name, opcode, 4, current_frame.regs->cs, 4, current_frame.regs->ip);
 	if (current_frame.discard)
 		return;
 
@@ -589,14 +597,14 @@ static void end(const char *name, vxt_byte opcode, bool modregrm, int cycles, st
 	if (code_as_data_skip)
 		return;
 
-	//if (executed_cycles != cycles)
-	//	log(LOG_WARNING, "WARNING: Unexpected cycle timing! EMU: %d, CPU: %d" NL, cycles, executed_cycles);
-
 	for (int i = 0; i < NUM_MEM_OPS; i++) {
 		validate_mem_op(&current_frame.reads[i]);
 		validate_mem_op(&current_frame.writes[i]);
 	}
 	validate_registers();
+
+	//if (executed_cycles != cycles)
+	//	log(LOG_WARNING, "WARNING: Unexpected cycle timing! EMU: %d, CPU: %d" NL, cycles, executed_cycles);
 }
 
 static void rw_byte(struct mem_op *rw_op, vxt_pointer addr, vxt_byte data) {

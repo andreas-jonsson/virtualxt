@@ -195,6 +195,10 @@ pub fn build(b: *Builder) void {
         pirepheral.addIncludeDir("lib/vxtp");
         pirepheral.addIncludeDir("lib/vxt/include");
 
+        if (validator) {
+            pirepheral.defineCMacroRaw("PI8088");
+        }
+
         const opt = c_options ++ &[_][]const u8{"-std=c11", "-pedantic"};
         pirepheral.addCSourceFile("lib/vxtp/disk.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/pic.c", opt);
