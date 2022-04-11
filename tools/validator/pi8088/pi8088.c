@@ -427,7 +427,7 @@ static void init_pins() {
 	}
 }
 
-static void begin(const char *name, vxt_byte opcode, bool modregrm, struct vxt_registers *regs, void *userdata) {
+static void begin(const char *name, vxt_byte rep, vxt_byte seg, vxt_byte opcode, bool modregrm, struct vxt_registers *regs, void *userdata) {
 	(void)userdata;
 
 	current_frame.name = name;
@@ -443,8 +443,11 @@ static void begin(const char *name, vxt_byte opcode, bool modregrm, struct vxt_r
 	memset(current_frame.writes, 0, sizeof(current_frame.writes));
 
 	// Correct for fetch.
-	current_frame.regs->ip--;
-	current_frame.reads[0] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), opcode, MOF_EMULATOR};
+	vxt_word num_reads = 0;
+	if (rep) current_frame.reads[num_reads++] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), rep, MOF_EMULATOR};
+	if (seg) current_frame.reads[num_reads++] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), seg, MOF_EMULATOR};
+	current_frame.reads[num_reads++] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), opcode, MOF_EMULATOR};
+	current_frame.regs->ip -= num_reads;
 
 	// We must discard the first instruction after boot.
 	if ((current_frame.reads[0].addr == 0xFFFF0) || (current_frame.reads[0].addr <= 0xFF))

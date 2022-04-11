@@ -400,9 +400,8 @@ static void prep_exec(CONSTSP(cpu) p) {
    }
 
    p->seg = p->regs.ds;
-   p->seg_override = false;
+   p->seg_override = 0;
    p->repeat = 0;
-   p->has_prefix = false;
    p->inst_start = p->regs.ip;
 }
 
@@ -410,41 +409,34 @@ static void read_opcode(CONSTSP(cpu) p) {
    for (;;) {
       switch (p->opcode = read_opcode8(p)) {
          case 0x26:
-            p->has_prefix = true;
             p->seg = p->regs.es;
-            p->seg_override = true;
+            p->seg_override = p->opcode;
             p->cycles += 2;
             break;
          case 0x2E:
-            p->has_prefix = true;
             p->seg = p->regs.cs;
-            p->seg_override = true;
+            p->seg_override = p->opcode;
             p->cycles += 2;
             break;
          case 0x36:
-            p->has_prefix = true;
             p->seg = p->regs.ss;
-            p->seg_override = true;
+            p->seg_override = p->opcode;
             p->cycles += 2;
             break;
          case 0x3E:
-            p->has_prefix = true;
             p->seg = p->regs.ds;
-            p->seg_override = true;
+            p->seg_override = p->opcode;
             p->cycles += 2;
             break;
          case 0xF2: // REPNE/REPNZ
          case 0xF3: // REP/REPE/REPZ
-            p->has_prefix = true;
             p->repeat = p->opcode;
             p->cycles += 2;
             break;
          default:
             // MOVSx, CMPSx, STOSx, LODSx, SCASx
-            if (p->repeat && !((p->opcode >= 0xA4 && p->opcode <= 0xA7) || (p->opcode >= 0xAA && p->opcode <= 0xAF))) {
-               p->has_prefix = false;
+            if (p->repeat && !((p->opcode >= 0xA4 && p->opcode <= 0xA7) || (p->opcode >= 0xAA && p->opcode <= 0xAF)))
                p->repeat = 0;
-            }
             return;
       }
    }
@@ -471,10 +463,8 @@ static void cpu_exec(CONSTSP(cpu) p) {
    }
 
    p->ea_cycles = 0;
-   VALIDATOR_BEGIN(p, inst->name, p->opcode, inst->modregrm, &p->regs);
+   VALIDATOR_BEGIN(p, inst->name, p->repeat, p->seg_override, p->opcode, inst->modregrm, &p->regs);
 
-   if (p->has_prefix)
-      VALIDATOR_DISCARD(p);
    if (inst->modregrm)
       read_modregrm(p);
    inst->func(p, inst);

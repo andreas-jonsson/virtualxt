@@ -228,7 +228,7 @@ struct vxt_validator {
     vxt_error (*initialize)(vxt_system *s, void *userdata);
     vxt_error (*destroy)(void *userdata);
 
-    void (*begin)(const char *name, vxt_byte opcode, bool modregrm, struct vxt_registers *regs, void *userdata);
+    void (*begin)(const char *name, vxt_byte rep, vxt_byte seg, vxt_byte opcode, bool modregrm, struct vxt_registers *regs, void *userdata);
     void (*end)(int cycles, struct vxt_registers *regs, void *userdata);
     void (*read)(vxt_pointer addr, vxt_byte data, void *userdata);
     void (*write)(vxt_pointer addr, vxt_byte data, void *userdata);

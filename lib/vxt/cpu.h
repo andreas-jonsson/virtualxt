@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 #define SET_FLAG(r, f, v) ( (r) = ((r) & ~(f)) | ((v) & (f)) )
 #define SET_FLAG_IF(r, f, c) ( SET_FLAG((r), (f), (c) ? (f) : ~(f)) )
 
-#define VALIDATOR_BEGIN(p, name, op, mod, regs) { if ((p)->validator) (p)->validator->begin((name), (op), (mod), (regs), (p)->validator->userdata); }
+#define VALIDATOR_BEGIN(p, name, rep, seg, op, mod, regs) { if ((p)->validator) (p)->validator->begin((name), (rep), (seg), (op), (mod), (regs), (p)->validator->userdata); }
 #define VALIDATOR_END(p, cycles, regs) { if ((p)->validator) (p)->validator->end((cycles), (regs), (p)->validator->userdata); }
 #define VALIDATOR_READ(p, addr, data) { if ((p)->validator) (p)->validator->read((addr), (data), (p)->validator->userdata); }
 #define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr), (data), (p)->validator->userdata); }
@@ -58,8 +58,7 @@ struct cpu {
    struct address_mode mode;
 
    vxt_word seg;
-   bool seg_override;
-   bool has_prefix;
+   vxt_byte seg_override;
 
    void (*tracer)(vxt_system*,vxt_pointer,vxt_byte);
    const struct vxt_validator *validator;
