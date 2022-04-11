@@ -31,7 +31,7 @@ freely, subject to the following restrictions:
 #include "udmask.h"
 
 #define NUM_INVALID_FETCHES 6
-#define NUM_MEM_OPS 16
+#define NUM_MEM_OPS (0x20000 + 16)
 #define CONSUMER "pi8088"
 #define HW_REVISION 1
 
@@ -427,30 +427,32 @@ static void init_pins() {
 	}
 }
 
-static void begin(const char *name, vxt_byte rep, vxt_byte seg, vxt_byte opcode, bool modregrm, struct vxt_registers *regs, void *userdata) {
+static void begin(struct vxt_registers *regs, void *userdata) {
 	(void)userdata;
 
-	current_frame.name = name;
-	current_frame.opcode = opcode;
-	current_frame.modregrm = modregrm;
-	current_frame.num_nop = 0;
-	current_frame.next_fetch = false;
 	current_frame.discard = false;
 	current_frame.regs[0] = *regs;
+
+	vxt_pointer ip_addr = VXT_POINTER(regs->cs, regs->ip);
+	if (trigger_addr == ip_addr)
+		trigger_addr = VXT_INVALID_POINTER;
+
+	if (trigger_addr != VXT_INVALID_POINTER) {
+		current_frame.discard = true;
+		return;
+	}
+
+	if (visit_once && visited[ip_addr]) {
+		current_frame.discard = true;
+		return;
+	}
+	visited[ip_addr] = true;
 	
-	memset(current_frame.prefetch_addr, 0, sizeof(current_frame.prefetch_addr));
 	memset(current_frame.reads, 0, sizeof(current_frame.reads));
 	memset(current_frame.writes, 0, sizeof(current_frame.writes));
 
-	// Correct for fetch.
-	vxt_word num_reads = 0;
-	if (rep) current_frame.reads[num_reads++] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), rep, MOF_EMULATOR};
-	if (seg) current_frame.reads[num_reads++] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), seg, MOF_EMULATOR};
-	current_frame.reads[num_reads++] = (struct mem_op){VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip), opcode, MOF_EMULATOR};
-	current_frame.regs->ip -= num_reads;
-
-	// We must discard the first instruction after boot.
-	if ((current_frame.reads[0].addr == 0xFFFF0) || (current_frame.reads[0].addr <= 0xFF))
+	// We must discard the first instructions after boot.
+	if ((ip_addr >= 0xFFFF0) || (ip_addr <= 0xFF))
 		current_frame.discard = true;
 }
 
@@ -523,25 +525,25 @@ static void validate_registers() {
 	ASSERT(current_frame.next_fetch, "Next instruction was never fetched! Possible bad jump.");
 }
 
-static void end(int cycles, struct vxt_registers *regs, void *userdata) {
+static void end(const char *name, vxt_byte opcode, bool modregrm, int cycles, struct vxt_registers *regs, void *userdata) {
 	(void)cycles; (void)userdata;
-
-	vxt_pointer ip_addr = VXT_POINTER(current_frame.regs->cs, current_frame.regs->ip);
-	if (trigger_addr == ip_addr)
-		trigger_addr = VXT_INVALID_POINTER;
 
 	if (trigger_addr != VXT_INVALID_POINTER)
 		return;
 
-	if (visit_once && visited[ip_addr])
-		return;
-	visited[ip_addr] = true;
-
+	current_frame.name = name;
+	current_frame.opcode = opcode;
+	current_frame.modregrm = modregrm;
+	current_frame.num_nop = 0;
+	current_frame.next_fetch = false;
 	current_frame.regs[1] = *regs;
-	log(LOG_INFO, "%s: %s (0x%X) @ %0*X:%0*X" NL, current_frame.discard ? "DISCARD" : "VALIDATE", current_frame.name, current_frame.opcode, 4, current_frame.regs[0].cs, 4, current_frame.regs[0].ip);
+
+	log(LOG_INFO, "%s: %s (0x%X) @ %0*X:%0*X" NL, current_frame.discard ? "DISCARD" : "VALIDATE", name, opcode, 4, current_frame.regs[0].cs, 4, current_frame.regs[0].ip);
 
 	if (current_frame.discard)
 		return;
+
+	memset(current_frame.prefetch_addr, 0, sizeof(current_frame.prefetch_addr));
 
 	// Create scratchpad.
 	memset(scratchpad, 0, sizeof(scratchpad));
@@ -617,6 +619,7 @@ static void read_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
 
 static void write_byte(vxt_pointer addr, vxt_byte data, void *userdata) {
 	(void)userdata;
+	visited[addr & 0xFFFFF] = false;
 	if (current_frame.discard)
 		return;
 	rw_byte(current_frame.writes, addr, data);

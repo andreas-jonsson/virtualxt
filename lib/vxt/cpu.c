@@ -463,18 +463,14 @@ static void cpu_exec(CONSTSP(cpu) p) {
    }
 
    p->ea_cycles = 0;
-   VALIDATOR_BEGIN(p, inst->name, p->repeat, p->seg_override, p->opcode, inst->modregrm, &p->regs);
-
    if (inst->modregrm)
       read_modregrm(p);
    inst->func(p, inst);
-
-   int executed_cycles = inst->cycles + p->ea_cycles;
-   VALIDATOR_END(p, executed_cycles, &p->regs);
-   p->cycles += executed_cycles;
+   p->cycles += p->ea_cycles;
 }
 
 int cpu_step(CONSTSP(cpu) p) {
+   VALIDATOR_BEGIN(p, &p->regs);
    prep_exec(p);
    if (!p->halt) {
       read_opcode(p);
@@ -482,6 +478,8 @@ int cpu_step(CONSTSP(cpu) p) {
    } else {
       p->cycles++;
    }
+   const CONSTSP(instruction) inst = &opcode_table[p->opcode];
+   VALIDATOR_END(p, inst->name, p->opcode, inst->modregrm, p->cycles, &p->regs);
    return p->cycles;
 }
 
