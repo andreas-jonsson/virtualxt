@@ -1,6 +1,6 @@
 var structvxt__validator =
 [
-    [ "begin", "structvxt__validator.html#a89549f8ae61cb54bc2bf70a41c5f2fbb", null ],
+    [ "begin", "structvxt__validator.html#ad0292dc3d42f75b29c251d599c4fcb74", null ],
     [ "destroy", "structvxt__validator.html#ad7330ca3e01661093dacd903cb200191", null ],
     [ "discard", "structvxt__validator.html#a4a34034f0eb44625904738ce6631d46c", null ],
     [ "end", "structvxt__validator.html#a842484a36e3f82f427669275c0fa2954", null ],
