@@ -64,10 +64,10 @@ static vxt_byte execute_operation(vxt_system *s, struct drive *dev, bool read, v
             if (fread(buffer, 1, SECTOR_SIZE, dev->fp) != SECTOR_SIZE)
                 break;
             for (int i = 0; i < SECTOR_SIZE; i++)
-                vxt_system_write_byte(s, addr + i, buffer[i]);
+                vxt_system_write_byte(s, addr++, buffer[i]);
         } else {
             for (int i = 0; i < SECTOR_SIZE; i++)
-                buffer[i] = vxt_system_read_byte(s, addr + i);
+                buffer[i] = vxt_system_read_byte(s, addr++);
             if (fwrite(buffer, 1, SECTOR_SIZE, dev->fp) != SECTOR_SIZE)
                 break;
         }
