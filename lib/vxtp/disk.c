@@ -185,7 +185,7 @@ vxt_error disk_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
         return VXT_USER_ERROR(2);
 
     if ((size > 1474560) && (num < 0x80)) {
-        fprintf(stderr, "invalid harddrive number, expected 0x80+\n");
+        fprintf(stderr, "invalid harddrive number, expected 128+\n");
         return VXT_USER_ERROR(3);
     }
 
@@ -205,6 +205,7 @@ vxt_error disk_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
 		d->cylinders = 80;
 		d->sectors = 18;
 		d->heads = 2;
+        d->is_hd = false;
 
 		if (size <= 1228800) d->sectors = 15;
 		if (size <= 737280) d->sectors = 9;
