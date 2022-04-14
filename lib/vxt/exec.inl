@@ -350,7 +350,7 @@ JUMP(jpo, !FLAGS(p->regs.flags, VXT_PARITY))
 JUMP(jl, FLAGS(p->regs.flags, VXT_SIGN) != FLAGS(p->regs.flags, VXT_OVERFLOW))
 JUMP(jge, FLAGS(p->regs.flags, VXT_SIGN) == FLAGS(p->regs.flags, VXT_OVERFLOW))
 JUMP(jle, (FLAGS(p->regs.flags, VXT_SIGN) != FLAGS(p->regs.flags, VXT_OVERFLOW)) || FLAGS(p->regs.flags, VXT_ZERO))
-JUMP(jg, (!FLAGS(p->regs.flags, VXT_ZERO) && FLAGS(p->regs.flags, VXT_SIGN)) == FLAGS(p->regs.flags, VXT_OVERFLOW))
+JUMP(jg, (FLAGS(p->regs.flags, VXT_SIGN) == FLAGS(p->regs.flags, VXT_OVERFLOW)) && !FLAGS(p->regs.flags, VXT_ZERO))
 #undef JUMP
 
 static void grp1_80_82(CONSTSP(cpu) p, INST(inst)) {
