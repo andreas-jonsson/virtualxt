@@ -55,6 +55,7 @@ struct snapshot {
     int cursor_offset;
 
     bool hgc_mode;
+    int hgc_base;
     int video_page;
     vxt_byte mode_ctrl_reg;
     vxt_byte color_ctrl_reg;
@@ -196,6 +197,9 @@ static vxt_error destroy(struct vxt_pirepheral *p) {
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, cga_video, p);
 
+    c->last_scanline = c->ustics() * 1000ll;
+    c->current_scanline = 0;
+
     c->cursor_visible = true;
     c->cursor_offset = 0;
     c->is_dirty = true;
@@ -267,6 +271,13 @@ static bool blink_tick(struct vxt_pirepheral *p) {
     return (((c->ustics() - c->application_start) / 500000) % 2) == 0;
 }
 
+static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
+    pixels[offset++] = 0xFF;
+    pixels[offset++] = (vxt_byte)(color & 0x0000FF);
+    pixels[offset++] = (vxt_byte)((color & 0x00FF00) >> 8);
+    pixels[offset] = (vxt_byte)((color & 0xFF0000) >> 16);
+}
+
 static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int x, int y) {
     VXT_DEC_DEVICE(c, cga_video, p);
     struct snapshot *snap = &c->snap;
@@ -295,10 +306,7 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 			vxt_dword color = (glyph_line & mask) ? fg_color : bg_color;
 		
 			int offset = (width * (y + i) + x + j) * 4;
-            snap->rgba_surface[offset++] = 0xFF;
-            snap->rgba_surface[offset++] = (vxt_byte)(color & 0x0000FF);
-            snap->rgba_surface[offset++] = (vxt_byte)((color & 0x00FF00) >> 8);
-            snap->rgba_surface[offset] = (vxt_byte)((color & 0xFF0000) >> 16);    
+            blit32(snap->rgba_surface, offset, color);
 		}
 	}
 }
@@ -315,6 +323,8 @@ bool vxtp_cga_snapshot(struct vxt_pirepheral *p) {
     for (int i = 0; i < MEMORY_SIZE; i++)
         c->snap.mem[i] = c->mem[i];
 
+    c->snap.hgc_mode = c->hgc_mode;
+    c->snap.hgc_base = c->hgc_base;
     c->snap.cursor_visible = c->cursor_visible;
     c->snap.cursor_offset = c->cursor_offset;
     c->snap.mode_ctrl_reg = c->mode_ctrl_reg;
@@ -326,13 +336,67 @@ bool vxtp_cga_snapshot(struct vxt_pirepheral *p) {
 }
 
 int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
-    VXT_DEC_DEVICE(c, cga_video, p);
-    struct snapshot *snap = &c->snap;
+    struct snapshot *snap = &(VXT_GET_DEVICE(cga_video, p))->snap;
 
     if (snap->hgc_mode) {
-        return -1; // TODO
+        for (int y = 0; y < 348; y++) {
+            for (int x = 0; x < 720; x++) {
+                int addr = ((y & 3) << 13) + ( y >> 2) * 90 + (x >> 3);
+                vxt_byte pixel = (snap->mem[snap->hgc_base + addr] >> (7 - (x & 7))) & 1;
+                vxt_dword color = cga_palette[pixel * 15];
+                int offset = (y * 720 + x) * 4;
+                blit32(snap->rgba_surface, offset, color);
+            }
+        }
+
+        for (int i = 720 * 348; i < 720 * 350; i++)
+            blit32(snap->rgba_surface, i * 4, cga_palette[0]);
+
+        return f(720, 350, snap->rgba_surface, userdata);
     } else if (snap->mode_ctrl_reg & 2) { // In CGA graphics mode?
-        return -1; // TODO
+        // In high-resolution mode?
+        if (snap->mode_ctrl_reg & 0x10) {
+            for (int y = 0; y < 200; y++) {
+                for (int x = 0; x < 640; x++) {
+                    int addr = (y >> 1) * 80 + (y & 1) * 8192 + (x >> 3);
+                    vxt_byte pixel = (snap->mem[CGA_BASE + addr] >> (7 - (x & 7))) & 1;
+                    vxt_dword color = cga_palette[pixel * 15];
+                    int offset = (y * 640 + x) * 4;
+                    blit32(snap->rgba_surface, offset, color);
+                }
+            }
+            return f(640, 200, snap->rgba_surface, userdata);
+        } else {
+            int color_index = (snap->color_ctrl_reg >> 5) & 1;
+            int bg_color_index = snap->color_ctrl_reg & 0xF;
+            int intensity = ((snap->color_ctrl_reg >> 4) & 1) << 3;
+
+            for (int y = 0; y < 200; y++) {
+                for (int x = 0; x < 320; x++) {
+                    int addr = (y >> 1) * 80 + (y & 1) * 8192 + (x >> 2);
+                    vxt_byte pixel = snap->mem[CGA_BASE + addr];
+
+                    switch (x & 3) {
+                        case 0:
+                            pixel = (pixel >> 6) & 3;
+                            break;
+                        case 1:
+                            pixel = (pixel >> 4) & 3;
+                            break;
+                        case 2:
+                            pixel = (pixel >> 2) & 3;
+                            break;
+                        case 3:
+                            pixel = pixel & 3;
+                            break;
+                    }
+
+                    vxt_dword color = cga_palette[pixel ? (pixel * 2 + color_index + intensity) : bg_color_index];
+                    blit32(snap->rgba_surface, (y * 320 + x) * 4, color);
+                }
+            }
+            return f(320, 200, snap->rgba_surface, userdata);
+        }
     } else { // We are in text mode.
         int num_col = (snap->mode_ctrl_reg & 1) ? 80 : 40;
         int num_char = num_col * 25;

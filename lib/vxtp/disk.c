@@ -173,7 +173,17 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     }
 }
 
-vxt_error disk_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
+bool vxtp_disk_unmount(struct vxt_pirepheral *p, int num) {
+    VXT_DEC_DEVICE(c, disk, p);
+    struct drive *d = &c->disks[num & 0xFF];
+    bool has_disk = d->fp != NULL;
+    d->fp = NULL;
+    if (d->is_hd)
+        c->num_hd--;
+    return has_disk;
+}
+
+vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
     VXT_DEC_DEVICE(c, disk, p);
 
     long size = 0;
@@ -191,10 +201,9 @@ vxt_error disk_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
 
     struct drive *d = &c->disks[num & 0xFF];
     if (d->fp) {
-        fprintf(stderr, "drive is already mounted\n");
-        return VXT_USER_ERROR(4);
+        vxtp_disk_unmount(p, num);
     }
-    
+
 	if (num >= 0x80) {
         d->cylinders = size / (63 * 16 * 512);
 		d->sectors = 63;
@@ -226,14 +235,6 @@ vxt_error disk_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
     return VXT_NO_ERROR;
 }
 
-void disk_unmount(struct vxt_pirepheral *p, int num) {
-    VXT_DEC_DEVICE(c, disk, p);
-    num &= 0xFF;
-    if (c->disks[num].is_hd)
-        c->num_hd--;
-    c->disks[num].fp = NULL;
-}
-
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, disk, p);
 
@@ -255,7 +256,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
             return VXT_USER_ERROR(1);
         }
 
-        vxt_error err = disk_mount(p, num, fp);
+        vxt_error err = vxtp_disk_mount(p, num, fp);
         if (err != VXT_NO_ERROR)
             return err;
 

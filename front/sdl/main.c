@@ -49,10 +49,6 @@ FILE *trace_offset_output = NULL;
 	#define CPU_NAME "8088"
 #endif
 
-#define SET_WHITE(r) ( SDL_SetRenderDrawColor((r), 0xFF, 0xFF, 0xFF, 0xFF) )
-#define SET_BLACK(r) ( SDL_SetRenderDrawColor((r), 0x0, 0x0, 0x0, 0xFF) )
-#define SET_COLOR(r, c) ( c ? SET_WHITE((r)) : SET_BLACK((r)) )
-
 #define SYNC(...) {						\
 	while (SDL_LockMutex(emu_mutex));	\
 	{ __VA_ARGS__ ; }					\
@@ -213,10 +209,10 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 	
-	//if (SDL_RenderSetLogicalSize(renderer, 640, 200)) {
-	//	printf("SDL_RenderSetLogicalSize() failed with error %s\n", SDL_GetError());
-	//	return -1;
-	//}
+	if (SDL_RenderSetLogicalSize(renderer, 640, 480)) {
+		printf("SDL_RenderSetLogicalSize() failed with error %s\n", SDL_GetError());
+		return -1;
+	}
 
 	vxt_set_logger(&printf);
 	vxt_set_breakpoint(&trigger_breakpoint);
@@ -254,23 +250,24 @@ int ENTRY(int argc, char *argv[]) {
 	}
 	vxt_clib_malloc(data, 0);
 
+	const char *files[] = {
+		"128*boot/freedos_hd.img",
+		NULL
+	};
+
+	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, files);
 	struct vxt_pirepheral *cga = vxtp_cga_create(&vxt_clib_malloc, &ustimer);
 	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc);
 
 	struct vxt_pirepheral *devices[16] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
 
-	const char *files[] = {
-		"0*boot/freedos.img",
-		NULL
-	};
-	
 	int i = 2;
 	if (!bb_test) {
 		devices[i++] = rom_ext;
 		devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 		devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
 		devices[i++] = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
-		devices[i++] = vxtp_disk_create(&vxt_clib_malloc, files);
+		devices[i++] = disk;
 		devices[i++] = ppi;
 		devices[i++] = cga;
 	} else {
@@ -344,13 +341,43 @@ int ENTRY(int argc, char *argv[]) {
 					break;
 				case SDL_MOUSEBUTTONUP:
 					break;
+				case SDL_DROPFILE:
+					if (!SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Insert Floppy", "Mount floppy image in A: drive?", window)) {
+						FILE *img = fopen(e.drop.file, "rb+");
+						if (!img) {
+							SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Insert Floppy", "Could not open floppy image file!", window);
+						} else {
+							vxt_error err = VXT_NO_ERROR;
+							SYNC(err = vxtp_disk_mount(disk, 0, img));
+							if (err != VXT_NO_ERROR)
+								SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Insert Floppy", "Could not mount floppy image!", window);
+						}
+					}
+					break;
 				case SDL_KEYDOWN:
-					if (args.debug && (e.key.keysym.sym == SDLK_F12) && (e.key.keysym.mod & KMOD_ALT))
-						SYNC(vxtu_debugger_interrupt(dbg));
+					if (args.debug && (e.key.keysym.sym == SDLK_F12) && (e.key.keysym.mod & KMOD_ALT)) {
+						SYNC(vxtu_debugger_interrupt(dbg));					
+						break;
+					}
 					for (bool success = false; !success;)
 						SYNC(success = vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
+					//if ((e.key.keysym.sym == SDLK_RETURN) && (e.key.keysym.mod & KMOD_ALT)) {
+					if (e.key.keysym.sym == SDLK_F11) {
+						if (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) {
+							SDL_SetWindowFullscreen(window, 0);
+							SDL_SetRelativeMouseMode(false);
+						} else {
+							SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+							SDL_SetRelativeMouseMode(true);
+						}
+						break;
+					} else if (e.key.keysym.sym == SDLK_F12) {
+						if (!SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Eject Floppy", "Eject mounted floppy image in A: drive?", window))
+							SYNC(vxtp_disk_unmount(disk, 0));
+						break;
+					}
 					for (bool success = false; !success;)
 						SYNC(success = vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, false));
 					break;
@@ -376,11 +403,15 @@ int ENTRY(int argc, char *argv[]) {
 			SDL_SetWindowTitle(window, buffer);
 		}
 
-		SET_BLACK(renderer);
-		SDL_RenderClear(renderer);
-		SET_WHITE(renderer);
+		vxt_dword bg = 0;
+		SYNC(
+			bg = vxtp_cga_border_color(cga);
+			vxtp_cga_snapshot(cga)
+		);
 
-		SYNC(vxtp_cga_snapshot(cga));
+		SDL_SetRenderDrawColor(renderer, bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF);
+		SDL_RenderClear(renderer);
+
 		vxtp_cga_render(cga, &cga_render, renderer);
 
 		SDL_RenderCopy(renderer, framebuffer, NULL, NULL);

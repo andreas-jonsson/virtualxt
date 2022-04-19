@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 #include <vxt/vxtu.h>
+#include <stdio.h>
 
 enum vxtp_scancode {
 	VXTP_SCAN_INVALID,
@@ -142,6 +143,8 @@ extern bool vxtp_cga_snapshot(struct vxt_pirepheral *p);
 extern int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 
 extern struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const char *files[]);
+extern vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, FILE *fp);
+extern bool vxtp_disk_unmount(struct vxt_pirepheral *p, int num);
 
 extern struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc);
 
