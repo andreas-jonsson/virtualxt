@@ -719,7 +719,11 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
 
 static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ax = ((vxt_word)p->regs.ah * (vxt_word)read_opcode8(p) + (vxt_word)p->regs.al) & 0xFF;
+   vxt_word imm = (vxt_word)read_opcode8(p);
+   #ifdef VXT_CPU_286
+      imm = 10;
+   #endif
+   p->regs.ax = ((vxt_word)p->regs.ah * imm + (vxt_word)p->regs.al) & 0xFF;
    flag_szp8(&p->regs, p->regs.al);
    SET_FLAG(p->regs.flags, VXT_ZERO, 0);
 }

@@ -35,7 +35,6 @@
 #endif
 
 #include "main.h"
-#include "font.h"
 #include "keys.h"
 #include "docopt.h"
 
@@ -69,6 +68,9 @@ int num_cycles = 0;
 SDL_atomic_t running;
 SDL_mutex *emu_mutex = NULL;
 SDL_Thread *emu_thread = NULL;
+
+SDL_Texture *framebuffer = NULL;
+SDL_Point framebuffer_size = {640, 200};
 
 static void trigger_breakpoint(void) {
 	SDL_TriggerBreakpoint();
@@ -153,42 +155,15 @@ static int emu_loop(void *ptr) {
 	return 0;
 }
 
-int mda_render(int offset, vxt_byte ch, enum vxtp_mda_attrib attrib, int cursor, void *userdata) {
-	int x = offset % 80;
-	int y = offset / 80;
-	int num_pixels = 0;
-	bool blink = ((SDL_GetTicks() / 500) % 2) != 0;
-	SDL_Point pixels[64];
-	
-	if ((attrib & VXTP_MDA_BLINK) && blink)
-		ch = ' ';
-
-	for (int i = 0; i < 8; i++) {
-		vxt_byte glyphLine = cga_font[ch * 8 + i];
-		if (attrib & VXTP_MDA_INVERSE)
-			glyphLine = ~glyphLine;
-		
-		for (int j = 0; j < 8; j++) {
-			vxt_byte mask = 0x80 >> j;
-			if (glyphLine & mask)
-				pixels[num_pixels++] = (SDL_Point){x * 8 + j, y * 8 + i};
-		}
+int cga_render(int width, int height, const vxt_byte *rgba, void *userdata) {
+	if ((framebuffer_size.x != width) || (framebuffer_size.y != height)) {
+		SDL_DestroyTexture(framebuffer);
+		framebuffer = SDL_CreateTexture(userdata, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+		if (!framebuffer)
+			return -1;
+		framebuffer_size = (SDL_Point){width, height};
 	}
-
-	// Draw character.
-	int err = SDL_RenderDrawPoints((SDL_Renderer*)userdata, pixels, num_pixels);
-	if (err) return err;
-
-	// Render blinking CRT cursor and underlines.
-	bool is_cursor = offset == cursor;
-	if (is_cursor || (attrib & VXTP_MDA_UNDELINE)) {
-		SET_COLOR((SDL_Renderer*)userdata, is_cursor && blink);
-		for (int i = 0; i < 8; i++)
-			pixels[i] = (SDL_Point){x * 8 + i, y * 8 + 7};
-		err = SDL_RenderDrawPoints((SDL_Renderer*)userdata, pixels, 8);
-		SET_WHITE((SDL_Renderer*)userdata);
-	}
-	return err;
+	return SDL_UpdateTexture(framebuffer, NULL, rgba, width * 4);
 }
 
 int ENTRY(int argc, char *argv[]) {
@@ -232,6 +207,12 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 
+	framebuffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, framebuffer_size.x, framebuffer_size.y);
+	if (!framebuffer) {
+		printf("SDL_CreateTexture() failed with error %s\n", SDL_GetError());
+		return -1;
+	}
+	
 	//if (SDL_RenderSetLogicalSize(renderer, 640, 200)) {
 	//	printf("SDL_RenderSetLogicalSize() failed with error %s\n", SDL_GetError());
 	//	return -1;
@@ -273,7 +254,7 @@ int ENTRY(int argc, char *argv[]) {
 	}
 	vxt_clib_malloc(data, 0);
 
-	struct vxt_pirepheral *mda = vxtp_mda_create(&vxt_clib_malloc);
+	struct vxt_pirepheral *cga = vxtp_cga_create(&vxt_clib_malloc, &ustimer);
 	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc);
 
 	struct vxt_pirepheral *devices[16] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
@@ -287,10 +268,11 @@ int ENTRY(int argc, char *argv[]) {
 	if (!bb_test) {
 		devices[i++] = rom_ext;
 		devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
+		devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
 		devices[i++] = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
 		devices[i++] = vxtp_disk_create(&vxt_clib_malloc, files);
 		devices[i++] = ppi;
-		devices[i++] = mda;
+		devices[i++] = cga;
 	} else {
 		devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 	}
@@ -398,11 +380,10 @@ int ENTRY(int argc, char *argv[]) {
 		SDL_RenderClear(renderer);
 		SET_WHITE(renderer);
 
-		SYNC(
-			vxtp_mda_invalidate(mda);
-			vxtp_mda_traverse(mda, &mda_render, renderer);
-		);
+		SYNC(vxtp_cga_snapshot(cga));
+		vxtp_cga_render(cga, &cga_render, renderer);
 
+		SDL_RenderCopy(renderer, framebuffer, NULL, NULL);
 		SDL_RenderPresent(renderer);
 	}
 
@@ -416,6 +397,7 @@ int ENTRY(int argc, char *argv[]) {
 	if (trace_offset_output)
 		fclose(trace_offset_output);
 
+	SDL_DestroyTexture(framebuffer);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();

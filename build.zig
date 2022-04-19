@@ -204,7 +204,9 @@ pub fn build(b: *Builder) void {
         pirepheral.addCSourceFile("lib/vxtp/pic.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/ppi.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/pit.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/dma.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/mda.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/cga.c", opt);
     }
 
     // -------- virtualxt sdl --------

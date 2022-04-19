@@ -37,7 +37,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
         case 0x62:
             // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
             //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
-            return 0x3; // TODO: Return other then MDA video bits.
+            return 0x2; // TODO: Return other then CGA video bits.
         case 0x64:
             return c->command_port;
 	}

@@ -60,9 +60,6 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(m, mda_video, p);
     m->is_dirty = true;
     if (port == 0x3B8) {
-        // Toggle blinking.
-        if ((m->mode_ctrl_reg & 0x20) != (data & 0x20))
-            m->is_dirty = true;
         m->mode_ctrl_reg = data;
         return;
     } else if (port & 1) { // 0x3B1, 0x3B3, 0x3B5, 0x3B7

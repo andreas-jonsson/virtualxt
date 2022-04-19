@@ -29,6 +29,8 @@ struct drive {
     FILE *fp;
     int size;
     bool is_hd;
+
+    vxt_byte buffer[SECTOR_SIZE];
     
     vxt_word cylinders;
     vxt_word sectors;
@@ -57,18 +59,16 @@ static vxt_byte execute_operation(vxt_system *s, struct drive *dev, bool read, v
         return 0;
 
     int num_sectors = 0;
-    static vxt_byte buffer[SECTOR_SIZE];
-
     while (num_sectors < count) {
         if (read) {
-            if (fread(buffer, 1, SECTOR_SIZE, dev->fp) != SECTOR_SIZE)
+            if (fread(dev->buffer, 1, SECTOR_SIZE, dev->fp) != SECTOR_SIZE)
                 break;
             for (int i = 0; i < SECTOR_SIZE; i++)
-                vxt_system_write_byte(s, addr++, buffer[i]);
+                vxt_system_write_byte(s, addr++, dev->buffer[i]);
         } else {
             for (int i = 0; i < SECTOR_SIZE; i++)
-                buffer[i] = vxt_system_read_byte(s, addr++);
-            if (fwrite(buffer, 1, SECTOR_SIZE, dev->fp) != SECTOR_SIZE)
+                dev->buffer[i] = vxt_system_read_byte(s, addr++);
+            if (fwrite(dev->buffer, 1, SECTOR_SIZE, dev->fp) != SECTOR_SIZE)
                 break;
         }
         num_sectors++;

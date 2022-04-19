@@ -26,22 +26,22 @@ extern "C" {
 #include <vxt/vxtu.h>
 
 enum vxtp_scancode {
-   VXTP_SCAN_INVALID,
-   VXTP_SCAN_ESCAPE,
-   VXTP_SCAN_1,
-   VXTP_SCAN_2,
-   VXTP_SCAN_3,
-   VXTP_SCAN_4,
-   VXTP_SCAN_5,
-   VXTP_SCAN_6,
-   VXTP_SCAN_7,
-   VXTP_SCAN_8,
-   VXTP_SCAN_9,
-   VXTP_SCAN_0,
-   VXTP_SCAN_MINUS,
-   VXTP_SCAN_EQUAL,
-   VXTP_SCAN_BACKSPACE,
-   VXTP_SCAN_TAB,
+	VXTP_SCAN_INVALID,
+	VXTP_SCAN_ESCAPE,
+	VXTP_SCAN_1,
+	VXTP_SCAN_2,
+	VXTP_SCAN_3,
+	VXTP_SCAN_4,
+	VXTP_SCAN_5,
+	VXTP_SCAN_6,
+	VXTP_SCAN_7,
+	VXTP_SCAN_8,
+	VXTP_SCAN_9,
+	VXTP_SCAN_0,
+	VXTP_SCAN_MINUS,
+	VXTP_SCAN_EQUAL,
+	VXTP_SCAN_BACKSPACE,
+	VXTP_SCAN_TAB,
 	VXTP_SCAN_Q,
 	VXTP_SCAN_W,
 	VXTP_SCAN_E,
@@ -133,7 +133,17 @@ extern struct vxt_pirepheral *vxtp_mda_create(vxt_allocator *alloc);
 extern void vxtp_mda_invalidate(struct vxt_pirepheral *p);
 extern int vxtp_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtp_mda_attrib,int,void*), void *userdata);
 
+extern struct vxt_pirepheral *vxtp_cga_create(vxt_allocator *alloc, long long (*ustics)(void));
+extern vxt_dword vxtp_cga_border_color(struct vxt_pirepheral *p);
+extern bool vxtp_cga_snapshot(struct vxt_pirepheral *p);
+
+// This function only operates on snapshot data and is threadsafe.
+// The use of 'vxtp_cga_snapshot' and 'vxtp_cga_render' needs to be coordinated by the user.
+extern int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
+
 extern struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const char *files[]);
+
+extern struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc);
 
 #ifdef __cplusplus
 }
