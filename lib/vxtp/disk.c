@@ -173,6 +173,10 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     }
 }
 
+void vxtp_disk_set_boot_drive(struct vxt_pirepheral *p, int num) {
+    (VXT_GET_DEVICE(disk, p))->boot_drive = num & 0xFF;
+}
+
 bool vxtp_disk_unmount(struct vxt_pirepheral *p, int num) {
     VXT_DEC_DEVICE(c, disk, p);
     struct drive *d = &c->disks[num & 0xFF];
@@ -238,7 +242,13 @@ vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, disk, p);
 
+    // IO 0xB0, 0xB1 to interrupt 0x19, 0x13
+    vxt_system_install_io(s, p, 0xB0, 0xB1);
     c->boot_drive = 0;
+
+    if (!c->files)
+        return VXT_NO_ERROR;
+
     for (int i = 0; c->files[i]; i++) {
         const char *file = c->files[i];
         char buffer[512];
@@ -263,9 +273,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
         if (*ty == '*')
             c->boot_drive = num;
     }
-
-    // IO 0xB0, 0xB1 to interrupt 0x19, 0x13
-    vxt_system_install_io(s, p, 0xB0, 0xB1);
     return VXT_NO_ERROR;
 }
 

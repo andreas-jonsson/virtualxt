@@ -133,7 +133,7 @@ static int emu_loop(void *ptr) {
 		Uint64 start = SDL_GetPerformanceCounter();
 
 		SYNC(
-			res = vxt_system_step(vxt, 0);
+			res = vxt_system_step(vxt, 100);
 			if (res.err != VXT_NO_ERROR) {
 				if (res.err == VXT_USER_TERMINATION)
 					SDL_AtomicSet(&running, 0);
@@ -250,14 +250,10 @@ int ENTRY(int argc, char *argv[]) {
 	}
 	vxt_clib_malloc(data, 0);
 
-	const char *files[] = {
-		"128*boot/freedos_hd.img",
-		NULL
-	};
-
-	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, files);
+	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, NULL);
 	struct vxt_pirepheral *cga = vxtp_cga_create(&vxt_clib_malloc, &ustimer);
 	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc);
+	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4);
 
 	struct vxt_pirepheral *devices[16] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
 
@@ -267,6 +263,7 @@ int ENTRY(int argc, char *argv[]) {
 		devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 		devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
 		devices[i++] = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
+		devices[i++] = mouse;
 		devices[i++] = disk;
 		devices[i++] = ppi;
 		devices[i++] = cga;
@@ -309,6 +306,22 @@ int ENTRY(int argc, char *argv[]) {
 			printf("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
 
+	if (args.floppy) {
+		FILE *fp = fopen(args.floppy, "rb+");
+		if (fp && (vxtp_disk_mount(disk, 0, fp) == VXT_NO_ERROR))
+			printf("Floppy image: %s\n", args.floppy);
+	}
+
+	args.harddrive = args.harddrive ? args.harddrive : "boot/freedos_hd.img";
+	if (args.harddrive) {
+		FILE *fp = fopen(args.harddrive, "rb+");
+		if (fp && (vxtp_disk_mount(disk, 128, fp) == VXT_NO_ERROR)) {
+			printf("Harddrive image: %s\n", args.harddrive);
+			if (args.hdboot || !args.floppy)
+				vxtp_disk_set_boot_drive(disk, 128);
+		}
+	}
+
 	vxt_system_reset(vxt);
 	vxt_system_registers(vxt)->debug = (bool)args.halt;
 
@@ -336,19 +349,40 @@ int ENTRY(int argc, char *argv[]) {
 					SDL_AtomicSet(&running, 0);
 					break;
 				case SDL_MOUSEMOTION:
+					if (mouse && SDL_GetRelativeMouseMode()) {
+						Uint32 state = SDL_GetMouseState(NULL, NULL);
+						struct vxtp_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
+						if (state & SDL_BUTTON_LMASK)
+							ev.buttons |= VXTP_MOUSE_LEFT;
+						if (state & SDL_BUTTON_RMASK)
+							ev.buttons |= VXTP_MOUSE_RIGHT;
+						vxtp_mouse_push_event(mouse, &ev);
+					}
 					break;
 				case SDL_MOUSEBUTTONDOWN:
-					break;
-				case SDL_MOUSEBUTTONUP:
+					if (mouse) {
+						if (e.button.button == SDL_BUTTON_MIDDLE) {
+							SDL_SetRelativeMouseMode(false);
+							break;
+						}
+						SDL_SetRelativeMouseMode(true);
+
+						struct vxtp_mouse_event ev = {0};
+						if (e.button.button == SDL_BUTTON_LEFT)
+							ev.buttons |= VXTP_MOUSE_LEFT;
+						if (e.button.button == SDL_BUTTON_RIGHT)
+							ev.buttons |= VXTP_MOUSE_RIGHT;
+						vxtp_mouse_push_event(mouse, &ev);
+					}
 					break;
 				case SDL_DROPFILE:
 					if (!SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Insert Floppy", "Mount floppy image in A: drive?", window)) {
-						FILE *img = fopen(e.drop.file, "rb+");
-						if (!img) {
+						FILE *fp = fopen(e.drop.file, "rb+");
+						if (!fp) {
 							SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Insert Floppy", "Could not open floppy image file!", window);
 						} else {
 							vxt_error err = VXT_NO_ERROR;
-							SYNC(err = vxtp_disk_mount(disk, 0, img));
+							SYNC(err = vxtp_disk_mount(disk, 0, fp));
 							if (err != VXT_NO_ERROR)
 								SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Insert Floppy", "Could not mount floppy image!", window);
 						}

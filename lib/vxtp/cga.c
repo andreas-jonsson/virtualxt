@@ -152,7 +152,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
         	c->crt_reg[c->crt_addr] = data;
             switch (c->crt_addr) {
                 case 0xA:
-                    c->cursor_visible = (data & 0x20) != 0;
+                    c->cursor_visible = (data & 0x20) == 0;
                     break;
                 case 0xE:
                     c->cursor_offset = (c->cursor_offset & 0x00FF) | ((vxt_word)data << 8);

@@ -122,6 +122,17 @@ enum vxtp_mda_attrib {
     VXTP_MDA_INVERSE        = 0x8
 };
 
+enum vxtp_mouse_button {
+    VXTP_MOUSE_RIGHT = 0x1,
+	VXTP_MOUSE_LEFT  = 0x2    
+};
+
+struct vxtp_mouse_event {
+	enum vxtp_mouse_button buttons;
+	int xrel;
+    int yrel;
+};
+
 extern struct vxt_pirepheral *vxtp_pic_create(vxt_allocator *alloc);
 
 extern struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, long long (*ustics)(void));
@@ -143,10 +154,14 @@ extern bool vxtp_cga_snapshot(struct vxt_pirepheral *p);
 extern int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 
 extern struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const char *files[]);
+extern void vxtp_disk_set_boot_drive(struct vxt_pirepheral *p, int num);
 extern vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, FILE *fp);
 extern bool vxtp_disk_unmount(struct vxt_pirepheral *p, int num);
 
 extern struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc);
+
+extern struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq);
+extern bool vxtp_mouse_push_event(struct vxt_pirepheral *p, const struct vxtp_mouse_event *ev);
 
 #ifdef __cplusplus
 }
