@@ -248,7 +248,7 @@ func BenchmarkJump2(b *testing.B) {
 }
 
 func TestMul(t *testing.T) {
-	runTestAndVerify(t, "mul", 8)
+	runTestAndVerify(t, "mul", 10)
 }
 
 func BenchmarkMul(b *testing.B) {

@@ -973,7 +973,11 @@ func (p *CPU) execute() error {
 			p.updateFlagsSZP16(p.AX())
 		}
 	case 0xD5: // AAD *d8
-		p.SetAX((uint16(p.AL()) + uint16(p.AH())*uint16(p.readOpcodeStream())) & 0xFF)
+		imm := uint16(p.readOpcodeStream())
+		if p.isV20 {
+			imm = 10
+		}
+		p.SetAX((uint16(p.AL()) + uint16(p.AH())*imm) & 0xFF)
 		p.updateFlagsSZP16(p.AX())
 	case 0xD6: // *SALC
 		// This is XLAT on V20.
