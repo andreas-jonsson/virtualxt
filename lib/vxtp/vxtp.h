@@ -138,8 +138,9 @@ extern struct vxt_pirepheral *vxtp_pic_create(vxt_allocator *alloc);
 extern struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, long long (*ustics)(void));
 extern double vxtp_pit_get_frequency(struct vxt_pirepheral *p, int channel);
 
-extern struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc);
+extern struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit, void (*enable_spk)(bool), void *userdata);
 extern bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool force);
+extern int vxtp_ppi_write_audio(struct vxt_pirepheral *p, vxt_byte *buffer, int freq, int channels, int samples);
 
 extern struct vxt_pirepheral *vxtp_mda_create(vxt_allocator *alloc);
 extern void vxtp_mda_invalidate(struct vxt_pirepheral *p);

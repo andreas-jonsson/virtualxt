@@ -18,6 +18,9 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+#ifndef _OPS_H_
+#define _OPS_H_
+
 #include "common.h"
 #include "cpu.h"
 
@@ -165,3 +168,5 @@ XOR(LOGIC_OP)
 
 #undef NARROW
 #undef WIDE
+
+#endif

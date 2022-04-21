@@ -20,10 +20,20 @@ freely, subject to the following restrictions:
 
 #include "vxtp.h"
 
+#define TONE_VOLUME 32
+#define UINT64 unsigned long long
+
 VXT_PIREPHERAL(ppi, {
 	vxt_byte data_port;
     vxt_byte command_port;
     vxt_byte port_61;
+
+    UINT64 spk_sample_index;
+	bool spk_enabled;
+    void (*spk_enable_cb)(bool);
+    void *spk_enable_ud;
+
+    struct vxt_pirepheral *pit;
 })
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
@@ -45,14 +55,21 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    if (port == 0x61)
-        (VXT_GET_DEVICE(ppi, p))->port_61 = data;
+    VXT_DEC_DEVICE(c, ppi, p);
+    if (port == 0x61) {
+        c->port_61 = data;
+        bool enabled = (data & 3) == 3;
+        if (enabled != c->spk_enabled) {
+            c->spk_enabled = enabled;
+            c->spk_sample_index = 0;
+            if (c->spk_enable_cb)
+                c->spk_enable_cb(enabled);
+        }
+    }
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io_at(s, p, 0x60);
-    vxt_system_install_io_at(s, p, 0x61);
-    vxt_system_install_io_at(s, p, 0x62);
+    vxt_system_install_io(s, p, 0x60, 0x62);
     vxt_system_install_io_at(s, p, 0x64);
     return VXT_NO_ERROR;
 }
@@ -61,6 +78,10 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, ppi, p);
     c->command_port = c->data_port = 0;
     c->port_61 = 4;
+
+	c->spk_sample_index = 0;
+	c->spk_enabled = false;
+
     return VXT_NO_ERROR;
 }
 
@@ -73,9 +94,14 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "PPI (Intel 8255)";
 }
 
-struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc) {
+struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit, void (*enable_spk)(bool), void *userdata) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(ppi));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(ppi));
+    VXT_DEC_DEVICE(c, ppi, p);
+
+    c->pit = pit;
+    c->spk_enable_cb = enable_spk;
+    c->spk_enable_ud = userdata;
 
     p->install = &install;
     p->destroy = &destroy;
@@ -97,4 +123,27 @@ bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool f
         return true;
     }
     return false;
+}
+
+int vxtp_ppi_write_audio(struct vxt_pirepheral *p, vxt_byte *buffer, int freq, int channels, int samples) {
+    VXT_DEC_DEVICE(c, ppi, p);
+
+    int num_bytes = 0;
+    volatile double tone_hz = vxtp_pit_get_frequency(c->pit, 2);
+
+    if (!c->spk_enabled || (tone_hz <= 0.0))
+        return num_bytes;
+
+    UINT64 square_wave_period = (UINT64)((double)freq / tone_hz);
+    UINT64 half_square_wave_period = square_wave_period / 2;
+
+    if (!half_square_wave_period)
+        return num_bytes;
+
+    for (int i = 0; i < samples; i++) {
+        char sample_value = ((++c->spk_sample_index / half_square_wave_period) % 2) ? TONE_VOLUME : -TONE_VOLUME;
+        for (int j = 0; j < channels; j++)
+            buffer[num_bytes++] = (vxt_byte)sample_value;
+    }
+    return num_bytes;
 }

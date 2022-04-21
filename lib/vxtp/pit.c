@@ -101,8 +101,7 @@ static vxt_error destroy(struct vxt_pirepheral *p) {
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, pit, p);
     vxt_memclear(c->channels, sizeof(c->channels));
-    c->device_ticks = 0;
-    c->ticks = c->get_ticks();
+    c->device_ticks = c->ticks = 0;
     return VXT_NO_ERROR;
 }
 
@@ -130,7 +129,7 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
         for (int i = 0; i < 3; i++) {
             ch = &c->channels[i];
 			if (ch->enabled)
-				ch->counter = (ch->counter < step) ? ch->data : ch->counter - step;
+				ch->counter = (ch->counter < step) ? ch->data : (ch->counter - step);
 		}
 		c->device_ticks = ticks;
 	}
@@ -158,7 +157,7 @@ struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, INT64 (*ustics)(voi
 }
 
 double vxtp_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
-    if (channel > 2 || channel < 0)
+    if ((channel > 2) || (channel < 0))
         return 0.0;
     return (VXT_GET_DEVICE(pit, p))->channels[channel].frequency;
 }

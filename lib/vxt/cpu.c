@@ -386,6 +386,12 @@ static void divZero(CONSTSP(cpu) p) {
    call_int(p, 0);
 }
 
+#ifdef VXT_CPU_V20
+   #include "v20.inl"
+#else
+   #include "i8088.inl"
+#endif
+
 static void prep_exec(CONSTSP(cpu) p) {
    if (p->trap)
       call_int(p, 1);
@@ -441,11 +447,6 @@ static void read_opcode(CONSTSP(cpu) p) {
       }
    }
 }
-
-#include "ops.inl"
-#include "shift.inl"
-#include "rep.inl"
-#include "exec.inl"
 
 static void cpu_exec(CONSTSP(cpu) p) {
    const CONSTSP(instruction) inst = &opcode_table[p->opcode];

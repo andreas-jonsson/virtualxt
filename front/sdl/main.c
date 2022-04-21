@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <assert.h>
 
 #define VXT_LIBC
 #define VXT_LIBC_ALLOCATOR
@@ -43,8 +44,10 @@ const char *bb_test = NULL;
 FILE *trace_op_output = NULL;
 FILE *trace_offset_output = NULL;
 
-#ifdef VXT_CPU_286
+#if defined(VXT_CPU_286)
 	#define CPU_NAME "286"
+#elif defined(VXT_CPU_V20)
+	#define CPU_NAME "V20"
 #else
 	#define CPU_NAME "8088"
 #endif
@@ -68,12 +71,18 @@ SDL_Thread *emu_thread = NULL;
 SDL_Texture *framebuffer = NULL;
 SDL_Point framebuffer_size = {640, 200};
 
+#define AUDIO_FREQUENCY 48000
+#define AUDIO_LATENCY 10
+
+SDL_AudioDeviceID audio_device = 0;
+
 static void trigger_breakpoint(void) {
 	SDL_TriggerBreakpoint();
 }
 
 long long ustimer(void) {
-	return SDL_GetPerformanceCounter() / (SDL_GetPerformanceFrequency() / 1000000);
+	//return SDL_GetPerformanceCounter() / (SDL_GetPerformanceFrequency() / 1000000);
+	return SDL_GetTicks64() * 1000;
 }
 
 static const char *getline() {
@@ -151,7 +160,7 @@ static int emu_loop(void *ptr) {
 	return 0;
 }
 
-int cga_render(int width, int height, const vxt_byte *rgba, void *userdata) {
+static int cga_render(int width, int height, const vxt_byte *rgba, void *userdata) {
 	if ((framebuffer_size.x != width) || (framebuffer_size.y != height)) {
 		SDL_DestroyTexture(framebuffer);
 		framebuffer = SDL_CreateTexture(userdata, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height);
@@ -160,6 +169,39 @@ int cga_render(int width, int height, const vxt_byte *rgba, void *userdata) {
 		framebuffer_size = (SDL_Point){width, height};
 	}
 	return SDL_UpdateTexture(framebuffer, NULL, rgba, width * 4);
+}
+
+static Uint32 audio_callback(Uint32 interval, void *param) {
+	int num_bytes = 0;
+	SDL_AudioSpec *spec = (SDL_AudioSpec*)param;
+
+	static vxt_byte buffer[48000 * 2]; // TODO: Resize this dynamically.
+	assert((unsigned)(spec->freq * spec->channels) <= sizeof(buffer));
+
+	SYNC(num_bytes = vxtp_ppi_write_audio(spec->userdata, buffer, spec->freq, spec->channels, spec->samples));
+
+	if (num_bytes) {
+		SDL_LockAudioDevice(audio_device);
+		SDL_QueueAudio(audio_device, buffer, num_bytes);
+		SDL_UnlockAudioDevice(audio_device);
+	}
+	return interval;
+}
+
+static void enable_speaker(bool b) {
+	SDL_LockAudioDevice(audio_device);
+	SDL_ClearQueuedAudio(audio_device);
+	SDL_PauseAudioDevice(audio_device, b ? 1 : 0);
+	SDL_UnlockAudioDevice(audio_device);
+}
+
+static vxt_word pow2(vxt_word v) {
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	return ++v;
 }
 
 int ENTRY(int argc, char *argv[]) {
@@ -252,7 +294,8 @@ int ENTRY(int argc, char *argv[]) {
 
 	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, NULL);
 	struct vxt_pirepheral *cga = vxtp_cga_create(&vxt_clib_malloc, &ustimer);
-	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc);
+	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
+	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit, &enable_speaker, NULL);
 	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4);
 
 	struct vxt_pirepheral *devices[16] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
@@ -262,7 +305,7 @@ int ENTRY(int argc, char *argv[]) {
 		devices[i++] = rom_ext;
 		devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 		devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
-		devices[i++] = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
+		devices[i++] = pit;
 		devices[i++] = mouse;
 		devices[i++] = disk;
 		devices[i++] = ppi;
@@ -339,6 +382,18 @@ int ENTRY(int argc, char *argv[]) {
 
 	if (!(emu_thread = SDL_CreateThread(&emu_loop, "emulator loop", vxt))) {
 		printf("SDL_CreateThread failed!\n");
+		return -1;
+	}
+
+	SDL_AudioSpec desired = {.freq = AUDIO_FREQUENCY, .format = AUDIO_U8, .channels = 1, .samples = pow2((AUDIO_FREQUENCY / 1000) * AUDIO_LATENCY)};
+	SDL_AudioSpec obtained = {0};
+	audio_device = SDL_OpenAudioDevice(NULL, false, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
+	SDL_PauseAudioDevice(audio_device, true);
+
+	obtained.userdata = ppi;
+	SDL_TimerID audio_timer = SDL_AddTimer((Uint32)obtained.freq / obtained.samples, &audio_callback, &obtained);
+	if (!audio_timer) {
+		printf("SDL_AddTimer failed!\n");
 		return -1;
 	}
 
@@ -452,6 +507,8 @@ int ENTRY(int argc, char *argv[]) {
 		SDL_RenderPresent(renderer);
 	}
 
+	SDL_RemoveTimer(audio_timer);
+
 	SDL_WaitThread(emu_thread, NULL);
 	SDL_DestroyMutex(emu_mutex);
 
@@ -465,6 +522,7 @@ int ENTRY(int argc, char *argv[]) {
 	SDL_DestroyTexture(framebuffer);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
+	SDL_CloseAudioDevice(audio_device);
 	SDL_Quit();
 	return 0;
 }

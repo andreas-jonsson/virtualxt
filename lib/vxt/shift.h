@@ -18,6 +18,9 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+#ifndef _SHIFT_H_
+#define _SHIFT_H_
+
 #include "common.h"
 #include "cpu.h"
 
@@ -34,7 +37,7 @@ static vxt_byte bitshift_8(CONSTSP(cpu) p, vxt_byte v, vxt_byte c) {
 	if (c == 0)
 		return v;
 
-   #ifdef VXT_CPU_286
+   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
 	   c &= 0x1F;
    #endif
 
@@ -118,7 +121,7 @@ static vxt_word bitshift_16(CONSTSP(cpu) p, vxt_word v, vxt_byte c) {
 	if (c == 0)
 		return v;
 
-   #ifdef VXT_CPU_286
+   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
 	   c &= 0x1F;
    #endif
 
@@ -200,3 +203,5 @@ static vxt_word bitshift_16(CONSTSP(cpu) p, vxt_word v, vxt_byte c) {
 
 #undef OVERFLOW_LEFT
 #undef OVERFLOW_RIGHT
+
+#endif
