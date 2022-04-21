@@ -386,7 +386,9 @@ static void divZero(CONSTSP(cpu) p) {
    call_int(p, 0);
 }
 
-#ifdef VXT_CPU_V20
+#if defined(VXT_CPU_286)
+   #include "i286.inl"
+#elif defined(VXT_CPU_V20)
    #include "v20.inl"
 #else
    #include "i8088.inl"

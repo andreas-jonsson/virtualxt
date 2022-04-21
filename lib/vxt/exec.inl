@@ -18,13 +18,12 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef _EXEC_H_
-#define _EXEC_H_
-
 #include "common.h"
 #include "cpu.h"
 #include "ops.h"
-#include "shift.h"
+
+#include "shift.inl"
+#include "rep.inl"
 
 #define CARRY (((inst->opcode > 0xF) && (p->regs.flags & VXT_CARRY)) ? 1 : 0)
 
@@ -855,7 +854,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = ((vxt_word)v) * ((vxt_word)p->regs.al);
          flag_szp8(&p->regs, p->regs.al);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
-         #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
             p->regs.flags &= ~VXT_ZERO;
          #endif
          break;
@@ -869,7 +868,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
 
          p->regs.ax = res;
          flag_szp8(&p->regs, res8);
-         #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
             p->regs.flags &= ~VXT_ZERO;
          #endif
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int8)res));
@@ -952,7 +951,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          flag_szp16(&p->regs, p->regs.ax);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.dx);
-         #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
             p->regs.flags &= ~VXT_ZERO;
          #endif
          break;
@@ -967,7 +966,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.dx = (vxt_word)(res >> 16);
 
          flag_szp16(&p->regs, p->regs.ax);
-         #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
             p->regs.flags &= ~VXT_ZERO;
          #endif
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int16)res));
@@ -1118,5 +1117,3 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
          UNREACHABLE();
    }
 }
-
-#endif

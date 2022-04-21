@@ -18,9 +18,6 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef _REP_H_
-#define _REP_H_
-
 #include "common.h"
 #include "cpu.h"
 #include "ops.h"
@@ -132,5 +129,3 @@ static void jcxz_E3(CONSTSP(cpu) p, INST(inst)) {
       p->regs.ip += v;
    }
 }
-
-#endif

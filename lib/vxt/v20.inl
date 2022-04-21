@@ -19,8 +19,8 @@ freely, subject to the following restrictions:
 */
 
 #include "common.h"
-#include "exec.h"
-#include "rep.h"
+
+#include "exec.inl"
 
 #define X 1
 #define INVALID "INVALID", false, X, &invalid_op

@@ -18,11 +18,9 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef _SHIFT_H_
-#define _SHIFT_H_
-
 #include "common.h"
 #include "cpu.h"
+#include "ops.h"
 
 // The OF flag is defined only for the 1-bit rotates; it is undefined in all other cases
 // (except that a zero-bit rotate does nothing, that is affects no flags). For left rotates,
@@ -203,5 +201,3 @@ static vxt_word bitshift_16(CONSTSP(cpu) p, vxt_word v, vxt_byte c) {
 
 #undef OVERFLOW_LEFT
 #undef OVERFLOW_RIGHT
-
-#endif
