@@ -90,16 +90,21 @@ fn parse_file(name: []const u8) anyerror!void {
     }
 }
 
-fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, testing: bool) *std.build.LibExeObjStep {
+fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, cpu286: bool, cpuV20: bool, testing: bool) *std.build.LibExeObjStep {
     const libname = b.fmt("vxt.{s}.{s}", .{@tagName(target.getOsTag()), @tagName(target.getCpuArch())});
     const lib = b.addStaticLibrary(libname, null);
 
     lib.addIncludeDir("lib/vxt/include");
     lib.setTarget(target);
 
+    if (cpu286 or testing) {
+        lib.defineCMacroRaw("VXT_CPU_286");
+    } else if (cpuV20) {
+        lib.defineCMacroRaw("VXT_CPU_V20");
+    }
+
     if (testing) {
         lib.defineCMacroRaw("TESTING");
-        lib.defineCMacroRaw("VXT_CPU_286");
         lib.linkLibC();
         lib.setBuildMode(.ReleaseSafe);
         create_test_files() catch unreachable;
@@ -155,6 +160,8 @@ pub fn build(b: *Builder) void {
     //const textmode = b.option(bool, "textmode", "Build for textmode only") orelse false;
     const validator = b.option(bool, "validator", "Enable PI8088 hardware validator") orelse false;
     const sdl_path = b.option([]const u8, "sdl-path", "Path to SDL2 headers and libs") orelse null;
+    const cpu286 = b.option(bool, "at", "Enable Intel 286 and IBM AT support") orelse false;
+    const cpuV20 = b.option(bool, "v20", "Enable NEC V20 CPU support") orelse false;
 
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
@@ -162,7 +169,7 @@ pub fn build(b: *Builder) void {
 
     // -------- libvxt --------
 
-    const libvxt = build_libvxt(b, mode, target, false);
+    const libvxt = build_libvxt(b, mode, target, cpu286, cpuV20, false);
     b.step("lib", "Build libvxt").dependOn(&libvxt.step);
 
     // -------- termbox --------
@@ -248,6 +255,12 @@ pub fn build(b: *Builder) void {
     exe_sdl.addCSourceFile("front/sdl/main.c", opt);
     exe_sdl.addCSourceFile("front/sdl/docopt.c", &[_][]const u8{"-std=c11", "-Wno-unused-variable", "-Wno-unused-parameter"});
 
+    if (cpu286) {
+        exe_sdl.defineCMacroRaw("VXT_CPU_286");
+    } else if (cpuV20) {
+        exe_sdl.defineCMacroRaw("VXT_CPU_V20");
+    }
+
     if (validator) {
         exe_sdl.linkSystemLibrary("gpiod");
         exe_sdl.defineCMacroRaw("PI8088");
@@ -263,7 +276,7 @@ pub fn build(b: *Builder) void {
         libretro.setTarget(target);
         libretro.setOutputDir("build/lib");
 
-        libretro.linkLibrary(build_libvxt(b, mode, target, false));
+        libretro.linkLibrary(build_libvxt(b, mode, target, cpu286, cpuV20, false));
         libretro.addIncludeDir("lib/vxt/include");
         libretro.addIncludeDir("lib/vxt");
 
@@ -286,7 +299,7 @@ pub fn build(b: *Builder) void {
         scrambler.linkSystemLibrary("gpiod");
         scrambler.defineCMacroRaw("PI8088");
 
-        scrambler.linkLibrary(build_libvxt(b, mode, target, false));
+        scrambler.linkLibrary(build_libvxt(b, mode, target, cpu286, cpuV20, false));
         scrambler.addIncludeDir("lib/vxt/include");
         scrambler.addIncludeDir("lib/vxt");        
 
@@ -308,7 +321,7 @@ pub fn build(b: *Builder) void {
         tests.defineCMacroRaw("VXT_CPU_286");
         tests.addIncludeDir("test");
 
-        const lib_vxt = build_libvxt(b, mode, target, true);
+        const lib_vxt = build_libvxt(b, mode, target, cpu286, cpuV20, true);
         if (validator) {
             lib_vxt.linkSystemLibrary("gpiod");
             lib_vxt.defineCMacroRaw("PI8088");
