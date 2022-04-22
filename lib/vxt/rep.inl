@@ -31,6 +31,7 @@ freely, subject to the following restrictions:
       while (p->regs.cx) {                                     \
          op                                                    \
          p->regs.cx--;                                         \
+         p->cycles++;                                          \
       }                                                        \
    }                                                           \
 
@@ -76,6 +77,7 @@ REPEAT(lodsw_AD, {
             p->cycles += (p->repeat == 0xF2) ? 5 : 6;                            \
             break;                                                               \
          }                                                                       \
+         p->cycles++;                                                            \
       }                                                                          \
    }                                                                             \
 

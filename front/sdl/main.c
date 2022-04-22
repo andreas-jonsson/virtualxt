@@ -205,7 +205,6 @@ static vxt_word pow2(vxt_word v) {
 
 int ENTRY(int argc, char *argv[]) {
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
-	args.debug |= args.halt;
 	if (args.manual) {
 		// TODO
 		return 0;
@@ -223,6 +222,10 @@ int ENTRY(int argc, char *argv[]) {
 	const char *base_path = SDL_GetBasePath();
 	base_path = base_path ? base_path : "./";
 	printf("Base path: %s\n", base_path);
+
+	args.debug |= args.halt;
+	if (args.debug)
+		printf("Internal debugger enabled!\n");
 
 	cpu_frequency = strtod(args.frequency, NULL);
 	if (cpu_frequency <= 0.0)
@@ -391,7 +394,9 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	SDL_TimerID audio_timer = 0;
-	if (!args.mute) {
+	if (args.mute) {
+		printf("Audio is muted!\n");
+	} else {
 		SDL_AudioSpec desired = {.freq = AUDIO_FREQUENCY, .format = AUDIO_U8, .channels = 1, .samples = pow2((AUDIO_FREQUENCY / 1000) * AUDIO_LATENCY)};
 		SDL_AudioSpec obtained = {0};
 		audio_device = SDL_OpenAudioDevice(NULL, false, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
