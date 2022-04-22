@@ -81,21 +81,6 @@ static void push_cs(CONSTSP(cpu) p, INST(inst)) {
    push(p, p->regs.cs);
 }
 
-static void pop_cs(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   p->regs.cs = pop(p);
-}
-
-static void ext_F(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   VALIDATOR_DISCARD(p);
-
-   // TODO: Multibyte instructions.
-
-   p->regs.ip = p->inst_start;
-   call_int(p, 6); // Invalid opcode for now.
-}
-
 static void or_8(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write8(p, op_or8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));

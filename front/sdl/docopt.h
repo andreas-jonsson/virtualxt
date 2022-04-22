@@ -90,16 +90,18 @@ struct DocoptArgs {
     size_t hdboot;
     size_t help;
     size_t manual;
+    size_t mute;
     size_t version;
     /* options with arguments */
     char *bios;
     char *config;
     char *floppy;
+    char *frequency;
     char *harddrive;
     char *trace;
     /* special */
     const char *usage_pattern;
-    const char *help_message[14];
+    const char *help_message[16];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

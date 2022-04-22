@@ -63,6 +63,7 @@ FILE *trace_offset_output = NULL;
 
 Uint32 last_title_update = 0;
 int num_cycles = 0;
+double cpu_frequency = 4.772726;
 
 SDL_atomic_t running;
 SDL_mutex *emu_mutex = NULL;
@@ -81,8 +82,7 @@ static void trigger_breakpoint(void) {
 }
 
 long long ustimer(void) {
-	//return SDL_GetPerformanceCounter() / (SDL_GetPerformanceFrequency() / 1000000);
-	return SDL_GetTicks64() * 1000;
+	return SDL_GetPerformanceCounter() / (SDL_GetPerformanceFrequency() / 1000000);
 }
 
 static const char *getline() {
@@ -137,10 +137,10 @@ static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
 
 static int emu_loop(void *ptr) {
 	vxt_system *vxt = (vxt_system*)ptr;
+	Uint64 start = SDL_GetPerformanceCounter();
+
 	while (SDL_AtomicGet(&running)) {
 		struct vxt_step res;
-		Uint64 start = SDL_GetPerformanceCounter();
-
 		SYNC(
 			res = vxt_system_step(vxt, 100);
 			if (res.err != VXT_NO_ERROR) {
@@ -152,10 +152,9 @@ static int emu_loop(void *ptr) {
 			num_cycles += res.cycles;
 		);
 
-		//const Uint64 freq = 4772726ul; // 4.77 Mhz
-		const Uint64 freq = 0;
-		if (freq > 0)
-			while (((SDL_GetPerformanceCounter() - start) / (SDL_GetPerformanceFrequency() / freq)) < (Uint64)res.cycles);
+		if (cpu_frequency > 0.0)
+			while (((SDL_GetPerformanceCounter() - start) / (SDL_GetPerformanceFrequency() / (Uint64)(cpu_frequency * 1000000.0))) < (Uint64)res.cycles);
+		start = SDL_GetPerformanceCounter();
 	}
 	return 0;
 }
@@ -224,6 +223,12 @@ int ENTRY(int argc, char *argv[]) {
 	const char *base_path = SDL_GetBasePath();
 	base_path = base_path ? base_path : "./";
 	printf("Base path: %s\n", base_path);
+
+	cpu_frequency = strtod(args.frequency, NULL);
+	if (cpu_frequency <= 0.0)
+		printf("No CPU frequency lock!\n");
+	else
+		printf("CPU frequency: %.2f MHz\n", cpu_frequency);
 
 	SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -385,16 +390,19 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 
-	SDL_AudioSpec desired = {.freq = AUDIO_FREQUENCY, .format = AUDIO_U8, .channels = 1, .samples = pow2((AUDIO_FREQUENCY / 1000) * AUDIO_LATENCY)};
-	SDL_AudioSpec obtained = {0};
-	audio_device = SDL_OpenAudioDevice(NULL, false, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
-	SDL_PauseAudioDevice(audio_device, true);
+	SDL_TimerID audio_timer = 0;
+	if (!args.mute) {
+		SDL_AudioSpec desired = {.freq = AUDIO_FREQUENCY, .format = AUDIO_U8, .channels = 1, .samples = pow2((AUDIO_FREQUENCY / 1000) * AUDIO_LATENCY)};
+		SDL_AudioSpec obtained = {0};
+		audio_device = SDL_OpenAudioDevice(NULL, false, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
+		SDL_PauseAudioDevice(audio_device, true);
 
-	obtained.userdata = ppi;
-	SDL_TimerID audio_timer = SDL_AddTimer(1000 / (obtained.freq / obtained.samples), &audio_callback, &obtained);
-	if (!audio_timer) {
-		printf("SDL_AddTimer failed!\n");
-		return -1;
+		obtained.userdata = ppi;
+		audio_timer = SDL_AddTimer(1000 / (obtained.freq / obtained.samples), &audio_callback, &obtained);
+		if (!audio_timer) {
+			printf("SDL_AddTimer failed!\n");
+			return -1;
+		}
 	}
 
 	while (SDL_AtomicGet(&running)) {
@@ -486,9 +494,9 @@ int ENTRY(int argc, char *argv[]) {
 			);
 
 			if (mhz > 10.0)
-				snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%d Mhz", (int)mhz);
+				snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%d MHz", (int)mhz);
 			else
-				snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%.2f Mhz", mhz);
+				snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%.2f MHz", mhz);
 			SDL_SetWindowTitle(window, buffer);
 		}
 
@@ -507,10 +515,13 @@ int ENTRY(int argc, char *argv[]) {
 		SDL_RenderPresent(renderer);
 	}
 
-	SDL_RemoveTimer(audio_timer);
-
 	SDL_WaitThread(emu_thread, NULL);
 	SDL_DestroyMutex(emu_mutex);
+
+	if (audio_timer) {
+		SDL_RemoveTimer(audio_timer);
+		SDL_CloseAudioDevice(audio_device);
+	}
 
 	vxt_system_destroy(vxt);
 
@@ -522,7 +533,6 @@ int ENTRY(int argc, char *argv[]) {
 	SDL_DestroyTexture(framebuffer);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
-	SDL_CloseAudioDevice(audio_device);
 	SDL_Quit();
 	return 0;
 }

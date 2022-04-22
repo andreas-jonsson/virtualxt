@@ -22,6 +22,11 @@ freely, subject to the following restrictions:
 
 #include "exec.inl"
 
+static void pop_cs(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   p->regs.cs = pop(p);
+}
+
 #define X 1
 #define INVALID "INVALID", false, X, &invalid_op
 

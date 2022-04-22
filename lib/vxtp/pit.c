@@ -71,7 +71,8 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     if (port == 0x43) { // Mode/Command register.
         struct channel *ch = &c->channels[(data >> 6) & 3];
         ch->mode = (data >> 4) & 3;
-        ch->toggle = (ch->mode != MODE_TOGGLE);
+        if (ch->mode == MODE_TOGGLE)
+            ch->toggle = false;
         return;
     }
 
@@ -84,8 +85,10 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
         ch->data = (ch->data & 0x00FF) | (((vxt_word)data) << 8);
 
     ch->effective = ch->data ? (vxt_dword)ch->data : 65536;
-    ch->toggle = (ch->mode != MODE_TOGGLE);
     ch->frequency = 1193182.0 / (double)ch->effective;
+
+    if (ch->mode == MODE_TOGGLE)
+        ch->toggle = !ch->toggle;
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {

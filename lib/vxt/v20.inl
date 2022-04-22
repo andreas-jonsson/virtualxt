@@ -22,6 +22,18 @@ freely, subject to the following restrictions:
 
 #include "exec.inl"
 
+static void ext_F(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   VALIDATOR_DISCARD(p);
+
+   vxt_byte ext_op = read_opcode8(p);
+   switch (ext_op) {
+      default:
+         p->regs.ip = p->inst_start;
+         call_int(p, 6);
+   }
+}
+
 #define X 1
 #define INVALID "INVALID", false, X, &invalid_op
 
