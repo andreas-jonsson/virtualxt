@@ -129,7 +129,7 @@ int vxtp_ppi_write_audio(struct vxt_pirepheral *p, vxt_byte *buffer, int freq, i
     VXT_DEC_DEVICE(c, ppi, p);
 
     int num_bytes = 0;
-    volatile double tone_hz = vxtp_pit_get_frequency(c->pit, 2);
+    double tone_hz = vxtp_pit_get_frequency(c->pit, 2);
 
     if (!c->spk_enabled || (tone_hz <= 0.0))
         return num_bytes;

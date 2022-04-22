@@ -19,8 +19,7 @@ freely, subject to the following restrictions:
 */
 
 #include "common.h"
-#include "cpu.h"
-#include "ops.h"
+#include "exec.h"
 
 #include "shift.inl"
 #include "rep.inl"
@@ -80,6 +79,21 @@ PUSH_POP(di)
 static void push_cs(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    push(p, p->regs.cs);
+}
+
+static void pop_cs(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   p->regs.cs = pop(p);
+}
+
+static void ext_F(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   VALIDATOR_DISCARD(p);
+
+   // TODO: Multibyte instructions.
+
+   p->regs.ip = p->inst_start;
+   call_int(p, 6); // Invalid opcode for now.
 }
 
 static void or_8(CONSTSP(cpu) p, INST(inst)) {
@@ -326,6 +340,90 @@ static void dec_reg(CONSTSP(cpu) p, INST(inst)) {
    vxt_word r = inst->opcode - 0x48;
    reg_write16(&p->regs, r, op_sub_sbb16(&p->regs, reg_read16(&p->regs, r), 1, 0));
    SET_FLAG(p->regs.flags, VXT_CARRY, c);
+}
+
+static void pusha_60(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   vxt_word sp = p->regs.sp;
+   push(p, p->regs.ax);
+   push(p, p->regs.cx);
+   push(p, p->regs.dx);
+   push(p, p->regs.bx);
+   push(p, sp);
+   push(p, p->regs.bp);
+   push(p, p->regs.si);
+   push(p, p->regs.di);
+}
+
+static void popa_61(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   p->regs.di = pop(p);
+   p->regs.si = pop(p);
+   p->regs.bp = pop(p);
+   pop(p);
+   p->regs.bx = pop(p);
+   p->regs.dx = pop(p);
+   p->regs.cx = pop(p);
+   p->regs.ax = pop(p);
+}
+
+static void bound_62(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   vxt_dword idx = SIGNEXT32(reg_read16(&p->regs, p->mode.reg));
+   vxt_pointer addr = get_effective_address(p);
+
+   if ((idx < SIGNEXT32(vxt_system_read_word(p->s, addr))) || (idx > SIGNEXT32(vxt_system_read_word(p->s, addr + 2)))) {
+      p->regs.ip = p->inst_start;
+      call_int(p, 5);
+   }
+}
+
+static void push_68(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   push(p, read_opcode16(p));
+}
+
+static void imul_69_6B(CONSTSP(cpu) p, INST(inst)) {
+   vxt_int32 a = SIGNEXT32(rm_read16(p));
+   vxt_int32 b = (inst->opcode == 69) ? SIGNEXT32(SIGNEXT16(read_opcode8(p))) : SIGNEXT32(read_opcode16(p));
+
+   vxt_int32 res = a * b;
+   vxt_word res16 = (vxt_word)(res & 0xFFFF);
+
+   flag_szp16(&p->regs, res16);
+   SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int16)res));
+   rm_write16(p, res16);
+}
+
+static void push_6A(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   push(p, (vxt_word)read_opcode8(p));
+}
+
+static void insb_6C(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   vxt_system_write_byte(p->s, VXT_POINTER(p->regs.ds, p->regs.si), system_in(p->s, p->regs.dx));
+   update_di_si(p, 1);
+}
+
+static void insw_6D(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   vxt_system_write_word(p->s, VXT_POINTER(p->regs.ds, p->regs.si), WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
+   update_di_si(p, 2);
+}
+
+static void outsb_6E(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   system_out(p->s, p->regs.dx, vxt_system_read_byte(p->s, VXT_POINTER(p->regs.ds, p->regs.si)));
+   update_di_si(p, 1);
+}
+
+static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   vxt_word data = vxt_system_read_word(p->s, VXT_POINTER(p->regs.ds, p->regs.si));
+   system_out(p->s, p->regs.dx, (vxt_byte)(data & 0xFF));
+   system_out(p->s, p->regs.dx + 1, (vxt_byte)(data >> 8));
+   update_di_si(p, 2);
 }
 
 #define JUMP(name, cond)                                       \
@@ -612,6 +710,16 @@ static void mov_reg16(CONSTSP(cpu) p, INST(inst)) {
    reg_write16(&p->regs, inst->opcode - 0xB8, read_opcode16(p));
 }
 
+static void shl_C0(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   rm_write8(p, bitshift_8(p, rm_read8(p), read_opcode8(p)));
+}
+
+static void shl_C1(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   rm_write16(p, bitshift_16(p, rm_read16(p), read_opcode16(p)));
+}
+
 static void ret_C2(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word ip = pop(p);
@@ -644,6 +752,32 @@ static void mov_C6(CONSTSP(cpu) p, INST(inst)) {
 static void mov_C7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write16(p, read_opcode16(p));
+}
+
+static void enter_C8(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   vxt_word size = read_opcode16(p);
+   vxt_byte level = read_opcode8(p);
+
+   push(p, p->regs.bp);
+   vxt_word sp = p->regs.sp;
+
+   if (level) {
+      for (vxt_byte i = 0; i < level; i++) {
+         p->regs.bp -= 2;
+         push(p, p->regs.bp);
+      }
+      push(p, p->regs.sp);
+   }
+
+   p->regs.bp = sp;
+   p->regs.sp -= size;
+}
+
+static void leave_C9(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   p->regs.sp = p->regs.bp;
+   p->regs.bp = pop(p);
 }
 
 static void retf_CA(CONSTSP(cpu) p, INST(inst)) {

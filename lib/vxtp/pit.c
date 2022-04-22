@@ -69,7 +69,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(c, pit, p);
     if (port == 0x43) { // Mode/Command register.
-        struct channel *ch = &c->channels[data >> 6];
+        struct channel *ch = &c->channels[(data >> 6) & 3];
         ch->mode = (data >> 4) & 3;
         ch->toggle = (ch->mode != MODE_TOGGLE);
         return;

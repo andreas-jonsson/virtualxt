@@ -45,7 +45,7 @@ FILE *trace_op_output = NULL;
 FILE *trace_offset_output = NULL;
 
 #if defined(VXT_CPU_286)
-	#define CPU_NAME "286"
+	#define CPU_NAME "i286"
 #elif defined(VXT_CPU_V20)
 	#define CPU_NAME "V20"
 #else
@@ -191,7 +191,7 @@ static Uint32 audio_callback(Uint32 interval, void *param) {
 static void enable_speaker(bool b) {
 	SDL_LockAudioDevice(audio_device);
 	SDL_ClearQueuedAudio(audio_device);
-	SDL_PauseAudioDevice(audio_device, b ? 1 : 0);
+	SDL_PauseAudioDevice(audio_device, b ? 0 : 1);
 	SDL_UnlockAudioDevice(audio_device);
 }
 
@@ -391,7 +391,7 @@ int ENTRY(int argc, char *argv[]) {
 	SDL_PauseAudioDevice(audio_device, true);
 
 	obtained.userdata = ppi;
-	SDL_TimerID audio_timer = SDL_AddTimer((Uint32)obtained.freq / obtained.samples, &audio_callback, &obtained);
+	SDL_TimerID audio_timer = SDL_AddTimer(1000 / (obtained.freq / obtained.samples), &audio_callback, &obtained);
 	if (!audio_timer) {
 		printf("SDL_AddTimer failed!\n");
 		return -1;

@@ -19,8 +19,7 @@ freely, subject to the following restrictions:
 */
 
 #include "common.h"
-#include "cpu.h"
-#include "ops.h"
+#include "exec.h"
 
 // The OF flag is defined only for the 1-bit rotates; it is undefined in all other cases
 // (except that a zero-bit rotate does nothing, that is affects no flags). For left rotates,

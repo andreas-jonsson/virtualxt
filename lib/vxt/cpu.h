@@ -23,23 +23,11 @@ freely, subject to the following restrictions:
 
 #include "common.h"
 
-#define ALL_FLAGS (VXT_CARRY | VXT_PARITY | VXT_AUXILIARY | VXT_ZERO | VXT_SIGN | VXT_TRAP | VXT_INTERRUPT | VXT_DIRECTION | VXT_OVERFLOW)
-#define FLAGS(r, f) ( ((r) & (f)) == (f) )
-#define ANY_FLAGS(r, f) ( ((r) & (f)) != 0 )
-#define SET_FLAG(r, f, v) ( (r) = ((r) & ~(f)) | ((v) & (f)) )
-#define SET_FLAG_IF(r, f, c) ( SET_FLAG((r), (f), (c) ? (f) : ~(f)) )
-
 #define VALIDATOR_BEGIN(p, regs) { if ((p)->validator) (p)->validator->begin((regs), (p)->validator->userdata); }
 #define VALIDATOR_END(p, name, op, mod, cycles, regs) { if ((p)->validator) (p)->validator->end((name), (op), (mod), (cycles), (regs), (p)->validator->userdata); }
 #define VALIDATOR_READ(p, addr, data) { if ((p)->validator) (p)->validator->read((addr), (data), (p)->validator->userdata); }
 #define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr), (data), (p)->validator->userdata); }
 #define VALIDATOR_DISCARD(p) { if ((p)->validator) (p)->validator->discard((p)->validator->userdata); }
-
-#define TRACE(p, ip, data) { if ((p)->tracer) (p)->tracer((p)->s, VXT_POINTER((p)->regs.cs, (ip)), (data)); }
-
-#define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq((p)->pic, (n)); }
-
-#define INST(n) const struct instruction * const n
 
 struct address_mode {
    vxt_byte mod, reg, rm;
@@ -64,14 +52,6 @@ struct cpu {
    const struct vxt_validator *validator;
    struct vxt_pirepheral *pic;
    vxt_system *s;
-};
-
-struct instruction {
-   vxt_byte opcode;
-   const char *name;
-   bool modregrm;
-   int cycles;
-   void (*func)(CONSTSP(cpu), INST());
 };
 
 extern void cpu_reset(CONSTSP(cpu) p);

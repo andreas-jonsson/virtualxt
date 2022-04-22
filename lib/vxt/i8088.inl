@@ -45,7 +45,7 @@ static struct instruction const opcode_table[0x100] = {
    {0xC, "OR AL Ib", false, 4, &or_C},
    {0xD, "OR AX Iv", false, 4, &or_D},
    {0xE, "PUSH CS", false, 10, &push_cs},
-   {0xF, INVALID},
+   {0xF, "POP CS", false, X, &pop_cs},
    {0x10, "ADC Eb Gb", true, X, &add_0_10},
    {0x11, "ADC Ev Gv", true, X, &add_1_11},
    {0x12, "ADC Gb Eb", true, X, &add_2_12},

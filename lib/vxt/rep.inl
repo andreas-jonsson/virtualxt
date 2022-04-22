@@ -19,8 +19,7 @@ freely, subject to the following restrictions:
 */
 
 #include "common.h"
-#include "cpu.h"
-#include "ops.h"
+#include "exec.h"
 
 #define REPEAT(name, op)                                       \
    static void name (CONSTSP(cpu) p, INST(inst)) {             \

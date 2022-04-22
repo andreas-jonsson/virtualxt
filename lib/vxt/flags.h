@@ -18,11 +18,17 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef _OPS_H_
-#define _OPS_H_
+#ifndef _FLAGS_H_
+#define _FLAGS_H_
 
 #include "common.h"
 #include "cpu.h"
+
+#define ALL_FLAGS (VXT_CARRY | VXT_PARITY | VXT_AUXILIARY | VXT_ZERO | VXT_SIGN | VXT_TRAP | VXT_INTERRUPT | VXT_DIRECTION | VXT_OVERFLOW)
+#define FLAGS(r, f) ( ((r) & (f)) == (f) )
+#define ANY_FLAGS(r, f) ( ((r) & (f)) != 0 )
+#define SET_FLAG(r, f, v) ( (r) = ((r) & ~(f)) | ((v) & (f)) )
+#define SET_FLAG_IF(r, f, c) ( SET_FLAG((r), (f), (c) ? (f) : ~(f)) )
 
 static const bool parity_table[0x100] = {
 	true, false, false, true, false, true, true, false,
