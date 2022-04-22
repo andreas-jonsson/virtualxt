@@ -457,12 +457,9 @@ int ENTRY(int argc, char *argv[]) {
 					}
 					break;
 				case SDL_KEYDOWN:
-					if (args.debug && (e.key.keysym.sym == SDLK_F12) && (e.key.keysym.mod & KMOD_ALT)) {
-						SYNC(vxtu_debugger_interrupt(dbg));					
-						break;
-					}
-					for (bool success = false; !success;)
-						SYNC(success = vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
+					//for (bool success = false; !success;)
+					//	SYNC(success = vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
+					SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), true));
 					break;
 				case SDL_KEYUP:
 					//if ((e.key.keysym.sym == SDLK_RETURN) && (e.key.keysym.mod & KMOD_ALT)) {
@@ -476,12 +473,18 @@ int ENTRY(int argc, char *argv[]) {
 						}
 						break;
 					} else if (e.key.keysym.sym == SDLK_F12) {
-						if (!SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Eject Floppy", "Eject mounted floppy image in A: drive?", window))
+						if (args.debug && (e.key.keysym.mod & KMOD_ALT)) {
+							SDL_SetWindowFullscreen(window, 0);
+							SDL_SetRelativeMouseMode(false);
+							SYNC(vxtu_debugger_interrupt(dbg));					
+						} else if (!SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Eject Floppy", "Eject mounted floppy image in A: drive?", window)) {
 							SYNC(vxtp_disk_unmount(disk, 0));
+						}
 						break;
 					}
-					for (bool success = false; !success;)
-						SYNC(success = vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, false));
+					//for (bool success = false; !success;)
+					//	SYNC(success = vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, false));
+					SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, true));
 					break;
 			}
 		}

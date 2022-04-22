@@ -116,7 +116,7 @@ bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool f
     VXT_DEC_DEVICE(c, ppi, p);
     bool has_scan = c->command_port & 2;
     if (force || !has_scan) {
-    	c->command_port |= 2;
+    	c->command_port |= 3;
 		c->data_port = (vxt_byte)key;
         if (!has_scan)
             vxt_system_interrupt(VXT_GET_SYSTEM(ppi, p), 1);
