@@ -8,6 +8,8 @@ Options:
   --halt                  Debugger will stop after first instruction.
   --hdboot                Prefer booting from harddrive.
   --mute                  Disable audio.
+  --list                  List network devices and IDs.
+  --network=ID            Select network adapter.
   --config=PATH           Set config directory.
   --bios=FILE             BIOS binary.
   --trace=FILE            Write CPU trace to file.

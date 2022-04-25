@@ -170,12 +170,19 @@ static int cga_render(int width, int height, const vxt_byte *rgba, void *userdat
 	return SDL_UpdateTexture(framebuffer, NULL, rgba, width * 4);
 }
 
+#ifdef VXTP_NETWORK
+	static Uint32 network_callback(Uint32 interval, void *param) {
+		SYNC(vxtp_network_poll(param));
+		return interval;
+	}
+#endif
+
 static Uint32 audio_callback(Uint32 interval, void *param) {
 	int num_bytes = 0;
 	SDL_AudioSpec *spec = (SDL_AudioSpec*)param;
 
 	static vxt_byte buffer[48000 * 2]; // TODO: Resize this dynamically.
-	assert((unsigned)(spec->freq * spec->channels) <= sizeof(buffer));
+	assert((unsigned)(spec->channels * spec->channels) <= sizeof(buffer));
 
 	SYNC(num_bytes = vxtp_ppi_write_audio(spec->userdata, buffer, spec->freq, spec->channels, spec->samples));
 
@@ -209,6 +216,13 @@ int ENTRY(int argc, char *argv[]) {
 		// TODO
 		return 0;
 	}
+
+	#ifdef VXTP_NETWORK
+		if (args.list) {
+			vxtp_network_list(NULL);
+			return 0;
+		}
+	#endif
 
 	if (!args.config) {
 		args.config = SDL_GetPrefPath("virtualxt", "VirtualXT-SDL");
@@ -321,6 +335,21 @@ int ENTRY(int argc, char *argv[]) {
 	} else {
 		devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 	}
+
+	SDL_TimerID network_timer = 0;
+	if (args.network) {
+		#ifdef VXTP_NETWORK
+			struct vxt_pirepheral *net = vxtp_network_create(&vxt_clib_malloc, atoi(args.network));
+			if (net) {
+				devices[i++] = net;
+				if (!(network_timer = SDL_AddTimer(10, &network_callback, net))) {
+					printf("SDL_AddTimer failed!\n");
+					return -1;
+				}
+			}
+		#endif
+	}
+
 	devices[i++] = dbg;
 	devices[i] = NULL;
 
@@ -403,8 +432,7 @@ int ENTRY(int argc, char *argv[]) {
 		SDL_PauseAudioDevice(audio_device, true);
 
 		obtained.userdata = ppi;
-		audio_timer = SDL_AddTimer(1000 / (obtained.freq / obtained.samples), &audio_callback, &obtained);
-		if (!audio_timer) {
+		if (!(audio_timer = SDL_AddTimer(1000 / (obtained.freq / obtained.samples), &audio_callback, &obtained))) {
 			printf("SDL_AddTimer failed!\n");
 			return -1;
 		}
@@ -424,7 +452,7 @@ int ENTRY(int argc, char *argv[]) {
 							ev.buttons |= VXTP_MOUSE_LEFT;
 						if (state & SDL_BUTTON_RMASK)
 							ev.buttons |= VXTP_MOUSE_RIGHT;
-						vxtp_mouse_push_event(mouse, &ev);
+						SYNC(vxtp_mouse_push_event(mouse, &ev));
 					}
 					break;
 				case SDL_MOUSEBUTTONDOWN:
@@ -440,7 +468,7 @@ int ENTRY(int argc, char *argv[]) {
 							ev.buttons |= VXTP_MOUSE_LEFT;
 						if (e.button.button == SDL_BUTTON_RIGHT)
 							ev.buttons |= VXTP_MOUSE_RIGHT;
-						vxtp_mouse_push_event(mouse, &ev);
+						SYNC(vxtp_mouse_push_event(mouse, &ev));
 					}
 					break;
 				case SDL_DROPFILE:
@@ -525,6 +553,9 @@ int ENTRY(int argc, char *argv[]) {
 
 	SDL_WaitThread(emu_thread, NULL);
 	SDL_DestroyMutex(emu_mutex);
+
+	if (network_timer)
+		SDL_RemoveTimer(network_timer);
 
 	if (audio_timer) {
 		SDL_RemoveTimer(audio_timer);

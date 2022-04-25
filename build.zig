@@ -159,6 +159,7 @@ pub fn build(b: *Builder) void {
 
     //const textmode = b.option(bool, "textmode", "Build for textmode only") orelse false;
     const validator = b.option(bool, "validator", "Enable PI8088 hardware validator") orelse false;
+    const network = b.option(bool, "pcap", "Link with libpcap") orelse false;
     const sdl_path = b.option([]const u8, "sdl-path", "Path to SDL2 headers and libs") orelse null;
     const cpu286 = b.option(bool, "at", "Enable Intel 286 and IBM AT support") orelse false;
     const cpuV20 = b.option(bool, "v20", "Enable NEC V20 CPU support") orelse false;
@@ -215,6 +216,12 @@ pub fn build(b: *Builder) void {
         pirepheral.addCSourceFile("lib/vxtp/mda.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/cga.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/mouse.c", opt);
+
+        if (network) {
+            pirepheral.defineCMacroRaw("VXTP_NETWORK");
+            pirepheral.addCSourceFile("lib/vxtp/network.c", opt);
+            pirepheral.linkSystemLibrary("pcap");
+        }
     }
 
     // -------- virtualxt sdl --------
@@ -265,6 +272,10 @@ pub fn build(b: *Builder) void {
         exe_sdl.linkSystemLibrary("gpiod");
         exe_sdl.defineCMacroRaw("PI8088");
         exe_sdl.addCSourceFile("tools/validator/pi8088/pi8088.c", opt);
+    }
+
+    if (network) {
+        exe_sdl.defineCMacroRaw("VXTP_NETWORK");
     }
 
     // -------- virtualxt libretro --------
