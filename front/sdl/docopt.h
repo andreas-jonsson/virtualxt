@@ -96,6 +96,7 @@ struct DocoptArgs {
     /* options with arguments */
     char *bios;
     char *config;
+    char *extension;
     char *floppy;
     char *frequency;
     char *harddrive;
@@ -103,7 +104,7 @@ struct DocoptArgs {
     char *trace;
     /* special */
     const char *usage_pattern;
-    const char *help_message[18];
+    const char *help_message[19];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 18; j++)
+            for (j = 0; j < 19; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -256,6 +256,10 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
         } else if (strcmp(option->olong, "--config") == 0) {
             if (option->argument) {
                 args->config = (char *) option->argument;
+            }
+        } else if (strcmp(option->olong, "--extension") == 0) {
+            if (option->argument) {
+                args->extension = (char *) option->argument;
             }
         } else if (strcmp(option->olong, "--floppy") == 0) {
             if (option->argument) {
@@ -299,8 +303,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, (char *) "4.77", NULL, NULL,
-        NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *) "4.77", NULL,
+        NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -316,6 +320,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --network=ID            Select network adapter.",
               "  --config=PATH           Set config directory.",
               "  --bios=FILE             BIOS binary.",
+              "  --extension=FILE        VirtualXT BIOS extension binary.",
               "  --trace=FILE            Write CPU trace to file.",
               "  -f --frequency=MHZ      CPU frequency lock (0 to disable) [default: 4.77].",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
@@ -336,6 +341,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {"-v", "--version", 0, 0, NULL},
         {NULL, "--bios", 1, 0, NULL},
         {NULL, "--config", 1, 0, NULL},
+        {NULL, "--extension", 1, 0, NULL},
         {"-a", "--floppy", 1, 0, NULL},
         {"-f", "--frequency", 1, 0, NULL},
         {"-c", "--harddrive", 1, 0, NULL},
@@ -347,7 +353,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 15;
+    elements.n_options = 16;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;

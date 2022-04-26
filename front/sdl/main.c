@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <string.h>
 #include <assert.h>
 
 #define VXT_LIBC
@@ -95,6 +96,25 @@ static const char *getline() {
 		}
 	}
 	return str;
+}
+
+static int open_url(const char *url) {
+	int ret = 0;
+	char *buffer = SDL_malloc(strlen(url) + 32);
+	if (!buffer)
+		return -1;
+
+	#if defined(_WIN32) || defined(__CYGWIN__)
+		strcpy(buffer, "cmd /c start ");
+	#elif defined(__APPLE__) && defined(__MACH__)
+		strcpy(buffer, "open ");
+	#else
+		strcpy(buffer, "xdg-open ");
+	#endif
+
+	ret = system(strcat(buffer, url));
+	SDL_free(buffer);
+	return ret;
 }
 
 static bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) {
@@ -212,9 +232,25 @@ static vxt_word pow2(vxt_word v) {
 
 int ENTRY(int argc, char *argv[]) {
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
+
+	if (!args.bios) {
+		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
+		if (!args.bios) args.bios = "bios/pcxtbios.bin";
+	}
+
+	if (!args.extension) {
+		args.extension = SDL_getenv("VXT_DEFAULT_VXTX_BIOS_PATH");
+		if (!args.extension) args.extension = "bios/vxtx.bin";
+	}
+
+	if (!args.harddrive && !args.floppy) {
+		args.harddrive = SDL_getenv("VXT_DEFAULT_HD_IMAGE");
+		if (!args.harddrive) args.harddrive = "boot/freedos_hd.img";
+	}
+
 	if (args.manual) {
-		// TODO
-		return 0;
+		const char *path = SDL_getenv("VXT_DEFAULT_MANUAL_INDEX");
+		return open_url(path ? path : "tools/manual/index.md.html");
 	}
 
 	#ifdef VXTP_NETWORK
@@ -288,7 +324,7 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	int size = 0;
-	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, bb_test ? bb_test : "bios/pcxtbios.bin", &size);
+	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, bb_test ? bb_test : args.bios, &size);
 	if (!data) {
 		printf("vxtu_read_file() failed!\n");
 		return -1;
@@ -301,7 +337,7 @@ int ENTRY(int argc, char *argv[]) {
 	}
 	vxt_clib_malloc(data, 0);
 
-	data = vxtu_read_file(&vxt_clib_malloc, "bios/vxtx.bin", &size);
+	data = vxtu_read_file(&vxt_clib_malloc, args.extension, &size);
 	if (!data) {
 		printf("vxtu_read_file() failed!\n");
 		return -1;
@@ -392,7 +428,6 @@ int ENTRY(int argc, char *argv[]) {
 			printf("Floppy image: %s\n", args.floppy);
 	}
 
-	args.harddrive = args.harddrive ? args.harddrive : "boot/freedos_hd.img";
 	if (args.harddrive) {
 		FILE *fp = fopen(args.harddrive, "rb+");
 		if (fp && (vxtp_disk_mount(disk, 128, fp) == VXT_NO_ERROR)) {
