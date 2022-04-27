@@ -1,3 +1,3 @@
 @echo off
 
-virtualxt-net.exe -network
+virtualxt-net.exe --network 1
