@@ -40,8 +40,13 @@
 #include "keys.h"
 #include "docopt.h"
 
-//const char *bb_test = "tools/testdata/bcdcnv.bin";
-const char *bb_test = NULL;
+struct video_adapter {
+	struct vxt_pirepheral *device;
+	vxt_dword (*border_color)(struct vxt_pirepheral *p);
+	bool (*snapshot)(struct vxt_pirepheral *p);
+	int (*render)(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
+};
+
 FILE *trace_op_output = NULL;
 FILE *trace_offset_output = NULL;
 
@@ -179,7 +184,7 @@ static int emu_loop(void *ptr) {
 	return 0;
 }
 
-static int cga_render(int width, int height, const vxt_byte *rgba, void *userdata) {
+static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
 	if ((framebuffer_size.x != width) || (framebuffer_size.y != height)) {
 		SDL_DestroyTexture(framebuffer);
 		framebuffer = SDL_CreateTexture(userdata, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height);
@@ -228,6 +233,23 @@ static vxt_word pow2(vxt_word v) {
 	v |= v >> 4;
 	v |= v >> 8;
 	return ++v;
+}
+
+static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
+	int size = 0;
+	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, path, &size);
+	if (!data) {
+		printf("vxtu_read_file() failed!\n");
+		return NULL;
+	}
+	
+	struct vxt_pirepheral *rom = vxtu_memory_create(&vxt_clib_malloc, base, size, true);
+	if (!vxtu_memory_device_fill(rom, data, size)) {
+		printf("vxtu_memory_device_fill() failed!\n");
+		return NULL;
+	}
+	vxt_clib_malloc(data, 0);
+	return rom;
 }
 
 int ENTRY(int argc, char *argv[]) {
@@ -323,54 +345,47 @@ int ENTRY(int argc, char *argv[]) {
 		dbg = vxtu_debugger_create(&vxt_clib_malloc, &dbgif);
 	}
 
-	int size = 0;
-	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, bb_test ? bb_test : args.bios, &size);
-	if (!data) {
-		printf("vxtu_read_file() failed!\n");
-		return -1;
-	}
-	
-	struct vxt_pirepheral *rom = vxtu_memory_create(&vxt_clib_malloc, bb_test ? 0xF0000 : 0xFE000, size, true);
-	if (!vxtu_memory_device_fill(rom, data, size)) {
-		printf("vxtu_memory_device_fill() failed!\n");
-		return -1;
-	}
-	vxt_clib_malloc(data, 0);
+	struct vxt_pirepheral *rom = load_bios(args.bios, 0xFE000);
+	if (!rom) return -1;
 
-	data = vxtu_read_file(&vxt_clib_malloc, args.extension, &size);
-	if (!data) {
-		printf("vxtu_read_file() failed!\n");
-		return -1;
-	}
-	
-	struct vxt_pirepheral *rom_ext = vxtu_memory_create(&vxt_clib_malloc, 0xE0000, size, bb_test == NULL);
-	if (!bb_test && !vxtu_memory_device_fill(rom_ext, data, size)) {
-		printf("vxtu_memory_device_fill() failed!\n");
-		return -1;
-	}
-	vxt_clib_malloc(data, 0);
+	struct vxt_pirepheral *rom_ext = load_bios(args.extension, 0xE0000);
+	if (!rom_ext) return -1;
 
 	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, NULL);
-	struct vxt_pirepheral *cga = vxtp_cga_create(&vxt_clib_malloc, &ustimer);
 	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
 	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit, &enable_speaker, NULL);
 	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4);
 
+	int i = 2;
 	struct vxt_pirepheral *devices[16] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
 
-	int i = 2;
-	if (!bb_test) {
-		devices[i++] = rom_ext;
-		devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
-		devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
-		devices[i++] = pit;
-		devices[i++] = mouse;
-		devices[i++] = disk;
-		devices[i++] = ppi;
-		devices[i++] = cga;
+	struct video_adapter video = {0};
+	if (args.vga) {
+		video.device = vxtp_vga_create(&vxt_clib_malloc, &ustimer);
+		video.border_color = &vxtp_vga_border_color;
+		video.snapshot = &vxtp_vga_snapshot;
+		video.render = &vxtp_vga_render;
+
+		vxtp_ppi_set_xt_switches(ppi, 0);
+		struct vxt_pirepheral *rom = load_bios(args.bios, 0xC0000);
+		if (!rom) return -1;
+
+		devices[i++] = rom;	
 	} else {
-		devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
+		video.device = vxtp_cga_create(&vxt_clib_malloc, &ustimer);
+		video.border_color = &vxtp_cga_border_color;
+		video.snapshot = &vxtp_cga_snapshot;
+		video.render = &vxtp_cga_render;
 	}
+
+	devices[i++] = rom_ext;
+	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
+	devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
+	devices[i++] = pit;
+	devices[i++] = mouse;
+	devices[i++] = disk;
+	devices[i++] = ppi;
+	devices[i++] = video.device;
 
 	SDL_TimerID network_timer = 0;
 	if (args.network) {
@@ -383,6 +398,9 @@ int ENTRY(int argc, char *argv[]) {
 					return -1;
 				}
 			}
+		#else
+			printf("No network support in this build!\n");
+			return -1;
 		#endif
 	}
 
@@ -439,12 +457,6 @@ int ENTRY(int argc, char *argv[]) {
 
 	vxt_system_reset(vxt);
 	vxt_system_registers(vxt)->debug = (bool)args.halt;
-
-	if (bb_test) {
-		struct vxt_registers *r = vxt_system_registers(vxt);
-		r->cs = 0xF000;
-    	r->ip = 0xFFF0;
-	}
 
 	SDL_AtomicSet(&running, 1);
 	if (!(emu_mutex = SDL_CreateMutex())) {
@@ -573,14 +585,14 @@ int ENTRY(int argc, char *argv[]) {
 
 		vxt_dword bg = 0;
 		SYNC(
-			bg = vxtp_cga_border_color(cga);
-			vxtp_cga_snapshot(cga)
+			bg = video.border_color(video.device);
+			video.snapshot(video.device)
 		);
 
 		SDL_SetRenderDrawColor(renderer, bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF);
 		SDL_RenderClear(renderer);
 
-		vxtp_cga_render(cga, &cga_render, renderer);
+		video.render(video.device, &render_callback, renderer);
 
 		SDL_RenderCopy(renderer, framebuffer, NULL, NULL);
 		SDL_RenderPresent(renderer);

@@ -215,6 +215,7 @@ pub fn build(b: *Builder) void {
         pirepheral.addCSourceFile("lib/vxtp/dma.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/mda.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/cga.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/vga.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/mouse.c", opt);
 
         if (network) {

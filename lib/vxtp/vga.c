@@ -28,24 +28,7 @@ freely, subject to the following restrictions:
 
 #define INT64 long long
 
-vxt_dword cga_palette[] = {
-	0x000000,
-	0x0000AA,
-	0x00AA00,
-	0x00AAAA,
-	0xAA0000,
-	0xAA00AA,
-	0xAA5500,
-	0xAAAAAA,
-	0x555555,
-	0x5555FF,
-	0x55FF55,
-	0x55FFFF,
-	0xFF5555,
-	0xFF55FF,
-	0xFFFF55,
-	0xFFFFFF,
-};
+extern vxt_dword cga_palette[];
 
 struct snapshot {
     vxt_byte mem[MEMORY_SIZE];
@@ -290,7 +273,7 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 	}
 }
 
-struct vxt_pirepheral *vxtp_cga_create(vxt_allocator *alloc, INT64 (*ustics)(void)) {
+struct vxt_pirepheral *vxtp_vga_create(vxt_allocator *alloc, INT64 (*ustics)(void)) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(cga_video));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(cga_video));
     VXT_DEC_DEVICE(c, cga_video, p);
@@ -311,11 +294,11 @@ struct vxt_pirepheral *vxtp_cga_create(vxt_allocator *alloc, INT64 (*ustics)(voi
     return p;
 }
 
-vxt_dword vxtp_cga_border_color(struct vxt_pirepheral *p) {
+vxt_dword vxtp_vga_border_color(struct vxt_pirepheral *p) {
     return cga_palette[(VXT_GET_DEVICE(cga_video, p))->color_ctrl_reg & 0xF];
 }
 
-bool vxtp_cga_snapshot(struct vxt_pirepheral *p) {
+bool vxtp_vga_snapshot(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, cga_video, p);
     if (!c->is_dirty)
         return false;
@@ -335,7 +318,7 @@ bool vxtp_cga_snapshot(struct vxt_pirepheral *p) {
     return true;
 }
 
-int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
+int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
     struct snapshot *snap = &(VXT_GET_DEVICE(cga_video, p))->snap;
 
     if (snap->hgc_mode) {

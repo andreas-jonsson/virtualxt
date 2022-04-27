@@ -141,6 +141,7 @@ extern double vxtp_pit_get_frequency(struct vxt_pirepheral *p, int channel);
 extern struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit, void (*enable_spk)(bool), void *userdata);
 extern bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool force);
 extern int vxtp_ppi_write_audio(struct vxt_pirepheral *p, vxt_byte *buffer, int freq, int channels, int samples);
+extern void vxtp_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data);
 
 extern struct vxt_pirepheral *vxtp_mda_create(vxt_allocator *alloc);
 extern void vxtp_mda_invalidate(struct vxt_pirepheral *p);
@@ -153,6 +154,11 @@ extern bool vxtp_cga_snapshot(struct vxt_pirepheral *p);
 // This function only operates on snapshot data and is threadsafe.
 // The use of 'vxtp_cga_snapshot' and 'vxtp_cga_render' needs to be coordinated by the user.
 extern int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
+
+extern struct vxt_pirepheral *vxtp_vga_create(vxt_allocator *alloc, long long (*ustics)(void));
+extern vxt_dword vxtp_vga_border_color(struct vxt_pirepheral *p);
+extern bool vxtp_vga_snapshot(struct vxt_pirepheral *p);
+extern int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 
 extern struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const char *files[]);
 extern void vxtp_disk_set_boot_drive(struct vxt_pirepheral *p, int num);

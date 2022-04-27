@@ -27,6 +27,7 @@ VXT_PIREPHERAL(ppi, {
 	vxt_byte data_port;
     vxt_byte command_port;
     vxt_byte port_61;
+    vxt_byte xt_switches;
 
     UINT64 spk_sample_index;
 	bool spk_enabled;
@@ -45,9 +46,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
         case 0x61:
             return c->port_61;
         case 0x62:
-            // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
-            //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
-            return 0x2; // TODO: Return other then CGA video bits.
+            return c->xt_switches;
         case 0x64:
             return c->command_port;
 	}
@@ -69,6 +68,10 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+    // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
+    //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
+    (VXT_GET_DEVICE(ppi, p))->xt_switches = 0x2; // CGA video bits.
+
     vxt_system_install_io(s, p, 0x60, 0x62);
     vxt_system_install_io_at(s, p, 0x64);
     return VXT_NO_ERROR;
@@ -146,4 +149,8 @@ int vxtp_ppi_write_audio(struct vxt_pirepheral *p, vxt_byte *buffer, int freq, i
             buffer[num_bytes++] = (vxt_byte)sample_value;
     }
     return num_bytes;
+}
+
+void vxtp_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data) {
+    (VXT_GET_DEVICE(ppi, p))->xt_switches = data;
 }

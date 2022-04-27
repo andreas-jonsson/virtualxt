@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 19; j++)
+            for (j = 0; j < 20; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -281,6 +281,10 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             if (option->argument) {
                 args->trace = (char *) option->argument;
             }
+        } else if (strcmp(option->olong, "--vga") == 0) {
+            if (option->argument) {
+                args->vga = (char *) option->argument;
+            }
         }
     }
     /* commands */
@@ -304,7 +308,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
         0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *) "4.77", NULL,
-        NULL, NULL,
+        NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -322,6 +326,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --bios=FILE             BIOS binary.",
               "  --extension=FILE        VirtualXT BIOS extension binary.",
               "  --trace=FILE            Write CPU trace to file.",
+              "  --vga=FILE              Load VGA BIOS.",
               "  -f --frequency=MHZ      CPU frequency lock (0 to disable) [default: 4.77].",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
               "  -c --harddrive=FILE     Mount harddrive image as drive C."}
@@ -346,14 +351,15 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {"-f", "--frequency", 1, 0, NULL},
         {"-c", "--harddrive", 1, 0, NULL},
         {NULL, "--network", 1, 0, NULL},
-        {NULL, "--trace", 1, 0, NULL}
+        {NULL, "--trace", 1, 0, NULL},
+        {NULL, "--vga", 1, 0, NULL}
     };
     struct Elements elements;
     int return_code = EXIT_SUCCESS;
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 16;
+    elements.n_options = 17;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;
