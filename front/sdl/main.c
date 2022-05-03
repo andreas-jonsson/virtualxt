@@ -249,6 +249,8 @@ static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 		return NULL;
 	}
 	vxt_clib_malloc(data, 0);
+
+	printf("Loaded BIOS @ 0x%X: %s\n", base, path);
 	return rom;
 }
 
@@ -367,10 +369,10 @@ int ENTRY(int argc, char *argv[]) {
 		video.render = &vxtp_vga_render;
 
 		vxtp_ppi_set_xt_switches(ppi, 0);
-		struct vxt_pirepheral *rom = load_bios(args.bios, 0xC0000);
+		struct vxt_pirepheral *rom = load_bios(args.vga, 0xC0000);
 		if (!rom) return -1;
 
-		devices[i++] = rom;	
+		devices[i++] = rom;
 	} else {
 		video.device = vxtp_cga_create(&vxt_clib_malloc, &ustimer);
 		video.border_color = &vxtp_cga_border_color;

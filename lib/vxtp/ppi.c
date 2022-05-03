@@ -68,10 +68,6 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
-    //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
-    (VXT_GET_DEVICE(ppi, p))->xt_switches = 0x2; // CGA video bits.
-
     vxt_system_install_io(s, p, 0x60, 0x62);
     vxt_system_install_io_at(s, p, 0x64);
     return VXT_NO_ERROR;
@@ -101,6 +97,10 @@ struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepher
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(ppi));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(ppi));
     VXT_DEC_DEVICE(c, ppi, p);
+
+    // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
+    //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
+    c->xt_switches = 0x2; // CGA video bits.
 
     c->pit = pit;
     c->spk_enable_cb = enable_spk;

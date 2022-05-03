@@ -99,6 +99,15 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     VXT_DEC_DEVICE(c, cga_video, p);
     switch (port) {
+        case 0x3B0:
+        case 0x3B2:
+        case 0x3B4:
+        case 0x3B6:
+        case 0x3D0:
+        case 0x3D2:
+        case 0x3D4:
+        case 0x3D6:
+            return c->crt_addr;
         case 0x3B1:
         case 0x3B3:
         case 0x3B5:
@@ -108,6 +117,8 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
         case 0x3D5:
         case 0x3D7:
             return c->crt_reg[c->crt_addr];
+        case 0x3D8:
+            return c->mode_ctrl_reg;
         case 0x3D9:
 		    return c->color_ctrl_reg;
         case 0x3BA:
