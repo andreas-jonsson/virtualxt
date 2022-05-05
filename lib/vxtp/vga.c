@@ -19,7 +19,7 @@ freely, subject to the following restrictions:
 */
 
 #include "vxtp.h"
-#include "cga_font.h"
+#include "vga_font.h"
 #include "vga_palette.h"
 
 #include <assert.h>
@@ -434,8 +434,8 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 	vxt_dword fg_color = cga_palette[fg_color_index];
     int width = (snap->mode_ctrl_reg & 1) ? 640 : 320;
 
-	for (int i = 0; i < 8; i++) {
-		vxt_byte glyph_line = cga_font[(int)ch * 8 + i];
+	for (int i = 0; i < 16; i++) {
+		vxt_byte glyph_line = vga_font[(int)ch * 16 + i];
 		for (int j = 0; j < 8; j++) {
 			vxt_byte mask = 0x80 >> j;
 			vxt_dword color = (glyph_line & mask) ? fg_color : bg_color;
@@ -515,7 +515,7 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
                 int cell_offset = CGA_BASE + snap->video_page + i;
                 vxt_byte ch = MEMORY(snap->mem, cell_offset);
                 vxt_byte attr = MEMORY(snap->mem, cell_offset + 1);
-                blit_char(p, ch, attr, (idx % num_col) * 8, (idx / num_col) * 8);
+                blit_char(p, ch, attr, (idx % num_col) * 8, (idx / num_col) * 16);
             }
 
             if (blink_tick(p) && snap->cursor_visible) {
@@ -523,10 +523,10 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
                 const int y = snap->cursor_y;
                 if (x < num_col && y < 25) {
                     vxt_byte attr = (MEMORY(snap->mem, CGA_BASE + snap->video_page + (num_col * 2 * y + x * 2 + 1)) & 0x70) | 0xF;
-                    blit_char(p, '_', attr, x * 8, y * 8);
+                    blit_char(p, '_', attr, x * 8, y * 16);
                 }
             }
-            return f(num_col * 8, 200, snap->rgba_surface, userdata);
+            return f(num_col * 8, 400, snap->rgba_surface, userdata);
         }
         case 0x4:
         case 0x5: // CGA 320x200x4
