@@ -30,6 +30,7 @@ freely, subject to the following restrictions:
 #define MEMORY_START 0xA0000
 #define CGA_BASE 0x18000
 #define SCANLINE_TIMING 31469
+#define VIDEO_MODE_BDA_ADDRESS (VXT_POINTER(0x40, 0x49))
 
 #define INT64 long long
 #define MEMORY(p, i) ((p)[(i) & (MEMORY_SIZE - 1)])
@@ -39,19 +40,12 @@ freely, subject to the following restrictions:
     if ((mask) & M) { __VA_ARGS__ ; }               \
 }                                                   \
 
-#define ALL_PLANES(mask, a, b, c, d) {              \
-    ONE_PLANE((mask), 0, a)                         \
-    ONE_PLANE((mask), 1, b)                         \
-    ONE_PLANE((mask), 2, c)                         \
-    ONE_PLANE((mask), 3, d)                         \
+#define FOR_PLANES(mask, ...) {                     \
+    ONE_PLANE((mask), 0, { __VA_ARGS__ ; });        \
+    ONE_PLANE((mask), 1, { __VA_ARGS__ ; });        \
+    ONE_PLANE((mask), 2, { __VA_ARGS__ ; });        \
+    ONE_PLANE((mask), 3, { __VA_ARGS__ ; });        \
 }                                                   \
-
-#define FOR_PLANES(mask, ...) ALL_PLANES((mask),    \
-    { __VA_ARGS__ ; },                              \
-    { __VA_ARGS__ ; },                              \
-    { __VA_ARGS__ ; },                              \
-    { __VA_ARGS__ ; }                               \
-)                                                   \
 
 #define ROTATE_OP(gc, v)                            \
 	for (int i = 0; i < ((gc)[3] & 7); i++) {       \
@@ -130,18 +124,13 @@ VXT_PIREPHERAL(vga_video, {
     } reg;
 })
 
-static vxt_byte update_video_mode(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(v, vga_video, p);
-    v->video_mode = vxt_system_read_byte(VXT_GET_SYSTEM(vga_video, p), VXT_POINTER(0x40, 0x49));
-    return v->video_mode;
-}
-
 static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
     VXT_DEC_DEVICE(v, vga_video, p);
+    if (addr == VIDEO_MODE_BDA_ADDRESS)
+        return v->video_mode;
     addr -= MEMORY_START;
 
-    vxt_byte vm = update_video_mode(p);
-	if ((vm != 0xD) && (vm != 0xE))
+	if ((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x12))
         return MEMORY(v->mem, addr);
 
     if (!(v->reg.seq_reg[4] & 6))
@@ -159,11 +148,18 @@ static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
 
 static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     VXT_DEC_DEVICE(v, vga_video, p);
-    addr -= MEMORY_START;
     v->is_dirty = true;
 
-    vxt_byte vm = update_video_mode(p);
-	if (((vm != 0xD) && (vm != 0xE)) || !(v->reg.seq_reg[4] & 6)) {
+    if ((addr == VIDEO_MODE_BDA_ADDRESS) && (v->video_mode != data)) {
+        printf("Switch video mode: 0x%X\n", data);
+        v->video_mode = data;
+        v->reg.seq_reg[4] = 0; // Set chained mode.
+        return;
+    }
+
+    addr -= MEMORY_START;
+
+	if (((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x12)) || !(v->reg.seq_reg[4] & 6)) {
         MEMORY(v->mem, addr) = data;
         return;
     }
@@ -171,6 +167,12 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     vxt_byte *gr = v->reg.gfx_reg;
     vxt_byte bit_mask = gr[8];
     vxt_byte map_mask = v->reg.seq_reg[2];
+
+    static vxt_byte vga_write_mode = 0;
+    if (vga_write_mode != (gr[5] & 3)) {
+        vga_write_mode = (gr[5] & 3);
+        printf("Switched write mode: 0x%X\n", vga_write_mode);
+    }
 
     switch (gr[5] & 3) {
         case 0:
@@ -356,6 +358,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + 0x20000) - 1);
+    vxt_system_install_mem_at(s, p, VIDEO_MODE_BDA_ADDRESS); // BDA video mode
 
     vxt_system_install_io_at(s, p, 0x3B4); // --
     vxt_system_install_io_at(s, p, 0x3D4); // R/W: CRT Index
@@ -519,9 +522,7 @@ bool vxtp_vga_snapshot(struct vxt_pirepheral *p) {
     memcpy(v->snap.mem, v->mem, MEMORY_SIZE);
     memcpy(v->snap.palette, v->palette, sizeof(v->snap.palette));
     
-    // This is also set in on memory read/write.
-    v->snap.video_mode = update_video_mode(p);
-
+    v->snap.video_mode = v->video_mode;
     v->snap.video_page = ((int)v->reg.crt_reg[0xC] << 8) + (int)v->reg.crt_reg[0xD];
     //assert(v->snap.video_page == vxt_system_read_byte(s, VXT_POINTER(0x40, 0x62)));
 
@@ -623,7 +624,7 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
                 for (int x = 0; x < width; x++) {
                     int addr = y * num_col + (x >> 3);
                     int shift = 7 - (x & 7);
-
+                    
                     vxt_byte pixel = (MEMORY(snap->mem, addr) >> shift) & 1;
                     pixel += ((MEMORY(snap->mem, PLANE_SIZE + addr) >> shift) & 1) << 1;
                     pixel += ((MEMORY(snap->mem, PLANE_SIZE * 2 + addr) >> shift) & 1) << 2;
@@ -634,6 +635,21 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             }
             return f(width, 200, snap->rgba_surface, userdata);
         }
+        case 0x12: // VGA 640x480x16
+            for (int y = 0; y < 480; y++) {
+                for (int x = 0; x < 640; x++) {
+                    int addr = y * 80 + (x >> 3);
+                    int shift = ~x & 7;
+                    
+                    vxt_byte pixel = (MEMORY(snap->mem, addr) >> shift) & 1;
+                    pixel += ((MEMORY(snap->mem, PLANE_SIZE + addr) >> shift) & 1) << 1;
+                    pixel += ((MEMORY(snap->mem, PLANE_SIZE * 2 + addr) >> shift) & 1) << 2;
+                    pixel += ((MEMORY(snap->mem, PLANE_SIZE * 3 + addr) >> shift) & 1) << 3;
+
+                    blit32(snap->rgba_surface, (y * 640 + x) * 4, snap->palette[pixel]);
+                }
+            }
+            return f(640, 480, snap->rgba_surface, userdata);
     }
     
     fprintf(stderr, "Unsupported video mode: 0x%X\n", snap->video_mode);

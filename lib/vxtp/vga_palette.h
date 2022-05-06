@@ -2,7 +2,7 @@
 
 #define RGB(r, g, b) ((((vxt_dword)r) << 16) | (((vxt_dword)g) << 8) | (vxt_dword)b)
 
-vxt_dword vga_palette[] = {
+const vxt_dword vga_palette[] = {
 	RGB(0, 0, 0),
 	RGB(0, 0, 169),
 	RGB(0, 169, 0),
