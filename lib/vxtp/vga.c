@@ -18,6 +18,8 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+// Reference: https://www.scs.stanford.edu/10wi-cs140/pintos/specs/freevga/vga/vga.htm
+
 #include "vxtp.h"
 #include "vga_font.h"
 #include "vga_palette.h"
@@ -130,20 +132,23 @@ static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
         return v->video_mode;
     addr -= MEMORY_START;
 
+    if (v->reg.seq_reg[5] & 8) {
+        fprintf(stderr, "Readmode 1 is unsupported!\n");
+        return 0;
+    }
+
 	if ((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x12))
         return MEMORY(v->mem, addr);
 
     if (!(v->reg.seq_reg[4] & 6))
         return MEMORY(v->mem, addr);
 
+
     v->mem_latch[0] = MEMORY(v->mem, addr);
     v->mem_latch[1] = MEMORY(v->mem, addr + PLANE_SIZE);
     v->mem_latch[2] = MEMORY(v->mem, addr + PLANE_SIZE * 2);
     v->mem_latch[3] = MEMORY(v->mem, addr + PLANE_SIZE * 3);
-
-    vxt_byte map_mask = v->reg.seq_reg[2];
-    FOR_PLANES(map_mask, return v->mem_latch[I]);
-    return 0;
+    return v->mem_latch[v->reg.gfx_reg[4] & 3];
 }
 
 static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
@@ -168,22 +173,15 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     vxt_byte bit_mask = gr[8];
     vxt_byte map_mask = v->reg.seq_reg[2];
 
-    static vxt_byte vga_write_mode = 0;
-    if (vga_write_mode != (gr[5] & 3)) {
-        vga_write_mode = (gr[5] & 3);
-        printf("Switched write mode: 0x%X\n", vga_write_mode);
-    }
-
     switch (gr[5] & 3) {
         case 0:
             ROTATE_OP(gr, data);
             FOR_PLANES(map_mask,
-                vxt_byte value = data;
+                vxt_byte value = (data & M) ? 0xFF : 0x0;
                 if (gr[1] & M)
                     value = (gr[0] & M) ? 0xFF : 0x0;
-
                 LOGIC_OP(gr, value, v->mem_latch[I]);
-                MEMORY(v->mem, addr + PLANE_SIZE * I) = (~bit_mask & value) | (bit_mask & v->mem_latch[I]);
+                MEMORY(v->mem, addr + PLANE_SIZE * I) = (bit_mask & value) | (~bit_mask & v->mem_latch[I]);
             );
             break;
         case 1:
@@ -191,22 +189,23 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
             break;
         case 2:
             FOR_PLANES(map_mask,
-                vxt_byte value = data;
-                if (gr[1] & M)
-                    value = (data & M) ? 0xFF : 0x0;
-
+                vxt_byte value = (data & M) ? 0xFF : 0x0;
                 LOGIC_OP(gr, value, v->mem_latch[I]);
-                MEMORY(v->mem, addr + PLANE_SIZE * I) = (~bit_mask & value) | (bit_mask & v->mem_latch[I]);
+                MEMORY(v->mem, addr + PLANE_SIZE * I) = (bit_mask & value) | (~bit_mask & v->mem_latch[I]);
             );
             break;
         case 3:
-            ROTATE_OP(gr, data);
-            data &= bit_mask;
+        {
+            vxt_byte value = data;
+            ROTATE_OP(gr, value);
+            value &= bit_mask;
+
             FOR_PLANES(map_mask,
-                vxt_byte value = (gr[0] & M) ? 0xFF : 0x0;
-                MEMORY(v->mem, addr + PLANE_SIZE * I) = (~data & value) | (data & v->mem_latch[I]);
+                vxt_byte set_reset = (gr[0] & M) ? 0xFF : 0x0;
+                MEMORY(v->mem, addr + PLANE_SIZE * I) = (value & set_reset) | (~value & v->mem_latch[I]);
             );
             break;
+        }
     }
 }
 
@@ -234,12 +233,12 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
         case 0x3C9:
             switch (v->reg.pal_read_latch++) {
                 case 0:
-                    return (v->palette[v->reg.pal_read_index] >> 2) & 0x3F;
+                    return (v->palette[v->reg.pal_read_index] >> 18) & 0x3F;
                 case 1:
                     return (v->palette[v->reg.pal_read_index] >> 10) & 0x3F;
                 default:
                     v->reg.pal_read_latch = 0;
-                    return (v->palette[v->reg.pal_read_index++] >> 18) & 0x3F;
+                    return (v->palette[v->reg.pal_read_index++] >> 2) & 0x3F;
             }
         case 0x3CA:
             return v->reg.feature_ctrl_reg;
@@ -269,6 +268,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     }
 
     // 0x3BA, 0x3C2, 0x3DA
+    v->reg.flip_3C0 = 0;
     vxt_byte status = v->reg.status_reg;
     v->reg.status_reg &= 0xFE;
     return status;
@@ -315,13 +315,13 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             vxt_byte value = data & 0x3F;
             switch (v->reg.pal_write_latch) {
                 case 0:
-                    v->reg.pal_rgb = value << 2;
+                    v->reg.pal_rgb = value << 18;
                     break;
                 case 1:
                     v->reg.pal_rgb |= value << 10;
                     break;
                 case 2:
-                    v->reg.pal_rgb |= value << 18;
+                    v->reg.pal_rgb |= value << 2;
                     v->palette[v->reg.pal_write_index++] = v->reg.pal_rgb;
                     break;
             }            
@@ -406,7 +406,6 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     v->reg.mode_ctrl_reg = 1;
     v->reg.color_ctrl_reg = 0x20;
     v->reg.status_reg = 0;
-    v->reg.misc_output = 0x80; // CGA emulation
 
     memcpy(v->palette, vga_palette, sizeof(vga_palette));
 
@@ -415,7 +414,7 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 
 static const char *name(struct vxt_pirepheral *p) {
     (void)p;
-    return "EGA/VGA Compatible Device";
+    return "VGA Compatible Device";
 }
 
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
@@ -541,6 +540,7 @@ bool vxtp_vga_snapshot(struct vxt_pirepheral *p) {
 int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
     struct snapshot *snap = &(VXT_GET_DEVICE(vga_video, p))->snap;
     int num_col = 80;
+    int height = 480;
 
     switch (snap->video_mode) {
         case 0x0:
@@ -618,9 +618,11 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             num_col = 40;
             snap->mode_ctrl_reg &= ~1;
         case 0xE: // EGA 640x200x16
+            height = 200;
+        case 0x12: // VGA 640x480x16
         {
             int width = num_col * 8;
-            for (int y = 0; y < 200; y++) {
+            for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
                     int addr = y * num_col + (x >> 3);
                     int shift = 7 - (x & 7);
@@ -633,23 +635,8 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
                     blit32(snap->rgba_surface, (y * width + x) * 4, snap->palette[pixel]);
                 }
             }
-            return f(width, 200, snap->rgba_surface, userdata);
+            return f(width, height, snap->rgba_surface, userdata);
         }
-        case 0x12: // VGA 640x480x16
-            for (int y = 0; y < 480; y++) {
-                for (int x = 0; x < 640; x++) {
-                    int addr = y * 80 + (x >> 3);
-                    int shift = ~x & 7;
-                    
-                    vxt_byte pixel = (MEMORY(snap->mem, addr) >> shift) & 1;
-                    pixel += ((MEMORY(snap->mem, PLANE_SIZE + addr) >> shift) & 1) << 1;
-                    pixel += ((MEMORY(snap->mem, PLANE_SIZE * 2 + addr) >> shift) & 1) << 2;
-                    pixel += ((MEMORY(snap->mem, PLANE_SIZE * 3 + addr) >> shift) & 1) << 3;
-
-                    blit32(snap->rgba_surface, (y * 640 + x) * 4, snap->palette[pixel]);
-                }
-            }
-            return f(640, 480, snap->rgba_surface, userdata);
     }
     
     fprintf(stderr, "Unsupported video mode: 0x%X\n", snap->video_mode);
