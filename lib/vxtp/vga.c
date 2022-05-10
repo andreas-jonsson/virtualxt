@@ -73,6 +73,8 @@ struct snapshot {
     int cursor_y;
 
     int video_page;
+    int pixel_shift;
+    bool plane_mode;
     vxt_byte video_mode;
     vxt_byte mode_ctrl_reg;
     vxt_byte color_ctrl_reg;
@@ -137,7 +139,7 @@ static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
         return 0;
     }
 
-	if ((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x12))
+	if ((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x10) && (v->video_mode != 0x12))
         return MEMORY(v->mem, addr);
 
     if (!(v->reg.seq_reg[4] & 6))
@@ -164,7 +166,7 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
 
     addr -= MEMORY_START;
 
-	if (((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x12)) || !(v->reg.seq_reg[4] & 6)) {
+	if (((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x10) && (v->video_mode != 0x12)) || !(v->reg.seq_reg[4] & 6)) {
         MEMORY(v->mem, addr) = data;
         return;
     }
@@ -523,7 +525,8 @@ bool vxtp_vga_snapshot(struct vxt_pirepheral *p) {
     
     v->snap.video_mode = v->video_mode;
     v->snap.video_page = ((int)v->reg.crt_reg[0xC] << 8) + (int)v->reg.crt_reg[0xD];
-    //assert(v->snap.video_page == vxt_system_read_byte(s, VXT_POINTER(0x40, 0x62)));
+    v->snap.plane_mode = (v->reg.seq_reg[0x4] & 6) != 0;
+    v->snap.pixel_shift = v->reg.attr_reg[0x13] & 15;
 
     vxt_pointer cursor_addr = VXT_POINTER(0x40, 0x50 + v->snap.video_page * 2);
     v->snap.cursor_x = vxt_system_read_byte(s, cursor_addr);
@@ -619,6 +622,8 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             snap->mode_ctrl_reg &= ~1;
         case 0xE: // EGA 640x200x16
             height = 200;
+        case 0x10: // EGA 640x350x16
+            height = 350;
         case 0x12: // VGA 640x480x16
         {
             int width = num_col * 8;
@@ -637,6 +642,20 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             }
             return f(width, height, snap->rgba_surface, userdata);
         }
+        case 0x13: // VGA 320x200x256
+            for (int y = 0; y < 200; y++) {
+                for (int x = 0; x < 320; x++) {
+                        int addr;
+                        if (snap->plane_mode) {
+                            addr = (y * 320 + x) / 4 + (x & 3) * PLANE_SIZE;
+                            addr = addr + snap->video_page - snap->pixel_shift;
+                        } else {
+                            addr = (snap->video_page + y * 320 + x) & 0xFFFF;
+                        }
+                        blit32(snap->rgba_surface, (y * 320 + x) * 4, snap->palette[MEMORY(snap->mem, addr)]);
+                }
+            }
+            return f(320, 200, snap->rgba_surface, userdata);
     }
     
     fprintf(stderr, "Unsupported video mode: 0x%X\n", snap->video_mode);
