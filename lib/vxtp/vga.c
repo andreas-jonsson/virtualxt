@@ -24,7 +24,6 @@ freely, subject to the following restrictions:
 #include "vga_font.h"
 #include "vga_palette.h"
 
-#include <assert.h>
 #include <string.h>
 
 #define PLANE_SIZE 0x10000

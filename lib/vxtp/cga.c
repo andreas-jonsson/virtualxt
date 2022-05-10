@@ -21,12 +21,15 @@ freely, subject to the following restrictions:
 #include "vxtp.h"
 #include "cga_font.h"
 
+#include <string.h>
+
 #define MEMORY_SIZE 0x10000
 #define MEMORY_START 0xB0000
 #define CGA_BASE 0x8000
 #define SCANLINE_TIMING 31469
 
 #define INT64 long long
+#define MEMORY(p, i) ((p)[(i) & (MEMORY_SIZE - 1)])
 
 vxt_dword cga_palette[] = {
 	0x000000,
@@ -87,12 +90,12 @@ VXT_PIREPHERAL(cga_video, {
 })
 
 static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    return (VXT_GET_DEVICE(cga_video, p))->mem[addr - MEMORY_START];
+    return MEMORY((VXT_GET_DEVICE(cga_video, p))->mem, addr - MEMORY_START);
 }
 
 static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     VXT_DEC_DEVICE(c, cga_video, p);
-    c->mem[addr - MEMORY_START] = data;
+    MEMORY(c->mem, addr - MEMORY_START) = data;
     c->is_dirty = true;
 }
 
@@ -331,8 +334,7 @@ bool vxtp_cga_snapshot(struct vxt_pirepheral *p) {
     if (!c->is_dirty)
         return false;
 
-    for (int i = 0; i < MEMORY_SIZE; i++)
-        c->snap.mem[i] = c->mem[i];
+    memcpy(c->snap.mem, c->mem, MEMORY_SIZE);
 
     c->snap.hgc_mode = c->hgc_mode;
     c->snap.hgc_base = c->hgc_base;
@@ -353,7 +355,7 @@ int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
         for (int y = 0; y < 348; y++) {
             for (int x = 0; x < 720; x++) {
                 int addr = ((y & 3) << 13) + ( y >> 2) * 90 + (x >> 3);
-                vxt_byte pixel = (snap->mem[snap->hgc_base + addr] >> (7 - (x & 7))) & 1;
+                vxt_byte pixel = (MEMORY(snap->mem, snap->hgc_base + addr) >> (7 - (x & 7))) & 1;
                 vxt_dword color = cga_palette[pixel * 15];
                 int offset = (y * 720 + x) * 4;
                 blit32(snap->rgba_surface, offset, color);
@@ -370,7 +372,7 @@ int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             for (int y = 0; y < 200; y++) {
                 for (int x = 0; x < 640; x++) {
                     int addr = (y >> 1) * 80 + (y & 1) * 8192 + (x >> 3);
-                    vxt_byte pixel = (snap->mem[CGA_BASE + addr] >> (7 - (x & 7))) & 1;
+                    vxt_byte pixel = (MEMORY(snap->mem, CGA_BASE + addr) >> (7 - (x & 7))) & 1;
                     vxt_dword color = cga_palette[pixel * 15];
                     int offset = (y * 640 + x) * 4;
                     blit32(snap->rgba_surface, offset, color);
@@ -385,7 +387,7 @@ int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             for (int y = 0; y < 200; y++) {
                 for (int x = 0; x < 320; x++) {
                     int addr = (y >> 1) * 80 + (y & 1) * 8192 + (x >> 2);
-                    vxt_byte pixel = snap->mem[CGA_BASE + addr];
+                    vxt_byte pixel = MEMORY(snap->mem, CGA_BASE + addr);
 
                     switch (x & 3) {
                         case 0:
@@ -415,8 +417,8 @@ int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
         for (int i = 0; i < num_char * 2; i += 2) {
             int idx = i / 2;
             int cell_offset = CGA_BASE + snap->video_page + i;
-            vxt_byte ch = snap->mem[cell_offset];
-            vxt_byte attr = snap->mem[cell_offset + 1];
+            vxt_byte ch = MEMORY(snap->mem, cell_offset);
+            vxt_byte attr = MEMORY(snap->mem, cell_offset + 1);
             blit_char(p, ch, attr, (idx % num_col) * 8, (idx / num_col) * 8);
         }
 
@@ -424,7 +426,7 @@ int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             int x = snap->cursor_offset % num_col;
             int y = snap->cursor_offset / num_col;
             if (x < num_col && y < 25) {
-                vxt_byte attr = (snap->mem[CGA_BASE + snap->video_page + (num_col * 2 * y + x * 2 + 1)] & 0x70) | 0xF;
+                vxt_byte attr = (MEMORY(snap->mem, CGA_BASE + snap->video_page + (num_col * 2 * y + x * 2 + 1)) & 0x70) | 0xF;
                 blit_char(p, '_', attr, x * 8, y * 8);
             }
         }
