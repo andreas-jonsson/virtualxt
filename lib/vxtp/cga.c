@@ -57,6 +57,7 @@ struct snapshot {
     bool cursor_visible;
     int cursor_offset;
 
+    bool tandy_mode;
     bool hgc_mode;
     int hgc_base;
     int video_page;
@@ -72,6 +73,8 @@ VXT_PIREPHERAL(cga_video, {
     bool hgc_mode;
     int hgc_base;
     vxt_byte hgc_enable;
+
+    bool tandy_mode;
 
     bool cursor_visible;
     int cursor_offset;
@@ -89,6 +92,15 @@ VXT_PIREPHERAL(cga_video, {
     vxt_byte crt_reg[0x100];
 })
 
+static void driver_switch_mode(struct cga_video *c, struct vxt_registers *r) {
+    if ((r->al & 0x7F) == 9) {
+        printf("Switch to 320x200 16-color Tandy/PCjr graphics!\n");
+        c->tandy_mode = true;
+    } else {
+        c->tandy_mode = false;
+    }
+}
+
 static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
     return MEMORY((VXT_GET_DEVICE(cga_video, p))->mem, addr - MEMORY_START);
 }
@@ -101,6 +113,9 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     VXT_DEC_DEVICE(c, cga_video, p);
+    if (port == 0xB3)
+        return 0;
+
     switch (port) {
         case 0x3B0:
         case 0x3B2:
@@ -143,6 +158,13 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(c, cga_video, p);
+    if (port == 0xB3) {
+        struct vxt_registers *r = vxt_system_registers(VXT_GET_SYSTEM(cga_video, p));
+        if (!r->ah)
+            driver_switch_mode(c, r);
+        return;
+    }
+
     c->is_dirty = true;
     switch (port) {
         case 0x3B0:
@@ -200,6 +222,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + MEMORY_SIZE) - 1);
     vxt_system_install_io(s, p, 0x3B0, 0x3BF);
     vxt_system_install_io(s, p, 0x3D0, 0x3DF);
+    vxt_system_install_io_at(s, p, 0xB3); // VXT guest driver int10 forwarding.
     return VXT_NO_ERROR;
 }
 
@@ -336,6 +359,7 @@ bool vxtp_cga_snapshot(struct vxt_pirepheral *p) {
 
     memcpy(c->snap.mem, c->mem, MEMORY_SIZE);
 
+    c->snap.tandy_mode = c->tandy_mode;
     c->snap.hgc_mode = c->hgc_mode;
     c->snap.hgc_base = c->hgc_base;
     c->snap.cursor_visible = c->cursor_visible;
@@ -366,6 +390,16 @@ int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             blit32(snap->rgba_surface, i * 4, cga_palette[0]);
 
         return f(720, 350, snap->rgba_surface, userdata);
+    } else if (snap->tandy_mode) { // Tandy 16-color graphics mode?
+        for (int y = 0; y < 200; y++) {
+            for (int x = 0; x < 320; x++) {
+                int addr = (y >> 2) * 160 + (x >> 1) + (y & 3) * 8192;
+                vxt_byte pixel = MEMORY(snap->mem, CGA_BASE + addr);
+                vxt_dword color = cga_palette[(x & 1) ? (pixel & 0xF) : (pixel >> 4)];
+                blit32(snap->rgba_surface, (y * 320 + x) * 4, color);
+            }
+        }
+        return f(320, 200, snap->rgba_surface, userdata);
     } else if (snap->mode_ctrl_reg & 2) { // In CGA graphics mode?
         // In high-resolution mode?
         if (snap->mode_ctrl_reg & 0x10) {
