@@ -383,6 +383,7 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i++] = rom_ext;
 	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 	devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
+	//devices[i++] = vxtp_ioext_create(&vxt_clib_malloc);
 	devices[i++] = pit;
 	devices[i++] = mouse;
 	devices[i++] = disk;

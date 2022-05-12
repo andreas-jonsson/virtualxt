@@ -170,6 +170,8 @@ extern struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc);
 extern struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq);
 extern bool vxtp_mouse_push_event(struct vxt_pirepheral *p, const struct vxtp_mouse_event *ev);
 
+extern struct vxt_pirepheral *vxtp_ioext_create(vxt_allocator *alloc);
+
 #ifdef VXTP_NETWORK
 	extern struct vxt_pirepheral *vxtp_network_create(vxt_allocator *alloc, int device);
 	extern vxt_error vxtp_network_poll(struct vxt_pirepheral *p);

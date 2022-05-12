@@ -50,6 +50,17 @@ int_13_handler:
 
     iret
 
+int_19_handler:
+    push bp
+    mov bp, sp
+    mov word [bp+4], 0
+    mov word [bp+2], 0x7C00
+    pop bp
+
+    out 0xB0, al
+
+    iret
+
 install_handlers:
     push ds
     push ax
@@ -61,6 +72,9 @@ install_handlers:
     mov word [INT_13_OFFSET], int_13_handler
     mov [INT_13_OFFSET+2], cs
 
+    mov word [INT_19_OFFSET], int_19_handler
+    mov [INT_19_OFFSET+2], cs
+
     pop ax
     pop ds
     ret
@@ -68,6 +82,8 @@ install_handlers:
 ;;;;;;;;;;;;;;;;;; Data ;;;;;;;;;;;;;;;;;;
 
 INT_13_OFFSET  equ 0x4C
+INT_19_OFFSET  equ 0x64
+
 db 'VXTX - VirtualXT BIOS Extensions', 0xA
 db 'This work is licensed under the zlib license.', 0
 

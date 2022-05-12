@@ -61,4 +61,4 @@ test
 
 scrambler.asm
 scrambler.bin
-tools/guest/guest.com
+tools/vxtdrv/vxtdrv.com
