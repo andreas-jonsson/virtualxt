@@ -20,6 +20,9 @@ freely, subject to the following restrictions:
 
 #include "vxtp.h"
 
+#include <string.h>
+
+#define MAX_EVENTS 16
 #define TONE_VOLUME 32
 #define UINT64 unsigned long long
 
@@ -28,6 +31,9 @@ VXT_PIREPHERAL(ppi, {
     vxt_byte command_port;
     vxt_byte port_61;
     vxt_byte xt_switches;
+
+    int queue_size;
+    enum vxtp_scancode queue[MAX_EVENTS];
 
     UINT64 spk_sample_index;
 	bool spk_enabled;
@@ -73,6 +79,18 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
+static vxt_error step(struct vxt_pirepheral *p, int cycles) {
+    (void)cycles;
+    VXT_DEC_DEVICE(c, ppi, p);
+    if (c->queue_size) {
+    	c->command_port |= 3;
+		c->data_port = (vxt_byte)c->queue[0];
+        memmove(c->queue, &c->queue[1], --c->queue_size);
+        vxt_system_interrupt(VXT_GET_SYSTEM(ppi, p), 1);
+    }
+    return VXT_NO_ERROR;
+}
+
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, ppi, p);
     c->command_port = c->data_port = 0;
@@ -81,6 +99,7 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 	c->spk_sample_index = 0;
 	c->spk_enabled = false;
 
+    c->queue_size = 0;
     return VXT_NO_ERROR;
 }
 
@@ -109,6 +128,7 @@ struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepher
     p->install = &install;
     p->destroy = &destroy;
     p->reset = &reset;
+    p->step = &step;
     p->name = &name;
     p->io.in = &in;
     p->io.out = &out;
@@ -116,14 +136,13 @@ struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepher
 }
 
 bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool force) {
+    (void)force;
     VXT_DEC_DEVICE(c, ppi, p);
-    bool has_scan = c->command_port & 2;
-    if (force || !has_scan) {
-    	c->command_port |= 3;
-		c->data_port = (vxt_byte)key;
-        if (!has_scan)
-            vxt_system_interrupt(VXT_GET_SYSTEM(ppi, p), 1);
+    if (c->queue_size < MAX_EVENTS) {
+        c->queue[c->queue_size++] = key;
         return true;
+    } else if (force) {
+        c->queue[MAX_EVENTS - 1] = key;
     }
     return false;
 }

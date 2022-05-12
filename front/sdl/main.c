@@ -535,9 +535,7 @@ int ENTRY(int argc, char *argv[]) {
 					}
 					break;
 				case SDL_KEYDOWN:
-					//for (bool success = false; !success;)
-					//	SYNC(success = vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
-					SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), true));
+					SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
 					//if ((e.key.keysym.sym == SDLK_RETURN) && (e.key.keysym.mod & KMOD_ALT)) {
@@ -560,9 +558,7 @@ int ENTRY(int argc, char *argv[]) {
 						}
 						break;
 					}
-					//for (bool success = false; !success;)
-					//	SYNC(success = vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, false));
-					SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, true));
+					SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, false));
 					break;
 			}
 		}
