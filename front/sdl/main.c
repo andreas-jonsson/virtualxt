@@ -30,6 +30,8 @@
 #include <vxt/vxtu.h>
 #include <vxtp.h>
 
+#include <ini.h>
+
 #ifdef _WIN32
 	#include <SDL.h>
 #else
@@ -78,6 +80,9 @@ SDL_Thread *emu_thread = NULL;
 SDL_Texture *framebuffer = NULL;
 SDL_Point framebuffer_size = {640, 200};
 
+int str_buffer_len = 0;
+char *str_buffer = NULL;
+
 #define AUDIO_FREQUENCY 48000
 #define AUDIO_LATENCY 10
 
@@ -87,8 +92,25 @@ static void trigger_breakpoint(void) {
 	SDL_TriggerBreakpoint();
 }
 
-long long ustimer(void) {
+static long long ustimer(void) {
 	return SDL_GetPerformanceCounter() / (SDL_GetPerformanceFrequency() / 1000000);
+}
+
+static const char *sprint(const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	int size = vsnprintf(NULL, 0, fmt, args) + 1;
+	va_end(args);
+
+	if (str_buffer_len < size) {
+		str_buffer_len = size;
+		str_buffer = SDL_realloc(str_buffer, size);
+	}
+
+	va_start(args, fmt);
+	vsnprintf(str_buffer, size, fmt, args);
+	va_end(args);
+	return str_buffer;
 }
 
 static const char *getline() {
@@ -141,13 +163,7 @@ static bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) {
 	}
 	fclose(tmpf);
 
-	char *buffer = NULL;
-	const char *cmd = "ndisasm -i -b 16 -o %d \"%s\" | head -%d";
-	buffer = (char*)malloc(strlen(name) + strlen(cmd));
-	sprintf(buffer, cmd, start, name, lines);
-
-	bool ret = system(buffer) == 0;
-	free(buffer);
+	bool ret = system(sprint("ndisasm -i -b 16 -o %d \"%s\" | head -%d", start, name, lines)) == 0;
 	remove(name);
 	return ret;
 }
@@ -254,23 +270,13 @@ static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 	return rom;
 }
 
+static int load_config(void *user, const char *section, const char *name, const char *value) {
+	(void)user; (void)section; (void)name; (void)value;
+	return 0;
+}
+
 int ENTRY(int argc, char *argv[]) {
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
-
-	if (!args.bios) {
-		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
-		if (!args.bios) args.bios = "bios/pcxtbios.bin";
-	}
-
-	if (!args.extension) {
-		args.extension = SDL_getenv("VXT_DEFAULT_VXTX_BIOS_PATH");
-		if (!args.extension) args.extension = "bios/vxtx.bin";
-	}
-
-	if (!args.harddrive && !args.floppy) {
-		args.harddrive = SDL_getenv("VXT_DEFAULT_HD_IMAGE");
-		if (!args.harddrive) args.harddrive = "boot/freedos_hd.img";
-	}
 
 	if (args.manual) {
 		const char *path = SDL_getenv("VXT_DEFAULT_MANUAL_INDEX");
@@ -287,7 +293,7 @@ int ENTRY(int argc, char *argv[]) {
 	if (!args.config) {
 		args.config = SDL_GetPrefPath("virtualxt", "VirtualXT-SDL");
 		if (!args.config) {
-			printf("Could not initialize config!\n");
+			printf("No config path!\n");
 			return -1;		
 		}
 	}
@@ -296,6 +302,36 @@ int ENTRY(int argc, char *argv[]) {
 	const char *base_path = SDL_GetBasePath();
 	base_path = base_path ? base_path : "./";
 	printf("Base path: %s\n", base_path);
+
+	// NOTE: Only exit on errors from here on.
+
+	{
+		const char *path = sprint("%s/config.ini", args.config);
+		FILE *fp = fopen(path, "a");
+		if (fp) fclose(fp);
+
+		if (ini_parse(path, &load_config, NULL) < 0) {
+			printf("Can't open: %s\n", path);
+			return -1;
+		}
+	}
+
+	// TODO: Read 'args' in to config struct and use that instead. 
+
+	if (!args.bios) {
+		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
+		if (!args.bios) args.bios = "bios/pcxtbios.bin";
+	}
+
+	if (!args.extension) {
+		args.extension = SDL_getenv("VXT_DEFAULT_VXTX_BIOS_PATH");
+		if (!args.extension) args.extension = "bios/vxtx.bin";
+	}
+
+	if (!args.harddrive && !args.floppy) {
+		args.harddrive = SDL_getenv("VXT_DEFAULT_HD_IMAGE");
+		if (!args.harddrive) args.harddrive = "boot/freedos_hd.img";
+	}
 
 	args.debug |= args.halt;
 	if (args.debug)
@@ -656,6 +692,9 @@ int ENTRY(int argc, char *argv[]) {
 		fclose(trace_op_output);
 	if (trace_offset_output)
 		fclose(trace_offset_output);
+
+	if (str_buffer)
+		SDL_free(str_buffer);
 
 	for (int i = 0; i < 2; i++) {
 		if (sticks[i])
