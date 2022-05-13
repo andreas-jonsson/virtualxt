@@ -133,6 +133,18 @@ struct vxtp_mouse_event {
     int yrel;
 };
 
+enum vxtp_joystick_button {
+    VXTP_JOYSTICK_A	= 0x1,
+	VXTP_JOYSTICK_B = 0x2
+};
+
+struct vxtp_joystick_event {
+	void *id;
+	enum vxtp_joystick_button buttons;
+	vxt_int16 xaxis;
+    vxt_int16 yaxis;
+};
+
 extern struct vxt_pirepheral *vxtp_pic_create(vxt_allocator *alloc);
 
 extern struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, long long (*ustics)(void));
@@ -171,6 +183,9 @@ extern struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word b
 extern bool vxtp_mouse_push_event(struct vxt_pirepheral *p, const struct vxtp_mouse_event *ev);
 
 extern struct vxt_pirepheral *vxtp_ioext_create(vxt_allocator *alloc);
+
+extern struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, long long (*ustics)(void), void *stick_a, void *stick_b);
+extern bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp_joystick_event *ev);
 
 #ifdef VXTP_NETWORK
 	extern struct vxt_pirepheral *vxtp_network_create(vxt_allocator *alloc, int device);

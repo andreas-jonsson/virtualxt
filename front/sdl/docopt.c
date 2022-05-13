@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 20; j++)
+            for (j = 0; j < 21; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -241,6 +241,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->hdboot = option->value;
         } else if (strcmp(option->olong, "--help") == 0) {
             args->help = option->value;
+        } else if (strcmp(option->olong, "--joystick") == 0) {
+            args->joystick = option->value;
         } else if (strcmp(option->olong, "--list") == 0) {
             args->list = option->value;
         } else if (strcmp(option->olong, "--manual") == 0) {
@@ -307,8 +309,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *) "4.77", NULL,
-        NULL, NULL, NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *) "4.77",
+        NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -322,6 +324,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --mute                  Disable audio.",
               "  --list                  List network devices and IDs.",
               "  --network=ID            Select network adapter.",
+              "  --joystick              Enable joystick support.",
               "  --config=PATH           Set config directory.",
               "  --bios=FILE             BIOS binary.",
               "  --extension=FILE        VirtualXT BIOS extension binary.",
@@ -340,6 +343,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--halt", 0, 0, NULL},
         {NULL, "--hdboot", 0, 0, NULL},
         {"-h", "--help", 0, 0, NULL},
+        {NULL, "--joystick", 0, 0, NULL},
         {NULL, "--list", 0, 0, NULL},
         {"-m", "--manual", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
@@ -359,7 +363,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 17;
+    elements.n_options = 18;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;

@@ -338,6 +338,27 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 
+	int num_sticks = 0;
+	SDL_Joystick *sticks[2] = {NULL};
+
+	if (args.joystick) {
+		printf("Initialize joysticks:\n");
+		if (!(num_sticks = SDL_NumJoysticks())) {
+			printf("No joystick found!\n");
+		} else {
+			for (int i = 0; i < num_sticks; i++) {
+				const char *name = SDL_JoystickNameForIndex(i);
+				if (!name) name = "Unknown Joystick";
+
+				if ((i < 2) && (sticks[i] = SDL_JoystickOpen(i))) {
+					printf("%d - *%s\n", i + 1, name);
+					continue;
+				}
+				printf("%d - %s\n", i + 1, name);
+			}
+		}
+	}
+
 	vxt_set_logger(&printf);
 	vxt_set_breakpoint(&trigger_breakpoint);
 
@@ -357,6 +378,7 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
 	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit, &enable_speaker, NULL);
 	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4);
+	struct vxt_pirepheral *joystick = NULL;
 
 	int i = 2;
 	struct vxt_pirepheral *devices[16] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
@@ -379,6 +401,9 @@ int ENTRY(int argc, char *argv[]) {
 		video.snapshot = &vxtp_cga_snapshot;
 		video.render = &vxtp_cga_render;
 	}
+
+	if (num_sticks)
+		devices[i++] = joystick = vxtp_joystick_create(&vxt_clib_malloc, ustimer, sticks[0], sticks[1]);
 
 	devices[i++] = rom_ext;
 	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
@@ -534,6 +559,23 @@ int ENTRY(int argc, char *argv[]) {
 						}
 					}
 					break;
+				case SDL_JOYAXISMOTION:
+				case SDL_JOYBUTTONDOWN:
+				case SDL_JOYBUTTONUP:
+				{
+					assert(e.jaxis.which == e.jbutton.which);
+					SDL_Joystick *js = SDL_JoystickFromInstanceID(e.jaxis.which);
+					if (js && ((sticks[0] == js) || (sticks[0] == js))) {
+						struct vxtp_joystick_event ev = {
+							js,
+							(SDL_JoystickGetButton(js, 0) ? VXTP_JOYSTICK_A : 0) | (SDL_JoystickGetButton(js, 1) ? VXTP_JOYSTICK_B : 0),
+							SDL_JoystickGetAxis(js, 0),
+							SDL_JoystickGetAxis(js, 1)
+						};
+						SYNC(vxtp_joystick_push_event(joystick, &ev));
+					}
+					break;
+				}
 				case SDL_KEYDOWN:
 					SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
@@ -614,6 +656,11 @@ int ENTRY(int argc, char *argv[]) {
 		fclose(trace_op_output);
 	if (trace_offset_output)
 		fclose(trace_offset_output);
+
+	for (int i = 0; i < 2; i++) {
+		if (sticks[i])
+			SDL_JoystickClose(sticks[i]);
+	}
 
 	SDL_DestroyTexture(framebuffer);
 	SDL_DestroyRenderer(renderer);

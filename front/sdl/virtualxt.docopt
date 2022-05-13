@@ -10,6 +10,7 @@ Options:
   --mute                  Disable audio.
   --list                  List network devices and IDs.
   --network=ID            Select network adapter.
+  --joystick              Enable joystick support.
   --config=PATH           Set config directory.
   --bios=FILE             BIOS binary.
   --extension=FILE        VirtualXT BIOS extension binary.

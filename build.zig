@@ -218,6 +218,7 @@ pub fn build(b: *Builder) void {
         pirepheral.addCSourceFile("lib/vxtp/vga.c", opt);
         //pirepheral.addCSourceFile("lib/vxtp/ioext.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/mouse.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/joystick.c", opt);
 
         if (network) {
             pirepheral.defineCMacroRaw("VXTP_NETWORK");
