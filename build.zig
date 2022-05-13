@@ -184,6 +184,14 @@ pub fn build(b: *Builder) void {
     termbox.addCSourceFile("lib/termbox/src/termbox.c", c_options);
     termbox.addCSourceFile("lib/termbox/src/utf8.c", c_options);
 
+    // -------- ini --------
+
+    const ini = b.addStaticLibrary("ini", null);
+    ini.setBuildMode(mode);
+    ini.setTarget(target);
+    ini.linkLibC();
+    ini.addCSourceFile("lib/inih/ini.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
+
     // -------- microui --------
 
     const microui = b.addStaticLibrary("microui", null);
@@ -258,6 +266,9 @@ pub fn build(b: *Builder) void {
 
     exe_sdl.linkLibrary(pirepheral);
     exe_sdl.addIncludeDir("lib/vxtp");
+
+    exe_sdl.linkLibrary(ini);
+    exe_sdl.addIncludeDir("lib/inih");
 
     exe_sdl.linkLibC();
 
