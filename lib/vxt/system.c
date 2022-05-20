@@ -228,6 +228,8 @@ bool vxt_system_a20(vxt_system *s) {
 void vxt_system_set_a20(vxt_system *s, bool b) {
     #ifdef VXT_CPU_286
         s->a20_enable = b;
+    #else
+        (void)s; (void)b;
     #endif
 }
 
