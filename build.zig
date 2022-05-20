@@ -214,6 +214,12 @@ pub fn build(b: *Builder) void {
         if (validator) {
             pirepheral.defineCMacroRaw("PI8088");
         }
+        
+        if (cpu286) {
+            pirepheral.defineCMacroRaw("VXT_CPU_286");
+        } else if (cpuV20) {
+            pirepheral.defineCMacroRaw("VXT_CPU_V20");
+        }
 
         const opt = c_options ++ &[_][]const u8{"-std=c11", "-pedantic"};
         pirepheral.addCSourceFile("lib/vxtp/disk.c", opt);

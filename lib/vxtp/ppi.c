@@ -42,6 +42,7 @@ VXT_PIREPHERAL(ppi, {
 
     vxt_byte command;
     vxt_byte a20_data;
+    vxt_byte refresh_request;
     bool keyboard_enable;
 
     int queue_size;
@@ -62,7 +63,10 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
             c->command_port = 0;
             return c->data_port;
         case 0x61:
-            return c->port_61;
+            #ifdef VXT_CPU_286
+                c->refresh_request ^= 0x10;
+            #endif
+            return (c->port_61 & 0xEF) | c->refresh_request;
         case 0x62:
             return c->xt_switches;
         case 0x64:
@@ -74,13 +78,15 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(c, ppi, p);
     switch (port) {
-        case 0x60:
-            if (!c->keyboard_enable && (c->command == WRITE_OUTPUT_CMD)) {
-                c->command = 0;
-                c->a20_data = data;
-                vxt_system_set_a20(VXT_GET_SYSTEM(ppi, p), (data & 2) != 0);
-            }
-            break;
+        #ifdef VXT_CPU_286
+            case 0x60:
+                if (!c->keyboard_enable && (c->command == WRITE_OUTPUT_CMD)) {
+                    c->command = 0;
+                    c->a20_data = data;
+                    vxt_system_set_a20(VXT_GET_SYSTEM(ppi, p), (data & 2) != 0);
+                }
+                break;
+        #endif
         case 0x61:
         {
             c->port_61 = data;
@@ -93,17 +99,19 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             }
             break;
         }
-        case 0x64:
-            c->command = data;
-            switch (data) {
-                case ENABLE_KEYBOARD_CMD:
-                    c->keyboard_enable = true;
-                    break;
-                case DISABLE_KEYBOARD_CMD:
-                    c->keyboard_enable = false;
-                    break;
-            }
-            break;
+        #ifdef VXT_CPU_286
+            case 0x64:
+                c->command = data;
+                switch (data) {
+                    case ENABLE_KEYBOARD_CMD:
+                        c->keyboard_enable = true;
+                        break;
+                    case DISABLE_KEYBOARD_CMD:
+                        c->keyboard_enable = false;
+                        break;
+                }
+                break;
+        #endif
     }
 }
 
@@ -134,7 +142,7 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, ppi, p);
     c->command_port = c->data_port = 0;
-    c->port_61 = 4;
+    c->port_61 = 14;
 
 	c->spk_sample_index = 0;
 	c->spk_enabled = false;

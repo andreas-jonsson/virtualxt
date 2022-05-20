@@ -318,7 +318,13 @@ int ENTRY(int argc, char *argv[]) {
 
 	if (!args.bios) {
 		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
-		if (!args.bios) args.bios = "bios/pcxtbios.bin";
+		if (!args.bios) {
+			#ifdef VXT_CPU_286
+				args.bios = "bios/vxt286.bin";
+			#else
+				args.bios = "bios/pcxtbios.bin";
+			#endif
+		}
 	}
 
 	if (!args.extension) {
