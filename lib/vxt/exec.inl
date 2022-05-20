@@ -803,7 +803,6 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
    p->regs.flags = pop(p);
-   p->irs = false;
 }
 
 static void grp2_D0(CONSTSP(cpu) p, INST(inst)) {

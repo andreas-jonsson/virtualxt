@@ -172,8 +172,6 @@ static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
 	(void)s; (void)addr;
 	fwrite(&data, 1, 1, trace_op_output);
 	fwrite(&addr, sizeof(vxt_pointer), 1, trace_offset_output);
-	data = vxt_system_isr_flag(s) ? 1 : 0;
-	fwrite(&data, 1, 1, trace_offset_output);
 }
 
 static int emu_loop(void *ptr) {
@@ -451,6 +449,10 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i++] = ppi;
 	devices[i++] = video.device;
 
+	#ifdef VXT_CPU_286
+		devices[i++] = vxtp_postcard_create(&vxt_clib_malloc);
+	#endif
+
 	SDL_TimerID network_timer = 0;
 	if (args.network) {
 		#ifdef VXTP_NETWORK
@@ -534,11 +536,12 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	SDL_TimerID audio_timer = 0;
+	SDL_AudioSpec obtained = {0};
+
 	if (args.mute) {
 		printf("Audio is muted!\n");
 	} else {
-		SDL_AudioSpec desired = {.freq = AUDIO_FREQUENCY, .format = AUDIO_U8, .channels = 1, .samples = pow2((AUDIO_FREQUENCY / 1000) * AUDIO_LATENCY)};
-		SDL_AudioSpec obtained = {0};
+		SDL_AudioSpec desired = {.freq = AUDIO_FREQUENCY, .format = AUDIO_U8, .channels = 1, .samples = pow2((AUDIO_FREQUENCY / 1000) * AUDIO_LATENCY)};	
 		audio_device = SDL_OpenAudioDevice(NULL, false, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
 		SDL_PauseAudioDevice(audio_device, true);
 

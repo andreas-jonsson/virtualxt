@@ -24,7 +24,15 @@ freely, subject to the following restrictions:
 
 #define MAX_EVENTS 16
 #define TONE_VOLUME 32
-#define UINT64 unsigned long long
+#define INT64 long long
+
+#define DATA_READY 1
+#define COMMAND_READY 2
+
+#define DISABLE_KEYBOARD_CMD 0xAD
+#define ENABLE_KEYBOARD_CMD 0xAE
+#define READ_INPUT_CMD 0xD0
+#define WRITE_OUTPUT_CMD 0xD1
 
 VXT_PIREPHERAL(ppi, {
 	vxt_byte data_port;
@@ -32,10 +40,14 @@ VXT_PIREPHERAL(ppi, {
     vxt_byte port_61;
     vxt_byte xt_switches;
 
+    vxt_byte command;
+    vxt_byte a20_data;
+    bool keyboard_enable;
+
     int queue_size;
     enum vxtp_scancode queue[MAX_EVENTS];
 
-    UINT64 spk_sample_index;
+    INT64 spk_sample_index;
 	bool spk_enabled;
     void (*spk_enable_cb)(bool);
     void *spk_enable_ud;
@@ -61,15 +73,37 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(c, ppi, p);
-    if (port == 0x61) {
-        c->port_61 = data;
-        bool enabled = (data & 3) == 3;
-        if (enabled != c->spk_enabled) {
-            c->spk_enabled = enabled;
-            c->spk_sample_index = 0;
-            if (c->spk_enable_cb)
-                c->spk_enable_cb(enabled);
+    switch (port) {
+        case 0x60:
+            if (!c->keyboard_enable && (c->command == WRITE_OUTPUT_CMD)) {
+                c->command = 0;
+                c->a20_data = data;
+                vxt_system_set_a20(VXT_GET_SYSTEM(ppi, p), (data & 2) != 0);
+            }
+            break;
+        case 0x61:
+        {
+            c->port_61 = data;
+            bool enabled = (data & 3) == 3;
+            if (enabled != c->spk_enabled) {
+                c->spk_enabled = enabled;
+                c->spk_sample_index = 0;
+                if (c->spk_enable_cb)
+                    c->spk_enable_cb(enabled);
+            }
+            break;
         }
+        case 0x64:
+            c->command = data;
+            switch (data) {
+                case ENABLE_KEYBOARD_CMD:
+                    c->keyboard_enable = true;
+                    break;
+                case DISABLE_KEYBOARD_CMD:
+                    c->keyboard_enable = false;
+                    break;
+            }
+            break;
     }
 }
 
@@ -82,11 +116,17 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
 static vxt_error step(struct vxt_pirepheral *p, int cycles) {
     (void)cycles;
     VXT_DEC_DEVICE(c, ppi, p);
-    if (c->queue_size) {
-    	c->command_port |= 3;
-		c->data_port = (vxt_byte)c->queue[0];
-        memmove(c->queue, &c->queue[1], --c->queue_size);
-        vxt_system_interrupt(VXT_GET_SYSTEM(ppi, p), 1);
+    c->command_port |= COMMAND_READY;
+    if (c->keyboard_enable) {
+        if (c->queue_size) {
+            c->command_port |= DATA_READY;
+            c->data_port = (vxt_byte)c->queue[0];
+            memmove(c->queue, &c->queue[1], --c->queue_size);
+            vxt_system_interrupt(VXT_GET_SYSTEM(ppi, p), 1);
+        }
+    } else if (c->command == READ_INPUT_CMD) {
+        c->command_port |= DATA_READY;
+        c->data_port = c->a20_data;
     }
     return VXT_NO_ERROR;
 }
@@ -99,7 +139,11 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 	c->spk_sample_index = 0;
 	c->spk_enabled = false;
 
+    c->keyboard_enable = true;
     c->queue_size = 0;
+
+    c->a20_data = 0;
+    vxt_system_set_a20(VXT_GET_SYSTEM(ppi, p), false);
     return VXT_NO_ERROR;
 }
 
@@ -156,8 +200,8 @@ int vxtp_ppi_write_audio(struct vxt_pirepheral *p, vxt_byte *buffer, int freq, i
     if (!c->spk_enabled || (tone_hz <= 0.0))
         return num_bytes;
 
-    UINT64 square_wave_period = (UINT64)((double)freq / tone_hz);
-    UINT64 half_square_wave_period = square_wave_period / 2;
+    INT64 square_wave_period = (INT64)((double)freq / tone_hz);
+    INT64 half_square_wave_period = square_wave_period / 2;
 
     if (!half_square_wave_period)
         return num_bytes;

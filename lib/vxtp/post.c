@@ -20,38 +20,42 @@ freely, subject to the following restrictions:
 
 #include "vxtp.h"
 
-VXT_PIREPHERAL(dma, {
- 	int _;
+#include <stdio.h>
+
+VXT_PIREPHERAL(post, {
+ 	vxt_byte code;
 })
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    (void)p; (void)port;
-	return 0;
+    VXT_DEC_DEVICE(c, post, p);
+    (void)port;
+	return c->code;
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    (void)p; (void)port; (void)data;
+    VXT_DEC_DEVICE(c, post, p);
+    (void)port;
+    printf("POST: 0x%X\n", (c->code = data));
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io(s, p, 0x0, 0xF);
-    vxt_system_install_io(s, p, 0x81, 0x8F);
+    vxt_system_install_io_at(s, p, 0x80);
     return VXT_NO_ERROR;
 }
 
 static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(dma, p))(p, 0);
+    vxt_system_allocator(VXT_GET_SYSTEM(post, p))(p, 0);
     return VXT_NO_ERROR;
 }
 
 static const char *name(struct vxt_pirepheral *p) {
     (void)p;
-    return "Dmmy DMA Controller";
+    return "POST Card";
 }
 
-struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(dma));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(dma));
+struct vxt_pirepheral *vxtp_postcard_create(vxt_allocator *alloc) {
+    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(post));
+    vxt_memclear(p, VXT_PIREPHERAL_SIZE(post));
 
     p->install = &install;
     p->destroy = &destroy;

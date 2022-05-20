@@ -15,13 +15,7 @@ def main():
 
         size = int(len(parts[1]) / 2)
         new_offset = int.from_bytes(off_fp.read(4), byteorder='little')
-        flags = off_fp.read(1)[0]
         off_fp.read((size-1)*4+(size-1)) # Discard
-
-        if flags == 0:
-            print(end = ' ')
-        else:
-            print(end = 'i')
 
         if next_instruction != new_offset:
             print(end = '*')

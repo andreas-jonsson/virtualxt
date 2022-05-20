@@ -397,8 +397,6 @@ static void call_int(CONSTSP(cpu) p, int n) {
    r->ip = vxt_system_read_word(p->s, (vxt_pointer)n * 4);
    r->cs = vxt_system_read_word(p->s, (vxt_pointer)n * 4 + 2);
    r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
-
-   p->irs = true;
 }
 
 static void divZero(CONSTSP(cpu) p) {

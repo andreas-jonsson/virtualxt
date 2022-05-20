@@ -188,10 +188,6 @@ void *vxt_system_userdata(CONSTP(vxt_system) s) {
     return s->userdata;
 }
 
-bool vxt_system_isr_flag(CONSTP(vxt_system) s) {
-    return s->cpu.irs;
-}
-
 const vxt_byte *vxt_system_io_map(vxt_system *s) {
     return s->io_map;
 }
@@ -225,6 +221,16 @@ void vxt_system_interrupt(CONSTP(vxt_system) s, int n) {
         s->cpu.pic->pic.irq(s->cpu.pic, n);
 }
 
+bool vxt_system_a20(vxt_system *s) {
+    return s->a20_enable;
+}
+
+void vxt_system_set_a20(vxt_system *s, bool b) {
+    #ifdef VXT_CPU_286
+        s->a20_enable = b;
+    #endif
+}
+
 void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word addr) {
     s->io_map[addr] = (vxt_byte)vxt_pirepheral_id(dev);
 }
@@ -247,6 +253,13 @@ void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vx
 }
 
 vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
+    #ifdef VXT_CPU_286
+        if ((addr > 0xFFFFF) && s->a20_enable) {
+            addr &= (VXT_EXTENDED_MEMORY_MASK | 0xFFFFF);
+            return s->high_mem[addr - 0x100000];
+        }
+    #endif
+
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
     vxt_byte data = dev->io.read(dev, addr);
@@ -255,6 +268,14 @@ vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
 }
 
 void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
+    #ifdef VXT_CPU_286
+        if ((addr > 0xFFFFF) && s->a20_enable) {
+            addr &= (VXT_EXTENDED_MEMORY_MASK | 0xFFFFF);
+            s->high_mem[addr - 0x100000] = data;
+            return;
+        }
+    #endif
+
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
     dev->io.write(dev, addr, data);
@@ -262,26 +283,12 @@ void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data
 }
 
 vxt_word vxt_system_read_word(CONSTP(vxt_system) s, vxt_pointer addr) {
-    vxt_pointer p = addr & 0xFFFFF;
-    CONSTSP(vxt_pirepheral) devl = s->devices[s->mem_map[p]];
-    vxt_byte low = devl->io.read(devl, p);
-    VALIDATOR_READ(&s->cpu, p, low);
-    p = (addr+1) & 0xFFFFF;
-    CONSTSP(vxt_pirepheral) devh = s->devices[s->mem_map[p]];
-    vxt_byte high = devh->io.read(devh, p);
-    VALIDATOR_READ(&s->cpu, p, high);
-    return WORD(high, low);
+    return WORD(vxt_system_read_byte(s, addr + 1), vxt_system_read_byte(s, addr));
 }
 
 void vxt_system_write_word(CONSTP(vxt_system) s, vxt_pointer addr, vxt_word data) {
-    vxt_pointer p = addr & 0xFFFFF;
-    CONSTSP(vxt_pirepheral) devl = s->devices[s->mem_map[p]];
-    devl->io.write(devl, p, LBYTE(data));
-    VALIDATOR_WRITE(&s->cpu, p, LBYTE(data));
-    p = (addr+1) & 0xFFFFF;
-    CONSTSP(vxt_pirepheral) devh = s->devices[s->mem_map[p]];
-    devh->io.write(devh, p, HBYTE(data));
-    VALIDATOR_WRITE(&s->cpu, p, HBYTE(data));
+    vxt_system_write_byte(s, addr, LBYTE(data));
+    vxt_system_write_byte(s, addr + 1, HBYTE(data));
 }
 
 vxt_byte system_in(CONSTP(vxt_system) s, vxt_word port) {
