@@ -456,6 +456,7 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i++] = video.device;
 
 	#ifdef VXT_CPU_286
+		devices[i++] = vxtp_rtc_create(&vxt_clib_malloc);
 		devices[i++] = vxtp_postcard_create(&vxt_clib_malloc);
 	#endif
 

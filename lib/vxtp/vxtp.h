@@ -189,6 +189,8 @@ extern bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp
 
 extern struct vxt_pirepheral *vxtp_postcard_create(vxt_allocator *alloc);
 
+extern struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc);
+
 #ifdef VXTP_NETWORK
 	extern struct vxt_pirepheral *vxtp_network_create(vxt_allocator *alloc, int device);
 	extern vxt_error vxtp_network_poll(struct vxt_pirepheral *p);
