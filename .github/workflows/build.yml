@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "develop", "edge", "release" ]
   pull_request:
     branches: [ "develop" ]
 
