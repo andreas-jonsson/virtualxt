@@ -66,6 +66,8 @@ static unsigned tobin(char ch) {
 }
 
 static unsigned tonumber(const char *str) {
+    if (!str)
+        return 0;
     unsigned res = 0;
     unsigned base = 10;
     if (str[0] == '0') {
@@ -83,6 +85,8 @@ static unsigned tonumber(const char *str) {
 }
 
 static bool strcomp(const char *a, const char *b) {
+    if (!a || !b)
+        return false;
     do {
         if (*a != *b)
             return false;

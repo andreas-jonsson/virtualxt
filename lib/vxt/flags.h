@@ -68,7 +68,7 @@ static const bool parity_table[0x100] = {
 static void flag_szp8(CONSTSP(vxt_registers) r, vxt_byte v) {
    SET_FLAG_IF(r->flags, VXT_ZERO, !v);
    SET_FLAG_IF(r->flags, VXT_SIGN, v & 0x80);
-	SET_FLAG_IF(r->flags, VXT_PARITY, parity_table[v]);
+	SET_FLAG_IF(r->flags, VXT_PARITY, parity_table[v & 0xFF]);
 }
 
 static void flag_szp16(CONSTSP(vxt_registers) r, vxt_word v) {
