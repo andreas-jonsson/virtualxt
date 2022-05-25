@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/andreas-jonsson/virtualxt/actions/workflows/build.yml/badge.svg)](https://github.com/andreas-jonsson/virtualxt/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/andreas-jonsson/virtualxt/branch/main/graph/badge.svg?token=miEtCEo0s4)](https://codecov.io/gh/andreas-jonsson/virtualxt)
-[![Forum](https://img.shields.io/badge/forum-GitHub-blue)](https://github.com/andreas-jonsson/virtualxt/discussions)
+[![Forum](https://img.shields.io/badge/forum-GitHub-blue)](https://www.vogons.org/viewforum.php?f=9)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)
 
 VirtualXT is a IBM PC/XT (8088/V20) emulator that runs on modern hardware and operating systems.
@@ -43,12 +43,12 @@ If you want to embed the emulator or create a custom frontend you can find libvx
 
 ## Screenshots
 
-![bios screenshot](doc/screenshots/bios.PNG)
+![bios screenshot](screenshots/bios.PNG)
 
-![freedos screenshot](doc/screenshots/freedos.PNG)
+![freedos screenshot](screenshots/freedos.PNG)
 
-![edit screenshot](doc/screenshots/edit.PNG)
+![edit screenshot](screenshots/edit.PNG)
 
-![win30setup screenshot](doc/screenshots/win30setup.PNG)
+![win30setup screenshot](screenshots/win30setup.PNG)
 
-![monkey screenshot](doc/screenshots/monkey.PNG)
+![monkey screenshot](screenshots/monkey.PNG)
