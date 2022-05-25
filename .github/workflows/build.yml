@@ -87,7 +87,7 @@ jobs:
       - name: Deploy
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: ./tools/package/itch/push.sh
+        run: if [[ $TRAVIS_BRANCH =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
 
   macos-build:
     name: Build (MacOS AMD64)
