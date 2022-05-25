@@ -1,0 +1,116 @@
+name: Build
+
+on:
+  push:
+    branches: [ "0.7" ]
+  pull_request:
+    branches: [ "0.7" ]
+
+  workflow_dispatch:
+
+env:
+  VXT_VERSION: 0.7.0
+  ZIG_VERSION: 0.9.0
+  SDL2_VERSION: 2.0.20
+
+jobs:
+  linux-build:
+    name: Build (Linux AMD64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Setup
+        run: |
+          sudo apt-get update
+          sudo apt-get install kcov cppcheck
+          curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
+          echo "${GITHUB_WORKSPACE}/zig-linux-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
+
+          curl -L -o sdl.tar.gz https://www.libsdl.org/release/SDL2-${SDL2_VERSION}.tar.gz && tar -xf sdl.tar.gz
+          cd SDL2-${SDL2_VERSION}
+          ./configure --prefix="${GITHUB_WORKSPACE}/sdl_bin"
+          make && make install
+
+      - name: Test & Check
+        run: zig build check
+
+      - name: Report
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          kcov kcov-out zig-cache/o/*/test .
+          bash <(curl -s https://codecov.io/bash) -s kcov-out
+        
+      - name: Build
+        run: zig build -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
+
+  windows-build:
+    name: Build (Windows AMD64)
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Setup
+        run: |
+          curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o sdl.zip https://www.libsdl.org/release/SDL2-devel-${SDL2_VERSION}-VC.zip && unzip sdl.zip
+          curl -L -o zig.zip https://ziglang.org/download/${ZIG_VERSION}/zig-windows-x86_64-${ZIG_VERSION}.zip && unzip -q zig.zip
+          echo "${GITHUB_WORKSPACE}/zig-windows-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
+
+      - name: Test
+        run: zig build test
+        
+      - name: Build
+        run: zig build -Drelease-fast -Dsdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}"
+
+      - name: Package
+        run: ./tools/package/itch/package.bat
+        
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: ./tools/package/itch/push.sh
+
+  macos-build:
+    name: Build (MacOS AMD64)
+    runs-on: macos-latest
+
+    if: false # Disable osx build
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Setup
+        run: |
+          brew update
+          brew install sdl2
+          curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-macos-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
+          echo "${GITHUB_WORKSPACE}/zig-macos-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
+
+      - name: Test
+        run: zig build test
+        
+      - name: Build
+        run: zig build

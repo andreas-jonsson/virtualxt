@@ -8,4 +8,4 @@ path = "virtualxt-net.bat"
 
 [[actions]]
 name = "manual"
-path = "manual/index.md.html"
+path = "tools/manual/index.md.html"

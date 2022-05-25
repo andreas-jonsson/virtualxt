@@ -1,5 +1,5 @@
 name: virtualxt
-version: 0.6.2
+version: 0.7.0
 summary: Lightweight IBM PC/XT emulator
 icon: tools/package/snap/usr/share/icons/hicolor/128x128/apps/virtualxt.png
 architectures:
@@ -42,7 +42,7 @@ parts:
       vxtx.bin: usr/share/virtualxt/bios/vxtx.bin
 
   manual:
-    source: doc
+    source: tools/manual
     plugin: dump
     prime:
       - usr
@@ -54,12 +54,13 @@ parts:
       - usr/bin
       - usr/lib
     organize:
-      bin/virtualxt: usr/bin/virtualxt
+      build/bin/virtualxt: usr/bin/virtualxt
     source: .
-    plugin: go
-    go-buildtags: [sdl, pcap]
-    go-packages: [github.com/andreas-jonsson/virtualxt]
+    plugin: nil
+    override-build: |
+      zig build -Drelease-fast
     build-packages: [gcc, pkg-config, libsdl2-dev, libpcap0.8-dev]
+    build-snaps: [zig/beta]
     stage-packages:
       - libasound2
       - libasyncns0

@@ -3,7 +3,7 @@ runtime: org.freedesktop.Platform
 runtime-version: '21.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
-  - org.freedesktop.Sdk.Extension.golang
+  - org.freedesktop.Sdk.Extension.ziglang
 command: virtualxt.freedos
 finish-args:
   - --share=ipc
@@ -13,9 +13,6 @@ finish-args:
   - --filesystem=/media
   - --filesystem=/run/media
   - --device=all
-build-options:
-  env:
-    - GOROOT=/usr/lib/sdk/golang
 
 modules:
   - name: SDL2
@@ -35,30 +32,24 @@ modules:
   - name: virtualxt
     buildsystem: simple
     build-commands:
-    
-      # Fix for 0.6.1. Remove later.
-      - cp _go.mod go.mod
-      - cp _go.sum go.sum
-      - cp _modules.txt vendor/modules.txt
+      - /usr/lib/sdk/ziglang/zig build -Drelease-fast
 
-      - $GOROOT/bin/go build -tags sdl
-
-      - install -Dm00755 virtualxt $FLATPAK_DEST/bin/virtualxt
+      - install -Dm00755 build/bin/virtualxt $FLATPAK_DEST/bin/virtualxt
       - install -Dm00644 bios/pcxtbios.bin $FLATPAK_DEST/share/virtualxt/pcxtbios.bin
       - install -Dm00644 bios/vxtx.bin $FLATPAK_DEST/share/virtualxt/vxtx.bin
       - install -Dm00644 boot/freedos.img $FLATPAK_DEST/share/virtualxt/freedos.img
       - install -Dm00644 boot/freedos_hd.img $FLATPAK_DEST/share/virtualxt/freedos_hd.img
-      - install -Dm00644 doc/manual/index.md.html doc/manual/markdeep.min.js doc/manual/style.css -t $FLATPAK_DEST/share/virtualxt/manual
+      - install -Dm00644 tools/manual/index.md.html tools/manual/markdeep.min.js tools/manual/style.css -t $FLATPAK_DEST/share/virtualxt/manual
 
-      - install -Dm00644 doc/icon/icon.png $FLATPAK_DEST/share/icons/hicolor/128x128/apps/$FLATPAK_ID.png
+      - install -Dm00644 tools/icon/icon.png $FLATPAK_DEST/share/icons/hicolor/128x128/apps/$FLATPAK_ID.png
       
       - install -Dm00755 virtualxt.freedos $FLATPAK_DEST/bin/virtualxt.freedos
       - install -Dm00644 $FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
       - install -Dm00644 $FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
     sources:
       - type: archive
-        url: https://github.com/andreas-jonsson/virtualxt/archive/refs/tags/v0.6.1.tar.gz
-        sha256: 6619e16925ab488bc7ee09852d05c98f758050aef9c115eec70a283c9bdc04dc
+        url: https://github.com/andreas-jonsson/virtualxt/archive/refs/heads/0.7.tar.gz
+        sha256: 57907246146e196dcc129013c84b7c445b0ffabd7722971b07a1f9b1687644ab
 
       - type: file
         path: org.virtualxt.VirtualXT.appdata.xml
@@ -68,12 +59,3 @@ modules:
 
       - type: file
         path: virtualxt.freedos
-
-      - type: file
-        path: _modules.txt
-
-      - type: file
-        path: _go.sum
-
-      - type: file
-        path: _go.mod

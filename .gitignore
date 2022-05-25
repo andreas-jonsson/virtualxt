@@ -1,18 +1,64 @@
-*.dump
-*.prof
+# Prerequisites
+*.d
 
-tools/validator/clib/validator.h
-tools/validator/clib/validator.a
-tools/validator/clib/validator.dll
-tools/validator/clib/validator.lib
-*_validator.json
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
 
-tools/wasm/**/*.wasm
-tools/wasm/**/*.bin
-tools/wasm/**/*.img
+# Linker output
+*.ilk
+*.map
+*.exp
 
-tools/mount/freedos_hd
+# Precompiled Headers
+*.gch
+*.pch
 
-virtualxt.exe
-coverage.txt
-rsrc.syso
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+zig-cache
+zig-out
+kcov-out
+build
+docs
+test
+*.trace
+
+scrambler.asm
+scrambler.bin
+tools/vxtdrv/vxtdrv.com

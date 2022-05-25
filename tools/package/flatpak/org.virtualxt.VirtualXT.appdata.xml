@@ -46,7 +46,7 @@
   <update_contact>mail@andreasjonsson.se</update_contact>
 
   <releases>
-    <release version="0.6.1" date="2021-06-01"/>
+    <release version="0.7.0" date="2022-04-26"/>
   </releases>
 
   <!-- Generate the oars rating at: https://hughsie.github.io/oars/generate.html -->
