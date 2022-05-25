@@ -73,6 +73,7 @@ jobs:
           curl -L -o sdl.zip https://www.libsdl.org/release/SDL2-devel-${SDL2_VERSION}-VC.zip && unzip sdl.zip
           curl -L -o zig.zip https://ziglang.org/download/${ZIG_VERSION}/zig-windows-x86_64-${ZIG_VERSION}.zip && unzip -q zig.zip
           echo "${GITHUB_WORKSPACE}/zig-windows-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
 
       - name: Test
         run: zig build test
