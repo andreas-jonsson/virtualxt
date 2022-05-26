@@ -87,6 +87,7 @@ char *str_buffer = NULL;
 #define AUDIO_LATENCY 10
 
 SDL_AudioDeviceID audio_device = 0;
+SDL_AudioSpec audio_spec = {0};
 
 static void trigger_breakpoint(void) {
 	SDL_TriggerBreakpoint();
@@ -216,28 +217,21 @@ static int render_callback(int width, int height, const vxt_byte *rgba, void *us
 	}
 #endif
 
-static Uint32 audio_callback(Uint32 interval, void *param) {
-	int num_bytes = 0;
-	SDL_AudioSpec *spec = (SDL_AudioSpec*)param;
+static void audio_callback(void *udata, uint8_t *stream, int len) {
+	struct vxt_pirepheral **audio_sources = (struct vxt_pirepheral**)udata;
+	len /= 2;
+	
+	SYNC(
+		for (int i = 0; i < len; i++) {
+			vxt_word sample = vxtp_ppi_sample(audio_sources[0], audio_spec.freq);
+			if (audio_sources[1])
+				sample += vxtp_adlib_sample(audio_sources[1], audio_spec.freq);
 
-	static vxt_byte buffer[48000 * 2]; // TODO: Resize this dynamically.
-	assert((unsigned)(spec->channels * spec->channels) <= sizeof(buffer));
-
-	SYNC(num_bytes = vxtp_ppi_write_audio(spec->userdata, buffer, spec->freq, spec->channels, spec->samples));
-
-	if (num_bytes) {
-		SDL_LockAudioDevice(audio_device);
-		SDL_QueueAudio(audio_device, buffer, num_bytes);
-		SDL_UnlockAudioDevice(audio_device);
-	}
-	return interval;
-}
-
-static void enable_speaker(bool b) {
-	SDL_LockAudioDevice(audio_device);
-	SDL_ClearQueuedAudio(audio_device);
-	SDL_PauseAudioDevice(audio_device, b ? 0 : 1);
-	SDL_UnlockAudioDevice(audio_device);
+			((vxt_int16*)stream)[i] = sample;
+			if (audio_spec.channels > 1)
+				((vxt_int16*)stream)[++i] = sample;
+		}
+	);
 }
 
 static vxt_word pow2(vxt_word v) {
@@ -416,8 +410,9 @@ int ENTRY(int argc, char *argv[]) {
 
 	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, NULL);
 	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
-	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit, &enable_speaker, NULL);
+	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit);
 	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4);
+	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&vxt_clib_malloc);
 	struct vxt_pirepheral *joystick = NULL;
 
 	int i = 2;
@@ -444,6 +439,9 @@ int ENTRY(int argc, char *argv[]) {
 
 	if (num_sticks)
 		devices[i++] = joystick = vxtp_joystick_create(&vxt_clib_malloc, ustimer, sticks[0], sticks[1]);
+
+	if (!args.no_adlib)
+		devices[i++] = adlib;
 
 	devices[i++] = rom_ext;
 	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
@@ -542,21 +540,21 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 
-	SDL_TimerID audio_timer = 0;
-	SDL_AudioSpec obtained = {0};
+	struct vxt_pirepheral *audio_sources[2] = {ppi, adlib};
 
 	if (args.mute) {
 		printf("Audio is muted!\n");
 	} else {
-		SDL_AudioSpec desired = {.freq = AUDIO_FREQUENCY, .format = AUDIO_U8, .channels = 1, .samples = pow2((AUDIO_FREQUENCY / 1000) * AUDIO_LATENCY)};	
-		audio_device = SDL_OpenAudioDevice(NULL, false, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
-		SDL_PauseAudioDevice(audio_device, true);
+		SDL_AudioSpec spec = {0};
+		spec.freq = AUDIO_FREQUENCY;
+		spec.format = AUDIO_S16;
+		spec.channels = 1;
+		spec.samples = pow2((AUDIO_FREQUENCY / 1000) * AUDIO_LATENCY);
+		spec.userdata = audio_sources;
+		spec.callback = &audio_callback;
 
-		obtained.userdata = ppi;
-		if (!(audio_timer = SDL_AddTimer(1000 / (obtained.freq / obtained.samples), &audio_callback, &obtained))) {
-			printf("SDL_AddTimer failed!\n");
-			return -1;
-		}
+		audio_device = SDL_OpenAudioDevice(NULL, false, &spec, &audio_spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
+		SDL_PauseAudioDevice(audio_device, 0);
 	}
 
 	while (SDL_AtomicGet(&running)) {
@@ -691,10 +689,8 @@ int ENTRY(int argc, char *argv[]) {
 	if (network_timer)
 		SDL_RemoveTimer(network_timer);
 
-	if (audio_timer) {
-		SDL_RemoveTimer(audio_timer);
+	if (audio_device)
 		SDL_CloseAudioDevice(audio_device);
-	}
 
 	vxt_system_destroy(vxt);
 

@@ -186,11 +186,17 @@ pub fn build(b: *Builder) void {
 
     // -------- ini --------
 
-    const ini = b.addStaticLibrary("ini", null);
+    const ini = b.addStaticLibrary("ini", "lib/inih/ini.c");
     ini.setBuildMode(mode);
     ini.setTarget(target);
     ini.linkLibC();
-    ini.addCSourceFile("lib/inih/ini.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
+
+    // -------- nuked-opl3 --------
+
+    const opl3 = b.addStaticLibrary("nuked-opl3", "lib/nuked-opl3/opl3.c");
+    opl3.setBuildMode(mode);
+    opl3.setTarget(target);
+    opl3.linkLibC();
 
     // -------- microui --------
 
@@ -235,12 +241,17 @@ pub fn build(b: *Builder) void {
         pirepheral.addCSourceFile("lib/vxtp/joystick.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/post.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/rtc.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/adlib.c", opt);
 
         if (network) {
             pirepheral.defineCMacroRaw("VXTP_NETWORK");
             pirepheral.addCSourceFile("lib/vxtp/network.c", opt);
             pirepheral.linkSystemLibrary("pcap");
         }
+
+        pirepheral.linkLibrary(opl3);
+        pirepheral.defineCMacroRaw("VXTP_NUKED_OPL3");
+        pirepheral.addIncludeDir("lib/nuked-opl3");
     }
 
     // -------- virtualxt sdl --------
@@ -277,6 +288,8 @@ pub fn build(b: *Builder) void {
 
     exe_sdl.linkLibrary(ini);
     exe_sdl.addIncludeDir("lib/inih");
+
+    exe_sdl.linkLibrary(opl3); // Part of vxtp?
 
     exe_sdl.linkLibC();
 

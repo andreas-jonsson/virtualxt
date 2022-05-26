@@ -150,9 +150,9 @@ extern struct vxt_pirepheral *vxtp_pic_create(vxt_allocator *alloc);
 extern struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, long long (*ustics)(void));
 extern double vxtp_pit_get_frequency(struct vxt_pirepheral *p, int channel);
 
-extern struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit, void (*enable_spk)(bool), void *userdata);
+extern struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit);
 extern bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool force);
-extern int vxtp_ppi_write_audio(struct vxt_pirepheral *p, vxt_byte *buffer, int freq, int channels, int samples);
+extern vxt_int16 vxtp_ppi_sample(struct vxt_pirepheral *p, int freq);
 extern void vxtp_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data);
 
 extern struct vxt_pirepheral *vxtp_mda_create(vxt_allocator *alloc);
@@ -190,6 +190,9 @@ extern bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp
 extern struct vxt_pirepheral *vxtp_postcard_create(vxt_allocator *alloc);
 
 extern struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc);
+
+extern struct vxt_pirepheral *vxtp_adlib_create(vxt_allocator *alloc);
+extern vxt_int16 vxtp_adlib_sample(struct vxt_pirepheral *p, int freq);
 
 #ifdef VXTP_NETWORK
 	extern struct vxt_pirepheral *vxtp_network_create(vxt_allocator *alloc, int device);

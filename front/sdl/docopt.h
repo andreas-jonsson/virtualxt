@@ -93,6 +93,7 @@ struct DocoptArgs {
     size_t list;
     size_t manual;
     size_t mute;
+    size_t no_adlib;
     size_t version;
     /* options with arguments */
     char *bios;
@@ -106,7 +107,7 @@ struct DocoptArgs {
     char *vga;
     /* special */
     const char *usage_pattern;
-    const char *help_message[21];
+    const char *help_message[22];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

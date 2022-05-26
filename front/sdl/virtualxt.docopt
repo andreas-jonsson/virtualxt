@@ -8,6 +8,7 @@ Options:
   --halt                  Debugger will stop after first instruction.
   --hdboot                Prefer booting from harddrive.
   --mute                  Disable audio.
+  --no-adlib              Disable AdLib emulation.
   --list                  List network devices and IDs.
   --network=ID            Select network adapter.
   --joystick              Enable joystick support.

@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 21; j++)
+            for (j = 0; j < 22; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -249,6 +249,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->manual = option->value;
         } else if (strcmp(option->olong, "--mute") == 0) {
             args->mute = option->value;
+        } else if (strcmp(option->olong, "--no-adlib") == 0) {
+            args->no_adlib = option->value;
         } else if (strcmp(option->olong, "--version") == 0) {
             args->version = option->value;
         } else if (strcmp(option->olong, "--bios") == 0) {
@@ -309,7 +311,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *) "4.77",
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *) "4.77",
         NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
@@ -322,6 +324,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --halt                  Debugger will stop after first instruction.",
               "  --hdboot                Prefer booting from harddrive.",
               "  --mute                  Disable audio.",
+              "  --no-adlib              Disable AdLib emulation.",
               "  --list                  List network devices and IDs.",
               "  --network=ID            Select network adapter.",
               "  --joystick              Enable joystick support.",
@@ -347,6 +350,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--list", 0, 0, NULL},
         {"-m", "--manual", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
+        {NULL, "--no-adlib", 0, 0, NULL},
         {"-v", "--version", 0, 0, NULL},
         {NULL, "--bios", 1, 0, NULL},
         {NULL, "--config", 1, 0, NULL},
@@ -363,7 +367,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 18;
+    elements.n_options = 19;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;
