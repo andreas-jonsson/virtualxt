@@ -104,8 +104,15 @@ static void bootstrap(vxt_system *s, struct disk *c) {
 }
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    (void)p; (void)port;
-	return 0xFF;
+    VXT_DEC_DEVICE(c, disk, p);
+    switch (port) {
+        case 0xB0:
+            return (c->boot_drive >= 0x80) ? 0 : 0xFF;
+        case 0xB1:
+            return c->disks[vxt_system_registers(VXT_GET_SYSTEM(disk, p))->dl].fp ? 0 : 0xFF;
+        default:
+            return 0xFF;
+    }
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {

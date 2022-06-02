@@ -70,11 +70,29 @@ PUSH_POP(ax)
 PUSH_POP(bx)
 PUSH_POP(cx)
 PUSH_POP(dx)
-PUSH_POP(sp)
 PUSH_POP(bp)
 PUSH_POP(si)
 PUSH_POP(di)
 #undef PUSH_POP
+
+static void push_sp(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   #ifdef VXT_CPU_286
+      vxt_system_write_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp), p->regs.sp);
+      p->regs.sp -= 2;
+   #else
+      push(p, p->regs.sp);
+   #endif
+}
+
+static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   #ifdef VXT_CPU_286
+      p->regs.sp = vxt_system_read_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp));
+   #else
+      p->regs.sp = pop(p);
+   #endif
+}
 
 static void push_cs(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);

@@ -242,6 +242,7 @@ pub fn build(b: *Builder) void {
         pirepheral.addCSourceFile("lib/vxtp/post.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/rtc.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/adlib.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/fdc.c", opt);
 
         if (network) {
             pirepheral.defineCMacroRaw("VXTP_NETWORK");

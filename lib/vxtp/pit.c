@@ -113,8 +113,12 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
     VXT_DEC_DEVICE(c, pit, p);
 
     INT64 ticks = c->get_ticks();
-    struct channel *ch = c->channels;
+    if (vxt_system_registers(VXT_GET_SYSTEM(pit, p))->debug) {
+        c->ticks = c->device_ticks = ticks;
+        return VXT_NO_ERROR;
+    }
 
+    struct channel *ch = c->channels;
 	if (ch->enabled && (ch->frequency > 0.0)) {
 		INT64 next = 1000000ll / (INT64)ch->frequency;
 		if (ticks >= (c->ticks + next)) {

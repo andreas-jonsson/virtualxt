@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 22; j++)
+            for (j = 0; j < 23; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -235,6 +235,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             return EXIT_FAILURE;
         } else if (strcmp(option->olong, "--debug") == 0) {
             args->debug = option->value;
+        } else if (strcmp(option->olong, "--fdc") == 0) {
+            args->fdc = option->value;
         } else if (strcmp(option->olong, "--halt") == 0) {
             args->halt = option->value;
         } else if (strcmp(option->olong, "--hdboot") == 0) {
@@ -311,8 +313,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *) "4.77",
-        NULL, NULL, NULL, NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
+        "4.77", NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -326,6 +328,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --mute                  Disable audio.",
               "  --no-adlib              Disable AdLib emulation.",
               "  --list                  List network devices and IDs.",
+              "  --fdc                   Enable experimental floppy disk controller.",
               "  --network=ID            Select network adapter.",
               "  --joystick              Enable joystick support.",
               "  --config=PATH           Set config directory.",
@@ -343,6 +346,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
     };
     struct Option options[] = {
         {"-d", "--debug", 0, 0, NULL},
+        {NULL, "--fdc", 0, 0, NULL},
         {NULL, "--halt", 0, 0, NULL},
         {NULL, "--hdboot", 0, 0, NULL},
         {"-h", "--help", 0, 0, NULL},
@@ -367,7 +371,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 19;
+    elements.n_options = 20;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;

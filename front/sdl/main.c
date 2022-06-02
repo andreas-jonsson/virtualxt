@@ -409,6 +409,7 @@ int ENTRY(int argc, char *argv[]) {
 	if (!rom_ext) return -1;
 
 	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, NULL);
+	struct vxt_pirepheral *fdc = vxtp_fdc_create(&vxt_clib_malloc, 0x3F0, 6);
 	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
 	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit);
 	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4);
@@ -416,7 +417,7 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *joystick = NULL;
 
 	int i = 2;
-	struct vxt_pirepheral *devices[16] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
+	struct vxt_pirepheral *devices[32] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
 
 	struct video_adapter video = {0};
 	if (args.vga) {
@@ -443,18 +444,23 @@ int ENTRY(int argc, char *argv[]) {
 	if (!args.no_adlib)
 		devices[i++] = adlib;
 
-	devices[i++] = rom_ext;
+	if (args.fdc) {
+		devices[i++] = fdc;
+	} else {
+		devices[i++] = disk;
+		devices[i++] = rom_ext;
+	}
+	
 	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 	devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
+	devices[i++] = vxtp_rtc_create(&vxt_clib_malloc);
 	//devices[i++] = vxtp_ioext_create(&vxt_clib_malloc);
 	devices[i++] = pit;
 	devices[i++] = mouse;
-	devices[i++] = disk;
 	devices[i++] = ppi;
 	devices[i++] = video.device;
 
 	#ifdef VXT_CPU_286
-		devices[i++] = vxtp_rtc_create(&vxt_clib_malloc);
 		devices[i++] = vxtp_postcard_create(&vxt_clib_malloc);
 	#endif
 
@@ -513,11 +519,12 @@ int ENTRY(int argc, char *argv[]) {
 
 	if (args.floppy) {
 		FILE *fp = fopen(args.floppy, "rb+");
-		if (fp && (vxtp_disk_mount(disk, 0, fp) == VXT_NO_ERROR))
+		vxt_error (*mnt)(struct vxt_pirepheral*,int,FILE*) = args.fdc ? vxtp_fdc_mount : vxtp_disk_mount;
+		if (fp && (mnt(args.fdc ? fdc : disk, 0, fp) == VXT_NO_ERROR))
 			printf("Floppy image: %s\n", args.floppy);
 	}
 
-	if (args.harddrive) {
+	if (args.harddrive && !args.fdc) {
 		FILE *fp = fopen(args.harddrive, "rb+");
 		if (fp && (vxtp_disk_mount(disk, 128, fp) == VXT_NO_ERROR)) {
 			printf("Harddrive image: %s\n", args.harddrive);

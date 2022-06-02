@@ -35,7 +35,7 @@ VXT_PIREPHERAL(rtc, {
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     VXT_DEC_DEVICE(c, rtc, p);
-    if (port == 0x70)
+    if (!(port & 1))
         return c->addr;
 
     time_t t = time(NULL);
@@ -86,7 +86,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(c, rtc, p);
-    if (port == 0x70) {
+    if (!(port & 1)) {
         c->addr = data & 0x7F;
         if (c->addr >= CMOS_SIZE)
             c->addr = 0xD;
@@ -107,7 +107,11 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io(s, p, 0x70, 0x71);
+    #ifdef VXT_CPU_286
+        vxt_system_install_io(s, p, 0x70, 0x71);
+    #else
+        vxt_system_install_io(s, p, 0x240, 0x241);
+    #endif
     return VXT_NO_ERROR;
 }
 

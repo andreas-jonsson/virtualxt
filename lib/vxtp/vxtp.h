@@ -177,6 +177,10 @@ extern void vxtp_disk_set_boot_drive(struct vxt_pirepheral *p, int num);
 extern vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, FILE *fp);
 extern bool vxtp_disk_unmount(struct vxt_pirepheral *p, int num);
 
+extern struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word base, int irq);
+extern vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, FILE *fp);
+extern bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num);
+
 extern struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc);
 
 extern struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq);

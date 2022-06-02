@@ -86,6 +86,7 @@ struct DocoptArgs {
     
     /* options without arguments */
     size_t debug;
+    size_t fdc;
     size_t halt;
     size_t hdboot;
     size_t help;
@@ -107,7 +108,7 @@ struct DocoptArgs {
     char *vga;
     /* special */
     const char *usage_pattern;
-    const char *help_message[22];
+    const char *help_message[23];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

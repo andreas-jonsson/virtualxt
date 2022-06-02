@@ -10,6 +10,7 @@ Options:
   --mute                  Disable audio.
   --no-adlib              Disable AdLib emulation.
   --list                  List network devices and IDs.
+  --fdc                   Enable experimental floppy disk controller.
   --network=ID            Select network adapter.
   --joystick              Enable joystick support.
   --config=PATH           Set config directory.
