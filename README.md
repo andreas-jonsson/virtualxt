@@ -43,6 +43,11 @@ brew install virtualxt
 
 If you want to embed the emulator or create a custom frontend you can find libvxt API documentation [here](https://andreas-jonsson.github.io/virtualxt).
 
+## Validation
+
+A hardware validator was developed to ensure proper CPU behaviour.
+Some additional information about that can be found [here](https://hackaday.io/project/184209-virtualxt-hardware-validator).
+
 ## Screenshots
 
 ![bios screenshot](screenshots/bios.PNG)
