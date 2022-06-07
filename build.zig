@@ -223,6 +223,7 @@ pub fn build(b: *Builder) void {
         
         if (cpu286) {
             pirepheral.defineCMacroRaw("VXT_CPU_286");
+            pirepheral.defineCMacroRaw("VXTP_SYS_AT");
         } else if (cpuV20) {
             pirepheral.defineCMacroRaw("VXT_CPU_V20");
         }
@@ -300,6 +301,7 @@ pub fn build(b: *Builder) void {
 
     if (cpu286) {
         exe_sdl.defineCMacroRaw("VXT_CPU_286");
+        exe_sdl.defineCMacroRaw("VXTP_SYS_AT");
     } else if (cpuV20) {
         exe_sdl.defineCMacroRaw("VXT_CPU_V20");
     }

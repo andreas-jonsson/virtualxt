@@ -268,10 +268,10 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
             if (c->is_busy) {
                 LOGS("BUSY!");
                 status = MSR_MASK_BUSY;
-            } else if (c->fifo_len) {
-                status = MSR_MASK_DATAREG | MSR_MASK_DATAIO | MSR_MASK_BUSY;
             //} else if (c->command_len && (c->command_len < disk_command_size[*c->command & 0xF])) {
             //    status = MSR_MASK_DATAIO;
+            } else if (c->fifo_len) {
+                status = MSR_MASK_DATAREG | MSR_MASK_DATAIO | MSR_MASK_BUSY;
             }
 
             //if (c->command_len)
@@ -283,7 +283,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
                     status |= 1 << i;
             }
 
-            LOG("STATUS: 0x%X", status);
+            LOG("MSR: 0x%X", status);
             return status;
         }
         case 5: // Data Register
@@ -292,8 +292,10 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
             LOG("FIFO Read: 0x%X", data);
             return data;
         }
+        default:
+            LOG("Read port: 0x%X", port - c->base);
+            return 0;
     }
-    return 0;
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
@@ -303,10 +305,11 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             LOG("DOR: 0x%X", data);
         	c->drive_num = data & 0x3;
             c->status_reg0 = (c->status_reg0 & 0xFC) | c->drive_num;
-            c->status_reg3 = (enum status3)c->status_reg0;//(c->status_reg0 & 0xFC) | c->drive_num;
+            c->status_reg3 = (c->status_reg3 & 0xFC) | c->drive_num;
             c->use_dma = (data & DOR_MASK_DMA) != 0;
-            //if (!(c->dor_reg & DOR_MASK_RESET) && (data & DOR_MASK_RESET))
-            if (data & DOR_MASK_RESET)
+
+            // Only reset during flipp.
+            if (!(c->dor_reg & DOR_MASK_RESET) && (data & DOR_MASK_RESET))
                 controller_reset(c);
             c->dor_reg = data;
             break;
@@ -314,6 +317,8 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             LOG("Push command: 0x%X", data);
             push_command_byte(c, data);
             break;
+        default:
+            LOG("Write port: 0x%X", port - c->base);
     }
 }
 /*
@@ -415,6 +420,9 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     c->s = s;
     vxt_system_install_io(s, p, c->base, c->base + 5);
     vxt_system_install_io_at(s, p, c->base + 7);
+
+    c->dor_reg = DOR_MASK_RESET;
+
     return VXT_NO_ERROR;
 }
 
