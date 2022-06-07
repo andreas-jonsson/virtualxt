@@ -18,7 +18,9 @@ library of old application and games.
 * Keyboard controller with 83-key XT-style keyboard
 * Serial port with Microsoft 2-button mouse
 * Floppy and hard disk controller
+* AdLib Music Synthesizer
 * Ethernet adapter
+* Real Time Clock
 * PC speaker
 
 ## Build
