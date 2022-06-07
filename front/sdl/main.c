@@ -341,6 +341,10 @@ int ENTRY(int argc, char *argv[]) {
 	else
 		printf("CPU frequency: %.2f MHz\n", cpu_frequency);
 
+	#if !defined(_WIN32) && !defined(__APPLE__)
+		SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
+	#endif
+
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	SDL_SetHint(SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1");
