@@ -12,9 +12,9 @@ description: |
   VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.
   It is designed to be simple and lightweight yet still capable enough to run a large library of old application and games.
 
-base: core20
+base: core20 #core18
 grade: stable
-confinement: classic
+confinement: classic #strict
 
 parts:
   desktop:
@@ -58,9 +58,10 @@ parts:
     source: .
     plugin: nil
     override-build: |
+      snap install zig --classic --beta
       zig build -Drelease-fast
     build-packages: [gcc, pkg-config, libsdl2-dev, libpcap0.8-dev]
-    build-snaps: [zig/beta]
+    #build-snaps: [zig/beta]
     stage-packages:
       - libasound2
       - libasyncns0
