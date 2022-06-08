@@ -14,7 +14,7 @@ description: |
 
 base: core18
 grade: stable
-confinement: classic #strict
+confinement: strict
 
 parts:
   desktop:
