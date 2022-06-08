@@ -12,7 +12,7 @@ description: |
   VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.
   It is designed to be simple and lightweight yet still capable enough to run a large library of old application and games.
 
-base: core20 #core18
+base: core18
 grade: stable
 confinement: classic #strict
 
