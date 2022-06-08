@@ -101,8 +101,8 @@ apps:
   virtualxt:
     command: usr/bin/virtualxt.freedos
     desktop: usr/share/applications/virtualxt.desktop
-    extensions:
-      - gnome-3-28    # TODO: Using this extension because it seems to fix the issue of ALSA not findig config files.
+    #extensions:
+    #  - gnome-3-28    # TODO: Using this extension because it seems to fix the issue of ALSA not findig config files. (Requires core18)
     plugs:
       - desktop
       - desktop-legacy
