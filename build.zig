@@ -237,7 +237,7 @@ pub fn build(b: *Builder) void {
         pirepheral.addCSourceFile("lib/vxtp/mda.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/cga.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/vga.c", opt);
-        //pirepheral.addCSourceFile("lib/vxtp/ioext.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/rifs.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/mouse.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/joystick.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/post.c", opt);
