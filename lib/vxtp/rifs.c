@@ -81,7 +81,6 @@ struct dos_proc {
 #endif
 
 VXT_PIREPHERAL(rifs, {
-    int irq;
     vxt_word base_port;
     vxt_byte registers[8];
     bool dlab;
@@ -341,13 +340,12 @@ static const char *name(struct vxt_pirepheral *p) {
     return "RIFS Server";
 }
 
-struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, int irq) {
+struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(rifs));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(rifs));
     VXT_DEC_DEVICE(fs, rifs, p);
 
     fs->base_port = base_port;
-    fs->irq = irq;
 
     p->install = &install;
     p->destroy = &destroy;
