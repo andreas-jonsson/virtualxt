@@ -26,6 +26,9 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 
 #define BUFFER_SIZE 1024
+#define MAX_PATH_LEN 1024
+#define MAX_DOS_PROC 256
+#define MAX_OPEN_FILES 256
 
 VXT_PACK(struct rifs_packet {
     vxt_byte packetID[2];   // 'K', 'Y': Request from server.
@@ -62,42 +65,55 @@ enum {
     IFS_FINDFIRST,
     IFS_FINDNEXT,
     IFS_CLOSEALL,
-    IFS_EXTOPEN,
-    IFS_ENDOFLIST
+    IFS_EXTOPEN
 };
+
+struct dos_proc {
+    bool active;
+    vxt_word id;
+    FILE *files[MAX_OPEN_FILES];
+};
+
+#ifdef __linux__
+    #include "rifs_unix.h"
+#else
+    #include "rifs_dummy.h"
+#endif
 
 VXT_PIREPHERAL(rifs, {
     int irq;
     vxt_word base_port;
     vxt_byte registers[8];
+    bool dlab;
 
     vxt_byte buffer_input[BUFFER_SIZE];
     int buffer_input_len;
 
     vxt_byte buffer_output[BUFFER_SIZE];
     int buffer_output_len;
-})
-/*
-// Expects the 'length', 'cmd' and 'process_id' to be set by caller.
-static bool server_response(struct rifs *fs, struct rifs_packet *data) {
-    if (fs->buffer_input_len)
-        return false;
 
-    assert(data->length <= BUFFER_SIZE);
-    fs->buffer_input_len = data->length;
+    char path_scratchpad[MAX_PATH_LEN];
+    struct dos_proc processes[MAX_DOS_PROC];
+})
+
+// Expects the 'cmd' and 'process_id' to be set by caller.
+static void server_response(struct rifs *fs, const struct rifs_packet *pk, int payload_size) {
+    assert(!fs->buffer_input_len);
+
+    int size = payload_size + sizeof(struct rifs_packet);
+    assert(size <= BUFFER_SIZE);
+    fs->buffer_input_len = size;
 
     struct rifs_packet *dest = (struct rifs_packet*)fs->buffer_input;
-    memmov(dest, data, data->length);
+    memcpy(dest, pk, size);
+    dest->length = (vxt_word)size;
     dest->notlength = ~dest->length;
 
-    dest->packetID[0] = 'K'; dest->packetID[1] = 'Y';
+    dest->packetID[0] = 'L'; dest->packetID[1] = 'Y';
 
     dest->crc32 = 0;
     dest->crc32 = crc32(fs->buffer_input, dest->length);
-
-    return true;
 }
-*/
 
 static bool verify_packet(struct rifs_packet *pk) {
     vxt_word len = ~pk->notlength;
@@ -118,13 +134,119 @@ static bool verify_packet(struct rifs_packet *pk) {
     return true;
 }
 
-static void process_packet(struct rifs *fs, struct rifs_packet *pk) {
-    (void)fs;
+static const char *host_path(struct rifs *fs, const char *path) {
+    strcpy(fs->path_scratchpad, "/home/phix/dos_tmp/"); // Host root path.
+
+    // Remove drive letter.
+    if ((strlen(path) >= 2) && (path[1] == ':'))
+        path = path + 2;
+    else
+        fprintf(stderr, "RIFS path is not absolute!\n");
+       
+    strncat(fs->path_scratchpad, path, sizeof(fs->path_scratchpad));
+
+    // Convert slashes.
+    int ln = strlen(fs->path_scratchpad);
+    for (int i = 0; i < ln; i++) {
+        if (fs->path_scratchpad[i] == '\\')
+            fs->path_scratchpad[i] = '/';
+    }
+    return fs->path_scratchpad;
+}
+
+static struct dos_proc *get_proc(struct rifs *fs, vxt_word id) {
+    struct dos_proc *inactive = NULL;
+    for (int i = 0; i < MAX_DOS_PROC; i++) {
+        struct dos_proc *proc = &fs->processes[i];
+        if (!inactive && !proc->active)
+            inactive = proc;
+        if (proc->id == id && proc->active)
+            return proc;
+    }
+
+    // Create new proc.
+    inactive->id = id;
+    inactive->active = true;
+    memset(inactive->files, 0, sizeof(inactive->files));
+    return inactive;
+}
+
+static void process_request(struct rifs *fs, struct rifs_packet *pk) {
     int data_size = pk->length - sizeof(struct rifs_packet);
+    struct dos_proc *proc = get_proc(fs, pk->process_id);
+    if (!proc) {
+        fprintf(stderr, "To many RIFS procs!\n");
+        return;
+    }
 
     switch (pk->cmd) {
+        case IFS_RMDIR:
+            pk->cmd = rifs_rmdir(host_path(fs, (char*)pk->data));
+            server_response(fs, pk, 0);
+            break;
+        case IFS_MKDIR:
+            pk->cmd = rifs_mkdir(host_path(fs, (char*)pk->data));
+            server_response(fs, pk, 0);
+            break;
+        //case IFS_CLOSEFILE:
+        //    break;
+        //case IFS_READFILE:
+        //    break;
+        //case IFS_WRITEFILE:
+        //    break;
+        //case IFS_LOCKFILE:
+        //    break;
+        //case IFS_UNLOCKFILE:
+        //    break;
+        //case IFS_GETSPACE:
+        //    break;
+        //case IFS_SETATTR:
+        //    break;
+        //case IFS_GETATTR:
+        //    break;
+        case IFS_RENAMEFILE:
+        {
+            const char *new_name = (char*)pk->data + strlen((char*)pk->data) + 1;
+            pk->cmd = rifs_rename(host_path(fs, (char*)pk->data), new_name);
+            server_response(fs, pk, 0);
+            break;
+        }
+        case IFS_DELETEFILE:
+            pk->cmd = rifs_delete(host_path(fs, (char*)pk->data));
+            server_response(fs, pk, 0);
+            break;
+        case IFS_OPENFILE:
+            pk->cmd = 3;//rifs_openfile(proc, *(vxt_word*)pk->data, host_path(fs, (char*)pk->data + 2), pk->data);
+            server_response(fs, pk, pk->cmd ? 0 : 12);
+            break;
+        //case IFS_CREATEFILE:
+        //    break;
         case IFS_FINDFIRST:
-            printf("PATH: %s\n", pk->data+2);
+            printf("Find first: %s\n", pk->data+2);
+            break;
+        case IFS_CLOSEALL:
+            for (int i = 0; i < MAX_DOS_PROC; i++) {
+                if (proc->id == fs->processes[i].id) {
+                    proc->active = false;
+                    for (int j = 0; j < MAX_OPEN_FILES; j++) {
+                        FILE **fp = &proc->files[j];
+                        if (*fp) {
+                            fclose(*fp);
+                            *fp = NULL;
+                        }
+                    }
+                    break;
+                }
+            }
+            pk->cmd = 0;
+            server_response(fs, pk, 0);
+            break;
+        //case IFS_EXTOPEN:
+        //    break;
+        case IFS_CHDIR:
+        case IFS_COMMITFILE:
+            pk->cmd = 0;
+            server_response(fs, pk, 0);
             break;
         default:
             fprintf(stderr, "Unknown RIFS command: 0x%X (payload size %d)\n", pk->cmd, data_size);
@@ -144,6 +266,8 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 	vxt_word reg = port & 7;
 	switch (reg) {
         case 0: // Serial Data Register
+            if (fs->dlab)
+                return fs->registers[reg];
             return fs->buffer_input_len ? pop_data(p) : 0;
         case 5: // Line Status Register
         {
@@ -163,6 +287,9 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 
 	switch (reg) {
         case 0: // Serial Data Register
+            if (fs->dlab)
+                return;
+
             if (fs->buffer_output_len >= BUFFER_SIZE) {
                 fprintf(stderr, "Invalid RIFS buffer state!\n");
                 fs->buffer_output_len = 0;
@@ -175,13 +302,19 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
                 if (p->length == fs->buffer_output_len) { // Is packet ready?
                     fs->buffer_output_len = 0;
                     if (verify_packet(p))
-                        process_packet(fs, p);
+                        process_request(fs, p);
                 }
             }
             break;
         case 3: // Line Control Register
-            fprintf(stderr, "LCR write! Assume RIFS state reset.\n");
-            fs->buffer_output_len = fs->buffer_input_len = 0;
+            {
+                bool dlab = data & 0x80;
+                if (fs->dlab != dlab) {
+                    fs->dlab = dlab;
+                    fs->buffer_output_len = fs->buffer_input_len = 0;
+                    fprintf(stderr, "DLAB change! Assume RIFS state reset.\n");
+                }
+            }
             break;
     }
 }
