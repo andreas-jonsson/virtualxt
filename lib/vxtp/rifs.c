@@ -25,7 +25,7 @@ freely, subject to the following restrictions:
 #include <string.h>
 #include <stdio.h>
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 0x10000
 #define MAX_PATH_LEN 1024
 #define MAX_DOS_PROC 256
 #define MAX_OPEN_FILES 256
@@ -187,22 +187,84 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             pk->cmd = rifs_mkdir(host_path(fs, (char*)pk->data));
             server_response(fs, pk, 0);
             break;
-        //case IFS_CLOSEFILE:
-        //    break;
-        //case IFS_READFILE:
-        //    break;
+        case IFS_CLOSEFILE:
+        {
+            vxt_word idx = *(vxt_word*)pk->data;
+            if (idx >= MAX_OPEN_FILES) {
+                pk->cmd = 6; // Invalid handle
+            } else {
+                pk->cmd = 0;
+                fclose(proc->files[idx]);
+            }
+            proc->files[idx] = NULL;
+            server_response(fs, pk, 0);
+            break;
+        }
+        case IFS_READFILE:
+        {
+            volatile vxt_word *dest = (vxt_word*)pk->data;
+            volatile vxt_word idx = *dest; dest += 2;
+            volatile vxt_dword pos = *dest; dest += 4;
+            volatile vxt_word ln = *dest;
+
+            *(vxt_word*)pk->data = 0;
+
+            FILE *fp = proc->files[idx];
+            if ((idx >= MAX_OPEN_FILES) || !fp) {
+                pk->cmd = 6; // Invalid handle
+                server_response(fs, pk, 2);
+                break;
+            }
+            
+            if (fseek(fp, (long)pos, SEEK_SET)) {
+                pk->cmd = 0x19; // Seek error
+                server_response(fs, pk, 2);
+                break;
+            }
+
+            assert((ln + 2) <= (BUFFER_SIZE - sizeof(struct rifs_packet)));
+            size_t res = fread(pk->data + 2, 1, (size_t)ln, fp);
+            if ((res != (size_t)ln) && !feof(fp)) {
+                pk->cmd = 0x1E; // Read fault
+                server_response(fs, pk, 2);
+                break;
+            }
+
+            pk->cmd = 0;
+            *(vxt_word*)pk->data = (vxt_word)res;
+            server_response(fs, pk, res + 2);
+            break;
+        }
         //case IFS_WRITEFILE:
         //    break;
-        //case IFS_LOCKFILE:
-        //    break;
-        //case IFS_UNLOCKFILE:
-        //    break;
-        //case IFS_GETSPACE:
-        //    break;
-        //case IFS_SETATTR:
-        //    break;
-        //case IFS_GETATTR:
-        //    break;
+        case IFS_GETSPACE:
+        {
+            // We just fake this and say we always have 63Mb of free space. :D
+
+            vxt_word *dest = (vxt_word*)pk->data;
+            dest[0] = 63; // Available clusters
+            dest[1] = 64; // Total clusters
+            dest[2] = 1024; // Bytes per sector
+            dest[3] = 1024; // Sectors per cluster
+
+            pk->cmd = 0;
+            server_response(fs, pk, 8);
+            break;
+        }
+        case IFS_SETATTR:
+            pk->cmd = rifs_exists(host_path(fs, (char*)pk->data + 2)) ? 0 : 2;
+            server_response(fs, pk, 0);
+            break;
+        case IFS_GETATTR:
+            if (rifs_exists(host_path(fs, (char*)pk->data))) {
+                pk->cmd = 0;
+                *(vxt_word*)pk->data = 0;
+                server_response(fs, pk, 2);
+            } else {
+                pk->cmd = 2;
+                server_response(fs, pk, 0);
+            }
+            break;
         case IFS_RENAMEFILE:
         {
             const char *new_name = (char*)pk->data + strlen((char*)pk->data) + 1;
@@ -215,7 +277,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             server_response(fs, pk, 0);
             break;
         case IFS_OPENFILE:
-            pk->cmd = 3;//rifs_openfile(proc, *(vxt_word*)pk->data, host_path(fs, (char*)pk->data + 2), pk->data);
+            pk->cmd = rifs_openfile(proc, *(vxt_word*)pk->data, host_path(fs, (char*)pk->data + 2), pk->data);
             server_response(fs, pk, pk->cmd ? 0 : 12);
             break;
         //case IFS_CREATEFILE:
@@ -244,6 +306,8 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
         //    break;
         case IFS_CHDIR:
         case IFS_COMMITFILE:
+        case IFS_LOCKFILE:
+        case IFS_UNLOCKFILE:
             pk->cmd = 0;
             server_response(fs, pk, 0);
             break;

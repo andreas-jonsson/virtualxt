@@ -27,6 +27,8 @@ freely, subject to the following restrictions:
 #include <unistd.h>
 #include <sys/stat.h>
 
+#define COPY_VALUE(ptr, src, ty) { ty v = (src); memcpy((ptr), &v, sizeof(ty)); }
+
 static bool case_path(char const *path, char *new_path)
 {
     char *p = strcpy(alloca(strlen(path) + 1), path);
@@ -81,6 +83,43 @@ static bool case_path(char const *path, char *new_path)
     if (dir)
         closedir(dir);
     return true;
+}
+
+static bool rifs_exists(const char *path) {
+    char *new_path = alloca(strlen(path) + 2);
+    if (case_path(path, new_path))
+        return access(path, F_OK) == 0;
+    return false;
+}
+
+static vxt_dword get_file_size(FILE *fp) {
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    return (size > 0xFFFF) ? 0 : (vxt_word)size;
+}
+
+static vxt_word rifs_openfile(struct dos_proc *proc, vxt_word attrib, const char *path, vxt_byte *data) {
+    char *new_path = alloca(strlen(path) + 2);
+    if (case_path(path, new_path)) {
+        for (vxt_word i = 0; i < MAX_OPEN_FILES; i++) {
+            FILE *fp = proc->files[i];
+            if (!fp) {
+                fp = proc->files[i] = fopen(new_path, attrib ? "rb+" : "rb");
+                if (!fp)
+                    return 2; // File not found
+
+                *(vxt_word*)data = i; data += 2; // FP
+                *(vxt_word*)data = attrib; data += 2; // Attribute
+                *(vxt_word*)data = 0; data += 2; // Time
+                *(vxt_word*)data = 0; data += 2; // Date
+                COPY_VALUE(data, get_file_size(fp), vxt_dword); // Size
+                return 0;
+            }
+        }
+        return 4; // Too many open files
+    }
+    return 2; // File not found
 }
 
 static vxt_word rifs_rmdir(const char *path) {

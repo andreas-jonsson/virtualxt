@@ -20,6 +20,11 @@ freely, subject to the following restrictions:
 
 #include "vxtp.h"
 
+static bool rifs_exists(const char *path) {
+    (void)path;
+    return false;
+}
+
 static vxt_word rifs_rmdir(const char *path) {
     (void)path;
     return 0;
