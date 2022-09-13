@@ -114,7 +114,7 @@ static const char *sprint(const char *fmt, ...) {
 	return str_buffer;
 }
 
-static const char *getline() {
+static const char *mgetline() {
 	static char buffer[1024] = {0};
 	char *str = fgets(buffer, sizeof(buffer), stdin);
 	for (char *p = str; *p; p++) {
@@ -146,11 +146,21 @@ static int open_url(const char *url) {
 }
 
 static bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) {
-	char *name = tmpnam(NULL);
-	if (!name)
-		return false;
-	
-	FILE *tmpf = fopen(name, "wb");
+	#ifdef __APPLE__
+		int fh;
+		char name[128] = {0};
+		strncpy(name, "disasm.XXXXXX", sizeof(name) - 1);
+		fh = mkstemp(name);
+		if (fh == -1)
+			return false;
+		FILE *tmpf = fdopen(fh, "wb");
+	#else
+		char *name = tmpnam(NULL);
+		if (!name)
+			return false;
+		FILE *tmpf = fopen(name, "wb");
+	#endif
+
 	if (!tmpf)
 		return false;
 
@@ -402,7 +412,7 @@ int ENTRY(int argc, char *argv[]) {
 
 	struct vxt_pirepheral *dbg = NULL;
 	if (args.debug) {
-		struct vxtu_debugger_interface dbgif = {&pdisasm, &getline, &printf};
+		struct vxtu_debugger_interface dbgif = {&pdisasm, &mgetline, &printf};
 		dbg = vxtu_debugger_create(&vxt_clib_malloc, &dbgif);
 	}
 
