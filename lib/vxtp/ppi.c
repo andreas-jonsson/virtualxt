@@ -122,7 +122,7 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
     VXT_DEC_DEVICE(c, ppi, p);
     c->command_port |= COMMAND_READY;
     if (c->keyboard_enable) {
-        if (c->queue_size) {
+        if (c->queue_size && !(c->command_port & DATA_READY)) {
             c->command_port |= DATA_READY;
             c->data_port = (vxt_byte)c->queue[0];
             memmove(c->queue, &c->queue[1], --c->queue_size);
