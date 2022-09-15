@@ -202,21 +202,21 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
         }
         case IFS_READFILE:
         {
-            volatile vxt_word *dest = (vxt_word*)pk->data;
-            volatile vxt_word idx = *dest; dest += 2;
-            volatile vxt_dword pos = *dest; dest += 4;
-            volatile vxt_word ln = *dest;
+            vxt_word *dest = (vxt_word*)pk->data;
+            vxt_word idx = *dest; dest++;
+            vxt_dword pos = (((vxt_dword)dest[0]) << 16) | (vxt_dword)dest[1]; dest += 2;
+            vxt_word ln = *dest;
 
             *(vxt_word*)pk->data = 0;
 
-            FILE *fp = proc->files[idx];
-            if ((idx >= MAX_OPEN_FILES) || !fp) {
+            if (idx >= MAX_OPEN_FILES) {
                 pk->cmd = 6; // Invalid handle
                 server_response(fs, pk, 2);
                 break;
             }
-            
-            if (fseek(fp, (long)pos, SEEK_SET)) {
+
+            FILE *fp = proc->files[idx];
+            if (!fp || fseek(fp, (long)pos, SEEK_SET)) {
                 pk->cmd = 0x19; // Seek error
                 server_response(fs, pk, 2);
                 break;
@@ -235,11 +235,49 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             server_response(fs, pk, res + 2);
             break;
         }
-        //case IFS_WRITEFILE:
-        //    break;
+        case IFS_WRITEFILE:
+        {
+            vxt_word *src = (vxt_word*)pk->data;
+            vxt_word idx = *src; src++;
+            vxt_dword pos = (((vxt_dword)src[0]) << 16) | (vxt_dword)src[1]; src += 2;
+            vxt_word ln = *src; src++;
+
+            if (idx >= MAX_OPEN_FILES) {
+                pk->cmd = 6; // Invalid handle
+                *(vxt_word*)pk->data = 0;
+                server_response(fs, pk, 2);
+                break;
+            }
+            
+            FILE *fp = proc->files[idx];
+            if (fp && (ln == 0)) {
+                pos = 0;
+                fp = freopen(NULL, "wb+", fp);
+            }
+
+            if (!fp || fseek(fp, (long)pos, SEEK_SET)) {
+                pk->cmd = 0x19; // Seek error
+                *(vxt_word*)pk->data = 0;
+                server_response(fs, pk, 2);
+                break;
+            }
+
+            size_t res = fwrite(src, 1, (size_t)ln, fp);
+            *(vxt_word*)pk->data = (vxt_word)res;
+
+            if (res != (size_t)ln) {
+                pk->cmd = 0x1D; // Write fault
+                server_response(fs, pk, 2);
+                break;
+            }
+
+            pk->cmd = 0;
+            server_response(fs, pk, 2);
+            break;
+        }
         case IFS_GETSPACE:
         {
-            // We just fake this and say we always have 63Mb of free space. :D
+            // TODO: We just fake this and say we always have 63Mb of free space. :D
 
             vxt_word *dest = (vxt_word*)pk->data;
             dest[0] = 63; // Available clusters
@@ -261,7 +299,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
                 *(vxt_word*)pk->data = 0;
                 server_response(fs, pk, 2);
             } else {
-                pk->cmd = 2;
+                pk->cmd = 2; // File not found
                 server_response(fs, pk, 0);
             }
             break;
@@ -280,11 +318,14 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             pk->cmd = rifs_openfile(proc, *(vxt_word*)pk->data, host_path(fs, (char*)pk->data + 2), pk->data);
             server_response(fs, pk, pk->cmd ? 0 : 12);
             break;
-        //case IFS_CREATEFILE:
-        //    break;
-        case IFS_FINDFIRST:
-            printf("Find first: %s\n", pk->data+2);
+        case IFS_CREATEFILE:
+            pk->cmd = rifs_openfile(proc, 1, host_path(fs, (char*)pk->data + 2), pk->data);
+            server_response(fs, pk, pk->cmd ? 0 : 12);
             break;
+        //case IFS_FINDFIRST:
+        //    break;
+        //case IFS_FINDNEXT:
+        //    break;
         case IFS_CLOSEALL:
             for (int i = 0; i < MAX_DOS_PROC; i++) {
                 if (proc->id == fs->processes[i].id) {
@@ -313,6 +354,8 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             break;
         default:
             fprintf(stderr, "Unknown RIFS command: 0x%X (payload size %d)\n", pk->cmd, data_size);
+            pk->cmd = 0x16; // Unknown command
+            server_response(fs, pk, 0);
     }
 }
 

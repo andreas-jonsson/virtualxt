@@ -29,8 +29,7 @@ freely, subject to the following restrictions:
 
 #define COPY_VALUE(ptr, src, ty) { ty v = (src); memcpy((ptr), &v, sizeof(ty)); }
 
-static bool case_path(char const *path, char *new_path)
-{
+static bool case_path(char const *path, char *new_path) {
     char *p = strcpy(alloca(strlen(path) + 1), path);
     int new_path_ln = 0;
     
@@ -88,7 +87,7 @@ static bool case_path(char const *path, char *new_path)
 static bool rifs_exists(const char *path) {
     char *new_path = alloca(strlen(path) + 2);
     if (case_path(path, new_path))
-        return access(path, F_OK) == 0;
+        return access(new_path, F_OK) == 0;
     return false;
 }
 
@@ -105,7 +104,12 @@ static vxt_word rifs_openfile(struct dos_proc *proc, vxt_word attrib, const char
         for (vxt_word i = 0; i < MAX_OPEN_FILES; i++) {
             FILE *fp = proc->files[i];
             if (!fp) {
-                fp = proc->files[i] = fopen(new_path, attrib ? "rb+" : "rb");
+                const char *mode = "rb+";
+                if (attrib == 0)
+                    mode = "rb";
+                else if (attrib == 1)
+                    mode = "wb";
+                fp = proc->files[i] = fopen(new_path, mode);
                 if (!fp)
                     return 2; // File not found
 
@@ -119,7 +123,7 @@ static vxt_word rifs_openfile(struct dos_proc *proc, vxt_word attrib, const char
         }
         return 4; // Too many open files
     }
-    return 2; // File not found
+    return 3; // Path not found
 }
 
 static vxt_word rifs_rmdir(const char *path) {
@@ -145,8 +149,9 @@ static vxt_word rifs_rename(const char *from, const char *to) {
     if (case_path(from, new_path)) {
         if (!rename(new_path, to))
             return 0;
+        return 2; // File not found
     }
-    return 2; // File not found
+    return 3; // Path not found
 }
 
 static vxt_word rifs_delete(const char *path) {
@@ -154,6 +159,7 @@ static vxt_word rifs_delete(const char *path) {
     if (case_path(path, new_path)) {
         if (!remove(new_path))
             return 0;
+        return 2; // File not found
     }
-    return 2; // File not found
+    return 3; // Path not found
 }
