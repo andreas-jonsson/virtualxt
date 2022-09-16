@@ -20,27 +20,50 @@ freely, subject to the following restrictions:
 
 #include "vxtp.h"
 
+#define CLOSE_DIR(p)
+
 static bool rifs_exists(const char *path) {
     (void)path;
     return false;
 }
 
+static const char *rifs_copy_root(char *dest, const char *path) {
+    (void)path;
+    *dest = 0;
+    return NULL;
+}
+
+static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
+    (void)proc; (void)data;
+    return 0x16;
+}
+
+static vxt_word rifs_findfirst(struct dos_proc *proc, const char *path, vxt_byte *data) {
+    (void)proc; (void)path; (void)data;
+    return 0x16;
+}
+
+static vxt_word rifs_openfile(struct dos_proc *proc, vxt_word attrib, const char *path, vxt_byte *data) {
+    (void)proc; (void)attrib; (void)path; (void)data;
+    return 0x16;
+}
+
 static vxt_word rifs_rmdir(const char *path) {
     (void)path;
-    return 0;
+    return 0x16;
 }
 
 static vxt_word rifs_mkdir(const char *path) {
     (void)path;
-    return 0;
+    return 0x16;
 }
 
 static vxt_word rifs_rename(const char *from, const char *to) {
     (void)from; (void)to;
-    return 0;
+    return 0x16;
 }
 
 static vxt_word rifs_delete(const char *path) {
     (void)path;
-    return 0;
+    return 0x16;
 }

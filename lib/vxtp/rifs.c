@@ -72,17 +72,20 @@ struct dos_proc {
     bool active;
     vxt_word id;
     FILE *files[MAX_OPEN_FILES];
+    void *dir_it;
+    char dir_pattern[13];
 };
 
 #ifdef __linux__
-    #include "rifs_unix.h"
+    #include "rifs_unix.inl"
 #else
-    #include "rifs_dummy.h"
+    #include "rifs_dummy.inl"
 #endif
 
 VXT_PIREPHERAL(rifs, {
     vxt_word base_port;
     vxt_byte registers[8];
+    const char root_path[MAX_PATH_LEN];
     bool dlab;
 
     vxt_byte buffer_input[BUFFER_SIZE];
@@ -134,7 +137,7 @@ static bool verify_packet(struct rifs_packet *pk) {
 }
 
 static const char *host_path(struct rifs *fs, const char *path) {
-    strcpy(fs->path_scratchpad, "/home/phix/dos_tmp/"); // Host root path.
+    strncpy(fs->path_scratchpad, fs->root_path, sizeof(fs->path_scratchpad));
 
     // Remove drive letter.
     if ((strlen(path) >= 2) && (path[1] == ':'))
@@ -322,11 +325,16 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             pk->cmd = rifs_openfile(proc, 1, host_path(fs, (char*)pk->data + 2), pk->data);
             server_response(fs, pk, pk->cmd ? 0 : 12);
             break;
-        //case IFS_FINDFIRST:
-        //    break;
-        //case IFS_FINDNEXT:
-        //    break;
+        case IFS_FINDFIRST:
+            pk->cmd = rifs_findfirst(proc, host_path(fs, (char*)pk->data + 2), pk->data);
+            server_response(fs, pk, pk->cmd ? 0 : 43);
+            break;
+        case IFS_FINDNEXT:
+            pk->cmd = rifs_findnext(proc, pk->data);
+            server_response(fs, pk, pk->cmd ? 0 : 43);
+            break;
         case IFS_CLOSEALL:
+            CLOSE_DIR(proc);
             for (int i = 0; i < MAX_DOS_PROC; i++) {
                 if (proc->id == fs->processes[i].id) {
                     proc->active = false;
@@ -438,6 +446,9 @@ static vxt_error destroy(struct vxt_pirepheral *p) {
 
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(fs, rifs, p);
+
+    // TODO
+
     vxt_memclear(fs->registers, sizeof(fs->registers));
     return VXT_NO_ERROR;
 }
@@ -447,12 +458,13 @@ static const char *name(struct vxt_pirepheral *p) {
     return "RIFS Server";
 }
 
-struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port) {
+struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(rifs));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(rifs));
     VXT_DEC_DEVICE(fs, rifs, p);
 
     fs->base_port = base_port;
+    rifs_copy_root(fs->root_path, root);
 
     p->install = &install;
     p->destroy = &destroy;

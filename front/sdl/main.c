@@ -454,11 +454,13 @@ int ENTRY(int argc, char *argv[]) {
 		devices[i++] = disk;
 		devices[i++] = rom_ext;
 	}
+
+	if (args.rifs)
+		devices[i++] = vxtp_rifs_create(&vxt_clib_malloc, 0x178, args.rifs);
 	
 	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 	devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
 	devices[i++] = vxtp_rtc_create(&vxt_clib_malloc);
-	devices[i++] = vxtp_rifs_create(&vxt_clib_malloc, 0x178);
 	devices[i++] = pit;
 	devices[i++] = mouse;
 	devices[i++] = ppi;
