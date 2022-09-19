@@ -22,6 +22,7 @@ freely, subject to the following restrictions:
 
 #include <alloca.h>
 #include <strings.h>
+#include <strings.h>
 #include <dirent.h>
 #include <errno.h>
 #include <unistd.h>
@@ -110,27 +111,23 @@ static bool rifs_exists(const char *path) {
 }
 
 static const char *rifs_copy_root(char *dest, const char *path) {
-    const char *file_name = NULL;
-    const char *abs_path = realpath(path, NULL);
+    struct stat s;
+    if (!stat(path, &s)) {
+        if (!S_ISDIR(s.st_mode)) {
+            const char *file_name;
+            if ((file_name = strrchr(path, '/'))) {
+                file_name++; // Remove leading '/'
+                assert(*file_name);
+            } else {
+                file_name = path;
+            }
 
-    if (abs_path) {
-        FILE *fp = fopen(abs_path, "r");
-        if (fp) {
-            fclose(fp);
-            file_name = strrchr(path, '/');
-            assert(file_name);
-
-            file_name++; // Remove leading '/'
-            assert(*file_name);
-
-            // TODO: Modify path and remove filename.
+            strncpy(dest, path, strlen(path) - strlen(file_name));
+            if (*dest == 0)
+                strcpy(dest, "./");
+            return file_name;
         }
-        strncpy(dest, abs_path, MAX_PATH_LEN);
-        free(abs_path);
-        return file_name;
     }
-
-    fprintf(stderr, "WARNING: Could not resolve absolut path: %s\n", path);
     strncpy(dest, path, MAX_PATH_LEN);
     return NULL;
 }

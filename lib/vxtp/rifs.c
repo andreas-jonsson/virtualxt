@@ -85,7 +85,7 @@ struct dos_proc {
 VXT_PIREPHERAL(rifs, {
     vxt_word base_port;
     vxt_byte registers[8];
-    const char root_path[MAX_PATH_LEN];
+    char root_path[MAX_PATH_LEN];
     bool dlab;
 
     vxt_byte buffer_input[BUFFER_SIZE];
@@ -253,10 +253,10 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             }
             
             FILE *fp = proc->files[idx];
-            if (fp && (ln == 0)) {
-                pos = 0;
-                fp = freopen(NULL, "wb+", fp);
-            }
+            //if (fp && (ln == 0)) {
+            //    pos = 0;
+            //    fp = freopen(NULL, "wb+", fp);
+            //}
 
             if (!fp || fseek(fp, (long)pos, SEEK_SET)) {
                 pk->cmd = 0x19; // Seek error
@@ -446,9 +446,16 @@ static vxt_error destroy(struct vxt_pirepheral *p) {
 
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(fs, rifs, p);
-
-    // TODO
-
+    for (int i = 0; i < MAX_DOS_PROC; i++) {
+        struct dos_proc *proc = &fs->processes[i];
+        if (proc->active) {
+            for (int j = 0; j < MAX_OPEN_FILES; j++) {
+                if (proc->files[j])
+                    fclose(proc->files[j]);
+            }
+            CLOSE_DIR(proc);
+        }
+    }
     vxt_memclear(fs->registers, sizeof(fs->registers));
     return VXT_NO_ERROR;
 }
@@ -464,6 +471,7 @@ struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port
     VXT_DEC_DEVICE(fs, rifs, p);
 
     fs->base_port = base_port;
+    // TODO: Add autoexec.
     rifs_copy_root(fs->root_path, root);
 
     p->install = &install;
