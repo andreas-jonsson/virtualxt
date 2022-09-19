@@ -13,6 +13,7 @@ Options:
   --fdc                   Enable experimental floppy disk controller.
   --network=ID            Select network adapter.
   --joystick              Enable joystick support.
+  --rifs=PATH             Enable experimental RIFS support. (Shared folders)
   --config=PATH           Set config directory.
   --bios=FILE             BIOS binary.
   --extension=FILE        VirtualXT BIOS extension binary.

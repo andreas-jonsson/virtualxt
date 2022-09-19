@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/virtualxt",
-            "args": [],
+            "args": ["--mute"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

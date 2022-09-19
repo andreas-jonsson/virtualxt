@@ -426,7 +426,7 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *fdc = vxtp_fdc_create(&vxt_clib_malloc, 0x3F0, 6);
 	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
 	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit);
-	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4);
+	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4); // COM1
 	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&vxt_clib_malloc);
 	struct vxt_pirepheral *joystick = NULL;
 
@@ -464,11 +464,13 @@ int ENTRY(int argc, char *argv[]) {
 		devices[i++] = disk;
 		devices[i++] = rom_ext;
 	}
+
+	if (args.rifs)
+		devices[i++] = vxtp_rifs_create(&vxt_clib_malloc, 0x178, args.rifs);
 	
 	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 	devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
 	devices[i++] = vxtp_rtc_create(&vxt_clib_malloc);
-	//devices[i++] = vxtp_ioext_create(&vxt_clib_malloc);
 	devices[i++] = pit;
 	devices[i++] = mouse;
 	devices[i++] = ppi;

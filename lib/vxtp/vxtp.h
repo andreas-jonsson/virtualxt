@@ -186,7 +186,7 @@ extern struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc);
 extern struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq);
 extern bool vxtp_mouse_push_event(struct vxt_pirepheral *p, const struct vxtp_mouse_event *ev);
 
-extern struct vxt_pirepheral *vxtp_ioext_create(vxt_allocator *alloc);
+extern struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root);
 
 extern struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, long long (*ustics)(void), void *stick_a, void *stick_b);
 extern bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp_joystick_event *ev);
