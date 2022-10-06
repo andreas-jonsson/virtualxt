@@ -32,7 +32,7 @@
 
 #include <ini.h>
 
-#if defined(_WIN32) || defined(__APPLE__)
+#ifdef _WIN32
 	#include <SDL.h>
 #else
 	#include <SDL2/SDL.h>
