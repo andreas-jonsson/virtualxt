@@ -72,8 +72,13 @@ struct dos_proc {
     bool active;
     vxt_word id;
     FILE *files[MAX_OPEN_FILES];
+    
+    bool is_root;
+    vxt_word find_attrib;
+
     void *dir_it;
     char dir_pattern[13];
+    char dir_path[MAX_PATH_LEN];
 };
 
 #ifdef __linux__
@@ -188,6 +193,10 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             break;
         case IFS_MKDIR:
             pk->cmd = rifs_mkdir(host_path(fs, (char*)pk->data));
+            server_response(fs, pk, 0);
+            break;
+        case IFS_CHDIR:
+            pk->cmd = rifs_exists(host_path(fs, (char*)pk->data)) ? 0 : 3;
             server_response(fs, pk, 0);
             break;
         case IFS_CLOSEFILE:
@@ -326,7 +335,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             server_response(fs, pk, pk->cmd ? 0 : 12);
             break;
         case IFS_FINDFIRST:
-            pk->cmd = rifs_findfirst(proc, host_path(fs, (char*)pk->data + 2), pk->data);
+            pk->cmd = rifs_findfirst(proc, *(vxt_word*)pk->data, host_path(fs, (char*)pk->data + 2), strcmp("Z:\\????????.???", (char*)pk->data + 2) == 0, pk->data);
             server_response(fs, pk, pk->cmd ? 0 : 43);
             break;
         case IFS_FINDNEXT:
@@ -353,7 +362,6 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             break;
         //case IFS_EXTOPEN:
         //    break;
-        case IFS_CHDIR:
         case IFS_COMMITFILE:
         case IFS_LOCKFILE:
         case IFS_UNLOCKFILE:

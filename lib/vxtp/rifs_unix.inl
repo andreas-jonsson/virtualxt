@@ -21,9 +21,8 @@ freely, subject to the following restrictions:
 #include "vxtp.h"
 
 #include <alloca.h>
-#include <strings.h>
-#include <strings.h>
 #include <dirent.h>
+#include <strings.h>
 #include <errno.h>
 #include <unistd.h>
 #include <libgen.h>
@@ -93,16 +92,23 @@ static vxt_dword get_fp_size(FILE *fp) {
     fseek(fp, 0, SEEK_SET);
     return (size > 0xFFFF) ? 0 : (vxt_word)size;
 }
-/*
-static vxt_dword get_file_size(const char *name) {
-    FILE *fp = fopen(name, "r");
-    if (!fp)
-        return 0;
-    vxt_dword size = get_fp_size(fp);
-    fclose(fp);
-    return size;
+
+static bool pattern_comp(const char *pattern, const char *name, bool root) {
+    // TODO: Improve this! Might only work in FreeDOS.
+    // Reference: https://devblogs.microsoft.com/oldnewthing/20071217-00/?p=24143
+
+    if (!strcmp(name, ".") || !strcmp(name, "..")) {
+        if (root)
+            return false;
+    } else if (*name == '.') {
+        return false;
+    }
+
+    if (!strcmp(pattern, "????????.???"))
+        return true;
+    return !strcasecmp(pattern, name);
 }
-*/
+
 static bool rifs_exists(const char *path) {
     char *new_path = alloca(strlen(path) + 2);
     if (case_path(path, new_path))
@@ -132,24 +138,28 @@ static const char *rifs_copy_root(char *dest, const char *path) {
     return NULL;
 }
 
-static bool pattern_comp(const char *pattern, const char *name) {
-    // TODO: Improve this! Might only work in FreeDOS.
-    // Reference: https://devblogs.microsoft.com/oldnewthing/20071217-00/?p=24143
-    if (!strcmp(name, ".") || !strcmp(name, ".."))
-        return false;
-    if (!strcmp(pattern, "????????.???"))
-        return true;
-    return !strcasecmp(pattern, name);
-}
-
 static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
     if (proc->dir_it) {
+        char *full_path = alloca(MAX_PATH_LEN);
+
         for (struct dirent *dire = readdir((DIR*)proc->dir_it); dire; dire = readdir((DIR*)proc->dir_it)) {
-            if (pattern_comp(proc->dir_pattern, dire->d_name)) {
-                // Reference: https://www.stanislavs.org/helppc/int_21-4e.html
+            if (pattern_comp(proc->dir_pattern, dire->d_name, proc->is_root)) {
                 memset(data, 0, 43);
-                // TODO: Need to provide full path.
-                //*(vxt_word*)&data[0x1A] = get_file_size(dire->d_name);
+                snprintf(full_path, MAX_PATH_LEN, "%s/%s", proc->dir_path, dire->d_name);
+
+                // Reference: https://www.stanislavs.org/helppc/int_21-4e.html
+            
+                struct stat stbuf;
+                stat(full_path, &stbuf);
+
+                if (S_ISDIR(stbuf.st_mode) && !(proc->find_attrib & 0x10))
+                    continue;
+
+                data[0x15] = S_ISDIR(stbuf.st_mode) ? 0x10 : 0x0;
+
+                snprintf(full_path, MAX_PATH_LEN, "%s/%s", proc->dir_path, dire->d_name);
+                *(vxt_word*)&data[0x1A] = (vxt_word)(((stbuf.st_size > 0xFFFF) || !S_ISREG(stbuf.st_mode)) ? 0xFFFF : stbuf.st_size);
+
                 strncpy((char*)&data[0x1E], dire->d_name, 13);
                 return 0;
             }
@@ -159,12 +169,18 @@ static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
     return 12; // No more files
 }
 
-static vxt_word rifs_findfirst(struct dos_proc *proc, const char *path, vxt_byte *data) {
+static vxt_word rifs_findfirst(struct dos_proc *proc, vxt_word attrib, const char *path, bool root, vxt_byte *data) {
     CLOSE_DIR(proc);
     char *new_path = alloca(strlen(path) + 2);
+
     if (case_path(path, new_path)) {
         const char *pattern = strrchr(path, '/'); // Use path because dirname may modify new_path.
-        if ((proc->dir_it = opendir(dirname(new_path)))) {
+        const char *dir_path = dirname(new_path);
+        
+        if ((proc->dir_it = opendir(dir_path))) {
+            proc->is_root = root;
+            proc->find_attrib = attrib;
+            strncpy(proc->dir_path, dir_path, sizeof(proc->dir_path));
             pattern = pattern ? pattern + 1 : "????????.???";
             strncpy(proc->dir_pattern, pattern, sizeof(proc->dir_pattern));
             return rifs_findnext(proc, data);
