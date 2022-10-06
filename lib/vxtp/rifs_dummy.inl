@@ -39,7 +39,7 @@ static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
 }
 
 static vxt_word rifs_findfirst(struct dos_proc *proc, vxt_word attrib, const char *path, bool root, vxt_byte *data) {
-    (void)proc; (void)path; (void)data;
+    (void)proc; (void)attrib; (void)path; (void)root; (void)data;
     return 0x16;
 }
 
