@@ -92,6 +92,7 @@ VXT_PIREPHERAL(rifs, {
     vxt_byte registers[8];
     char root_path[MAX_PATH_LEN];
     bool dlab;
+    bool readonly;
 
     vxt_byte buffer_input[BUFFER_SIZE];
     int buffer_input_len;
@@ -186,12 +187,20 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
         return;
     }
 
+    #define BREAK_RO(size) {                    \
+        if (fs->readonly) {                     \
+            pk->cmd = 5;                        \
+            server_response(fs, pk, (size));    \
+            break;                              \
+        }                                       \
+    }                                           \
+
     switch (pk->cmd) {
-        case IFS_RMDIR:
+        case IFS_RMDIR: BREAK_RO(0)
             pk->cmd = rifs_rmdir(host_path(fs, (char*)pk->data));
             server_response(fs, pk, 0);
             break;
-        case IFS_MKDIR:
+        case IFS_MKDIR: BREAK_RO(0)
             pk->cmd = rifs_mkdir(host_path(fs, (char*)pk->data));
             server_response(fs, pk, 0);
             break;
@@ -247,7 +256,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             server_response(fs, pk, res + 2);
             break;
         }
-        case IFS_WRITEFILE:
+        case IFS_WRITEFILE: BREAK_RO(2)
         {
             vxt_word *src = (vxt_word*)pk->data;
             vxt_word idx = *src; src++;
@@ -301,7 +310,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             server_response(fs, pk, 8);
             break;
         }
-        case IFS_SETATTR:
+        case IFS_SETATTR: BREAK_RO(0)
             pk->cmd = rifs_exists(host_path(fs, (char*)pk->data + 2)) ? 0 : 2;
             server_response(fs, pk, 0);
             break;
@@ -315,22 +324,27 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
                 server_response(fs, pk, 0);
             }
             break;
-        case IFS_RENAMEFILE:
+        case IFS_RENAMEFILE: BREAK_RO(0)
         {
             const char *new_name = (char*)pk->data + strlen((char*)pk->data) + 1;
             pk->cmd = rifs_rename(host_path(fs, (char*)pk->data), new_name);
             server_response(fs, pk, 0);
             break;
         }
-        case IFS_DELETEFILE:
+        case IFS_DELETEFILE: BREAK_RO(0)
             pk->cmd = rifs_delete(host_path(fs, (char*)pk->data));
             server_response(fs, pk, 0);
             break;
         case IFS_OPENFILE:
+            if (fs->readonly && (*(vxt_word*)pk->data == 1)) {
+                pk->cmd = 5;
+                server_response(fs, pk, 0);
+                break;
+            }
             pk->cmd = rifs_openfile(proc, *(vxt_word*)pk->data, host_path(fs, (char*)pk->data + 2), pk->data);
             server_response(fs, pk, pk->cmd ? 0 : 12);
             break;
-        case IFS_CREATEFILE:
+        case IFS_CREATEFILE: BREAK_RO(0)
             pk->cmd = rifs_openfile(proc, 1, host_path(fs, (char*)pk->data + 2), pk->data);
             server_response(fs, pk, pk->cmd ? 0 : 12);
             break;
@@ -373,6 +387,8 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             pk->cmd = 0x16; // Unknown command
             server_response(fs, pk, 0);
     }
+
+    #undef BREAK_RO
 }
 
 static vxt_byte pop_data(struct vxt_pirepheral *p) {
@@ -473,11 +489,15 @@ static const char *name(struct vxt_pirepheral *p) {
     return "RIFS Server";
 }
 
-struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root) {
+struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root, bool ro) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(rifs));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(rifs));
     VXT_DEC_DEVICE(fs, rifs, p);
 
+    if (!ro)
+        printf("WARNING: '%s' is writable from guest!\n", root);
+
+    fs->readonly = ro;
     fs->base_port = base_port;
     // TODO: Add autoexec.
     rifs_copy_root(fs->root_path, root);

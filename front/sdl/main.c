@@ -340,6 +340,9 @@ int ENTRY(int argc, char *argv[]) {
 		args.harddrive = SDL_getenv("VXT_DEFAULT_HD_IMAGE");
 		if (!args.harddrive) args.harddrive = "boot/freedos_hd.img";
 	}
+	
+	if (!args.rifs)
+		args.rifs = ".";
 
 	args.debug |= args.halt;
 	if (args.debug)
@@ -465,9 +468,12 @@ int ENTRY(int argc, char *argv[]) {
 		devices[i++] = rom_ext;
 	}
 
-	if (args.rifs)
-		devices[i++] = vxtp_rifs_create(&vxt_clib_malloc, 0x178, args.rifs);
-	
+	if (args.rifs) {
+		bool ro = *args.rifs != '*';
+		const char *root = ro ? args.rifs : &args.rifs[1];
+		devices[i++] = vxtp_rifs_create(&vxt_clib_malloc, 0x178, root, ro);
+	}
+
 	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 	devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
 	devices[i++] = vxtp_rtc_create(&vxt_clib_malloc);
