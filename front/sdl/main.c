@@ -268,7 +268,7 @@ static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 	}
 	vxt_clib_malloc(data, 0);
 
-	printf("Loaded BIOS @ 0x%X: %s\n", base, path);
+	printf("Loaded BIOS @ 0x%X-0x%X: %s\n", base, base + size - 1, path);
 	return rom;
 }
 
