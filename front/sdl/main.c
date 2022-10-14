@@ -293,7 +293,16 @@ static int load_config(void *user, const char *section, const char *name, const 
 }
 
 int ENTRY(int argc, char *argv[]) {
+	// This is a hack because there seems to be a bug in DocOpt
+	// that prevents us from adding trailing parameters.
+	char *rifs_path = NULL;
+	if ((argc == 2) && (*argv[1] != '-')) {
+		rifs_path = argv[1];
+		argc = 1;
+	}
+
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
+	args.rifs = rifs_path ? rifs_path : args.rifs;
 
 	if (args.manual) {
 		const char *path = SDL_getenv("VXT_DEFAULT_MANUAL_INDEX");
@@ -331,8 +340,6 @@ int ENTRY(int argc, char *argv[]) {
 			return -1;
 		}
 	}
-
-	// TODO: Read 'args' in to config struct and use that instead. 
 
 	if (!args.bios) {
 		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
