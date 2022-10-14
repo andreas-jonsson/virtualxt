@@ -23,6 +23,7 @@ freely, subject to the following restrictions:
 #include <alloca.h>
 #include <dirent.h>
 #include <strings.h>
+#include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
 #include <libgen.h>
@@ -151,16 +152,33 @@ static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
             
                 struct stat stbuf;
                 stat(full_path, &stbuf);
+                bool is_dir = S_ISDIR(stbuf.st_mode);
 
-                if (S_ISDIR(stbuf.st_mode) && !(proc->find_attrib & 0x10))
+                if (is_dir && !(proc->find_attrib & 0x10))
                     continue;
 
-                data[0x15] = S_ISDIR(stbuf.st_mode) ? 0x10 : 0x0;
+                data[0x15] = is_dir ? 0x10 : 0x0;
 
                 snprintf(full_path, MAX_PATH_LEN, "%s/%s", proc->dir_path, dire->d_name);
                 *(vxt_word*)&data[0x1A] = (vxt_word)(((stbuf.st_size > 0xFFFF) || !S_ISREG(stbuf.st_mode)) ? 0xFFFF : stbuf.st_size);
 
-                strncpy((char*)&data[0x1E], dire->d_name, 13);
+                char *dst = (char*)&data[0x1E];
+                int ln = (int)strlen(dire->d_name);
+                int max_ln = is_dir ? 8 : 12;
+                int cap_ln = (ln > max_ln) ? max_ln : ln;
+                memset(dst, 0, 13);
+
+                for (int i = 0; i < cap_ln; i++)
+                    dst[i] = (vxt_byte)toupper(dire->d_name[i]);
+                if (ln > max_ln) {
+                    dst[7] = '~';
+                    if (!is_dir) {
+                        dst[8] = '.';
+                        dst[9] = (char)toupper(dire->d_name[ln - 3]);
+                        dst[10] = (char)toupper(dire->d_name[ln - 2]);
+                        dst[11] = (char)toupper(dire->d_name[ln - 1]);
+                    }
+                }
                 return 0;
             }
         }

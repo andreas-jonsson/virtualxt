@@ -225,7 +225,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
         {
             vxt_word *dest = (vxt_word*)pk->data;
             vxt_word idx = *dest; dest++;
-            vxt_dword pos = (((vxt_dword)dest[0]) << 16) | (vxt_dword)dest[1]; dest += 2;
+            vxt_dword pos = (((vxt_dword)dest[1]) << 16) | (vxt_dword)dest[0]; dest += 2;
             vxt_word ln = *dest;
 
             *(vxt_word*)pk->data = 0;
@@ -260,7 +260,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
         {
             vxt_word *src = (vxt_word*)pk->data;
             vxt_word idx = *src; src++;
-            vxt_dword pos = (((vxt_dword)src[0]) << 16) | (vxt_dword)src[1]; src += 2;
+            vxt_dword pos = (((vxt_dword)src[1]) << 16) | (vxt_dword)src[0]; src += 2;
             vxt_word ln = *src; src++;
 
             if (idx >= MAX_OPEN_FILES) {
@@ -494,6 +494,7 @@ struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(rifs));
     VXT_DEC_DEVICE(fs, rifs, p);
 
+    // This is still a beta feature. Be safe!
     if (!ro)
         printf("WARNING: '%s' is writable from guest!\n", root);
 

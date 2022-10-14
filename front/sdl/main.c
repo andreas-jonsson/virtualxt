@@ -49,6 +49,11 @@ struct video_adapter {
 	int (*render)(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 };
 
+struct ini_config {
+	struct DocoptArgs *args;
+};
+struct ini_config config = {0};
+
 FILE *trace_op_output = NULL;
 FILE *trace_offset_output = NULL;
 
@@ -274,6 +279,16 @@ static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 
 static int load_config(void *user, const char *section, const char *name, const char *value) {
 	(void)user; (void)section; (void)name; (void)value;
+	struct ini_config *config = (struct ini_config*)user;
+	if (!strcmp("debug", section)) {
+		if (!strcmp("debugger", name))
+			config->args->debug = atoi(value);
+		else if (!strcmp("halt", name))
+			config->args->halt = atoi(value);
+	} else if (!strcmp("rifs", section)) {
+		if (!strcmp("detatch", name) && (atoi(value) != 0))
+			config->args->rifs = NULL;
+	}
 	return 0;
 }
 
@@ -296,7 +311,7 @@ int ENTRY(int argc, char *argv[]) {
 		args.config = SDL_GetPrefPath("virtualxt", "VirtualXT-SDL");
 		if (!args.config) {
 			printf("No config path!\n");
-			return -1;		
+			return -1;
 		}
 	}
 	printf("Config path: %s\n", args.config);
@@ -305,14 +320,13 @@ int ENTRY(int argc, char *argv[]) {
 	base_path = base_path ? base_path : "./";
 	printf("Base path: %s\n", base_path);
 
-	// NOTE: Only exit on errors from here on.
-
 	{
 		const char *path = sprint("%s/config.ini", args.config);
 		FILE *fp = fopen(path, "a");
 		if (fp) fclose(fp);
 
-		if (ini_parse(path, &load_config, NULL) < 0) {
+		config.args = &args;
+		if (ini_parse(path, &load_config, &config) < 0) {
 			printf("Can't open: %s\n", path);
 			return -1;
 		}
