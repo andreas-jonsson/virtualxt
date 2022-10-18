@@ -24,6 +24,7 @@ freely, subject to the following restrictions:
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #define BUFFER_SIZE 0x10000
 #define MAX_PATH_LEN 1024
@@ -80,6 +81,20 @@ struct dos_proc {
     char dir_pattern[13];
     char dir_path[MAX_PATH_LEN];
 };
+
+static void time_and_data(time_t *mod_time, vxt_word *time_out, vxt_word *date_out) {
+    struct tm *timeinfo = localtime(mod_time);
+    if (time_out) {
+        *time_out = (timeinfo->tm_hour & 0x1F) << 11;
+        *time_out |= (timeinfo->tm_min & 0x3F) << 5;
+        *time_out |= (timeinfo->tm_sec / 2) & 0x1F;
+    }
+    if (date_out) {
+        *date_out = ((timeinfo->tm_year - 80) & 0x7F) << 9;
+        *date_out |= ((timeinfo->tm_mon + 1) & 0xF) << 5;
+        *date_out |= timeinfo->tm_mday & 0x1F;
+    }
+}
 
 #ifdef __linux__
     #include "rifs_unix.inl"
