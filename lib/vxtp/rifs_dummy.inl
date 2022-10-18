@@ -35,6 +35,8 @@ static const char *rifs_copy_root(char *dest, const char *path) {
 
 static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
     (void)proc; (void)data;
+    time_t t = time(NULL);
+    time_and_data(&t, NULL, NULL);
     return 0x16;
 }
 
