@@ -4,6 +4,7 @@ var vxt_8h =
     [ "vxt_step", "structvxt__step.html", "structvxt__step" ],
     [ "vxt_io", "structvxt__io.html", "structvxt__io" ],
     [ "vxt_pic", "structvxt__pic.html", "structvxt__pic" ],
+    [ "vxt_dma", "structvxt__dma.html", "structvxt__dma" ],
     [ "vxt_pirepheral", "structvxt__pirepheral.html", "structvxt__pirepheral" ],
     [ "vxt_validator", "structvxt__validator.html", "structvxt__validator" ],
     [ "NULL", "vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4", null ],

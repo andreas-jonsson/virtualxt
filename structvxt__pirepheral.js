@@ -1,6 +1,7 @@
 var structvxt__pirepheral =
 [
     [ "destroy", "structvxt__pirepheral.html#aa43cee629beb19a47cd0fb42a097c008", null ],
+    [ "dma", "structvxt__pirepheral.html#ad3431325202fbfcc97b55cecd561fa05", null ],
     [ "install", "structvxt__pirepheral.html#a4fab5e6d319b14c6ba7fbf3605376e8d", null ],
     [ "io", "structvxt__pirepheral.html#ae56deb98874bb6d0463e2213be8137a0", null ],
     [ "name", "structvxt__pirepheral.html#abc41e5af11264b1449a4b5f1b088790d", null ],

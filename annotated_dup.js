@@ -1,5 +1,6 @@
 var annotated_dup =
 [
+    [ "vxt_dma", "structvxt__dma.html", "structvxt__dma" ],
     [ "vxt_io", "structvxt__io.html", "structvxt__io" ],
     [ "vxt_pic", "structvxt__pic.html", "structvxt__pic" ],
     [ "vxt_pirepheral", "structvxt__pirepheral.html", "structvxt__pirepheral" ],
