@@ -211,6 +211,11 @@ struct vxt_pic {
     int (*next)(struct vxt_pirepheral*);
 };
 
+struct vxt_dma {
+    vxt_byte (*read)(struct vxt_pirepheral*,vxt_byte);
+    void (*write)(struct vxt_pirepheral*,vxt_byte,vxt_byte);
+};
+
 /// Represents a IO or memory mapped device.
 struct vxt_pirepheral {
 	vxt_error (*install)(vxt_system*,struct vxt_pirepheral*);
@@ -222,6 +227,7 @@ struct vxt_pirepheral {
 
     struct vxt_io io;
     struct vxt_pic pic;
+    struct vxt_dma dma;
 };
 
 /// @private

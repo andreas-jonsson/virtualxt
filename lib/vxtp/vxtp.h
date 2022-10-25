@@ -182,8 +182,6 @@ extern vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, FILE *fp);
 extern bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num);
 
 extern struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc);
-extern vxt_byte vxtp_dma_read(struct vxt_pirepheral *p, vxt_byte ch);
-extern void vxtp_dma_write(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte data);
 
 extern struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq);
 extern bool vxtp_mouse_push_event(struct vxt_pirepheral *p, const struct vxtp_mouse_event *ev);

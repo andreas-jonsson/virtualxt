@@ -175,17 +175,8 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(dma));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(dma));
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->reset = &reset;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
+static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
+    (void)p; return VXT_PCLASS_DMA;
 }
 
 static void update_count(struct dma* const c, vxt_byte ch) {
@@ -198,7 +189,7 @@ static void update_count(struct dma* const c, vxt_byte ch) {
     }
 }
 
-vxt_byte vxtp_dma_read(struct vxt_pirepheral *p, vxt_byte ch) {
+static vxt_byte dma_read(struct vxt_pirepheral *p, vxt_byte ch) {
     VXT_DEC_DEVICE(c, dma, p);
     ch &= 3;
     vxt_byte res = vxt_system_read_byte(VXT_GET_SYSTEM(dma, p), c->channel[ch].page + c->channel[ch].addr);
@@ -206,9 +197,25 @@ vxt_byte vxtp_dma_read(struct vxt_pirepheral *p, vxt_byte ch) {
     return res;
 }
 
-void vxtp_dma_write(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte data) {
+static void dma_write(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte data) {
     VXT_DEC_DEVICE(c, dma, p);
     ch &= 3;
     vxt_system_write_byte(VXT_GET_SYSTEM(dma, p), c->channel[ch].page + c->channel[ch].addr, data);
     update_count(c, ch);
+}
+
+struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc) {
+    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(dma));
+    vxt_memclear(p, VXT_PIREPHERAL_SIZE(dma));
+
+    p->install = &install;
+    p->destroy = &destroy;
+    p->name = &name;
+    p->pclass = &pclass;
+    p->reset = &reset;
+    p->io.in = &in;
+    p->io.out = &out;
+    p->dma.read = &dma_read;
+    p->dma.write = &dma_write;
+    return p;
 }
