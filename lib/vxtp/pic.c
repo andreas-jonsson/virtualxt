@@ -80,13 +80,19 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 static int next(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, pic, p);
     vxt_byte has = c->request_reg & (~c->mask_reg);
-	if (has) {
-        for (vxt_byte i = 0; i < 8; i++) {
-            if ((has >> i) & 1) {
-                c->request_reg ^= (1 << i);
-                c->service_reg |= (1 << i);
-                return (int)c->icw[2] + i;
-            }
+
+    for (vxt_byte i = 0; i < 8; i++) {
+        vxt_byte mask = 1 << i;
+        if (!(has & mask))
+            continue;
+        
+        if ((c->request_reg & mask) && !(c->service_reg & mask)) {
+            c->request_reg ^= mask;
+            c->service_reg |= mask;
+
+            if (!(c->icw[4] & 2)) // Not auto EOI?
+                c->service_reg |= mask;
+            return (int)c->icw[2] + i;
         }
     }
     return -1;
