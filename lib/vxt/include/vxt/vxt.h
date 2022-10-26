@@ -199,7 +199,7 @@ enum vxt_pclass {
 
 struct vxt_pirepheral;
 
-/// Represents a IO or memory mapped device.
+/// Interface for ISA bus devices.
 struct vxt_pirepheral {
 	vxt_error (*install)(vxt_system*,struct vxt_pirepheral*);
     vxt_error (*destroy)(struct vxt_pirepheral*);
