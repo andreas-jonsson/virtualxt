@@ -114,6 +114,7 @@ extern "C" {
     x(2, VXT_INVALID_REGISTER_PACKING,  "invalid register size or packing")     \
     x(3, VXT_USER_TERMINATION,          "user requested termination")           \
     x(4, VXT_NO_PIC,                    "could not find interrupt controller")  \
+    x(5, VXT_NO_DMA,                    "could not find dma controller")        \
 
 #define _VXT_ERROR_ENUM(id, name, text) name = id,
 typedef enum {_VXT_ERROR_CODES(_VXT_ERROR_ENUM) _VXT_NUM_ERRORS} vxt_error;
@@ -198,36 +199,33 @@ enum vxt_pclass {
 
 struct vxt_pirepheral;
 
-struct vxt_io {
-    vxt_byte (*in)(struct vxt_pirepheral*,vxt_word);
-    void (*out)(struct vxt_pirepheral*,vxt_word,vxt_byte);
-
-    vxt_byte (*read)(struct vxt_pirepheral*,vxt_pointer);
-    void (*write)(struct vxt_pirepheral*,vxt_pointer,vxt_byte);
-};
-
-struct vxt_pic {
-    void (*irq)(struct vxt_pirepheral*,int);
-    int (*next)(struct vxt_pirepheral*);
-};
-
-struct vxt_dma {
-    vxt_byte (*read)(struct vxt_pirepheral*,vxt_byte);
-    void (*write)(struct vxt_pirepheral*,vxt_byte,vxt_byte);
-};
-
 /// Represents a IO or memory mapped device.
 struct vxt_pirepheral {
 	vxt_error (*install)(vxt_system*,struct vxt_pirepheral*);
     vxt_error (*destroy)(struct vxt_pirepheral*);
     vxt_error (*reset)(struct vxt_pirepheral*);
+
     const char* (*name)(struct vxt_pirepheral*);
     enum vxt_pclass (*pclass)(struct vxt_pirepheral*);
     vxt_error (*step)(struct vxt_pirepheral*,int);
 
-    struct vxt_io io;
-    struct vxt_pic pic;
-    struct vxt_dma dma;
+    struct {
+        vxt_byte (*in)(struct vxt_pirepheral*,vxt_word);
+        void (*out)(struct vxt_pirepheral*,vxt_word,vxt_byte);
+
+        vxt_byte (*read)(struct vxt_pirepheral*,vxt_pointer);
+        void (*write)(struct vxt_pirepheral*,vxt_pointer,vxt_byte);
+    } io;
+
+    struct {
+        void (*irq)(struct vxt_pirepheral*,int);
+        int (*next)(struct vxt_pirepheral*);
+    } pic;
+
+    struct {
+        vxt_byte (*read)(struct vxt_pirepheral*,vxt_byte);
+        void (*write)(struct vxt_pirepheral*,vxt_byte,vxt_byte);
+    } dma;
 };
 
 /// @private
