@@ -207,8 +207,11 @@ static int emu_loop(void *ptr) {
 			num_cycles += res.cycles;
 		);
 
-		if (cpu_frequency > 0.0)
-			while (((SDL_GetPerformanceCounter() - start) / (SDL_GetPerformanceFrequency() / (Uint64)(cpu_frequency * 1000000.0))) < (Uint64)res.cycles);
+		while (cpu_frequency > 0.0) {
+			Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)(cpu_frequency * 1000000.0);
+			if (!f || (((SDL_GetPerformanceCounter() - start) / f) >= (Uint64)res.cycles))
+				break;
+		}
 		start = SDL_GetPerformanceCounter();
 	}
 	return 0;
