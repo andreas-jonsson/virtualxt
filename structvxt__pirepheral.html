@@ -59,7 +59,7 @@ $(document).ready(function(){initNavTree('structvxt__pirepheral.html',''); initR
 </div><!--header-->
 <div class="contents">
 
-<p>Represents a IO or memory mapped device.  
+<p>Interface for ISA bus devices.  
  <a href="structvxt__pirepheral.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="vxt_8h_source.html">vxt.h</a>&gt;</code></p>
@@ -78,15 +78,40 @@ Data Fields</h2></td></tr>
 <tr class="separator:a7ad68d04ad11b8d4412ea93580fd54cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aedbdd9b0cbbf731bb83c4d92b0192f03"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047">vxt_error</a>(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__pirepheral.html#aedbdd9b0cbbf731bb83c4d92b0192f03">step</a> )(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *, int)</td></tr>
 <tr class="separator:aedbdd9b0cbbf731bb83c4d92b0192f03"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae56deb98874bb6d0463e2213be8137a0"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structvxt__io.html">vxt_io</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__pirepheral.html#ae56deb98874bb6d0463e2213be8137a0">io</a></td></tr>
-<tr class="separator:ae56deb98874bb6d0463e2213be8137a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2162a2eca268a28d83762f50dafdedb2"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structvxt__pic.html">vxt_pic</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__pirepheral.html#a2162a2eca268a28d83762f50dafdedb2">pic</a></td></tr>
-<tr class="separator:a2162a2eca268a28d83762f50dafdedb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad3431325202fbfcc97b55cecd561fa05"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structvxt__dma.html">vxt_dma</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__pirepheral.html#ad3431325202fbfcc97b55cecd561fa05">dma</a></td></tr>
-<tr class="separator:ad3431325202fbfcc97b55cecd561fa05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f42b0560f8092c64d7b3963a1f19620"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a5cd2674f2b58b4fbeaa731fb91e75b7a"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>(*&#160;&#160;&#160;<a class="el" href="structvxt__pirepheral.html#a5cd2674f2b58b4fbeaa731fb91e75b7a">in</a> )(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> <br class="typebreak" />
+&#160;&#160;&#160;&#160;&#160;&#160;*, <a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a>)</td></tr>
+<tr class="separator:a5cd2674f2b58b4fbeaa731fb91e75b7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0391a6eae2cb1084406f76f473cb491"><td class="memItemLeft" >&#160;&#160;&#160;void(*&#160;&#160;&#160;<a class="el" href="structvxt__pirepheral.html#ad0391a6eae2cb1084406f76f473cb491">out</a> )(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> <br class="typebreak" />
+&#160;&#160;&#160;&#160;&#160;&#160;*, <a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a>, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>)</td></tr>
+<tr class="separator:ad0391a6eae2cb1084406f76f473cb491"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5cd7dbdc2ea7080362190862887912d3"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>(*&#160;&#160;&#160;<a class="el" href="structvxt__pirepheral.html#a2784eb740cdc546d44db538ae40446d0">read</a> )(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> <br class="typebreak" />
+&#160;&#160;&#160;&#160;&#160;&#160;*, <a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>)</td></tr>
+<tr class="separator:a5cd7dbdc2ea7080362190862887912d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2bf18a3a3ba3e27f2798701c8859c9e1"><td class="memItemLeft" >&#160;&#160;&#160;void(*&#160;&#160;&#160;<a class="el" href="structvxt__pirepheral.html#ab3fdb007808955c19d519a89bf296129">write</a> )(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> <br class="typebreak" />
+&#160;&#160;&#160;&#160;&#160;&#160;*, <a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>)</td></tr>
+<tr class="separator:a2bf18a3a3ba3e27f2798701c8859c9e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f42b0560f8092c64d7b3963a1f19620"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__pirepheral.html#a3f42b0560f8092c64d7b3963a1f19620">io</a></td></tr>
+<tr class="separator:a3f42b0560f8092c64d7b3963a1f19620"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac8dbc46af64245ff400978f8237bf93"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:aabfd5e7dd6558a91f8d8132b2fe019c7"><td class="memItemLeft" >&#160;&#160;&#160;void(*&#160;&#160;&#160;<a class="el" href="structvxt__pirepheral.html#aabfd5e7dd6558a91f8d8132b2fe019c7">irq</a> )(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *, int)</td></tr>
+<tr class="separator:aabfd5e7dd6558a91f8d8132b2fe019c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9732ff8a0557a3d40c84daa6055d2ccb"><td class="memItemLeft" >&#160;&#160;&#160;int(*&#160;&#160;&#160;<a class="el" href="structvxt__pirepheral.html#a9732ff8a0557a3d40c84daa6055d2ccb">next</a> )(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *)</td></tr>
+<tr class="separator:a9732ff8a0557a3d40c84daa6055d2ccb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac8dbc46af64245ff400978f8237bf93"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__pirepheral.html#aac8dbc46af64245ff400978f8237bf93">pic</a></td></tr>
+<tr class="separator:aac8dbc46af64245ff400978f8237bf93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe5aad18f095cfc34db1d4f94b3a695e"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a1be6857a4d6c612bcd77cd6d7ae546fd"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>(*&#160;&#160;&#160;<a class="el" href="structvxt__pirepheral.html#a2784eb740cdc546d44db538ae40446d0">read</a> )(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> <br class="typebreak" />
+&#160;&#160;&#160;&#160;&#160;&#160;*, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>)</td></tr>
+<tr class="separator:a1be6857a4d6c612bcd77cd6d7ae546fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ee3fc4b364b8331d5abb5e5377775c1"><td class="memItemLeft" >&#160;&#160;&#160;void(*&#160;&#160;&#160;<a class="el" href="structvxt__pirepheral.html#ab3fdb007808955c19d519a89bf296129">write</a> )(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> <br class="typebreak" />
+&#160;&#160;&#160;&#160;&#160;&#160;*, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>)</td></tr>
+<tr class="separator:a2ee3fc4b364b8331d5abb5e5377775c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe5aad18f095cfc34db1d4f94b3a695e"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxt__pirepheral.html#abe5aad18f095cfc34db1d4f94b3a695e">dma</a></td></tr>
+<tr class="separator:abe5aad18f095cfc34db1d4f94b3a695e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Represents a IO or memory mapped device. </p>
+<div class="textblock"><p>Interface for ISA bus devices. </p>
 </div><h2 class="groupheader">Field Documentation</h2>
 <a id="aa43cee629beb19a47cd0fb42a097c008"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa43cee629beb19a47cd0fb42a097c008">&#9670;&nbsp;</a></span>destroy</h2>
@@ -102,14 +127,28 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a id="ad3431325202fbfcc97b55cecd561fa05"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad3431325202fbfcc97b55cecd561fa05">&#9670;&nbsp;</a></span>dma</h2>
+<a id="abe5aad18f095cfc34db1d4f94b3a695e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe5aad18f095cfc34db1d4f94b3a695e">&#9670;&nbsp;</a></span>dma</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct <a class="el" href="structvxt__dma.html">vxt_dma</a> dma</td>
+          <td class="memname">struct { ... }  dma</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a5cd2674f2b58b4fbeaa731fb91e75b7a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5cd2674f2b58b4fbeaa731fb91e75b7a">&#9670;&nbsp;</a></span>in</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>(* in(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *, <a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a>)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -130,14 +169,28 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a id="ae56deb98874bb6d0463e2213be8137a0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae56deb98874bb6d0463e2213be8137a0">&#9670;&nbsp;</a></span>io</h2>
+<a id="a3f42b0560f8092c64d7b3963a1f19620"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3f42b0560f8092c64d7b3963a1f19620">&#9670;&nbsp;</a></span>io</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct <a class="el" href="structvxt__io.html">vxt_io</a> io</td>
+          <td class="memname">struct { ... }  io</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aabfd5e7dd6558a91f8d8132b2fe019c7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aabfd5e7dd6558a91f8d8132b2fe019c7">&#9670;&nbsp;</a></span>irq</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void(* irq(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *, int)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -158,6 +211,34 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a id="a9732ff8a0557a3d40c84daa6055d2ccb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9732ff8a0557a3d40c84daa6055d2ccb">&#9670;&nbsp;</a></span>next</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int(* next(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad0391a6eae2cb1084406f76f473cb491"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad0391a6eae2cb1084406f76f473cb491">&#9670;&nbsp;</a></span>out</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void(* out(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *, <a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a>, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a7ad68d04ad11b8d4412ea93580fd54cb"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7ad68d04ad11b8d4412ea93580fd54cb">&#9670;&nbsp;</a></span>pclass</h2>
 
@@ -172,14 +253,28 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a id="a2162a2eca268a28d83762f50dafdedb2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2162a2eca268a28d83762f50dafdedb2">&#9670;&nbsp;</a></span>pic</h2>
+<a id="aac8dbc46af64245ff400978f8237bf93"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac8dbc46af64245ff400978f8237bf93">&#9670;&nbsp;</a></span>pic</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct <a class="el" href="structvxt__pic.html">vxt_pic</a> pic</td>
+          <td class="memname">struct { ... }  pic</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a2784eb740cdc546d44db538ae40446d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2784eb740cdc546d44db538ae40446d0">&#9670;&nbsp;</a></span>read</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>(* read(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -208,6 +303,20 @@ Data Fields</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047">vxt_error</a>(* step(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *, int)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ab3fdb007808955c19d519a89bf296129"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab3fdb007808955c19d519a89bf296129">&#9670;&nbsp;</a></span>write</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void(* write(struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>, <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>)</td>
         </tr>
       </table>
 </div><div class="memdoc">

@@ -2,9 +2,6 @@ var vxt_8h =
 [
     [ "vxt_registers", "structvxt__registers.html", "structvxt__registers" ],
     [ "vxt_step", "structvxt__step.html", "structvxt__step" ],
-    [ "vxt_io", "structvxt__io.html", "structvxt__io" ],
-    [ "vxt_pic", "structvxt__pic.html", "structvxt__pic" ],
-    [ "vxt_dma", "structvxt__dma.html", "structvxt__dma" ],
     [ "vxt_pirepheral", "structvxt__pirepheral.html", "structvxt__pirepheral" ],
     [ "vxt_validator", "structvxt__validator.html", "structvxt__validator" ],
     [ "NULL", "vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4", null ],
@@ -58,6 +55,7 @@ var vxt_8h =
       [ "VXT_INVALID_REGISTER_PACKING", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ab6543bc82279c3921f82ffe4d9ccfcb8", null ],
       [ "VXT_USER_TERMINATION", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047aebc9bde81021d51eb886bfea944c558c", null ],
       [ "VXT_NO_PIC", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a80ff11543be9e05d7582d046639c7d98", null ],
+      [ "VXT_NO_DMA", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a3d4155ce6f53a99a61ec44ee7ff74c11", null ],
       [ "__VXT_NUM_ERRORS", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ac6a3e5326ad48de3d6b4283d9acdeecd", null ]
     ] ],
     [ "vxt_pclass", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7", [
