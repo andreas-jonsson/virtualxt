@@ -96,8 +96,8 @@ static void time_and_data(time_t *mod_time, vxt_word *time_out, vxt_word *date_o
     }
 }
 
-#ifdef __linux__
-    #include "rifs_unix.inl"
+#if defined(_WIN32) || defined(__linux__)
+    #include "rifs_win_nix.inl"
 #else
     #include "rifs_dummy.inl"
 #endif

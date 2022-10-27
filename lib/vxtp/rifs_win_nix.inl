@@ -20,7 +20,12 @@ freely, subject to the following restrictions:
 
 #include "vxtp.h"
 
-#include <alloca.h>
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <alloca.h>
+#endif
+
 #include <dirent.h>
 #include <strings.h>
 #include <ctype.h>
@@ -33,65 +38,62 @@ freely, subject to the following restrictions:
 #define COPY_VALUE(ptr, src, ty) { ty v = (src); memcpy((ptr), &v, sizeof(ty)); }
 
 static bool case_path(char const *path, char *new_path) {
-    char *p = strcpy(alloca(strlen(path) + 1), path);
-    int new_path_ln = 0;
-    
-    DIR *dir;
-    if (p[0] == '/') {
-        dir = opendir("/");
-        p = p + 1;
-    } else {
-        dir = opendir(".");
-        new_path[0] = '.';
-        new_path[1] = 0;
-        new_path_ln = 1;
-    }
-    
-    bool tail = false;
-    p = strtok(p, "/");
-    while (p) {
-        if (!dir)
-            return false;
+    #ifdef _WIN32
+        strcpy(new_path, path);
+    #else
+        char *p = strcpy(alloca(strlen(path) + 1), path);
+        int new_path_ln = 0;
         
-        if (tail) {
-            closedir(dir);
-            return false;
+        DIR *dir;
+        if (p[0] == '/') {
+            dir = opendir("/");
+            p = p + 1;
+        } else {
+            dir = opendir(".");
+            new_path[0] = '.';
+            new_path[1] = 0;
+            new_path_ln = 1;
         }
         
-        new_path[new_path_ln++] = '/';
-        new_path[new_path_ln] = 0;
-        
-        struct dirent *dire = readdir(dir);
-        while (dire) {
-            if (!strcasecmp(p, dire->d_name)) {
-                strcpy(new_path + new_path_ln, dire->d_name);
-                new_path_ln += strlen(dire->d_name);
-
+        bool tail = false;
+        p = strtok(p, "/");
+        while (p) {
+            if (!dir)
+                return false;
+            
+            if (tail) {
                 closedir(dir);
-                dir = opendir(new_path);
-                break;
+                return false;
             }
-            dire = readdir(dir);
+            
+            new_path[new_path_ln++] = '/';
+            new_path[new_path_ln] = 0;
+            
+            struct dirent *dire = readdir(dir);
+            while (dire) {
+                if (!strcasecmp(p, dire->d_name)) {
+                    strcpy(new_path + new_path_ln, dire->d_name);
+                    new_path_ln += strlen(dire->d_name);
+
+                    closedir(dir);
+                    dir = opendir(new_path);
+                    break;
+                }
+                dire = readdir(dir);
+            }
+            
+            if (!dire) {
+                strcpy(new_path + new_path_ln, p);
+                new_path_ln += strlen(p);
+                tail = true;
+            }
+            p = strtok(NULL, "/");
         }
         
-        if (!dire) {
-            strcpy(new_path + new_path_ln, p);
-            new_path_ln += strlen(p);
-            tail = true;
-        }
-        p = strtok(NULL, "/");
-    }
-    
-    if (dir)
-        closedir(dir);
+        if (dir)
+            closedir(dir);
+    #endif
     return true;
-}
-
-static vxt_dword get_fp_size(FILE *fp) {
-    fseek(fp, 0, SEEK_END);
-    long size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    return (size > 0xFFFF) ? 0 : (vxt_word)size;
 }
 
 static bool pattern_comp(const char *pattern, const char *name, bool root) {
@@ -233,7 +235,7 @@ static vxt_word rifs_openfile(struct dos_proc *proc, vxt_word attrib, const char
 
                 *(vxt_word*)data = time; data += 2; // Time
                 *(vxt_word*)data = date; data += 2; // Date
-                COPY_VALUE(data, get_fp_size(fp), vxt_dword); // Size
+                COPY_VALUE(data, (stbuf.st_size > 0xFFFF) ? 0 : (vxt_dword)stbuf.st_size, vxt_dword); // Size
                 return 0;
             }
         }
@@ -254,7 +256,11 @@ static vxt_word rifs_rmdir(const char *path) {
 static vxt_word rifs_mkdir(const char *path) {
     char *new_path = alloca(strlen(path) + 2);
     if (case_path(path, new_path)) {
-        if (!mkdir(new_path, S_IRWXU))
+        #ifdef _WIN32
+            if (!mkdir(new_path))
+        #else
+            if (!mkdir(new_path, S_IRWXU))
+        #endif
             return 0;
     }
     return 3; // Path not found
