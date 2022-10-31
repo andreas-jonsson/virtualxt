@@ -127,6 +127,10 @@ Macros</h2></td></tr>
 <tr class="separator:aa8e9cb23bc22de501aececb758cc6995"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae08ded49754ca882907c28e33a0facc2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ae08ded49754ca882907c28e33a0facc2">VXT_PIREPHERAL_WITH_DATA</a>(name,  type,  body)</td></tr>
 <tr class="separator:ae08ded49754ca882907c28e33a0facc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a79b1ad47dfd6d53a4f09e6442b84a787"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a79b1ad47dfd6d53a4f09e6442b84a787">VXT_PRINT</a>(...)&#160;&#160;&#160;{ _vxt_logger(__VA_ARGS__); }</td></tr>
+<tr class="separator:a79b1ad47dfd6d53a4f09e6442b84a787"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9aee7044c7743909456cb3c36774270"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#af9aee7044c7743909456cb3c36774270">VXT_LOG</a>(...)</td></tr>
+<tr class="separator:af9aee7044c7743909456cb3c36774270"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9a535784185704cea1333b728f21dd7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#aa9a535784185704cea1333b728f21dd7">vxt_system_initialize</a>(s)&#160;&#160;&#160;_vxt_system_initialize((s), sizeof(struct <a class="el" href="structvxt__registers.html">vxt_registers</a>), <a class="el" href="vxt_8h.html#a1dda08b7c7b99cc4abd17f1e5ac18179">VXT_VERSION_MAJOR</a>, <a class="el" href="vxt_8h.html#ab8216dbfb8be4e92f22aef22bfb426a8">VXT_VERSION_MINOR</a>)</td></tr>
 <tr class="separator:aa9a535784185704cea1333b728f21dd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -489,6 +493,29 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="af9aee7044c7743909456cb3c36774270"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af9aee7044c7743909456cb3c36774270">&#9670;&nbsp;</a></span>VXT_LOG</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXT_LOG</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>...</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">        {                                                              \</div>
+<div class="line">        int l = 0; <span class="keyword">const</span> <span class="keywordtype">char</span> *f = __FILE__;                                            \</div>
+<div class="line">        while (f[l]) l++;                                                               \</div>
+<div class="line">        while (l &amp;&amp; (f[l-1] != <span class="charliteral">&#39;/&#39;</span>) &amp;&amp; (f[l-1] != <span class="charliteral">&#39;\\&#39;</span>)) l--;                           \</div>
+<div class="line">        _vxt_logger(&quot;[%s] &quot;, &amp;f[l]); _vxt_logger(__VA_ARGS__); _vxt_logger(&quot;\n&quot;); }     \</div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="ab740cb9791821ffb26bf633c05c0cf50"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab740cb9791821ffb26bf633c05c0cf50">&#9670;&nbsp;</a></span>VXT_MAX_PIREPHERALS</h2>
 
@@ -683,6 +710,24 @@ Functions</h2></td></tr>
           <td></td>
           <td>)</td>
           <td></td><td>&#160;&#160;&#160;( (((((<a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>)(<a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a>)(s)) &lt;&lt; 4) + (<a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a>)(<a class="el" href="vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54">vxt_word</a>)(o))) &amp; 0xFFFFF )</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a79b1ad47dfd6d53a4f09e6442b84a787"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a79b1ad47dfd6d53a4f09e6442b84a787">&#9670;&nbsp;</a></span>VXT_PRINT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXT_PRINT</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>...</em></td><td>)</td>
+          <td>&#160;&#160;&#160;{ _vxt_logger(__VA_ARGS__); }</td>
         </tr>
       </table>
 </div><div class="memdoc">

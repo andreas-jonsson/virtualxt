@@ -15,6 +15,7 @@ var vxt_8h =
     [ "VXT_INVALID_DEVICE_ID", "vxt_8h.html#aedee3310691d61f01335d01cb93a0752", null ],
     [ "VXT_INVALID_POINTER", "vxt_8h.html#af5b876880e067c418ea0cf9a93f97117", null ],
     [ "VXT_IO_MAP_SIZE", "vxt_8h.html#a0805f80bc96947fff1919912df1e8d5e", null ],
+    [ "VXT_LOG", "vxt_8h.html#af9aee7044c7743909456cb3c36774270", null ],
     [ "VXT_MAX_PIREPHERALS", "vxt_8h.html#ab740cb9791821ffb26bf633c05c0cf50", null ],
     [ "VXT_MEM_MAP_SIZE", "vxt_8h.html#a4cdd4ee72c72a2d4a86a9fafa8eb4a25", null ],
     [ "vxt_memclear", "vxt_8h.html#a28eea7dc46eb2990dadd367616f94b32", null ],
@@ -23,6 +24,7 @@ var vxt_8h =
     [ "VXT_PIREPHERAL_SIZE", "vxt_8h.html#ad4034072e24fcd403a7b7b11a758ab1f", null ],
     [ "VXT_PIREPHERAL_WITH_DATA", "vxt_8h.html#ae08ded49754ca882907c28e33a0facc2", null ],
     [ "VXT_POINTER", "vxt_8h.html#a84f0b9a641d0c29c80fbe58d2078f2c9", null ],
+    [ "VXT_PRINT", "vxt_8h.html#a79b1ad47dfd6d53a4f09e6442b84a787", null ],
     [ "vxt_system_initialize", "vxt_8h.html#aa9a535784185704cea1333b728f21dd7", null ],
     [ "VXT_USER_ERROR", "vxt_8h.html#a286a2e46fc5fc0831d53f9fe55e655db", null ],
     [ "VXT_VERSION", "vxt_8h.html#ac3d9aeef44ef000c6bb367613239bc4e", null ],
@@ -101,5 +103,6 @@ var vxt_8h =
     [ "vxt_system_step", "vxt_8h.html#a7515cc8e21a8f5d5c05f2cf08c7d8069", null ],
     [ "vxt_system_userdata", "vxt_8h.html#a48c6f6fc4a46cdb0859ff80c3aec1d60", null ],
     [ "vxt_system_write_byte", "vxt_8h.html#aa598195958d58c2ae337dcdefc127ed5", null ],
-    [ "vxt_system_write_word", "vxt_8h.html#a69afab67d13e020b40feffe98bd19760", null ]
+    [ "vxt_system_write_word", "vxt_8h.html#a69afab67d13e020b40feffe98bd19760", null ],
+    [ "_vxt_logger", "vxt_8h.html#a492bbd5e8df328f2f0ab24b8b0213496", null ]
 ];
