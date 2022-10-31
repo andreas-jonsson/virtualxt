@@ -136,7 +136,7 @@ static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
       p->regs.ip = p->inst_start;
       call_int(p, 6);
    #else
-      LOG("invalid opcode: 0x%X", inst->opcode);
+      PRINT("invalid opcode: 0x%X", inst->opcode);
       p->regs.debug = true;
    #endif
 }
@@ -1202,7 +1202,7 @@ static void grp4_FE(CONSTSP(cpu) p, INST(inst)) {
          rm_write8(p, op_sub_sbb8(&p->regs, v, 1, 0));
          break;
       default:
-         LOG("TODO: Invalid opcode!");
+         PRINT("TODO: Invalid opcode!");
    }
    SET_FLAG(p->regs.flags, VXT_CARRY, c);
 }

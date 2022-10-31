@@ -23,24 +23,24 @@ freely, subject to the following restrictions:
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     UNUSED(p);
-    LOG("reading unmapped IO port: %X", port);
+    VXT_PRINT("reading unmapped IO port: %X\n", port);
     return 0xFF;
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     UNUSED(p); UNUSED(data);
-    LOG("writing unmapped IO port: %X", port);
+    VXT_PRINT("writing unmapped IO port: %X\n", port);
 }
 
 static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
     UNUSED(p);
-    LOG("reading unmapped memory: %X", addr);
+    VXT_PRINT("reading unmapped memory: %X\n", addr);
     return 0xFF;
 }
 
 static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     UNUSED(p); UNUSED(data);
-    LOG("writing unmapped memory: %X", addr);
+    VXT_PRINT("writing unmapped memory: %X\n", addr);
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {

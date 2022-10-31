@@ -72,7 +72,7 @@ void cpu_reset_cycle_count(CONSTSP(cpu) p) {
 
 void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
-   memclear(&p->regs, sizeof(p->regs));
+   vxt_memclear(&p->regs, sizeof(p->regs));
    #ifdef VXT_CPU_286
       p->regs.flags = 0x2;
    #else

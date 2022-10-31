@@ -66,7 +66,7 @@ void vxt_set_breakpoint(void (*f)(void)) {
 
 vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral * const devs[]) {
     vxt_system *s = (vxt_system*)alloc(NULL, sizeof(struct system));
-    memclear(s, sizeof(struct system));
+    vxt_memclear(s, sizeof(struct system));
     s->alloc = alloc;
     s->cpu.s = s;
 

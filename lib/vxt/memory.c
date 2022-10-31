@@ -38,7 +38,7 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     if (!m->read_only) {
         VXT_GET_DEVICE_DATA(memory, p)[addr - m->base] = data;
     } else {
-        LOG("writing to read-only memory: [0x%X] = 0x%X", addr, data);
+        VXT_LOG("writing to read-only memory: [0x%X] = 0x%X", addr, data);
     }
 }
 
@@ -61,7 +61,7 @@ static const char *name(struct vxt_pirepheral *p) {
 struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
     int size = VXT_PIREPHERAL_SIZE(memory) + amount;
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, size);
-    memclear(p, size);
+    vxt_memclear(p, size);
     VXT_DEC_DEVICE(m, memory, p);
 
     m->base = base;

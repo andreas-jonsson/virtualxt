@@ -45,9 +45,6 @@ extern void (*breakpoint)(void);
    #define ABORT() { breakpoint(); *_just_null = 0; for(;;); }
 #endif
 
-// TODO: Remove this.
-#define memclear vxt_memclear
-
 // Host to 8088 endian conversion.
 #if !defined(VXT_BIGENDIAN) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
    #define HBYTE(w)     ((vxt_byte)(((vxt_word)(w))>>8))
@@ -57,17 +54,15 @@ extern void (*breakpoint)(void);
    #error Bigendian is not supported!
 #endif
 
-#define _LOG(...)    { _vxt_logger(__VA_ARGS__); }
-#define LOG(...)     { _LOG(__VA_ARGS__); _LOG("\n"); }
-
 #define UNUSED(v) ( (void)(v) )
 
 #define CONSTP(t)    t * const
 #define CONSTSP(t)   struct CONSTP(t)
 
-#define ENSURE(e)          if (!(e)) { _LOG("( " #e " ) "); ABORT(); }
-#define ASSERT(e, ...)     if (!(e)) { _LOG("( " #e " ) "); LOG(__VA_ARGS__); ABORT(); }
-#define PANIC(...)         { LOG(__VA_ARGS__); ABORT(); }
+#define PRINT(...)         { VXT_PRINT(__VA_ARGS__); VXT_PRINT("\n"); }
+#define ENSURE(e)          if (!(e)) { VXT_PRINT("( " #e " ) "); ABORT(); }
+#define ASSERT(e, ...)     if (!(e)) { VXT_PRINT("( " #e " ) "); PRINT(__VA_ARGS__); ABORT(); }
+#define PANIC(...)         { PRINT(__VA_ARGS__); ABORT(); }
 #define UNREACHABLE(...)   { PANIC("unreachable"); return __VA_ARGS__; }
 
 #endif
