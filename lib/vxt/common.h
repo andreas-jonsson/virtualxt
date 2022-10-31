@@ -57,7 +57,7 @@ extern void (*breakpoint)(void);
    #error Bigendian is not supported!
 #endif
 
-#define _LOG(...)    { logger(__VA_ARGS__); }
+#define _LOG(...)    { _vxt_logger(__VA_ARGS__); }
 #define LOG(...)     { _LOG(__VA_ARGS__); _LOG("\n"); }
 
 #define UNUSED(v) ( (void)(v) )
@@ -69,7 +69,5 @@ extern void (*breakpoint)(void);
 #define ASSERT(e, ...)     if (!(e)) { _LOG("( " #e " ) "); LOG(__VA_ARGS__); ABORT(); }
 #define PANIC(...)         { LOG(__VA_ARGS__); ABORT(); }
 #define UNREACHABLE(...)   { PANIC("unreachable"); return __VA_ARGS__; }
-
-extern int (*logger)(const char*, ...);
 
 #endif

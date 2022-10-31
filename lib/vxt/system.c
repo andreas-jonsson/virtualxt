@@ -29,13 +29,13 @@
       va_end(args);
       return ret;
    }
-   int (*logger)(const char*, ...) = &libc_print;
+   int (*_vxt_logger)(const char*, ...) = &libc_print;
 #else
    static int no_print(const char *fmt, ...) {
       UNUSED(fmt);
       return -1;
    }
-   int (*logger)(const char*, ...) = &no_print;
+   int (*_vxt_logger)(const char*, ...) = &no_print;
 #endif
 
 static void no_breakpoint(void) {}
@@ -57,7 +57,7 @@ int vxt_lib_version_minor(void) { return VXT_VERSION_MINOR; }
 int vxt_lib_version_patch(void) { return VXT_VERSION_PATCH; }
 
 void vxt_set_logger(int (*f)(const char*, ...)) {
-    logger = f;
+    _vxt_logger = f;
 }
 
 void vxt_set_breakpoint(void (*f)(void)) {

@@ -21,6 +21,8 @@ freely, subject to the following restrictions:
 // References: http://www.brokenthorn.com/Resources/OSDev20.html
 //             https://wiki.osdev.org/Floppy_Disk_Controller
 
+//#define VXT_NO_LOG
+
 #include "vxtp.h"
 
 #include <string.h>
@@ -28,14 +30,6 @@ freely, subject to the following restrictions:
 
 #define FIFO_SIZE 16
 #define SECTOR_SIZE 512
-
-#if 1
-    #define LOG(fmt, ...) printf("FDC: " fmt "\n", __VA_ARGS__)
-    #define LOGS(str) LOG("%s", (str))
-#else
-    #define LOG(...)
-    #define LOGS(...)
-#endif
 
 const vxt_byte disk_command_size[16] = {
     0, 0, 9, 3, 2, 9, 9, 2, 1, 9, 2, 0, 9, 6, 0, 3
@@ -174,7 +168,7 @@ static vxt_byte fifo_read(struct fdc *c) {
         memmove(c->fifo, &c->fifo[1], c->fifo_len);
         return data;
     }
-    LOGS("Reading empty FIFO!");
+    VXT_LOG("Reading empty FIFO!");
     return 0;
 }
 
@@ -184,7 +178,7 @@ static void fifo_write(struct fdc *c, vxt_byte data) {
 }
 
 static void execute_command(struct fdc *c) {
-    LOG("Execute command: %d", *c->command & 0xF);
+    VXT_LOG("Execute command: %d", *c->command & 0xF);
 
     c->fifo_len = 0;
     c->is_busy = false;
@@ -253,7 +247,7 @@ static void push_command_byte(struct fdc *c, vxt_byte data) {
 }
 
 static void controller_reset(struct fdc *c) {
-    LOGS("Controller reset!");
+    VXT_LOG("Controller reset!");
     c->fifo_len = c->command_len = 0;
     c->status_reg0 = (c->status_reg0 & 3) | STATUS0_INT_ABNORMAL_POLL;
     vxt_system_interrupt(c->s, c->irq);
@@ -266,7 +260,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
         {
             vxt_byte status = MSR_MASK_DATAREG;
             if (c->is_busy) {
-                LOGS("BUSY!");
+                VXT_LOG("BUSY!");
                 status = MSR_MASK_BUSY;
             //} else if (c->command_len && (c->command_len < disk_command_size[*c->command & 0xF])) {
             //    status = MSR_MASK_DATAIO;
@@ -283,17 +277,17 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
                     status |= 1 << i;
             }
 
-            LOG("MSR: 0x%X", status);
+            VXT_LOG("MSR: 0x%X", status);
             return status;
         }
         case 5: // Data Register
         {
             vxt_byte data = fifo_read(c);
-            LOG("FIFO Read: 0x%X", data);
+            VXT_LOG("FIFO Read: 0x%X", data);
             return data;
         }
         default:
-            LOG("Read port: 0x%X", port - c->base);
+            VXT_LOG("Read port: 0x%X", port - c->base);
             return 0;
     }
 }
@@ -302,7 +296,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(c, fdc, p);
     switch (port - c->base) {
         case 2: // Digital Output Register (DOR)
-            LOG("DOR: 0x%X", data);
+            VXT_LOG("DOR: 0x%X", data);
         	c->drive_num = data & 0x3;
             c->status_reg0 = (c->status_reg0 & 0xFC) | c->drive_num;
             c->status_reg3 = (c->status_reg3 & 0xFC) | c->drive_num;
@@ -314,11 +308,11 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             c->dor_reg = data;
             break;
         case 5:	// Data Register
-            LOG("Push command: 0x%X", data);
+            VXT_LOG("Push command: 0x%X", data);
             push_command_byte(c, data);
             break;
         default:
-            LOG("Write port: 0x%X", port - c->base);
+            VXT_LOG("Write port: 0x%X", port - c->base);
     }
 }
 /*

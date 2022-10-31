@@ -248,6 +248,25 @@ struct vxt_validator {
     void (*discard)(void *userdata);
 };
 
+// Use VXT_NO_LOG to disable logging in specific compile units
+// or use VXT_NO_LOGGING to disable all logging.
+#ifdef VXT_NO_LOG
+    #define VXT_PRINT(...)
+    #define VXT_LOG(...)
+#else
+
+    /// @private
+    extern int (*_vxt_logger)(const char*, ...);
+
+    #define VXT_PRINT(...) { _vxt_logger(__VA_ARGS__); }
+    #define VXT_LOG(...) {                                                              \
+        int l = 0; const char *f = __FILE__;                                            \
+        while (f[l]) l++;                                                               \
+        while (l && (f[l-1] != '/') && (f[l-1] != '\\')) l--;                           \
+        _vxt_logger("[%s] ", &f[l]); _vxt_logger(__VA_ARGS__); _vxt_logger("\n"); }     \
+
+#endif
+
 /// @private
 extern vxt_error _vxt_system_initialize(vxt_system *s, unsigned reg_size, int v_major, int v_minor);
 
