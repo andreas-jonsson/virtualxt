@@ -116,13 +116,16 @@ TEST(system_initialize,
 )
 
 vxt_error vxt_system_destroy(CONSTP(vxt_system) s) {
-    if (s->cpu.validator)
-        s->cpu.validator->destroy(s->cpu.validator->userdata);
+    if (s->cpu.validator) {
+        vxt_error (*destroy)(void*) = s->cpu.validator->destroy;
+        destroy(s->cpu.validator->userdata);
+    }
 
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_pirepheral) d = s->devices[i];
         if (d->destroy) {
-            vxt_error err = d->destroy(d);
+            vxt_error (*destroy)(struct vxt_pirepheral*) = d->destroy;
+            vxt_error err = destroy(d);
             if (err) return err;
         }
     }
