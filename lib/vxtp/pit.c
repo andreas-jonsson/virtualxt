@@ -20,6 +20,9 @@ freely, subject to the following restrictions:
 
 #include "vxtp.h"
 
+// Single step the counter for maximum BIOS compatibility.
+#define PIT_COUNTER_STEP 1
+
 enum chmode {
     MODE_LATCH_COUNT,
     MODE_LOW_BYTE,
@@ -129,7 +132,7 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
 		}
 	}
 
-	const INT64 step = 10;
+	const INT64 step = PIT_COUNTER_STEP;
 	const INT64 next = 1000000 / (1193182 / step);
 
 	if (ticks >= (c->device_ticks + next)) {
