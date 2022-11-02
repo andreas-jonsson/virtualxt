@@ -122,7 +122,7 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         "-Wno-unused-function", // Needed for unit tests.
         "-std=c11",
         "-pedantic",
-        "-fPIC", // Needed for libretro.
+        //"-fPIC", // Needed for libretro.
     };
 
     const files = &[_][]const u8{
