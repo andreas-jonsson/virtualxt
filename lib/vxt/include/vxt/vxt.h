@@ -42,6 +42,7 @@ extern "C" {
 #ifdef VXT_LIBC
     #include <stdint.h>
     #include <stdbool.h>
+    #include <string.h>
 
     typedef int8_t vxt_int8;
     typedef int16_t vxt_int16;

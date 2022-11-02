@@ -122,6 +122,7 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         "-Wno-unused-function", // Needed for unit tests.
         "-std=c11",
         "-pedantic",
+        "-fPIC", // Needed for libretro.
     };
 
     const files = &[_][]const u8{
@@ -320,14 +321,18 @@ pub fn build(b: *Builder) void {
 
     {
         const libname = b.fmt("vxt-libretro.{s}.{s}", .{@tagName(target.getOsTag()), @tagName(target.getCpuArch())});
-        const libretro = b.addSharedLibrary(libname, null, .unversioned);
+        const libretro = b.addSharedLibrary(libname, "front/libretro/files.zig", .unversioned);
         libretro.setBuildMode(mode);
         libretro.setTarget(target);
         libretro.setOutputDir("build/lib");
 
         libretro.linkLibrary(build_libvxt(b, mode, target, cpu286, cpuV20, false));
         libretro.addIncludeDir("lib/vxt/include");
-        libretro.addIncludeDir("lib/vxt");
+
+        libretro.linkLibrary(pirepheral);
+        libretro.addIncludeDir("lib/vxtp");
+
+        libretro.linkLibC();
 
         libretro.addIncludeDir("lib/libretro");
 
