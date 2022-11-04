@@ -22,7 +22,7 @@ const builtin = @import("builtin");
 const Builder = std.build.Builder;
 const print = std.debug.print;
 
-const expected_zig_version: u32 = 9;
+const expected_zig_version: u32 = 10;
 
 const c_options = &[_][]const u8{
     "-Wall",
@@ -73,11 +73,11 @@ fn parse_file(name: []const u8) anyerror!void {
     const file_buffer = try file.readToEndAlloc(allocator, megabyte);
     defer allocator.free(file_buffer);
 
-    var h_out = try cwd.openFile("test/test.h", .{.write = true});
+    var h_out = try cwd.openFile("test/test.h", .{.mode = .read_write});
     defer h_out.close();
     try h_out.seekFromEnd(0);
 
-    var zig_out = try cwd.openFile("test/test.zig", .{.write = true});
+    var zig_out = try cwd.openFile("test/test.zig", .{.mode = .read_write});
     defer zig_out.close();
     try zig_out.seekFromEnd(0);
 
@@ -94,7 +94,7 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     const libname = b.fmt("vxt.{s}.{s}", .{@tagName(target.getOsTag()), @tagName(target.getCpuArch())});
     const lib = b.addStaticLibrary(libname, null);
 
-    lib.addIncludeDir("lib/vxt/include");
+    lib.addIncludePath("lib/vxt/include");
     lib.setTarget(target);
 
     if (cpu286 or testing) {
@@ -158,7 +158,6 @@ fn assert_version(major: u32, minor: u32) void {
 pub fn build(b: *Builder) void {
     assert_version(0, expected_zig_version);
 
-    //const textmode = b.option(bool, "textmode", "Build for textmode only") orelse false;
     const validator = b.option(bool, "validator", "Enable PI8088 hardware validator") orelse false;
     const network = b.option(bool, "pcap", "Link with libpcap") orelse false;
     const sdl_path = b.option([]const u8, "sdl-path", "Path to SDL2 headers and libs") orelse null;
@@ -167,7 +166,6 @@ pub fn build(b: *Builder) void {
 
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
-    //const wasm = target.toTarget().isWasm();
 
     // -------- libvxt --------
 
@@ -180,7 +178,7 @@ pub fn build(b: *Builder) void {
     termbox.setBuildMode(mode);
     termbox.setTarget(target);
     termbox.linkLibC();
-    termbox.addIncludeDir("lib/termbox/src");
+    termbox.addIncludePath("lib/termbox/src");
 
     termbox.addCSourceFile("lib/termbox/src/termbox.c", c_options);
     termbox.addCSourceFile("lib/termbox/src/utf8.c", c_options);
@@ -205,7 +203,7 @@ pub fn build(b: *Builder) void {
     microui.setBuildMode(mode);
     microui.setTarget(target);
     microui.linkLibC();
-    microui.addIncludeDir("lib/microui/src");
+    microui.addIncludePath("lib/microui/src");
     microui.addCSourceFile("lib/microui/src/microui.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
 
     // -------- pirepheral --------
@@ -215,8 +213,8 @@ pub fn build(b: *Builder) void {
         pirepheral.setBuildMode(mode);
         pirepheral.setTarget(target);
         pirepheral.linkLibC();
-        pirepheral.addIncludeDir("lib/vxtp");
-        pirepheral.addIncludeDir("lib/vxt/include");
+        pirepheral.addIncludePath("lib/vxtp");
+        pirepheral.addIncludePath("lib/vxt/include");
 
         if (validator) {
             pirepheral.defineCMacroRaw("PI8088");
@@ -254,14 +252,14 @@ pub fn build(b: *Builder) void {
 
         pirepheral.linkLibrary(opl3);
         pirepheral.defineCMacroRaw("VXTP_NUKED_OPL3");
-        pirepheral.addIncludeDir("lib/nuked-opl3");
+        pirepheral.addIncludePath("lib/nuked-opl3");
     }
 
     // -------- virtualxt sdl --------
 
     const exe_sdl = b.addExecutable("virtualxt", "front/sdl/main.zig");
-    exe_sdl.addIncludeDir("front/sdl");
-    exe_sdl.defineCMacroRaw("ENTRY=c_main");
+    exe_sdl.addIncludePath("front/sdl");
+    exe_sdl.defineCMacroRaw("ENTRY=c_main"); 
 
     exe_sdl.setBuildMode(mode);
     exe_sdl.setTarget(target);
@@ -270,27 +268,27 @@ pub fn build(b: *Builder) void {
 
     if (sdl_path != null) {
         const p = .{sdl_path};
-        print("SDL2 location: {s}\n", p);
+        print("SDL2 location: {any}\n", p);
 
-        exe_sdl.addIncludeDir(b.fmt("{s}/include", p));
+        exe_sdl.addIncludePath(b.fmt("{any}/include", p));
 
         if (target.isWindows() and target.getAbi() == .gnu) {
-            exe_sdl.addLibPath(b.fmt("{s}/lib/x64", p));
+            exe_sdl.addLibraryPath(b.fmt("{any}/lib/x64", p));
         } else {
-            exe_sdl.addLibPath(b.fmt("{s}/lib", p));
+            exe_sdl.addLibraryPath(b.fmt("{any}/lib", p));
         }
     }
 
     exe_sdl.linkSystemLibrary("SDL2");
 
     exe_sdl.linkLibrary(libvxt);
-    exe_sdl.addIncludeDir("lib/vxt/include");
+    exe_sdl.addIncludePath("lib/vxt/include");
 
     exe_sdl.linkLibrary(pirepheral);
-    exe_sdl.addIncludeDir("lib/vxtp");
+    exe_sdl.addIncludePath("lib/vxtp");
 
     exe_sdl.linkLibrary(ini);
-    exe_sdl.addIncludeDir("lib/inih");
+    exe_sdl.addIncludePath("lib/inih");
 
     exe_sdl.linkLibrary(opl3); // Part of vxtp?
 
@@ -325,16 +323,17 @@ pub fn build(b: *Builder) void {
         libretro.setBuildMode(mode);
         libretro.setTarget(target);
         libretro.setOutputDir("build/lib");
+        libretro.setMainPkgPath("."); // Needed for embedded files.
 
         libretro.linkLibrary(build_libvxt(b, mode, target, cpu286, cpuV20, false));
-        libretro.addIncludeDir("lib/vxt/include");
+        libretro.addIncludePath("lib/vxt/include");
 
         libretro.linkLibrary(pirepheral);
-        libretro.addIncludeDir("lib/vxtp");
+        libretro.addIncludePath("lib/vxtp");
 
         libretro.linkLibC();
 
-        libretro.addIncludeDir("lib/libretro");
+        libretro.addIncludePath("lib/libretro");
 
         libretro.addCSourceFile("front/libretro/core.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
 
@@ -354,8 +353,8 @@ pub fn build(b: *Builder) void {
         scrambler.defineCMacroRaw("PI8088");
 
         scrambler.linkLibrary(build_libvxt(b, mode, target, cpu286, cpuV20, false));
-        scrambler.addIncludeDir("lib/vxt/include");
-        scrambler.addIncludeDir("lib/vxt");        
+        scrambler.addIncludePath("lib/vxt/include");
+        scrambler.addIncludePath("lib/vxt");        
 
         scrambler.addCSourceFile("tools/validator/pi8088/scrambler.c", opt);
         scrambler.addCSourceFile("tools/validator/pi8088/pi8088.c", opt);
@@ -373,7 +372,7 @@ pub fn build(b: *Builder) void {
         tests.linkLibC();
         tests.defineCMacroRaw("TESTING");
         tests.defineCMacroRaw("VXT_CPU_286");
-        tests.addIncludeDir("test");
+        tests.addIncludePath("test");
 
         const lib_vxt = build_libvxt(b, mode, target, cpu286, cpuV20, true);
         if (validator) {
@@ -383,8 +382,8 @@ pub fn build(b: *Builder) void {
         }
 
         tests.linkLibrary(lib_vxt);
-        tests.addIncludeDir("lib/vxt/include");
-        tests.addIncludeDir("lib/vxt");
+        tests.addIncludePath("lib/vxt/include");
+        tests.addIncludePath("lib/vxt");
 
         b.step("test", "Run all libvxt tests").dependOn(&tests.step);
 

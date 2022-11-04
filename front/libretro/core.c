@@ -32,10 +32,10 @@ freely, subject to the following restrictions:
 #include <vxt/vxtu.h>
 #include <vxtp.h>
 
-extern const vxt_byte *get_pcxtbios_data();
-extern vxt_dword get_pcxtbios_size();
-extern const vxt_byte *get_vxtx_data();
-extern vxt_dword get_vxtx_size();
+extern const vxt_byte *get_pcxtbios_data(void);
+extern vxt_dword get_pcxtbios_size(void);
+extern const vxt_byte *get_vxtx_data(void);
+extern vxt_dword get_vxtx_size(void);
 
 #define LOG(...) log_cb(RETRO_LOG_INFO, __VA_ARGS__)
 

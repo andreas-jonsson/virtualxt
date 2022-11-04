@@ -17,9 +17,10 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 const std = @import("std");
+const c = @cImport(@cInclude("main.h"));
 
 pub fn main() void {
-    const ret = @cImport(@cInclude("main.h")).c_main(
+    const ret = c.c_main(
         @intCast(c_int, std.os.argv.len),
         @ptrCast([*c][*c]u8, std.os.argv)
     );
