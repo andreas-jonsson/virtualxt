@@ -94,7 +94,7 @@ VXT_PIREPHERAL(cga_video, {
 
 static void driver_switch_mode(struct cga_video *c, struct vxt_registers *r) {
     if ((r->al & 0x7F) == 9) {
-        printf("Switch to 320x200 16-color Tandy/PCjr graphics!\n");
+        VXT_LOG("Switch to 320x200 16-color Tandy/PCjr graphics!");
         c->tandy_mode = true;
     } else {
         c->tandy_mode = false;

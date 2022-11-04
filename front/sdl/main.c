@@ -119,7 +119,7 @@ static const char *sprint(const char *fmt, ...) {
 	return str_buffer;
 }
 
-static const char *mgetline() {
+static const char *mgetline(void) {
 	static char buffer[1024] = {0};
 	char *str = fgets(buffer, sizeof(buffer), stdin);
 	for (char *p = str; *p; p++) {
