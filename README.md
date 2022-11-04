@@ -23,6 +23,18 @@ library of old application and games.
 * Real Time Clock
 * PC speaker
 
+## Screenshots
+
+![bios screenshot](screenshots/bios.PNG)
+
+![freedos screenshot](screenshots/freedos.PNG)
+
+![edit screenshot](screenshots/edit.PNG)
+
+![win30setup screenshot](screenshots/win30setup.PNG)
+
+![monkey screenshot](screenshots/monkey.PNG)
+
 ## Build
 
 The emulator is written in C11 and should be compiled with the [Zig](https://ziglang.org/) toolchain.
@@ -48,14 +60,4 @@ If you want to embed the emulator or create a custom frontend you can find libvx
 A hardware validator was developed to ensure proper CPU behaviour.
 Some additional information about that can be found [here](https://hackaday.io/project/184209-virtualxt-hardware-validator).
 
-## Screenshots
-
-![bios screenshot](screenshots/bios.PNG)
-
-![freedos screenshot](screenshots/freedos.PNG)
-
-![edit screenshot](screenshots/edit.PNG)
-
-![win30setup screenshot](screenshots/win30setup.PNG)
-
-![monkey screenshot](screenshots/monkey.PNG)
+![validator screenshot](screenshots/validator.jpg)
