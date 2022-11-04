@@ -10,7 +10,7 @@ on:
 
 env:
   VXT_VERSION: 0.7.0
-  ZIG_VERSION: 0.9.0
+  ZIG_VERSION: 0.10.0
   SDL2_VERSION: 2.24.1
 
 jobs:
