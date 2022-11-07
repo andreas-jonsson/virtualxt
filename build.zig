@@ -368,6 +368,9 @@ pub fn build(b: *Builder) void {
 
         wasm.linkLibC(); // For headers only.
 
+        wasm.addIncludePath("lib/printf");
+        wasm.addCSourceFile("lib/printf/printf.c", wasm_opt);
+
         // Add the vxt pirepherals directly.
         wasm.addIncludePath("lib/vxtp");
         //wasm.addCSourceFile("lib/vxtp/disk.c", wasm_opt);

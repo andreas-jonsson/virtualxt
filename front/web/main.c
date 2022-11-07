@@ -26,6 +26,8 @@
 #include <vxt/vxtu.h>
 #include <vxtp.h>
 
+#include <printf.h>
+
 #include "main.h"
 
 #define ALLOCATOR_SIZE (20 * 1024 * 1024)
@@ -33,8 +35,6 @@ vxt_byte allocator_data[ALLOCATOR_SIZE];
 vxt_byte *allocator_ptr = allocator_data;
 
 #define LOG(...) ( log_wrapper(__VA_ARGS__) )
-//#define LOG_BUFFER_SIZE 4096
-//char log_buffer[LOG_BUFFER_SIZE] = {0};
 
 vxt_system *sys = NULL;
 struct vxt_pirepheral *disk = NULL;
@@ -45,14 +45,9 @@ int log_wrapper(const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 
-	//int n = vsnprintf(log_buffer, LOG_BUFFER_SIZE, fmt, args);
-    //js_puts(log_buffer, strlen(log_buffer));
-
-	int n = 0;
-
-	vxt_word sz = 0;
-	while (fmt[sz++]);
-	js_puts(fmt, sz - 1);
+	char buffer[1024] = {0};
+	int n = vsnprintf_(buffer, sizeof(buffer), fmt, args);
+    js_puts(buffer, n);
 
 	va_end(args);
 	return n;
