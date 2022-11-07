@@ -344,6 +344,52 @@ pub fn build(b: *Builder) void {
         b.step("libretro", "Build libretro core").dependOn(&libretro.step);
     }
 
+    // -------- virtualxt web --------
+
+    {
+        const wasm_target = .{.cpu_arch = .wasm32, .os_tag = .freestanding, .abi = .musl};
+        const wasm = b.addSharedLibrary("virtualxt", "front/web/main.zig", .unversioned);
+        wasm.addIncludePath("front/web");
+
+        wasm.setBuildMode(mode);
+        wasm.setTarget(wasm_target);
+        wasm.setOutputDir("build/web");
+        wasm.setMainPkgPath("."); // Needed for embedded files.
+
+        if (cpuV20) {
+            wasm.defineCMacroRaw("VXT_CPU_V20");
+        }
+
+        wasm.linkLibrary(build_libvxt(b, mode, wasm_target, false, cpuV20, false));
+        wasm.addIncludePath("lib/vxt/include");
+        
+        const wasm_opt = opt;// ++ &[_][]const u8{"-fno-builtin"};
+        wasm.addCSourceFile("front/web/main.c", wasm_opt);
+
+        wasm.linkLibC(); // For headers only.
+
+        // Add the vxt pirepherals directly.
+        wasm.addIncludePath("lib/vxtp");
+        //wasm.addCSourceFile("lib/vxtp/disk.c", wasm_opt);
+        wasm.addCSourceFile("lib/vxtp/pic.c", wasm_opt);
+        wasm.addCSourceFile("lib/vxtp/ppi.c", wasm_opt);
+        wasm.addCSourceFile("lib/vxtp/pit.c", wasm_opt);
+        wasm.addCSourceFile("lib/vxtp/cga.c", wasm_opt);
+        wasm.addCSourceFile("lib/vxtp/dma.c", wasm_opt);
+
+        // https://github.com/ziglang/zig/issues/8633
+        const page_size = 0x10000;
+        wasm.import_memory = true; // import linear memory from the environment
+        wasm.initial_memory = 500 * page_size; // initial size of the linear memory (1 page = 64kB)
+        wasm.max_memory = 500 * page_size; // maximum size of the linear memory
+        wasm.global_base = 6560; // offset in linear memory to place global data
+
+        // TODO: Change this to a real copy step.
+        const web = b.addSystemCommand(&[_][]const u8{"cp", "-t", "build/web/", "front/web/index.html", "front/web/script.js"});
+        web.step.dependOn(&wasm.step);
+        b.step("web", "Build web-frontend").dependOn(&web.step);
+    }
+
     // -------- scrambler --------
 
     {
