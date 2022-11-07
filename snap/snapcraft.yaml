@@ -7,7 +7,7 @@ architectures:
   - build-on: arm64
   - build-on: armhf
   - build-on: i386
-license: Zlib
+license: zlib-acknowledgement
 description: |
   VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.
   It is designed to be simple and lightweight yet still capable enough to run a large library of old application and games.

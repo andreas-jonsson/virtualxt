@@ -6,7 +6,7 @@
   <summary>VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.</summary>
   
   <metadata_license>FSFAP</metadata_license>
-  <project_license>Zlib</project_license>
+  <project_license>zlib-acknowledgement</project_license>
   
   <recommends>
     <control>pointing</control>
