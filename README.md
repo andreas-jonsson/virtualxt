@@ -2,6 +2,7 @@
 
 [![Build](https://github.com/andreas-jonsson/virtualxt/actions/workflows/build.yml/badge.svg)](https://github.com/andreas-jonsson/virtualxt/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/andreas-jonsson/virtualxt/branch/main/graph/badge.svg?token=miEtCEo0s4)](https://codecov.io/gh/andreas-jonsson/virtualxt)
+[![Chat](https://img.shields.io/matrix/virtualxt:matrix.org)](https://matrix.to/#/#virtualxt:matrix.org)
 [![Forum](https://img.shields.io/badge/forum-VOGONS-blueviolet)](https://www.vogons.org/viewforum.php?f=9)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)
 
@@ -22,6 +23,18 @@ library of old application and games.
 * Ethernet adapter
 * Real Time Clock
 * PC speaker
+
+## Screenshots
+
+![bios screenshot](screenshots/bios.PNG)
+
+![freedos screenshot](screenshots/freedos.PNG)
+
+![edit screenshot](screenshots/edit.PNG)
+
+![win30setup screenshot](screenshots/win30setup.PNG)
+
+![monkey screenshot](screenshots/monkey.PNG)
 
 ## Build
 
@@ -48,14 +61,4 @@ If you want to embed the emulator or create a custom frontend you can find libvx
 A hardware validator was developed to ensure proper CPU behaviour.
 Some additional information about that can be found [here](https://hackaday.io/project/184209-virtualxt-hardware-validator).
 
-## Screenshots
-
-![bios screenshot](screenshots/bios.PNG)
-
-![freedos screenshot](screenshots/freedos.PNG)
-
-![edit screenshot](screenshots/edit.PNG)
-
-![win30setup screenshot](screenshots/win30setup.PNG)
-
-![monkey screenshot](screenshots/monkey.PNG)
+![validator screenshot](screenshots/validator.jpg)
