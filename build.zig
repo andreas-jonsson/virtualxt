@@ -262,15 +262,15 @@ pub fn build(b: *Builder) void {
     exe_sdl.defineCMacroRaw(b.fmt("PLATFORM={s}", .{@tagName(target.getOsTag())}));
 
     if (sdl_path != null) {
-        const p = .{sdl_path};
-        print("SDL2 location: {any}\n", p);
+        const p = .{sdl_path orelse ""}; // Make compiler happy.
+        print("SDL2 location: {s}\n", p);
 
-        exe_sdl.addIncludePath(b.fmt("{any}/include", p));
+        exe_sdl.addIncludePath(b.fmt("{s}/include", p));
 
         if (target.isWindows() and target.getAbi() == .gnu) {
-            exe_sdl.addLibraryPath(b.fmt("{any}/lib/x64", p));
+            exe_sdl.addLibraryPath(b.fmt("{s}/lib/x64", p));
         } else {
-            exe_sdl.addLibraryPath(b.fmt("{any}/lib", p));
+            exe_sdl.addLibraryPath(b.fmt("{s}/lib", p));
         }
     }
 
