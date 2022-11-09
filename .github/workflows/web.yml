@@ -40,9 +40,9 @@ jobs:
 
       - name: Package
         run: |
-          cd build
-          zip -r ../virtualxt.zip ./web
-          cd ..
+          cd build/web
+          zip -r ../../virtualxt.zip .
+          cd ../..
         
       - name: Deploy
         env:
