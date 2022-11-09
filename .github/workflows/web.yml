@@ -2,7 +2,7 @@ name: Web
 
 on:
   push:
-    branches: [ "develop", "edge", "release", "web-frontend" ]
+    branches: [ "develop", "edge", "release" ]
   pull_request:
     branches: [ "develop" ]
 
@@ -13,8 +13,8 @@ env:
   ZIG_VERSION: 0.10.0
 
 jobs:
-  linux-build:
-    name: Build (Linux AMD64)
+  web-build:
+    name: Web (Linux AMD64)
     runs-on: ubuntu-latest
 
     steps:
@@ -47,4 +47,4 @@ jobs:
       - name: Deploy
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: if [[ $GITHUB_REF_NAME =~ ^(web-frontend)$ ]]; then ./tools/package/itch/push-web.sh; fi
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge)$ ]]; then ./tools/package/itch/push-web.sh; fi
