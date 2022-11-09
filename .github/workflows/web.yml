@@ -41,7 +41,7 @@ jobs:
       - name: Package
         run: |
           cd build
-          zip -r ./web ../virtualxt.zip
+          zip -r ../virtualxt.zip ./web
           cd ..
         
       - name: Deploy
