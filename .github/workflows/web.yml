@@ -41,6 +41,7 @@ jobs:
       - name: Package
         run: |
           cd build/web
+          rm *.o
           zip -r ../../virtualxt.zip .
           cd ../..
         
