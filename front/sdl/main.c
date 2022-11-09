@@ -265,6 +265,31 @@ static vxt_word pow2(vxt_word v) {
 	return ++v;
 }
 
+static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+	(void)s;
+	return (int)fread(buffer, 1, (size_t)size, (FILE*)fp);
+}
+
+static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+	(void)s;
+	return (int)fwrite(buffer, 1, (size_t)size, (FILE*)fp);
+}
+
+static int seek_file(vxt_system *s, void *fp, int offset, enum vxtp_disk_seek whence) {
+	(void)s;
+	switch (whence) {
+		case VXTP_SEEK_START: return (int)fseek((FILE*)fp, (long)offset, SEEK_SET);
+		case VXTP_SEEK_CURRENT: return (int)fseek((FILE*)fp, (long)offset, SEEK_CUR);
+		case VXTP_SEEK_END: return (int)fseek((FILE*)fp, (long)offset, SEEK_END);
+		default: return -1;
+	}
+}
+
+static int tell_file(vxt_system *s, void *fp) {
+	(void)s;
+	return (int)ftell((FILE*)fp);
+}
+
 static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 	int size = 0;
 	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, path, &size);
@@ -453,7 +478,11 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *rom_ext = load_bios(args.extension, 0xE0000);
 	if (!rom_ext) return -1;
 
-	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, NULL);
+	struct vxtp_disk_interface interface = {
+		&read_file, &write_file, &seek_file, &tell_file
+	};
+
+	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, &interface);
 	struct vxt_pirepheral *fdc = vxtp_fdc_create(&vxt_clib_malloc, 0x3F0, 6);
 	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
 	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit);
@@ -569,7 +598,7 @@ int ENTRY(int argc, char *argv[]) {
 
 	if (args.floppy) {
 		FILE *fp = fopen(args.floppy, "rb+");
-		vxt_error (*mnt)(struct vxt_pirepheral*,int,FILE*) = args.fdc ? vxtp_fdc_mount : vxtp_disk_mount;
+		vxt_error (*mnt)(struct vxt_pirepheral*,int,void*) = args.fdc ? vxtp_fdc_mount : vxtp_disk_mount;
 		if (fp && (mnt(args.fdc ? fdc : disk, 0, fp) == VXT_NO_ERROR))
 			printf("Floppy image: %s\n", args.floppy);
 	}

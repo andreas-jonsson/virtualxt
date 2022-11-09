@@ -290,10 +290,17 @@ static bool blink_tick(struct vxt_pirepheral *p) {
 }
 
 static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
-    pixels[offset++] = 0xFF;
-    pixels[offset++] = (vxt_byte)(color & 0x0000FF);
-    pixels[offset++] = (vxt_byte)((color & 0x00FF00) >> 8);
-    pixels[offset] = (vxt_byte)((color & 0xFF0000) >> 16);
+    #ifdef VXTP_CGA_BYTESWAP
+        pixels[offset++] = (vxt_byte)((color & 0xFF0000) >> 16);
+        pixels[offset++] = (vxt_byte)((color & 0x00FF00) >> 8);
+        pixels[offset++] = (vxt_byte)(color & 0x0000FF);
+        pixels[offset] = 0xFF;
+    #else
+        pixels[offset++] = 0xFF;
+        pixels[offset++] = (vxt_byte)(color & 0x0000FF);
+        pixels[offset++] = (vxt_byte)((color & 0x00FF00) >> 8);
+        pixels[offset] = (vxt_byte)((color & 0xFF0000) >> 16);
+    #endif
 }
 
 static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int x, int y) {

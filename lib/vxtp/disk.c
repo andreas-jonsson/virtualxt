@@ -20,9 +20,6 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include <stdlib.h>
-#include <stdio.h>
-
 #include "vxtp.h"
 
 #define SECTOR_SIZE 512
@@ -43,51 +40,53 @@ struct drive {
 };
 
 VXT_PIREPHERAL(disk, {
+    struct vxtp_disk_interface interface;
+
 	vxt_byte boot_drive;
     vxt_byte num_hd;
 
-    const char **files;
     struct drive disks[0x100];
 })
 
-static vxt_byte execute_operation(vxt_system *s, struct drive *dev, bool read, vxt_pointer addr,
+static vxt_byte execute_operation(vxt_system *s, struct vxtp_disk_interface *di, struct drive *dev, bool read, vxt_pointer addr,
     vxt_word cylinders, vxt_word sectors, vxt_word heads, vxt_byte count)
 {
     if (!sectors)
 	    return 0;
-    
+
     int lba = ((int)cylinders * (int)dev->heads + (int)heads) * (int)dev->sectors + (int)sectors - 1;
-    if (fseek(dev->fp, lba * SECTOR_SIZE, SEEK_SET))
+    if (di->seek(s, dev->fp, lba * SECTOR_SIZE, VXTP_SEEK_START))
         return 0;
 
     int num_sectors = 0;
     while (num_sectors < count) {
         if (read) {
-            if (fread(dev->buffer, 1, SECTOR_SIZE, dev->fp) != SECTOR_SIZE)
+            if (di->read(s, dev->fp, dev->buffer, SECTOR_SIZE) != SECTOR_SIZE)
                 break;
             for (int i = 0; i < SECTOR_SIZE; i++)
                 vxt_system_write_byte(s, addr++, dev->buffer[i]);
         } else {
             for (int i = 0; i < SECTOR_SIZE; i++)
                 dev->buffer[i] = vxt_system_read_byte(s, addr++);
-            if (fwrite(dev->buffer, 1, SECTOR_SIZE, dev->fp) != SECTOR_SIZE)
+            if (di->write(s, dev->fp, dev->buffer, SECTOR_SIZE) != SECTOR_SIZE)
                 break;
         }
         num_sectors++;
     }
-    
-    fflush(dev->fp);
+
+    // NOTE: File interface must be flushed at this point!
+
     return num_sectors;
 }
 
-static void execute_and_set(vxt_system *s, struct disk *c, bool read) {
+static void execute_and_set(vxt_system *s, struct vxtp_disk_interface *di, struct disk *c, bool read) {
     struct vxt_registers *r = vxt_system_registers(s);
     struct drive *d = &c->disks[r->dl];
 	if (!d->fp) {
         r->ah = 1;
         r->flags |= VXT_CARRY;
 	} else {
-        r->al = execute_operation(s, d, read, VXT_POINTER(r->es, r->bx), (vxt_word)r->ch + (r->cl / 64) * 256, (vxt_word)r->cl & 0x3F, (vxt_word)r->dh, r->al);
+        r->al = execute_operation(s, di, d, read, VXT_POINTER(r->es, r->bx), (vxt_word)r->ch + (r->cl / 64) * 256, (vxt_word)r->cl & 0x3F, (vxt_word)r->dh, r->al);
         r->ah = 0;
         r->flags &= ~VXT_CARRY;
 	}
@@ -96,13 +95,13 @@ static void execute_and_set(vxt_system *s, struct disk *c, bool read) {
 static void bootstrap(vxt_system *s, struct disk *c) {
     struct drive *d = &c->disks[c->boot_drive];
     if (!d->fp) {
-        fprintf(stderr, "No bootdrive!\n");
-        abort();
+        VXT_LOG("No bootdrive!");
+        return;
     }
 
     struct vxt_registers *r = vxt_system_registers(s);
     r->dl = c->boot_drive;
-    r->al = execute_operation(s, d, true, VXT_POINTER(0x0, 0x7C00), 0, 1, 0, 1);
+    r->al = execute_operation(s, &c->interface, d, true, VXT_POINTER(0x0, 0x7C00), 0, 1, 0, 1);
 }
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
@@ -140,10 +139,10 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
                     r->flags = d->cf ? (r->flags | VXT_CARRY) : (r->flags & ~VXT_CARRY);
                     return;
                 case 2: // Read sector
-                    execute_and_set(s, c, true);
+                    execute_and_set(s, &c->interface, c, true);
                     break;
                 case 3: // Write sector
-                    execute_and_set(s, c, false);
+                    execute_and_set(s, &c->interface, c, false);
                     break;
                 case 4: // Format track
                 case 5: 
@@ -196,19 +195,20 @@ bool vxtp_disk_unmount(struct vxt_pirepheral *p, int num) {
     return has_disk;
 }
 
-vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
+vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, void *fp) {
     VXT_DEC_DEVICE(c, disk, p);
+    vxt_system *s = VXT_GET_SYSTEM(disk, p);
 
-    long size = 0;
-    if (fseek(fp, 0, SEEK_END))
+    int size = 0;
+    if (c->interface.seek(s, fp, 0, VXTP_SEEK_END))
         return VXT_USER_ERROR(0);
-    if ((size = ftell(fp)) < 0)
+    if ((size = c->interface.tell(s, fp)) < 0)
         return VXT_USER_ERROR(1);
-    if (fseek(fp, 0, SEEK_SET))
+    if (c->interface.seek(s, fp, 0, VXTP_SEEK_START))
         return VXT_USER_ERROR(2);
 
     if ((size > 1474560) && (num < 0x80)) {
-        fprintf(stderr, "invalid harddrive number, expected 128+\n");
+        VXT_LOG("Invalid harddrive number, expected 128+");
         return VXT_USER_ERROR(3);
     }
 
@@ -216,7 +216,7 @@ vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
     if (d->fp) {
         vxtp_disk_unmount(p, num);
     }
-
+    
 	if (num >= 0x80) {
         d->cylinders = size / (63 * 16 * 512);
 		d->sectors = 63;
@@ -243,7 +243,7 @@ vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
 	}
 
 	d->fp = fp;
-    d->size = (int)size;
+    d->size = size;
     d->ah = d->cf = 0;
     return VXT_NO_ERROR;
 }
@@ -255,33 +255,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     vxt_system_install_io(s, p, 0xB0, 0xB1);
     c->boot_drive = 0;
 
-    if (!c->files)
-        return VXT_NO_ERROR;
-
-    for (int i = 0; c->files[i]; i++) {
-        const char *file = c->files[i];
-        char buffer[512];
-        char ty[1];
-        int num;
-
-        if (sscanf(file, "%d%c%s", &num, ty, buffer) != 3) {
-            fprintf(stderr, "invalid disk directive: %s\n", file);
-            return VXT_USER_ERROR(0);
-        }
-
-        FILE *fp = fopen(buffer, "rb+");
-        if (!fp) {
-            fprintf(stderr, "could not open: %s\n", file);
-            return VXT_USER_ERROR(1);
-        }
-
-        vxt_error err = vxtp_disk_mount(p, num, fp);
-        if (err != VXT_NO_ERROR)
-            return err;
-
-        if (*ty == '*')
-            c->boot_drive = num;
-    }
     return VXT_NO_ERROR;
 }
 
@@ -304,11 +277,11 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "Disk Controller";
 }
 
-struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const char *files[]) {
+struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const struct vxtp_disk_interface *interface) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(disk));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(disk));
     VXT_DEC_DEVICE(c, disk, p);
-    c->files = files;
+    c->interface = *interface;
 
     p->install = &install;
     p->destroy = &destroy;

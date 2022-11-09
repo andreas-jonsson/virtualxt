@@ -149,6 +149,19 @@ struct vxtp_joystick_event {
     vxt_int16 yaxis;
 };
 
+enum vxtp_disk_seek {
+    VXTP_SEEK_START		= 0x0,
+	VXTP_SEEK_CURRENT 	= 0x1,
+	VXTP_SEEK_END 		= 0x2
+};
+
+struct vxtp_disk_interface {
+    int (*read)(vxt_system *s, void *fp, vxt_byte *buffer, int size);
+	int (*write)(vxt_system *s, void *fp, vxt_byte *buffer, int size);
+	int (*seek)(vxt_system *s, void *fp, int offset, enum vxtp_disk_seek whence);
+	int (*tell)(vxt_system *s, void *fp);
+};
+
 extern struct vxt_pirepheral *vxtp_pic_create(vxt_allocator *alloc);
 
 extern struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, long long (*ustics)(void));
@@ -176,13 +189,13 @@ extern vxt_dword vxtp_vga_border_color(struct vxt_pirepheral *p);
 extern bool vxtp_vga_snapshot(struct vxt_pirepheral *p);
 extern int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 
-extern struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const char *files[]);
+extern struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const struct vxtp_disk_interface *interface);
 extern void vxtp_disk_set_boot_drive(struct vxt_pirepheral *p, int num);
-extern vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, FILE *fp);
+extern vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, void *fp);
 extern bool vxtp_disk_unmount(struct vxt_pirepheral *p, int num);
 
 extern struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word base, int irq);
-extern vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, FILE *fp);
+extern vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, void *fp);
 extern bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num);
 
 extern struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc);

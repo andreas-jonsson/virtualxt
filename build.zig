@@ -201,15 +201,6 @@ pub fn build(b: *Builder) void {
     opl3.setTarget(target);
     opl3.linkLibC();
 
-    // -------- microui --------
-
-    const microui = b.addStaticLibrary("microui", null);
-    microui.setBuildMode(mode);
-    microui.setTarget(target);
-    microui.linkLibC();
-    microui.addIncludePath("lib/microui/src");
-    microui.addCSourceFile("lib/microui/src/microui.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
-
     // -------- pirepheral --------
 
     const pirepheral = b.addStaticLibrary("vxtp", null);
@@ -373,7 +364,9 @@ pub fn build(b: *Builder) void {
 
         // Add the vxt pirepherals directly.
         wasm.addIncludePath("lib/vxtp");
-        //wasm.addCSourceFile("lib/vxtp/disk.c", wasm_opt);
+        wasm.defineCMacroRaw("VXTP_CGA_BYTESWAP");
+        
+        wasm.addCSourceFile("lib/vxtp/disk.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/pic.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/ppi.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/pit.c", wasm_opt);
@@ -383,8 +376,8 @@ pub fn build(b: *Builder) void {
         // https://github.com/ziglang/zig/issues/8633
         const page_size = 0x10000;
         wasm.import_memory = true; // import linear memory from the environment
-        wasm.initial_memory = 500 * page_size; // initial size of the linear memory (1 page = 64kB)
-        wasm.max_memory = 500 * page_size; // maximum size of the linear memory
+        wasm.initial_memory = 700 * page_size; // initial size of the linear memory (1 page = 64kB)
+        wasm.max_memory = 700 * page_size; // maximum size of the linear memory
         wasm.global_base = 6560; // offset in linear memory to place global data
 
         // TODO: Change this to a real copy step.

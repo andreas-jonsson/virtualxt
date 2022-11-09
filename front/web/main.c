@@ -21,6 +21,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include <stdarg.h>
+#include <string.h>
 
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
@@ -30,18 +31,24 @@
 
 #include "main.h"
 
-#define ALLOCATOR_SIZE (20 * 1024 * 1024)
+#define ALLOCATOR_SIZE (30 * 1024 * 1024)
 vxt_byte allocator_data[ALLOCATOR_SIZE];
 vxt_byte *allocator_ptr = allocator_data;
 
 #define LOG(...) ( log_wrapper(__VA_ARGS__) )
+
+int disk_head = 0;
+vxt_byte *disk_content = NULL;
+
+int cga_width = -1;
+int cga_height = -1;
 
 vxt_system *sys = NULL;
 struct vxt_pirepheral *disk = NULL;
 struct vxt_pirepheral *ppi = NULL;
 struct vxt_pirepheral *cga = NULL;
 
-int log_wrapper(const char *fmt, ...) {
+static int log_wrapper(const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 
@@ -60,12 +67,75 @@ static void *allocator(void *ptr, int sz) {
 		LOG("Reallocation is not support!\n");
 		return NULL;
 	}
+
+	vxt_byte *p = allocator_ptr;
+	sz += 8 - (sz % 8);
 	allocator_ptr += sz;
+	
 	if (allocator_ptr >= (allocator_data + ALLOCATOR_SIZE)) {
 		LOG("Allocator is out of memory!\n");
 		return NULL;
 	}
-	return allocator_ptr;
+	return p;
+}
+
+static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+	(void)s; (void)fp;
+
+	int disk_sz = (int)get_freedos_hd_size();
+	if ((disk_head + size) > disk_sz)
+		size = disk_sz - disk_head;
+
+	memcpy(buffer, disk_content + disk_head, size);
+	disk_head += size;
+	return size;
+}
+
+static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+	(void)s; (void)fp;
+
+	int disk_sz = (int)get_freedos_hd_size();
+	if ((disk_head + size) > disk_sz)
+		size = disk_sz - disk_head;
+
+	memcpy(disk_content + disk_head, buffer, size);
+	disk_head += size;
+	return size;
+}
+
+static int seek_file(vxt_system *s, void *fp, int offset, enum vxtp_disk_seek whence) {
+	(void)s; (void)fp;
+
+	int disk_sz = (int)get_freedos_hd_size();
+	int pos = -1;
+
+	switch (whence) {
+		case VXTP_SEEK_START:
+			if ((pos = offset) > disk_sz)
+				return -1;
+			break;
+		case VXTP_SEEK_CURRENT:
+			pos = disk_head + offset;
+			if ((pos < 0) || (pos > disk_sz))
+				return -1;
+			break;
+		case SEEK_END:
+			pos = disk_sz - offset;
+			if ((pos < 0) || (pos > disk_sz))
+				return -1;
+			break;
+		default:
+			LOG("Invalid seek!");
+			return -1;
+	}
+
+	disk_head = pos;
+	return 0;
+}
+
+static int tell_file(vxt_system *s, void *fp) {
+	(void)s; (void)fp;
+	return disk_head;
 }
 
 static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
@@ -79,33 +149,49 @@ static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_poin
 }
 
 static long long ustimer(void) {
-    return 1;//(long long)(((double)clock() / CLOCKS_PER_SEC) * 1000000.0);
+    return (long long)js_ustimer();
 }
-/*
+
 static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
-    (void)width; (void)height;
+    cga_width = width;
+	cga_height = height;
     *(const vxt_byte**)userdata = rgba;
     return 0;
 }
-*/
-void *video_rgba_memory_pointer(void) {
-	//vxtp_cga_snapshot(cga);
-	/*
+
+int video_width(void) {
+	return cga_width;
+}
+
+int video_height(void) {
+	return cga_height;
+}
+
+const void *video_rgba_memory_pointer(void) {
+	vxtp_cga_snapshot(cga);
+
 	const vxt_byte *video_mem_buffer = NULL;
 	vxtp_cga_render(cga, &render_callback, &video_mem_buffer);
-	*/
-	static vxt_byte buffer[640*200*4];
-	return buffer;//(void*)video_mem_buffer;
+	return (void*)video_mem_buffer;
 }
 
 void step_emulation(int cycles) {
-	(void)cycles;
+	struct vxt_step s = vxt_system_step(sys, cycles);
+	if (s.err != VXT_NO_ERROR)
+		LOG(vxt_error_str(s.err));
 }
 
 void initialize_emulator(void) {
 	vxt_set_logger(&log_wrapper);
+
+	disk_content = allocator(NULL, get_freedos_hd_size());
+	memcpy(disk_content, get_freedos_hd_data(), get_freedos_hd_size());
+
+	struct vxtp_disk_interface interface = {
+		&read_file, &write_file, &seek_file, &tell_file
+	};
 	
-	//struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, NULL);
+	struct vxt_pirepheral *disk = vxtp_disk_create(&allocator, &interface);
 	struct vxt_pirepheral *pit = vxtp_pit_create(&allocator, &ustimer);
 	
 	ppi = vxtp_ppi_create(&allocator, pit);
@@ -120,14 +206,13 @@ void initialize_emulator(void) {
         pit,
         ppi,
 		cga,
-        //disk,
+        disk,
 		NULL
 	};
 
 	sys = vxt_system_create(&allocator, devices);
-	//vxt_system_initialize(sys);
-	/*
-
+	vxt_system_initialize(sys);
+	
 	LOG("Installed pirepherals:\n");
 	for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
 		struct vxt_pirepheral *device = vxt_system_pirepheral(sys, (vxt_byte)i);
@@ -135,6 +220,10 @@ void initialize_emulator(void) {
 			LOG("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
 
+	vxt_error err = vxtp_disk_mount(disk, 128, disk_content);
+	if (err != VXT_NO_ERROR)
+		LOG("%s (0x%X)", vxt_error_str(err), err);
+
+	vxtp_disk_set_boot_drive(disk, 128);
 	vxt_system_reset(sys);
-	*/
 }

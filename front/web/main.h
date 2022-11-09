@@ -27,11 +27,16 @@ extern const unsigned char *get_pcxtbios_data(void);
 extern unsigned int get_pcxtbios_size(void);
 extern const unsigned char *get_vxtx_data(void);
 extern unsigned int get_vxtx_size(void);
+extern const unsigned char *get_freedos_hd_data(void);
+extern unsigned int get_freedos_hd_size(void);
 
 extern void step_emulation(int);
 extern void initialize_emulator(void);
-extern void *video_rgba_memory_pointer(void);
+extern const void *video_rgba_memory_pointer(void);
+extern int video_width(void);
+extern int video_height(void);
 
 extern void js_puts(const char *s, int len);
+extern unsigned int js_ustimer(void);
 
 #endif

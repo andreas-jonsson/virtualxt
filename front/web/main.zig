@@ -23,8 +23,16 @@
 const c = @cImport(@cInclude("main.h"));
 const std = @import("std");
 
-export fn wasm_video_rgba_memory_pointer() [*]u8 {
-    return @ptrCast([*]u8, c.video_rgba_memory_pointer());
+export fn wasm_video_rgba_memory_pointer() [*]const u8 {
+    return @ptrCast([*]const u8, c.video_rgba_memory_pointer());
+}
+
+export fn wasm_video_width() i32 {
+    return @as(i32, c.video_width());
+}
+
+export fn wasm_video_height() i32 {
+    return @as(i32, c.video_height());
 }
 
 export fn wasm_step_emulation(cycles: i32) void {
@@ -39,6 +47,7 @@ export fn wasm_initialize_emulator() void {
 
 const pcxtbios = @embedFile("../../bios/pcxtbios.bin");
 const vxtx = @embedFile("../../bios/vxtx.bin");
+const freedos_hd = @embedFile("../../boot/freedos_hd.img");
 
 export fn get_pcxtbios_data() [*]const u8 {
     return pcxtbios;
@@ -54,4 +63,12 @@ export fn get_vxtx_data() [*]const u8 {
 
 export fn get_vxtx_size() u32 {
     return vxtx.len;
+}
+
+export fn get_freedos_hd_data() [*]const u8 {
+    return freedos_hd;
+}
+
+export fn get_freedos_hd_size() u32 {
+    return freedos_hd.len;
 }

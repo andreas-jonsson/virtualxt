@@ -460,7 +460,7 @@ bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num) {
     return has_disk;
 }
 
-vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, FILE *fp) {
+vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, void *fp) {
     VXT_DEC_DEVICE(c, fdc, p);
 
     if (num > 3)

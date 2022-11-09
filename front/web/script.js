@@ -1,11 +1,12 @@
 var memory = new WebAssembly.Memory({
-    initial: 500 /* pages */,
-    maximum: 500 /* pages */,
+    initial: 700 /* pages */,
+    maximum: 700 /* pages */,
 });
 
 var importObject = {
     env: {
         js_puts: printCString,
+        js_ustimer: () => { return performance.now() * 1000; },
         memory: memory,
     },
 };
@@ -24,28 +25,35 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
 
     const canvas = document.getElementById("virtualxt-canvas");
     const context = canvas.getContext("2d");
-    const imageData = context.createImageData(canvas.width, canvas.height);
+
+    var imageData = context.createImageData(canvas.width, canvas.height);
     context.clearRect(0, 0, canvas.width, canvas.height);
 
+    //const urlParams = new URLSearchParams(window.location.search);
+    //const cDrive = urlParams.get('c');
+
     const renderFrame = () => {
+        const width = result.instance.exports.wasm_video_width();
+        const height = result.instance.exports.wasm_video_height();
+
+        if ((imageData.width != width) || (imageData.height != height)) {
+            canvas.width = width; canvas.height = height;
+            imageData = context.createImageData(width, height);
+        }
+
         const bufferOffset = result.instance.exports.wasm_video_rgba_memory_pointer();
         const imageDataArray = wasmMemoryArray.slice(
             bufferOffset,
-            bufferOffset + 640 * 200 * 4
+            bufferOffset + width * height * 4
         );
+
         imageData.data.set(imageDataArray);
-
-        context.clearRect(0, 0, canvas.width, canvas.height);
         context.putImageData(imageData, 0, 0);
-    };
-
-    const stepEmulation = () => {
-        result.instance.exports.wasm_step_emulation(10000);
     };
 
     result.instance.exports.wasm_initialize_emulator();
 
-    //renderFrame();
-    //setInterval(renderFrame, 320);
-    //setInterval(stepEmulation, 100);
+    renderFrame();
+    setInterval(renderFrame, 32);
+    setInterval(() => { result.instance.exports.wasm_step_emulation(100000); }, 1);
 });
