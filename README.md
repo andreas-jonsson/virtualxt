@@ -44,7 +44,7 @@ You also need to have [SDL2](https://www.libsdl.org/) installed on your system o
 ```
 git clone https://github.com/andreas-jonsson/virtualxt.git
 cd virtualxt
-zig build
+zig build run -Drelease-fast
 ```
 
 You can download pre-built binaries from [itch.io](https://phix.itch.io/virtualxt/purchase). OSX and Linux users can also download VirtualXT using [Homebrew](https://brew.sh).
