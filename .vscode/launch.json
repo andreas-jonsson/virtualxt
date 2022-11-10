@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/virtualxt",
-            "args": ["--mute", "--debug"],
+            "args": ["-f", "0", "--mute", "--debug"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -23,7 +23,7 @@
                 }
             ],
             "preLaunchTask": "build",
-            "miDebuggerPath": "/usr/bin/gdb"
+            "miDebuggerPath": "gdb"
         }
     ]
 }

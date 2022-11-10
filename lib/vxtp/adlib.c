@@ -89,7 +89,7 @@ struct vxt_pirepheral *vxtp_adlib_create(vxt_allocator *alloc) {
     return p;
 }
 
-vxt_int16 vxtp_adlib_sample(struct vxt_pirepheral *p, int freq) {
+vxt_int16 vxtp_adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
     VXT_DEC_DEVICE(a, adlib, p);
     if (a->freq != freq) {
         a->freq = freq;

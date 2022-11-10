@@ -24,8 +24,11 @@
 
 #include <string.h>
 
+#ifndef VXTP_PPI_TONE_VOLUME
+    #define VXTP_PPI_TONE_VOLUME 8192
+#endif
+
 #define MAX_EVENTS 16
-#define TONE_VOLUME 8192
 #define INT64 long long
 
 #define DATA_READY 1
@@ -52,6 +55,9 @@ VXT_PIREPHERAL(ppi, {
 
     INT64 spk_sample_index;
 	bool spk_enabled;
+
+    void (*speaker_callback)(struct vxt_pirepheral*,double,void*);
+    void *speaker_callback_data;
 
     struct vxt_pirepheral *pit;
 })
@@ -94,6 +100,9 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             if (enabled != c->spk_enabled) {
                 c->spk_enabled = enabled;
                 c->spk_sample_index = 0;
+
+                if (c->speaker_callback)
+                    c->speaker_callback(p, enabled ? vxtp_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
             }
             break;
         }
@@ -145,6 +154,9 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 	c->spk_sample_index = 0;
 	c->spk_enabled = false;
 
+    if (c->speaker_callback)
+        c->speaker_callback(p, 0.0, c->speaker_callback_data);
+
     c->keyboard_enable = true;
     c->queue_size = 0;
 
@@ -194,7 +206,13 @@ bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool f
     return false;
 }
 
-vxt_int16 vxtp_ppi_sample(struct vxt_pirepheral *p, int freq) {
+void vxtp_ppi_set_speaker_callback(struct vxt_pirepheral *p, void (*f)(struct vxt_pirepheral*,double,void*), void *userdata) {
+    VXT_DEC_DEVICE(c, ppi, p);
+    c->speaker_callback = f;
+    c->speaker_callback_data = userdata;
+}
+
+vxt_int16 vxtp_ppi_generate_sample(struct vxt_pirepheral *p, int freq) {
     VXT_DEC_DEVICE(c, ppi, p);
 
     double tone_hz = vxtp_pit_get_frequency(c->pit, 2);
@@ -206,7 +224,7 @@ vxt_int16 vxtp_ppi_sample(struct vxt_pirepheral *p, int freq) {
 
     if (!half_square_wave_period)
         return 0;
-    return ((++c->spk_sample_index / half_square_wave_period) % 2) ? TONE_VOLUME : -TONE_VOLUME;
+    return ((++c->spk_sample_index / half_square_wave_period) % 2) ? VXTP_PPI_TONE_VOLUME : -VXTP_PPI_TONE_VOLUME;
 }
 
 void vxtp_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data) {

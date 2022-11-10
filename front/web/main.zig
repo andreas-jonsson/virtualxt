@@ -35,6 +35,10 @@ export fn wasm_video_height() i32 {
     return @as(i32, c.video_height());
 }
 
+export fn wasm_send_key(scan: i32) void {
+    c.send_key(@as(c_int, scan));
+}
+
 export fn wasm_step_emulation(cycles: i32) void {
     c.step_emulation(@as(c_int, cycles));
 }

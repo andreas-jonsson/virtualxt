@@ -152,6 +152,11 @@ static long long ustimer(void) {
     return (long long)js_ustimer();
 }
 
+static void speaker_callback(struct vxt_pirepheral *p, double freq, void *userdata) {
+	(void)p; (void)userdata;
+	js_speaker_callback(freq);
+}
+
 static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
     cga_width = width;
 	cga_height = height;
@@ -175,6 +180,10 @@ const void *video_rgba_memory_pointer(void) {
 	return (void*)video_mem_buffer;
 }
 
+void send_key(int scan) {
+	vxtp_ppi_key_event(ppi, (enum vxtp_scancode)scan, false);
+}
+
 void step_emulation(int cycles) {
 	struct vxt_step s = vxt_system_step(sys, cycles);
 	if (s.err != VXT_NO_ERROR)
@@ -195,6 +204,8 @@ void initialize_emulator(void) {
 	struct vxt_pirepheral *pit = vxtp_pit_create(&allocator, &ustimer);
 	
 	ppi = vxtp_ppi_create(&allocator, pit);
+	vxtp_ppi_set_speaker_callback(ppi, &speaker_callback, NULL);
+
     cga = vxtp_cga_create(&allocator, &ustimer);
 
 	struct vxt_pirepheral *devices[] = {

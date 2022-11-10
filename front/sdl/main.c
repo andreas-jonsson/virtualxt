@@ -245,9 +245,9 @@ static void audio_callback(void *udata, uint8_t *stream, int len) {
 	
 	SYNC(
 		for (int i = 0; i < len; i++) {
-			vxt_word sample = vxtp_ppi_sample(audio_sources[0], audio_spec.freq);
+			vxt_word sample = vxtp_ppi_generate_sample(audio_sources[0], audio_spec.freq);
 			if (audio_sources[1])
-				sample += vxtp_adlib_sample(audio_sources[1], audio_spec.freq);
+				sample += vxtp_adlib_generate_sample(audio_sources[1], audio_spec.freq);
 
 			((vxt_int16*)stream)[i] = sample;
 			if (audio_spec.channels > 1)

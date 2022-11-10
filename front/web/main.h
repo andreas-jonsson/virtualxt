@@ -35,8 +35,10 @@ extern void initialize_emulator(void);
 extern const void *video_rgba_memory_pointer(void);
 extern int video_width(void);
 extern int video_height(void);
+extern void send_key(int);
 
-extern void js_puts(const char *s, int len);
+extern void js_puts(const char*, int);
 extern unsigned int js_ustimer(void);
+extern void js_speaker_callback(double);
 
 #endif
