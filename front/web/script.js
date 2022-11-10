@@ -20,10 +20,11 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-const cycle_cap = 75000;
-const target_freq = 4.77;
+const cycleCap = 75000;
+const targetFreq = 4.77;
+const targetWidth = 640;
 
-const js_to_xt = {
+const jsToXt = {
     "Escape": 1,
     "1": 2, "!": 2,
     "2": 3, "@": 3,
@@ -138,7 +139,7 @@ function handleKeyEvent(event, mask, callback) {
         return;
     }
 
-    var scan = js_to_xt[event.key];
+    var scan = jsToXt[event.key];
     if (!scan) {
         console.log("Unknown key:", event.key);
         return;
@@ -156,6 +157,7 @@ function handleKeyEvent(event, mask, callback) {
 }
 
 WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((result) => {
+    const C = result.instance.exports;
     const wasmMemoryArray = new Uint8Array(memory.buffer);
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
@@ -172,20 +174,21 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     const renderFrame = () => {
-        const width = result.instance.exports.wasm_video_width();
-        const height = result.instance.exports.wasm_video_height();
+        const width = C.wasm_video_width();
+        const height = C.wasm_video_height();
 
         if ((imageData.width != width) || (imageData.height != height)) {
             const scale = (width / (4 / 3)) / height;
+            const tScale = targetWidth / width; // Adjust for low vs high CGA resolution.
 
             canvas.width = width; canvas.height = height;
-            canvas.style.setProperty("transform", "scaleY(" + scale + ")");            
-            console.log("Resolution changed: " + width + "x" + height + "(" + width + "x" + (height * scale).toFixed() + ")");
+            canvas.style.setProperty("transform", "scale(" + tScale + "," + (tScale * scale) + ")");            
+            console.log("Resolution changed: " + width + "x" + height + "(" + (width * tScale) + "x" + (height * scale * tScale).toFixed() + ")");
 
             imageData = context.createImageData(width, height);
         }
 
-        const bufferOffset = result.instance.exports.wasm_video_rgba_memory_pointer();
+        const bufferOffset = C.wasm_video_rgba_memory_pointer();
         const imageDataArray = wasmMemoryArray.slice(
             bufferOffset,
             bufferOffset + width * height * 4
@@ -197,10 +200,10 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
         window.requestAnimationFrame(renderFrame);
     };
 
-    result.instance.exports.wasm_initialize_emulator();
+    C.wasm_initialize_emulator();
 
-    window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, result.instance.exports.wasm_send_key); }, true);
-    window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, result.instance.exports.wasm_send_key); }, true);
+    window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
+    window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
 
     window.requestAnimationFrame(renderFrame);
 
@@ -209,12 +212,12 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
         const t = performance.now();
         const delta = t - stepper.t;
 
-        var cycles = delta * target_freq * 1000;
-        if (cycles > cycle_cap) {
-            cycles = cycle_cap;
+        var cycles = delta * targetFreq * 1000;
+        if (cycles > cycleCap) {
+            cycles = cycleCap;
         }
 
-        result.instance.exports.wasm_step_emulation(cycles);
+        C.wasm_step_emulation(cycles);
         stepper.c += cycles;
         stepper.t = t;
     }, 1);
