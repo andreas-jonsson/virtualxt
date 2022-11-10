@@ -40,5 +40,6 @@ extern void send_key(int);
 extern void js_puts(const char*, int);
 extern unsigned int js_ustimer(void);
 extern void js_speaker_callback(double);
+extern void js_set_border_color(unsigned int);
 
 #endif

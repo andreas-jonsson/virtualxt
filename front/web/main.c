@@ -42,6 +42,7 @@ vxt_byte *disk_content = NULL;
 
 int cga_width = -1;
 int cga_height = -1;
+vxt_dword cga_border = 0;
 
 vxt_system *sys = NULL;
 struct vxt_pirepheral *disk = NULL;
@@ -174,6 +175,10 @@ int video_height(void) {
 
 const void *video_rgba_memory_pointer(void) {
 	vxtp_cga_snapshot(cga);
+
+	vxt_dword color = vxtp_cga_border_color(cga);
+	if (color != cga_border)
+		js_set_border_color((cga_border = color));
 
 	const vxt_byte *video_mem_buffer = NULL;
 	vxtp_cga_render(cga, &render_callback, &video_mem_buffer);

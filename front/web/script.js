@@ -110,17 +110,18 @@ const js_to_xt = {
 }
 
 var memory = new WebAssembly.Memory({
-    initial: 700 /* pages */,
-    maximum: 700 /* pages */,
+    initial: 700, // Pages
+    maximum: 700
 });
 
 var importObject = {
     env: {
+        memory: memory,
         js_puts: printCString,
         js_ustimer: () => { return performance.now() * 1000; },
-        js_speaker_callback: (freq) => { oscillator.frequency.setValueAtTime(freq, null); }, 
-        memory: memory,
-    },
+        js_speaker_callback: (freq) => { oscillator.frequency.setValueAtTime(freq, null); },
+        js_set_border_color: (color) => { document.body.style.background = '#' + ('00000' + (color | 0).toString(16)).substr(-6); }
+    }
 };
 
 function printCString(ptr, len) {

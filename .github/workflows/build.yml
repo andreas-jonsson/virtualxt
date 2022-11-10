@@ -49,7 +49,7 @@ jobs:
           bash <(curl -s https://codecov.io/bash) -s kcov-out
         
       - name: Build
-        run: zig build -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
+        run: zig build -Dv20 -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
 
   windows-build:
     name: Build (Windows AMD64)
@@ -79,7 +79,7 @@ jobs:
         run: zig build test
         
       - name: Build
-        run: zig build -Drelease-fast -Dsdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}"
+        run: zig build -Dv20 -Drelease-fast -Dsdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}"
 
       - name: Package
         run: ./tools/package/itch/package.bat
@@ -115,4 +115,4 @@ jobs:
         run: zig build test
         
       - name: Build
-        run: zig build -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
+        run: zig build -Dv20 -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
