@@ -182,7 +182,7 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
             const scale = (width / (4 / 3)) / height;
 
             canvas.width = width; canvas.height = height;
-            canvas.style.setProperty("transform", "scale(1," + scale + ")");
+            canvas.style.setProperty("transform", "scaleY(" + scale + ")");            
             console.log("Resolution changed: " + width + "x" + height + "(" + width + "x" + (height * scale).toFixed() + ")");
 
             imageData = context.createImageData(width, height);
