@@ -51,7 +51,7 @@ export fn wasm_initialize_emulator() void {
 
 const pcxtbios = @embedFile("../../bios/pcxtbios.bin");
 const vxtx = @embedFile("../../bios/vxtx.bin");
-const freedos_hd = @embedFile("../../boot/freedos_hd.img");
+const freedos_hd = @embedFile("../../boot/freedos_web_hd.img");
 
 export fn get_pcxtbios_data() [*]const u8 {
     return pcxtbios;
