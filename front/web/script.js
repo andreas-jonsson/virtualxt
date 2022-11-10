@@ -179,7 +179,12 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
         const height = result.instance.exports.wasm_video_height();
 
         if ((imageData.width != width) || (imageData.height != height)) {
+            const scale = (width / (4 / 3)) / height;
+
             canvas.width = width; canvas.height = height;
+            canvas.style.setProperty("transform", "scale(1," + scale + ")");
+            console.log("Resolution changed: " + width + "x" + height + "(" + width + "x" + (height * scale).toFixed() + ")");
+
             imageData = context.createImageData(width, height);
         }
 
