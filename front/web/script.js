@@ -161,7 +161,7 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
 
     oscillator = audioCtx.createOscillator();
-    oscillator.type = 'square';
+    oscillator.type = "square";
     oscillator.connect(audioCtx.destination);
     oscillator.start();
 
@@ -170,9 +170,6 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
 
     var imageData = context.createImageData(canvas.width, canvas.height);
     context.clearRect(0, 0, canvas.width, canvas.height);
-
-    //const urlParams = new URLSearchParams(window.location.search);
-    //const cDrive = urlParams.get('c');
 
     const renderFrame = () => {
         const width = result.instance.exports.wasm_video_width();
