@@ -1,7 +1,7 @@
 #!/bin/sh
 
 HERE="$(dirname "$(readlink -f "$0")")"
-LIBS_PATH="$HERE/lib64:$HERE/usr/lib/x86_64-linux-gnu"
+LIBS_PATH="$HERE/lib64:$HERE/usr/lib:$HERE/usr/lib/x86_64-linux-gnu"
 
 if [ -z "$LD_LIBRARY_PATH" ]; then
   LD_LIBRARY_PATH="$LIBS_PATH"
