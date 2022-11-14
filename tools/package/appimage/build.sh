@@ -10,9 +10,9 @@ mkdir -p $APP_DIR/usr/lib/x86_64-linux-gnu $APP_DIR/lib64 $APP_DIR/bios $APP_DIR
 DST="$APP_DIR/usr/lib/x86_64-linux-gnu"
 SRC="/usr/lib/x86_64-linux-gnu"
 
-cp $SRC/libc.so* $DST
-cp $SRC/libm.so* $DST
-cp /lib64/ld-linux-x86-64.so* $APP_DIR/lib64/
+#cp $SRC/libc.so* $DST
+#cp $SRC/libm.so* $DST
+#cp /lib64/ld-linux-x86-64.so* $APP_DIR/lib64/
 
 # Required for network support.
 cp $SRC/libpcap.so* $DST
