@@ -1204,6 +1204,7 @@ static void grp4_FE(CONSTSP(cpu) p, INST(inst)) {
          rm_write8(p, op_sub_sbb8(&p->regs, v, 1, 0));
          break;
       default:
+         VALIDATOR_DISCARD(p);
          PRINT("TODO: Invalid opcode!");
    }
    SET_FLAG(p->regs.flags, VXT_CARRY, c);

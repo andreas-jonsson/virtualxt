@@ -25,11 +25,12 @@
 #include <time.h>
 #include <assert.h>
 
-#define VXT_CLIB_ALLOCATOR
+#define VXT_LIBC
+#define VXT_LIBC_ALLOCATOR
 #include <vxt/vxt.h>
-#include <vxt/utils.h>
+#include <vxt/vxtu.h>
 
-extern struct vxt_validator *pi8088_validator();
+extern struct vxt_validator *pi8088_validator(void);
 
 int main(int argc, char *argv[]) {
 	(void)argc; (void)argv;
@@ -37,14 +38,9 @@ int main(int argc, char *argv[]) {
 	vxt_set_logger(&printf);
 	srand((unsigned)time(NULL));
 
-	struct vxt_pirepheral *ram = vxtu_create_memory_device(&vxt_clib_malloc, 0x0, 0x100000, false);
+	struct vxt_pirepheral *ram = vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false);
 	for (int i = 0; i < 0x100000; i++)
 		ram->io.write(ram, (vxt_pointer)i, (vxt_byte)rand());
-
-	FILE *fp = fopen("scrambler.bin", "wb");
-	fwrite(vxtu_memory_internal_pointer(ram), 1, 0x100000, fp);
-	fclose(fp);
-	system("ndisasm -b 16 -o 0 scrambler.bin >> scrambler.asm");
 
 	struct vxt_pirepheral *devices[] = {
 		ram,
@@ -62,12 +58,22 @@ int main(int argc, char *argv[]) {
 
 	struct vxt_registers *r = vxt_system_registers(vxt);
 	for (;;) {
+		printf("----------------------------------------------------------------\n");
+
 		for (unsigned i = 0; i < sizeof(struct vxt_registers); i++)
 			((unsigned char*)r)[i] = (unsigned char)rand();
 
 		vxt_system_reset(vxt);
 		r->cs = (vxt_word)rand();
 		r->ip = (vxt_word)rand();
+		
+		{
+			vxt_pointer inst = VXT_POINTER(r->cs, r->ip);
+			FILE *fp = fopen("scrambler.bin", "ab");
+			fwrite((vxt_byte*)vxtu_memory_internal_pointer(ram) + inst, 1, 6, fp);
+			fclose(fp);
+			system("ndisasm -b 16 -o 0 scrambler.bin | head -1");
+		}
 
 		struct vxt_step res = vxt_system_step(vxt, 0);
 		if (res.err != VXT_NO_ERROR) {

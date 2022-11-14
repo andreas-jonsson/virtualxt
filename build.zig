@@ -375,9 +375,9 @@ pub fn build(b: *Builder) void {
         scrambler.linkSystemLibrary("gpiod");
         scrambler.defineCMacroRaw("PI8088");
 
-        scrambler.linkLibrary(build_libvxt(b, mode, target, cpu286, cpuV20, false));
+        scrambler.linkLibrary(build_libvxt(b, mode, target, false, false, false));
         scrambler.addIncludePath("lib/vxt/include");
-        scrambler.addIncludePath("lib/vxt");        
+        scrambler.addIncludePath("lib/vxt");
 
         scrambler.addCSourceFile("tools/validator/pi8088/scrambler.c", opt);
         scrambler.addCSourceFile("tools/validator/pi8088/pi8088.c", opt);
