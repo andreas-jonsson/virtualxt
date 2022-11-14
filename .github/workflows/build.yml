@@ -29,7 +29,7 @@ jobs:
       - name: Setup
         run: |
           sudo apt-get update
-          sudo apt-get install kcov cppcheck
+          sudo apt-get install kcov cppcheck libpcap-dev
           curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
           echo "${GITHUB_WORKSPACE}/zig-linux-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
 
@@ -49,7 +49,15 @@ jobs:
           bash <(curl -s https://codecov.io/bash) -s kcov-out
         
       - name: Build
-        run: zig build -Dv20 -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
+        run: zig build -Dv20 -Dpcap -Drelease-fast -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
+
+      - name: Package
+        run: ./tools/package/itch/package.linux.sh
+
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
 
   windows-build:
     name: Build (Windows AMD64)
@@ -79,7 +87,7 @@ jobs:
         run: zig build test
         
       - name: Build
-        run: zig build -Dv20 -Drelease-fast -Dsdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}"
+        run: zig build -Dv20 -Dpcap -Drelease-fast -Dsdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}"
 
       - name: Package
         run: ./tools/package/itch/package.bat
@@ -115,4 +123,4 @@ jobs:
         run: zig build test
         
       - name: Build
-        run: zig build -Dv20 -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
+        run: zig build -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
