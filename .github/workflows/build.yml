@@ -30,8 +30,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install kcov cppcheck libpcap-dev
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
           curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
           echo "${GITHUB_WORKSPACE}/zig-linux-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
 
           curl -L -o sdl.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-${SDL2_VERSION}.tar.gz && tar -xf sdl.tar.gz
           cd SDL2-${SDL2_VERSION}
