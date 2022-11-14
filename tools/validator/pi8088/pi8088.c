@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
 
 #define VXT_LIBC
 #define VXTU_LIBC_IO
@@ -156,7 +157,8 @@ static int log(const enum log_level lv, const char *fmt, ...) {
 }
 
 static int check(int line) {
-	ENSURE(line == 0 || line == 1);
+	if ((line != 0) && (line != 1))
+		ERROR("%s" NL, strerror(errno));
 	return line;
 }
 
@@ -181,7 +183,7 @@ static void pulse_clock(int ticks) {
 	}
 }
 
-static void reset_sequence() {
+static void reset_sequence(void) {
 	DEBUG("Starting reset sequence..." NL);
 
 	check(gpiod_line_set_value(reset_line, 1));
@@ -196,7 +198,7 @@ static void reset_sequence() {
 	DEBUG(NL "CPU is initialized!" NL);
 }
 
-static void latch_address() {
+static void latch_address(void) {
 	ENSURE(ale_signal);
 
 	address_latch = 0;
@@ -208,7 +210,7 @@ static void latch_address() {
 	DEBUG("Address latched: 0x%X" NL, address_latch);
 }
 
-static void set_bus_direction_out() {
+static void set_bus_direction_out(void) {
 	for (int i = 0; i < 8; i++)
 		check(gpiod_line_set_config(ad_0_7_line[i], GPIOD_LINE_REQUEST_DIRECTION_INPUT, 0, 0));
 }
@@ -219,7 +221,7 @@ static void set_bus_direction_in(vxt_byte data) {
 		check(gpiod_line_set_config(ad_0_7_line[i], GPIOD_LINE_REQUEST_DIRECTION_OUTPUT, 0, (data >> i) & 1));
 }
 
-static vxt_byte read_cpu_pins() {
+static vxt_byte read_cpu_pins(void) {
 	vxt_byte data = 0;
 	for (int i = 0; i < 8; i++)
 		data |= check(gpiod_line_get_value(ad_0_7_line[i])) << i;
@@ -349,7 +351,7 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 }
 
 // next_bus_cycle executes Tw, T4.
-static void next_bus_cycle() {
+static void next_bus_cycle(void) {
 	DEBUG("Wait for bus cycle");
 	while (!ale_signal) {
 		DEBUG(".");
@@ -359,7 +361,7 @@ static void next_bus_cycle() {
 }
 
 // execute_bus_cycle executes T1, T2, T3.
-static void execute_bus_cycle() {
+static void execute_bus_cycle(void) {
 	DEBUG("Execute bus cycle..." NL);
 
 	ENSURE(ale_signal);
@@ -378,7 +380,7 @@ static void execute_bus_cycle() {
 	}
 }
 
-static void init_pins() {
+static void init_pins(void) {
 	log(LOG_INFO, "Initialize pins..." NL);
 
 	// Output pins.
@@ -482,7 +484,7 @@ mask:
 	}
 }
 
-static void validate_registers() {
+static void validate_registers(void) {
 	ENSURE(state == STATE_FINISHED);
 	ASSERT(current_frame.next_fetch, "Next instruction was never fetched! Possible bad jump.");
 
