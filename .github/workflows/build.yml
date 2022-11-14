@@ -87,7 +87,7 @@ jobs:
         run: zig build test
         
       - name: Build
-        run: zig build -Dv20 -Dpcap -Drelease-fast -Dsdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}"
+        run: zig build -Dv20 -Drelease-fast -Dsdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}"
 
       - name: Package
         run: ./tools/package/itch/package.bat
