@@ -26,8 +26,6 @@ const builtin = @import("builtin");
 const Builder = std.build.Builder;
 const print = std.debug.print;
 
-const expected_zig_version: u32 = 10;
-
 const c_options = &[_][]const u8{
     "-Wall",
     "-Wextra",
@@ -151,17 +149,7 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     return lib;
 }
 
-fn assert_version(major: u32, minor: u32) void {
-    const a = builtin.zig_version.major;
-    const b = builtin.zig_version.minor;
-    if (a != major or b != minor) {
-        std.debug.panic("invalid Zig version, expected {}.{} but got {}.{}", .{ major, minor, a, b });
-    }
-}
-
 pub fn build(b: *Builder) void {
-    assert_version(0, expected_zig_version);
-
     const validator = b.option(bool, "validator", "Enable PI8088 hardware validator") orelse false;
     const network = b.option(bool, "pcap", "Link with libpcap") orelse false;
     const sdl_path = b.option([]const u8, "sdl-path", "Path to SDL2 headers and libs") orelse null;
@@ -175,17 +163,6 @@ pub fn build(b: *Builder) void {
 
     const libvxt = build_libvxt(b, mode, target, cpu286, cpuV20, false);
     b.step("lib", "Build libvxt").dependOn(&libvxt.step);
-
-    // -------- termbox --------
-
-    const termbox = b.addStaticLibrary("termbox", null);
-    termbox.setBuildMode(mode);
-    termbox.setTarget(target);
-    termbox.linkLibC();
-    termbox.addIncludePath("lib/termbox/src");
-
-    termbox.addCSourceFile("lib/termbox/src/termbox.c", c_options);
-    termbox.addCSourceFile("lib/termbox/src/utf8.c", c_options);
 
     // -------- ini --------
 
