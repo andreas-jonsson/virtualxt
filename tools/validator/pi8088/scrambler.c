@@ -30,6 +30,8 @@
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 
+#define TEMP_FILE "__scrambler.tmp"
+
 extern struct vxt_validator *pi8088_validator(void);
 
 int main(int argc, char *argv[]) {
@@ -69,10 +71,10 @@ int main(int argc, char *argv[]) {
 		
 		{
 			vxt_pointer inst = VXT_POINTER(r->cs, r->ip);
-			FILE *fp = fopen("scrambler.bin", "ab");
+			FILE *fp = fopen(TEMP_FILE, "wb");
 			fwrite((vxt_byte*)vxtu_memory_internal_pointer(ram) + inst, 1, 6, fp);
 			fclose(fp);
-			system("ndisasm -b 16 -o 0 scrambler.bin | head -1");
+			system("ndisasm -b 16 -o 0 " TEMP_FILE " | head -1");
 		}
 
 		struct vxt_step res = vxt_system_step(vxt, 0);
@@ -81,6 +83,8 @@ int main(int argc, char *argv[]) {
 			return -1;
 		}
 	}
+
 	vxt_system_destroy(vxt);
+	remove(TEMP_FILE);
 	return 0;
 }

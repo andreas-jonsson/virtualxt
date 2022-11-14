@@ -59,6 +59,5 @@ docs
 test
 *.trace
 
-scrambler.asm
-scrambler.bin
 tools/vxtdrv/vxtdrv.com
+__scrambler.tmp
