@@ -101,10 +101,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
         }
         c->channel[ch].page = (vxt_dword)data << 16;
     } else {
-        port &= 0x0F;
-        vxt_byte ch = (port >> 1) & 3;
-
-        switch (port) {
+        switch ((port &= 0x0F)) {
             case 0x0:
             case 0x1:
             case 0x2:
@@ -114,6 +111,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             case 0x6:
             case 0x7:
             {
+                vxt_byte ch = (port >> 1) & 3;
                 vxt_dword *target = (port & 1) ? &c->channel[ch].count : &c->channel[ch].addr;
                 if (c->flip)
                     *target = (*target & 0xFF) | ((vxt_word)data << 8);
@@ -128,16 +126,16 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
                 c->mem_to_mem = (data & 1) != 0;
                 break;
             case 0x9: // Request register
-                c->channel[ch].request = ((data >> 2) & 1) != 0;
+                c->channel[data & 3].request = ((data >> 2) & 1) != 0;
                 break;
             case 0xA: // Mask register
-                c->channel[ch].masked = ((data >> 2) & 1) != 0;
+                c->channel[data & 3].masked = ((data >> 2) & 1) != 0;
                 break;
             case 0xB: // Mode register
-                c->channel[ch].operation = (data >> 2) & 3;
-                c->channel[ch].mode = (data >> 6) & 3;
-                c->channel[ch].auto_init = ((data >> 4) & 1) != 0;
-                c->channel[ch].addr_inc = (data & 0x20) ? 0xFFFFFFFF : 0x00000001;
+                c->channel[data & 3].operation = (data >> 2) & 3;
+                c->channel[data & 3].mode = (data >> 6) & 3;
+                c->channel[data & 3].auto_init = ((data >> 4) & 1) != 0;
+                c->channel[data & 3].addr_inc = (data & 0x20) ? 0xFFFFFFFF : 0x1;
                 break;
             case 0xC: // Clear flip flop
                 c->flip = false;

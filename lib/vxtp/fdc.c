@@ -53,10 +53,7 @@ enum disk_command {
 };
 
 enum {
-	DOR_MASK_DRIVE0			= 0x00,
-	DOR_MASK_DRIVE1			= 0x01,
-	DOR_MASK_DRIVE2			= 0x02,
-	DOR_MASK_DRIVE3			= 0x03,
+	DOR_MASK_DRIVES			= 0x03,
 	DOR_MASK_RESET			= 0x04,
 	DOR_MASK_DMA			= 0x08,
 	DOR_MASK_DRIVE0_MOTOR	= 0x10,
@@ -141,6 +138,9 @@ VXT_PIREPHERAL(fdc, {
     vxt_word base;
     int irq;
 
+    bool use_dma;
+    struct vxt_pirepheral *dma_controller;
+
     vxt_byte fifo[FIFO_SIZE];
     int fifo_len;
 
@@ -161,13 +161,12 @@ VXT_PIREPHERAL(fdc, {
     vxt_byte drive_num;
     vxt_byte dor_reg;
     bool is_busy;
-    bool use_dma;
 })
 
 static vxt_byte fifo_read(struct fdc *c) {
     if (c->fifo_len) {
-        vxt_byte data = c->fifo[--c->fifo_len];
-        memmove(c->fifo, &c->fifo[1], c->fifo_len);
+        vxt_byte data = *c->fifo;
+        memmove(c->fifo, &c->fifo[1], --c->fifo_len);
         return data;
     }
     VXT_LOG("Reading empty FIFO!");
@@ -184,18 +183,17 @@ static void execute_command(struct fdc *c) {
 
     c->fifo_len = 0;
     c->is_busy = false;
-    c->status_reg0 = STATUS0_INT_NORMAL | (c->floppy[c->drive_num].fp ? 0 : STATUS0_NR) | (c->position[c->drive_num].head << 2) | c->drive_num;
 
 	switch (*c->command & 0xF) {
-        case CMD_READ_TRACK:
-            break;
+        //case CMD_READ_TRACK:
+        //    break;
         case CMD_SPECIFY:
             c->use_dma = (c->command[2] & 1) != 0;
             break;
-        case CMD_CHECK_STAT:
-            break;
-        case CMD_WRITE_SECT:
-            break;
+        //case CMD_CHECK_STAT:
+        //    break;
+        //case CMD_WRITE_SECT:
+        //    break;
         case CMD_READ_SECT:
         {
             struct drive_position *drive = &c->position[c->command[1] & 3];
@@ -215,16 +213,16 @@ static void execute_command(struct fdc *c) {
         }
         case CMD_CHECK_INT:
             fifo_write(c, (vxt_byte)c->status_reg0);
-            fifo_write(c, c->position[c->drive_num].track);
+            fifo_write(c, c->position[c->drive_num].track); // Cylinder?
             break;
-        case CMD_WRITE_DEL_S:
-            break;
-        case CMD_READ_ID_S:
-            break;
-        case CMD_READ_DEL_S:
-            break;
-        case CMD_FORMAT_TRACK:
-            break;
+        //case CMD_WRITE_DEL_S:
+        //    break;
+        //case CMD_READ_ID_S:
+        //    break;
+        //case CMD_READ_DEL_S:
+        //    break;
+        //case CMD_FORMAT_TRACK:
+        //    break;
         case CMD_SEEK:
         {
             struct drive_position *drive = &c->position[c->command[1] & 3];
@@ -234,11 +232,14 @@ static void execute_command(struct fdc *c) {
             break;
         }
         default:
+            c->command_len = 0;
             c->status_reg0 = STATUS0_INT_INVALID;
             fifo_write(c, (vxt_byte)c->status_reg0);
+            return;
 	}
 
 	c->command_len = 0;
+    c->status_reg0 = STATUS0_INT_NORMAL | (c->floppy[c->drive_num].fp ? 0 : STATUS0_NR) | (c->position[c->drive_num].head << 2) | c->drive_num;
 }
 
 static void push_command_byte(struct fdc *c, vxt_byte data) {
@@ -317,7 +318,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             VXT_LOG("Write port: 0x%X", port - c->base);
     }
 }
-/*
+
 static void update_seek(struct fdc *c) {
 	for (int i = 0; i < 4; i++) {
         struct drive_position *drive = &c->position[i];
@@ -360,11 +361,9 @@ static void update_transfer(struct fdc *c) {
 		if (drive->is_transfer) {
 			if (c->sector_read_index < SECTOR_SIZE) {
 				if (c->use_dma) {
-					// TODO!!!
-                    fprintf(stderr, "No DMA implemented!\n");
+					c->dma_controller->dma.write(c->dma_controller, 2, c->sector_buffer[c->sector_read_index++]);
 				} else {
-					if (!c->fifo_len) {
-						//c->fifo_len = 0;
+					if (c->fifo_len < FIFO_SIZE) {
 						fifo_write(c, c->sector_buffer[c->sector_read_index++]);
 						vxt_system_interrupt(c->s, c->irq);
                         return;
@@ -390,12 +389,15 @@ static void update_transfer(struct fdc *c) {
 			}
 		} else if (drive->is_reading) {
             FILE *fp = c->floppy[i].fp;
-            int sz = c->floppy[i].sectors * SECTOR_SIZE;
-			int lba = drive->track * sz * 2 + drive->head * sz + (drive->sector - 1) * SECTOR_SIZE;
+            if (fp) {
+                int sz = c->floppy[i].sectors * SECTOR_SIZE;
+                int lba = drive->track * sz * 2 + drive->head * sz + (drive->sector - 1) * SECTOR_SIZE;
 
-			fseek(fp, SEEK_SET, lba);
-			fread(c->sector_buffer, 1, SECTOR_SIZE, fp);
-
+                fseek(fp, SEEK_SET, lba);
+                fread(c->sector_buffer, 1, SECTOR_SIZE, fp);
+            } else {
+                VXT_LOG("Trying to read from a unmounted drive!");
+            }
 			drive->is_transfer = true;
             c->sector_read_index = c->fifo_len = 0;
 		}
@@ -410,7 +412,7 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
     update_transfer(c);
     return VXT_NO_ERROR;
 }
-*/
+
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, fdc, p);
     c->s = s;
@@ -419,7 +421,14 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
 
     c->dor_reg = DOR_MASK_RESET;
 
-    return VXT_NO_ERROR;
+    for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
+        struct vxt_pirepheral *ip = vxt_system_pirepheral(s, (vxt_byte)i);
+        if (vxt_pirepheral_class(ip) == VXT_PCLASS_DMA) {
+            c->dma_controller = ip;
+            break;
+        }
+    }
+    return c->dma_controller ? VXT_NO_ERROR : VXT_USER_ERROR(0);
 }
 
 static vxt_error destroy(struct vxt_pirepheral *p) {
@@ -443,7 +452,7 @@ struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word base, int 
     p->install = &install;
     p->destroy = &destroy;
     p->name = &name;
-    //p->step = &step;
+    p->step = &step;
     p->io.in = &in;
     p->io.out = &out;
     return p;
