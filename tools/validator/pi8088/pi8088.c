@@ -45,6 +45,7 @@
 #define ASSERT(e, ...) if (!(e)) ERROR(__VA_ARGS__)
 
 enum validator_state {
+	STATE_RESET,
 	STATE_SETUP,
 	STATE_EXECUTE,
 	STATE_READBACK,
@@ -128,7 +129,7 @@ bool visited[0x100000] = {false};
 //vxt_pointer trigger_addr = VXT_POINTER(0x0, 0x7C00);
 vxt_pointer trigger_addr = VXT_INVALID_POINTER;
 
-enum validator_state state = STATE_SETUP;
+enum validator_state state = STATE_RESET;
 struct frame current_frame = {0};
 
 const enum log_level {
@@ -169,13 +170,19 @@ static void pulse_clock(int ticks) {
 		cycle_count++;
 	}
 
-	rd_signal = !check(gpiod_line_get_value(rd_line));
-	wr_signal = !check(gpiod_line_get_value(wr_line));
-	iom_signal = check(gpiod_line_get_value(iom_line));
 	ale_signal = check(gpiod_line_get_value(ale_line));
+	if (ale_signal && (state == STATE_RESET))
+		state = STATE_SETUP;
 
-	ENSURE((rd_signal == 0) || (wr_signal == 0));
-	ENSURE((rd_signal == 0) || (ale_signal == 0));
+	// On some chips these lines float during reset.
+	if (state != STATE_RESET) {
+		rd_signal = !check(gpiod_line_get_value(rd_line));
+		wr_signal = !check(gpiod_line_get_value(wr_line));
+		iom_signal = check(gpiod_line_get_value(iom_line));
+
+		ENSURE((rd_signal == 0) || (wr_signal == 0));
+		ENSURE((rd_signal == 0) || (ale_signal == 0));
+	}
 
 	if (!ale_signal) {
 		cpu_memory_access = (enum access_type)(check(gpiod_line_get_value(a_8_19_line[9])) << 1) | check(gpiod_line_get_value(a_8_19_line[8]));
@@ -185,6 +192,8 @@ static void pulse_clock(int ticks) {
 
 static void reset_sequence(void) {
 	DEBUG("Starting reset sequence..." NL);
+
+	state = STATE_RESET;
 
 	check(gpiod_line_set_value(reset_line, 1));
 	pulse_clock(4);
@@ -267,6 +276,8 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 	ENSURE(!iom_signal);
 
 	switch (state) {
+		case STATE_RESET:
+			ERROR("Should not validate read during reset!" NL);
 		case STATE_SETUP:
 		{
 			// Trigger state change?
