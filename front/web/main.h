@@ -27,8 +27,6 @@ extern const unsigned char *get_pcxtbios_data(void);
 extern unsigned int get_pcxtbios_size(void);
 extern const unsigned char *get_vxtx_data(void);
 extern unsigned int get_vxtx_size(void);
-extern const unsigned char *get_freedos_hd_data(void);
-extern unsigned int get_freedos_hd_size(void);
 
 extern void step_emulation(int);
 extern void initialize_emulator(void);
@@ -41,5 +39,8 @@ extern void js_puts(const char*, int);
 extern unsigned int js_ustimer(void);
 extern void js_speaker_callback(double);
 extern void js_set_border_color(unsigned int);
+extern void js_disk_read(void*, unsigned int, unsigned int);
+extern void js_disk_write(void*, unsigned int, unsigned int);
+extern unsigned int js_disk_size(void);
 
 #endif

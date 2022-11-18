@@ -23,6 +23,7 @@
 const cycleCap = 75000;
 const targetFreq = 4.77;
 const targetWidth = 640;
+const diskImage = "freedos_web_hd.img";
 
 const jsToXt = {
     "Escape": 1,
@@ -108,22 +109,41 @@ const jsToXt = {
     "PageDown": 81,
     "Insert": 82,
     "Delete": 83
-}
+};
+
+var diskData = null;
 
 var memory = new WebAssembly.Memory({
-    initial: 700, // Pages
-    maximum: 700
+    initial: 350, // Pages
+    maximum: 350
 });
 
 var importObject = {
     env: {
         memory: memory,
         js_puts: printCString,
+        js_disk_read: diskReadData,
+        js_disk_write: diskWriteData,
+        js_disk_size: () => { return diskData.length; },
         js_ustimer: () => { return performance.now() * 1000; },
         js_speaker_callback: (freq) => { oscillator.frequency.setValueAtTime(freq, null); },
         js_set_border_color: (color) => { document.body.style.background = '#' + ('00000' + (color | 0).toString(16)).substr(-6); }
     }
 };
+
+function diskReadData(ptr, size, head) {
+    const view = new Uint8Array(memory.buffer, ptr, size);
+    for (let i = 0; i < size; i++) {
+        view[i] = diskData[head + i];
+    }
+}
+
+function diskWriteData(ptr, size, head) {
+    const view = new Uint8Array(memory.buffer, ptr, size);
+    for (let i = 0; i < size; i++) {
+        diskData[head + i] = view[i];
+    }
+}
 
 function printCString(ptr, len) {
     const view = new Uint8Array(memory.buffer, ptr, len);
@@ -156,6 +176,15 @@ function handleKeyEvent(event, mask, callback) {
     event.preventDefault();
 }
 
+function loadDiskImage(url) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.responseType = "arraybuffer";
+    xhr.onload = () => { diskData = (xhr.status == 200) ? new Uint8Array(xhr.response) : null; };
+    xhr.send();
+}
+
+loadDiskImage(diskImage);
 WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((result) => {
     const C = result.instance.exports;
     const wasmMemoryArray = new Uint8Array(memory.buffer);
@@ -200,30 +229,41 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
         window.requestAnimationFrame(renderFrame);
     };
 
-    C.wasm_initialize_emulator();
+    const initialize = () => {
+        C.wasm_initialize_emulator();
 
-    window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
-    window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
+        window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
+        window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
 
-    window.requestAnimationFrame(renderFrame);
+        window.requestAnimationFrame(renderFrame);
 
-    var stepper = { t: performance.now(), c: 0 };
-    setInterval(() => {
-        const t = performance.now();
-        const delta = t - stepper.t;
+        var stepper = { t: performance.now(), c: 0 };
+        setInterval(() => {
+            const t = performance.now();
+            const delta = t - stepper.t;
 
-        var cycles = delta * targetFreq * 1000;
-        if (cycles > cycleCap) {
-            cycles = cycleCap;
+            var cycles = delta * targetFreq * 1000;
+            if (cycles > cycleCap) {
+                cycles = cycleCap;
+            }
+
+            C.wasm_step_emulation(cycles);
+            stepper.c += cycles;
+            stepper.t = t;
+        }, 1);
+
+        setInterval(() => {
+            console.log("Frequency:", stepper.c / 1000000, "Mhz");
+            stepper.c = 0;
+        }, 1000);
+    }
+
+    const waitForDisk = () => {
+        if (!diskData) {
+            setTimeout(waitForDisk);
+            return;
         }
-
-        C.wasm_step_emulation(cycles);
-        stepper.c += cycles;
-        stepper.t = t;
-    }, 1);
-
-    setInterval(() => {
-        console.log("Frequency:", stepper.c / 1000000, "Mhz");
-        stepper.c = 0;
-    }, 1000);
+        initialize();
+    }
+    setTimeout(waitForDisk);
 });

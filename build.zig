@@ -353,12 +353,12 @@ pub fn build(b: *Builder) void {
         // https://github.com/ziglang/zig/issues/8633
         const page_size = 0x10000;
         wasm.import_memory = true; // import linear memory from the environment
-        wasm.initial_memory = 700 * page_size; // initial size of the linear memory (1 page = 64kB)
-        wasm.max_memory = 700 * page_size; // maximum size of the linear memory
+        wasm.initial_memory = 350 * page_size; // initial size of the linear memory (1 page = 64kB)
+        wasm.max_memory = 350 * page_size; // maximum size of the linear memory
         wasm.global_base = 6560; // offset in linear memory to place global data
 
         // TODO: Change this to a real copy step.
-        const web = b.addSystemCommand(&[_][]const u8{"cp", "-t", "build/web/", "front/web/index.html", "front/web/script.js"});
+        const web = b.addSystemCommand(&[_][]const u8{"cp", "-t", "build/web/", "front/web/index.html", "front/web/script.js", "boot/freedos_web_hd.img"});
         web.step.dependOn(&wasm.step);
         b.step("web", "Build web-frontend").dependOn(&web.step);
     }

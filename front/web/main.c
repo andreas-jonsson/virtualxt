@@ -31,14 +31,13 @@
 
 #include "main.h"
 
-#define ALLOCATOR_SIZE (30 * 1024 * 1024)
+#define ALLOCATOR_SIZE (20 * 1024 * 1024)
 vxt_byte allocator_data[ALLOCATOR_SIZE];
 vxt_byte *allocator_ptr = allocator_data;
 
 #define LOG(...) ( log_wrapper(__VA_ARGS__) )
 
 int disk_head = 0;
-vxt_byte *disk_content = NULL;
 
 int cga_width = -1;
 int cga_height = -1;
@@ -83,11 +82,11 @@ static void *allocator(void *ptr, int sz) {
 static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 	(void)s; (void)fp;
 
-	int disk_sz = (int)get_freedos_hd_size();
+	int disk_sz = (int)js_disk_size();
 	if ((disk_head + size) > disk_sz)
 		size = disk_sz - disk_head;
 
-	memcpy(buffer, disk_content + disk_head, size);
+	js_disk_read(buffer, size, disk_head);
 	disk_head += size;
 	return size;
 }
@@ -95,11 +94,11 @@ static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 	(void)s; (void)fp;
 
-	int disk_sz = (int)get_freedos_hd_size();
+	int disk_sz = (int)js_disk_size();
 	if ((disk_head + size) > disk_sz)
 		size = disk_sz - disk_head;
 
-	memcpy(disk_content + disk_head, buffer, size);
+	js_disk_write(buffer, size, disk_head);
 	disk_head += size;
 	return size;
 }
@@ -107,7 +106,7 @@ static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 static int seek_file(vxt_system *s, void *fp, int offset, enum vxtp_disk_seek whence) {
 	(void)s; (void)fp;
 
-	int disk_sz = (int)get_freedos_hd_size();
+	int disk_sz = (int)js_disk_size();
 	int pos = -1;
 
 	switch (whence) {
@@ -198,9 +197,6 @@ void step_emulation(int cycles) {
 void initialize_emulator(void) {
 	vxt_set_logger(&log_wrapper);
 
-	disk_content = allocator(NULL, get_freedos_hd_size());
-	memcpy(disk_content, get_freedos_hd_data(), get_freedos_hd_size());
-
 	struct vxtp_disk_interface interface = {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
@@ -236,7 +232,7 @@ void initialize_emulator(void) {
 			LOG("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
 
-	vxt_error err = vxtp_disk_mount(disk, 128, disk_content);
+	vxt_error err = vxtp_disk_mount(disk, 128, (void*)1);
 	if (err != VXT_NO_ERROR)
 		LOG("%s (0x%X)", vxt_error_str(err), err);
 
