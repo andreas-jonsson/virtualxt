@@ -23,7 +23,7 @@
 const cycleCap = 75000;
 const targetFreq = 4.77;
 const targetWidth = 640;
-const diskImage = "freedos_web_hd.img";
+const defaultDiskImage = "freedos_web_hd.img";
 
 const jsToXt = {
     "Escape": 1,
@@ -177,6 +177,8 @@ function handleKeyEvent(event, mask, callback) {
 }
 
 function loadDiskImage(url) {
+    console.log("Loading: " + url);
+    
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.responseType = "arraybuffer";
@@ -184,7 +186,9 @@ function loadDiskImage(url) {
     xhr.send();
 }
 
-loadDiskImage(diskImage);
+const urlParams = new URLSearchParams(window.location.search);
+loadDiskImage(urlParams.get("img") || defaultDiskImage);
+
 WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((result) => {
     const C = result.instance.exports;
     const wasmMemoryArray = new Uint8Array(memory.buffer);
