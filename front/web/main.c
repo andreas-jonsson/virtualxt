@@ -232,10 +232,13 @@ void initialize_emulator(void) {
 			LOG("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
 
-	vxt_error err = vxtp_disk_mount(disk, 128, (void*)1);
+	int drive_num = (js_disk_size() > 1474560) ? 128 : 0;
+	LOG("Disk num: %d", drive_num);
+
+	vxt_error err = vxtp_disk_mount(disk, drive_num, (void*)1);
 	if (err != VXT_NO_ERROR)
 		LOG("%s (0x%X)", vxt_error_str(err), err);
 
-	vxtp_disk_set_boot_drive(disk, 128);
+	vxtp_disk_set_boot_drive(disk, drive_num);
 	vxt_system_reset(sys);
 }
