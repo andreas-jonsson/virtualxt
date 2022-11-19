@@ -20,9 +20,9 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-const cycleCap = 75000;
-const targetFreq = 4.77;
-const targetWidth = 640;
+const defaultTargetFreq = 4.77;
+const defaultTargetWidth = 640;
+const defaultBin = "virtualxt.wasm";
 const defaultDiskImage = "freedos_web_hd.img";
 
 const jsToXt = {
@@ -189,7 +189,7 @@ function loadDiskImage(url) {
 const urlParams = new URLSearchParams(window.location.search);
 loadDiskImage(urlParams.get("img") || defaultDiskImage);
 
-WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((result) => {
+WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), importObject).then((result) => {
     const C = result.instance.exports;
     const wasmMemoryArray = new Uint8Array(memory.buffer);
 
@@ -200,6 +200,7 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
     oscillator.connect(audioCtx.destination);
     oscillator.start();
 
+    const targetWidth = urlParams.get("width") || defaultTargetWidth;
     const canvas = document.getElementById("virtualxt-canvas");
     const context = canvas.getContext("2d");
 
@@ -241,7 +242,10 @@ WebAssembly.instantiateStreaming(fetch("virtualxt.wasm"), importObject).then((re
 
         window.requestAnimationFrame(renderFrame);
 
+        const targetFreq = urlParams.get("freq") || defaultTargetFreq;
+        const cycleCap = targetFreq * 15000;
         var stepper = { t: performance.now(), c: 0 };
+
         setInterval(() => {
             const t = performance.now();
             const delta = t - stepper.t;
