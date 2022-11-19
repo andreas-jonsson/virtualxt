@@ -1,8 +1,8 @@
-name: Docs
+name: Pages
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "edge" ]
 
   workflow_dispatch:
 
@@ -10,8 +10,8 @@ env:
   ZIG_VERSION: 0.10.0
 
 jobs:
-  linux-docs:
-    name: Docs
+  linux-pages:
+    name: Pages
     runs-on: ubuntu-latest
 
     steps:
@@ -25,12 +25,25 @@ jobs:
           sudo apt-get install doxygen
           curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
           echo "${GITHUB_WORKSPACE}/zig-linux-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
+      
+      - name: Test
+        run: zig build test
 
-      - name: Generate
+      - name: Build
+        run: zig build web -Drelease-fast -Dv20
+
+      - name: Docs
         run: zig build doc
+
+      - name: Package
+        run: |
+          rm build/web/*.o
+          mkdir gh-pages
+          cp -r docs gh-pages
+          cp -r build/web gh-pages
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@4.1.6
         with:
           branch: gh-pages
-          folder: docs
+          folder: gh-pages

@@ -54,7 +54,7 @@ brew tap andreas-jonsson/virtualxt
 brew install virtualxt
 ```
 
-If you want to embed the emulator or create a custom frontend you can find libvxt API documentation [here](https://andreas-jonsson.github.io/virtualxt).
+If you want to embed the emulator or create a custom frontend you can find libvxt API documentation [here](https://andreas-jonsson.github.io/virtualxt/docs).
 
 ## Validation
 
