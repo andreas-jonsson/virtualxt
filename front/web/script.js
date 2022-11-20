@@ -263,6 +263,10 @@ WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), impo
         setInterval(() => {
             console.log("Frequency:", stepper.c / 1000000, "Mhz");
             stepper.c = 0;
+
+            if (audioCtx.state == "suspended") {
+                audioCtx.resume();
+            }
         }, 1000);
     }
 
