@@ -37,10 +37,10 @@ jobs:
 
       - name: Package
         run: |
-          rm build/web/*.o
           mkdir gh-pages
           cp -r docs gh-pages
-          cp -r build/web gh-pages
+          rm build/web/*.o
+          cp -r build/web/* gh-pages
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@4.1.6
