@@ -38,6 +38,7 @@ jobs:
       - name: Package
         run: |
           mkdir gh-pages
+          echo -n app.virtualxt.org > gh-pages/CNAME
           cp -r docs gh-pages
           rm build/web/*.o
           cp -r build/web/* gh-pages
