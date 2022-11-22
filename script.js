@@ -21,7 +21,6 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 const defaultTargetFreq = 4.77;
-const defaultTargetWidth = 640;
 const defaultBin = "virtualxt.wasm";
 const defaultDiskImage = "freedos_web_hd.img";
 
@@ -112,6 +111,7 @@ const jsToXt = {
 };
 
 var diskData = null;
+var invalidateWindowSize = false;
 
 var memory = new WebAssembly.Memory({
     initial: 350, // Pages
@@ -155,7 +155,12 @@ function printCString(ptr, len) {
 }
 
 function handleKeyEvent(event, mask, callback) {
-    if (event.defaultPrevented || event.repeat) {
+    if (event.defaultPrevented) {
+        return;
+    }
+
+    if (event.repeat) {
+        event.preventDefault();
         return;
     }
 
@@ -200,7 +205,11 @@ WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), impo
     oscillator.connect(audioCtx.destination);
     oscillator.start();
 
-    const targetWidth = urlParams.get("width") || defaultTargetWidth;
+    document.body.style.padding = 0;
+    document.body.style.margin = 4;
+
+    const crtAspect = 4 / 3;
+    const fixedWidth = urlParams.get("width");
     const canvas = document.getElementById("virtualxt-canvas");
     const context = canvas.getContext("2d");
 
@@ -211,8 +220,20 @@ WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), impo
         const width = C.wasm_video_width();
         const height = C.wasm_video_height();
 
-        if ((imageData.width != width) || (imageData.height != height)) {
-            const scale = (width / (4 / 3)) / height;
+        if ((imageData.width != width) || (imageData.height != height) || invalidateWindowSize) {
+            invalidateWindowSize = false;
+
+            var targetWidth = fixedWidth || document.body.clientWidth;
+            if (!fixedWidth) {
+                const windowHeight = window.innerHeight - 8;
+                const targetAspect = targetWidth / windowHeight;
+
+                if (targetAspect > crtAspect) {
+                    targetWidth = windowHeight * crtAspect;
+                }
+            }
+
+            const scale = (width / crtAspect) / height;
             const tScale = targetWidth / width; // Adjust for low vs high CGA resolution.
 
             canvas.width = width; canvas.height = height;
@@ -239,6 +260,7 @@ WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), impo
 
         window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
         window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
+        window.addEventListener("resize", () => { invalidateWindowSize = true; });
 
         window.requestAnimationFrame(renderFrame);
 
