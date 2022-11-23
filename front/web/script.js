@@ -216,8 +216,8 @@ function getCanvas() {
     return document.getElementById(urlParams.get("canvas") || defaultCanvas);
 }
 
-function startEmulator() {
-    WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), importObject).then((result) => {
+function startEmulator(binary) {
+    WebAssembly.instantiateStreaming(binary, importObject).then((result) => {
         const C = result.instance.exports;
         const wasmMemoryArray = new Uint8Array(memory.buffer);
 
@@ -225,6 +225,7 @@ function startEmulator() {
 
         oscillator = audioCtx.createOscillator();
         oscillator.type = "square";
+        oscillator.frequency = 1;
         oscillator.connect(audioCtx.destination);
         oscillator.start();
 
@@ -329,7 +330,17 @@ function startEmulator() {
     });
 }
 
+// Get wasm binary asap.
+const wasmBinary = fetch(urlParams.get("bin") || defaultBin);
+
+// If we are NOT uploading we can start load directly.
+const doUpload = (urlParams.get("img") == "upload");
+if (!doUpload) {
+    loadDiskImage(urlParams.get("img") || defaultDiskImage);
+}
+
 window.onload = () => {
+    const canvas = getCanvas();
     const div = document.createElement("div");
     const btn = document.createElement("button");
 
@@ -345,18 +356,12 @@ window.onload = () => {
         div.appendChild(divInner);
     }
     
-    const canvas = getCanvas();
-    const loadStart = () => {
-        loadDiskImage(urlParams.get("img") || defaultDiskImage);
-        startEmulator();
-    };
-
-    if (urlParams.get("upload") == "1") {
+    if (doUpload) {
         canvas.hidden = true;
         btn.innerText = "Upload Disk Image";
         btn.onclick = () => {
             uploadDiskImage(() => {
-                startEmulator();
+                startEmulator(wasmBinary);
                 document.body.removeChild(div);
                 canvas.hidden = false;
             });
@@ -366,12 +371,12 @@ window.onload = () => {
         canvas.hidden = true;
         btn.innerText = urlParams.get("start");
         btn.onclick = () => {
-            loadStart();
             document.body.removeChild(div);
             canvas.hidden = false;
+            startEmulator(wasmBinary);
         };
         document.body.appendChild(div);
     } else {
-        loadStart();
+        startEmulator(wasmBinary);
     }
 };
