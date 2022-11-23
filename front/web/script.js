@@ -23,6 +23,7 @@
 const defaultTargetFreq = 4.77;
 const defaultBin = "virtualxt.wasm";
 const defaultDiskImage = "freedos_web_hd.img";
+const defaultCanvas = "virtualxt-canvas";
 
 const jsToXt = {
     "Escape": 1,
@@ -211,6 +212,10 @@ function loadDiskImage(url) {
     xhr.send();
 }
 
+function getCanvas() {
+    return document.getElementById(urlParams.get("canvas") || defaultCanvas);
+}
+
 function startEmulator() {
     WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), importObject).then((result) => {
         const C = result.instance.exports;
@@ -229,7 +234,7 @@ function startEmulator() {
         const crtAspect = 4 / 3;
         const fixedWidth = urlParams.get("width");
         
-        const canvas = document.getElementById("virtualxt-canvas");
+        const canvas = getCanvas();
         canvas.style = "image-rendering: pixelated; image-rendering: crisp-edges; transform-origin: left top;";
 
         const context = canvas.getContext("2d");
@@ -340,7 +345,7 @@ window.onload = () => {
         div.appendChild(divInner);
     }
     
-    const canvas = document.getElementById("virtualxt-canvas");
+    const canvas = getCanvas();
     const loadStart = () => {
         loadDiskImage(urlParams.get("img") || defaultDiskImage);
         startEmulator();
