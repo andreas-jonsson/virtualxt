@@ -23,6 +23,7 @@
 const defaultTargetFreq = 4.77;
 const defaultBin = "virtualxt.wasm";
 const defaultDiskImage = "freedos_web_hd.img";
+const defaultCanvas = "virtualxt-canvas";
 
 const jsToXt = {
     "Escape": 1,
@@ -211,8 +212,12 @@ function loadDiskImage(url) {
     xhr.send();
 }
 
-function startEmulator() {
-    WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), importObject).then((result) => {
+function getCanvas() {
+    return document.getElementById(urlParams.get("canvas") || defaultCanvas);
+}
+
+function startEmulator(binary) {
+    WebAssembly.instantiateStreaming(binary, importObject).then((result) => {
         const C = result.instance.exports;
         const wasmMemoryArray = new Uint8Array(memory.buffer);
 
@@ -220,6 +225,7 @@ function startEmulator() {
 
         oscillator = audioCtx.createOscillator();
         oscillator.type = "square";
+        oscillator.frequency = 1;
         oscillator.connect(audioCtx.destination);
         oscillator.start();
 
@@ -229,7 +235,7 @@ function startEmulator() {
         const crtAspect = 4 / 3;
         const fixedWidth = urlParams.get("width");
         
-        const canvas = document.getElementById("virtualxt-canvas");
+        const canvas = getCanvas();
         canvas.style = "image-rendering: pixelated; image-rendering: crisp-edges; transform-origin: left top;";
 
         const context = canvas.getContext("2d");
@@ -324,7 +330,17 @@ function startEmulator() {
     });
 }
 
+// Get wasm binary asap.
+const wasmBinary = fetch(urlParams.get("bin") || defaultBin);
+
+// If we are NOT uploading we can start load directly.
+const doUpload = (urlParams.get("img") == "upload");
+if (!doUpload) {
+    loadDiskImage(urlParams.get("img") || defaultDiskImage);
+}
+
 window.onload = () => {
+    const canvas = getCanvas();
     const div = document.createElement("div");
     const btn = document.createElement("button");
 
@@ -340,18 +356,12 @@ window.onload = () => {
         div.appendChild(divInner);
     }
     
-    const canvas = document.getElementById("virtualxt-canvas");
-    const loadStart = () => {
-        loadDiskImage(urlParams.get("img") || defaultDiskImage);
-        startEmulator();
-    };
-
-    if (urlParams.get("upload") == "1") {
+    if (doUpload) {
         canvas.hidden = true;
         btn.innerText = "Upload Disk Image";
         btn.onclick = () => {
             uploadDiskImage(() => {
-                startEmulator();
+                startEmulator(wasmBinary);
                 document.body.removeChild(div);
                 canvas.hidden = false;
             });
@@ -361,12 +371,12 @@ window.onload = () => {
         canvas.hidden = true;
         btn.innerText = urlParams.get("start");
         btn.onclick = () => {
-            loadStart();
             document.body.removeChild(div);
             canvas.hidden = false;
+            startEmulator(wasmBinary);
         };
         document.body.appendChild(div);
     } else {
-        loadStart();
+        startEmulator(wasmBinary);
     }
 };
