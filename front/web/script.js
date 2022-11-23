@@ -110,6 +110,8 @@ const jsToXt = {
     "Delete": 83
 };
 
+const urlParams = new URLSearchParams(window.location.search);
+
 var diskData = null;
 var invalidateWindowSize = false;
 
@@ -181,6 +183,24 @@ function handleKeyEvent(event, mask, callback) {
     event.preventDefault();
 }
 
+function uploadDiskImage(afterPickCallback) {
+    var input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".img";
+    input.multiple = false;
+    input.onchange = () => {
+        file = input.files[0];
+        console.log("Selected: " + file.name);
+        if (afterPickCallback) {
+            afterPickCallback(file);
+        }
+        var reader = new FileReader();
+        reader.onload = () => { diskData = new Uint8Array(reader.result); };
+        reader.readAsArrayBuffer(file);
+    };
+    input.click();
+}
+
 function loadDiskImage(url) {
     console.log("Loading: " + url);
     
@@ -191,114 +211,162 @@ function loadDiskImage(url) {
     xhr.send();
 }
 
-const urlParams = new URLSearchParams(window.location.search);
-loadDiskImage(urlParams.get("img") || defaultDiskImage);
+function startEmulator() {
+    WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), importObject).then((result) => {
+        const C = result.instance.exports;
+        const wasmMemoryArray = new Uint8Array(memory.buffer);
 
-WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), importObject).then((result) => {
-    const C = result.instance.exports;
-    const wasmMemoryArray = new Uint8Array(memory.buffer);
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
+        oscillator = audioCtx.createOscillator();
+        oscillator.type = "square";
+        oscillator.connect(audioCtx.destination);
+        oscillator.start();
 
-    oscillator = audioCtx.createOscillator();
-    oscillator.type = "square";
-    oscillator.connect(audioCtx.destination);
-    oscillator.start();
+        document.body.style.padding = 0;
+        document.body.style.margin = 4;
 
-    document.body.style.padding = 0;
-    document.body.style.margin = 4;
+        const crtAspect = 4 / 3;
+        const fixedWidth = urlParams.get("width");
+        
+        const canvas = document.getElementById("virtualxt-canvas");
+        canvas.style = "image-rendering: pixelated; image-rendering: crisp-edges; transform-origin: left top;";
 
-    const crtAspect = 4 / 3;
-    const fixedWidth = urlParams.get("width");
-    const canvas = document.getElementById("virtualxt-canvas");
-    const context = canvas.getContext("2d");
+        const context = canvas.getContext("2d");
+        var imageData = context.createImageData(canvas.width, canvas.height);
+        context.clearRect(0, 0, canvas.width, canvas.height);
 
-    var imageData = context.createImageData(canvas.width, canvas.height);
-    context.clearRect(0, 0, canvas.width, canvas.height);
+        const renderFrame = () => {
+            const width = C.wasm_video_width();
+            const height = C.wasm_video_height();
 
-    const renderFrame = () => {
-        const width = C.wasm_video_width();
-        const height = C.wasm_video_height();
+            if ((imageData.width != width) || (imageData.height != height) || invalidateWindowSize) {
+                invalidateWindowSize = false;
 
-        if ((imageData.width != width) || (imageData.height != height) || invalidateWindowSize) {
-            invalidateWindowSize = false;
+                var targetWidth = fixedWidth || document.body.clientWidth;
+                if (!fixedWidth) {
+                    const windowHeight = window.innerHeight - 8;
+                    const targetAspect = targetWidth / windowHeight;
 
-            var targetWidth = fixedWidth || document.body.clientWidth;
-            if (!fixedWidth) {
-                const windowHeight = window.innerHeight - 8;
-                const targetAspect = targetWidth / windowHeight;
-
-                if (targetAspect > crtAspect) {
-                    targetWidth = windowHeight * crtAspect;
+                    if (targetAspect > crtAspect) {
+                        targetWidth = windowHeight * crtAspect;
+                    }
                 }
+
+                const xScale = targetWidth / width; // Adjust for low vs high CGA resolution.
+                const yScale = (width / crtAspect) / height;
+                const transX = urlParams.has("translate") ? parseInt(urlParams.get("translate")) : (document.body.clientWidth * 0.5 - width * xScale * 0.5);
+
+                canvas.width = width; canvas.height = height;
+                canvas.style.setProperty("transform", "matrix(" + xScale + ",0,0," + (xScale * yScale) + "," + transX + ",0)");
+                console.log("Resolution changed: " + width + "x" + height + "(" + (width * xScale).toFixed() + "x" + (height * yScale * xScale).toFixed() + ")");
+
+                imageData = context.createImageData(width, height);
             }
 
-            const xScale = targetWidth / width; // Adjust for low vs high CGA resolution.
-            const yScale = (width / crtAspect) / height;
-            const transX = urlParams.has("translate") ? parseInt(urlParams.get("translate")) : (document.body.clientWidth * 0.5 - width * xScale * 0.5);
+            const bufferOffset = C.wasm_video_rgba_memory_pointer();
+            const imageDataArray = wasmMemoryArray.slice(
+                bufferOffset,
+                bufferOffset + width * height * 4
+            );
 
-            canvas.width = width; canvas.height = height;
-            canvas.style.setProperty("transform", "matrix(" + xScale + ",0,0," + (xScale * yScale) + "," + transX + ",0)");
-            console.log("Resolution changed: " + width + "x" + height + "(" + (width * xScale).toFixed() + "x" + (height * yScale * xScale).toFixed() + ")");
+            imageData.data.set(imageDataArray);
+            context.putImageData(imageData, 0, 0);
 
-            imageData = context.createImageData(width, height);
+            window.requestAnimationFrame(renderFrame);
+        };
+
+        const initialize = () => {
+            C.wasm_initialize_emulator();
+
+            window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
+            window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
+            window.addEventListener("resize", () => { invalidateWindowSize = true; });
+
+            window.requestAnimationFrame(renderFrame);
+
+            const targetFreq = urlParams.get("freq") || defaultTargetFreq;
+            const cycleCap = targetFreq * 15000;
+            var stepper = { t: performance.now(), c: 0 };
+
+            setInterval(() => {
+                const t = performance.now();
+                const delta = t - stepper.t;
+
+                var cycles = delta * targetFreq * 1000;
+                if (cycles > cycleCap) {
+                    cycles = cycleCap;
+                }
+
+                C.wasm_step_emulation(cycles);
+                stepper.c += cycles;
+                stepper.t = t;
+            }, 1);
+
+            setInterval(() => {
+                console.log("Frequency:", stepper.c / 1000000, "Mhz");
+                stepper.c = 0;
+
+                if (audioCtx.state == "suspended") {
+                    audioCtx.resume();
+                }
+            }, 1000);
         }
 
-        const bufferOffset = C.wasm_video_rgba_memory_pointer();
-        const imageDataArray = wasmMemoryArray.slice(
-            bufferOffset,
-            bufferOffset + width * height * 4
-        );
+        const waitForDisk = () => {
+            if (!diskData) {
+                setTimeout(waitForDisk);
+                return;
+            }
+            initialize();
+        }
+        setTimeout(waitForDisk);
+    });
+}
 
-        imageData.data.set(imageDataArray);
-        context.putImageData(imageData, 0, 0);
+window.onload = () => {
+    const div = document.createElement("div");
+    const btn = document.createElement("button");
 
-        window.requestAnimationFrame(renderFrame);
+    {
+        btn.type = "button";
+        btn.style = "background-color: #555555; border: none; color: white; padding: 8px 16px; text-align: center; text-decoration: none; font-size: 14px;";
+
+        const divInner = document.createElement("div");
+        divInner.style = "position: absolute; bottom: 50%;";
+        divInner.appendChild(btn);
+
+        div.style = "display: flex; justify-content: center;";
+        div.appendChild(divInner);
+    }
+    
+    const canvas = document.getElementById("virtualxt-canvas");
+    const loadStart = () => {
+        loadDiskImage(urlParams.get("img") || defaultDiskImage);
+        startEmulator();
     };
 
-    const initialize = () => {
-        C.wasm_initialize_emulator();
-
-        window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
-        window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
-        window.addEventListener("resize", () => { invalidateWindowSize = true; });
-
-        window.requestAnimationFrame(renderFrame);
-
-        const targetFreq = urlParams.get("freq") || defaultTargetFreq;
-        const cycleCap = targetFreq * 15000;
-        var stepper = { t: performance.now(), c: 0 };
-
-        setInterval(() => {
-            const t = performance.now();
-            const delta = t - stepper.t;
-
-            var cycles = delta * targetFreq * 1000;
-            if (cycles > cycleCap) {
-                cycles = cycleCap;
-            }
-
-            C.wasm_step_emulation(cycles);
-            stepper.c += cycles;
-            stepper.t = t;
-        }, 1);
-
-        setInterval(() => {
-            console.log("Frequency:", stepper.c / 1000000, "Mhz");
-            stepper.c = 0;
-
-            if (audioCtx.state == "suspended") {
-                audioCtx.resume();
-            }
-        }, 1000);
+    if (urlParams.get("upload") == "1") {
+        canvas.hidden = true;
+        btn.innerText = "Upload Disk Image";
+        btn.onclick = () => {
+            uploadDiskImage(() => {
+                startEmulator();
+                document.body.removeChild(div);
+                canvas.hidden = false;
+            });
+        };
+        document.body.appendChild(div);
+    } else if (urlParams.has("start")) {
+        canvas.hidden = true;
+        btn.innerText = urlParams.get("start");
+        btn.onclick = () => {
+            loadStart();
+            document.body.removeChild(div);
+            canvas.hidden = false;
+        };
+        document.body.appendChild(div);
+    } else {
+        loadStart();
     }
-
-    const waitForDisk = () => {
-        if (!diskData) {
-            setTimeout(waitForDisk);
-            return;
-        }
-        initialize();
-    }
-    setTimeout(waitForDisk);
-});
+};
