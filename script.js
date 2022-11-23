@@ -233,12 +233,13 @@ WebAssembly.instantiateStreaming(fetch(urlParams.get("bin") || defaultBin), impo
                 }
             }
 
-            const scale = (width / crtAspect) / height;
-            const tScale = targetWidth / width; // Adjust for low vs high CGA resolution.
+            const xScale = targetWidth / width; // Adjust for low vs high CGA resolution.
+            const yScale = (width / crtAspect) / height;
+            const transX = urlParams.has("translate") ? parseInt(urlParams.get("translate")) : (document.body.clientWidth * 0.5 - width * xScale * 0.5);
 
             canvas.width = width; canvas.height = height;
-            canvas.style.setProperty("transform", "scale(" + tScale + "," + (tScale * scale) + ")");            
-            console.log("Resolution changed: " + width + "x" + height + "(" + (width * tScale) + "x" + (height * scale * tScale).toFixed() + ")");
+            canvas.style.setProperty("transform", "matrix(" + xScale + ",0,0," + (xScale * yScale) + "," + transX + ",0)");
+            console.log("Resolution changed: " + width + "x" + height + "(" + (width * xScale).toFixed() + "x" + (height * yScale * xScale).toFixed() + ")");
 
             imageData = context.createImageData(width, height);
         }
