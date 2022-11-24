@@ -21,11 +21,13 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 #include <microui.h>
 
 #include "window.h"
+#include "mu_renderer.h"
 
 bool has_open_windows = false;
 
@@ -64,7 +66,7 @@ void help_window(mu_Context *ctx) {
 			"Drop floppy image file on window to mount\n"
 			"Release or capture mouse";
 
-		mu_layout_row(ctx, 1, (int[]){-1}, -1);
+		mu_layout_row(ctx, 1, (int[]){-1}, -30);
 		mu_begin_panel(ctx, "Controls");
 		mu_layout_row(ctx, 3, (int[]){10, 120, -1}, -1);
 		mu_text(ctx, "");
@@ -72,12 +74,31 @@ void help_window(mu_Context *ctx) {
 		mu_text(ctx, text_r);
 		mu_end_panel(ctx);
 
+		mu_layout_row(ctx, 1, (int[]){-1}, -1);
+		mu_label(ctx, "Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>");
+
 		mu_end_window(ctx);
 	}
 }
 
-bool eject_window(mu_Context *ctx, const char *path) {
-	bool eject = false;
+void error_window(mu_Context *ctx, const char *msg) {
+	if (mu_begin_window_ex(ctx, "Error", mu_rect(120, 40, 400, 100), MU_OPT_CLOSED|MU_OPT_NORESIZE)) {
+		has_open_windows = true;
+
+		int text_width = r_get_text_width(msg, (int)strlen(msg));
+		mu_layout_set_next(ctx, mu_rect(200 - text_width / 2, 0, text_width + 10, 25), 1);
+		mu_label(ctx, msg);
+
+		mu_layout_set_next(ctx, mu_rect(170, 35, 60, 25), 1);
+		if (mu_button(ctx, "OK"))
+			mu_get_current_container(ctx)->open = 0;
+
+		mu_end_window(ctx);
+	}
+}
+
+int eject_window(mu_Context *ctx, const char *path) {
+	int eject = 0;
 	char buf[512] = {0};
 
 	if (mu_begin_window_ex(ctx, "Eject", mu_rect(120, 40, 400, 60), MU_OPT_CLOSED|MU_OPT_NORESIZE)) {
@@ -85,15 +106,32 @@ bool eject_window(mu_Context *ctx, const char *path) {
 		mu_layout_row(ctx, 3, (int[]){20, -100, -1}, 25);
 	
 		mu_label(ctx, "A:");
-
-		strncpy(buf, path, sizeof(buf));
+		
+		strncpy(buf, path ? path : "EMPTY", sizeof(buf));
 		mu_textbox_ex(ctx, buf, sizeof(buf), MU_OPT_NOINTERACT);
 
-		if ((eject = mu_button(ctx, "Eject")))
+		if ((eject = mu_button_ex(ctx, "Eject", 0, MU_OPT_ALIGNCENTER | (path ? 0 : MU_OPT_NOINTERACT))))
 			mu_get_current_container(ctx)->open = 0;
 
 		mu_end_window(ctx);
 	}
-
 	return eject;
+}
+
+int mount_window(mu_Context *ctx, char *path) {
+	int mount = 0;
+	if (mu_begin_window_ex(ctx, "Mount", mu_rect(120, 40, 400, 60), MU_OPT_CLOSED|MU_OPT_NORESIZE)) {
+		has_open_windows = true;
+		mu_layout_row(ctx, 3, (int[]){20, -100, -1}, 25);
+	
+		mu_label(ctx, "A:");
+
+		mu_textbox(ctx, path, FILENAME_MAX);
+
+		if ((mount = mu_button_ex(ctx, "Mount", 0, MU_OPT_ALIGNCENTER | (path ? 0 : MU_OPT_NOINTERACT))))
+			mu_get_current_container(ctx)->open = 0;
+
+		mu_end_window(ctx);
+	}
+	return mount;
 }

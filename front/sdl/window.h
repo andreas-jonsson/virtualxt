@@ -32,6 +32,8 @@ extern bool has_open_windows;
 
 mu_Container *open_window(mu_Context *ctx, const char *name);
 void help_window(mu_Context *ctx);
-bool eject_window(mu_Context *ctx, const char *path);
+void error_window(mu_Context *ctx, const char *msg);
+int eject_window(mu_Context *ctx, const char *path);
+int mount_window(mu_Context *ctx, char *path);
 
 #endif

@@ -110,6 +110,12 @@ SDL_Thread *emu_thread = NULL;
 SDL_Texture *framebuffer = NULL;
 SDL_Point framebuffer_size = {640, 200};
 
+char floppy_image_path[FILENAME_MAX] = {0};
+char new_floppy_image_path[FILENAME_MAX] = {0};
+
+#define WINDOW_ERROR_MESSAGE_SIZE 1024
+char window_error_message[WINDOW_ERROR_MESSAGE_SIZE] = {0};
+
 int str_buffer_len = 0;
 char *str_buffer = NULL;
 
@@ -625,10 +631,12 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	if (args.floppy) {
-		FILE *fp = fopen(args.floppy, "rb+");
+		strncpy(floppy_image_path, args.floppy, sizeof(floppy_image_path));
+
+		FILE *fp = fopen(floppy_image_path, "rb+");
 		vxt_error (*mnt)(struct vxt_pirepheral*,int,void*) = args.fdc ? vxtp_fdc_mount : vxtp_disk_mount;
 		if (fp && (mnt(args.fdc ? fdc : disk, 0, fp) == VXT_NO_ERROR))
-			printf("Floppy image: %s\n", args.floppy);
+			printf("Floppy image: %s\n", floppy_image_path);
 	}
 
 	if (args.harddrive && !args.fdc) {
@@ -725,17 +733,8 @@ int ENTRY(int argc, char *argv[]) {
 					}
 					break;
 				case SDL_DROPFILE:
-					if (!SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Insert Floppy", "Mount floppy image in A: drive?", window)) {
-						FILE *fp = fopen(e.drop.file, "rb+");
-						if (!fp) {
-							SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Insert Floppy", "Could not open floppy image file!", window);
-						} else {
-							vxt_error err = VXT_NO_ERROR;
-							SYNC(err = vxtp_disk_mount(disk, 0, fp));
-							if (err != VXT_NO_ERROR)
-								SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Insert Floppy", "Could not mount floppy image!", window);
-						}
-					}
+					strncpy(new_floppy_image_path, e.drop.file, sizeof(new_floppy_image_path));
+					open_window(ctx, "Mount");
 					break;
 				case SDL_JOYAXISMOTION:
 				case SDL_JOYBUTTONDOWN:
@@ -816,8 +815,30 @@ int ENTRY(int argc, char *argv[]) {
 			mu_begin(ctx);
 
 			help_window(ctx);
-			if (eject_window(ctx, (vxtp_disk_mount(disk, 0, NULL) == VXT_NO_ERROR) ? "EMPTY" : args.floppy))
+			error_window(ctx, window_error_message);
+
+			if (eject_window(ctx, (*floppy_image_path != 0) ? floppy_image_path: NULL)) {
 				SYNC(vxtp_disk_unmount(disk, 0));
+				*floppy_image_path = 0;
+			}
+
+			if (mount_window(ctx, new_floppy_image_path)) {
+				FILE *fp = fopen(new_floppy_image_path, "rb+");
+				if (!fp) {
+					strncpy(window_error_message, "Could not open floppy image file!", sizeof(window_error_message));
+					open_window(ctx, "Error");
+				} else {
+					vxt_error err = VXT_NO_ERROR;
+					SYNC(err = vxtp_disk_mount(disk, 0, fp));
+					if (err != VXT_NO_ERROR) {
+						strncpy(window_error_message, "Could not mount floppy image file!", sizeof(window_error_message));
+						open_window(ctx, "Error");
+						fclose(fp);
+					} else {
+						strncpy(floppy_image_path, new_floppy_image_path, sizeof(floppy_image_path));
+					}
+				}
+			}
 
 			mu_end(ctx);
 			if (has_open_windows)
