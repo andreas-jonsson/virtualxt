@@ -39,7 +39,6 @@ modules:
       - install -Dm00644 bios/vxtx.bin $FLATPAK_DEST/share/virtualxt/vxtx.bin
       - install -Dm00644 boot/freedos.img $FLATPAK_DEST/share/virtualxt/freedos.img
       - install -Dm00644 boot/freedos_hd.img $FLATPAK_DEST/share/virtualxt/freedos_hd.img
-      - install -Dm00644 tools/manual/index.md.html tools/manual/markdeep.min.js tools/manual/style.css -t $FLATPAK_DEST/share/virtualxt/manual
 
       - install -Dm00644 tools/icon/icon.png $FLATPAK_DEST/share/icons/hicolor/128x128/apps/$FLATPAK_ID.png
       

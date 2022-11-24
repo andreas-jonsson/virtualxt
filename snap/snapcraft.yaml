@@ -41,14 +41,6 @@ parts:
       pcxtbios.bin: usr/share/virtualxt/bios/pcxtbios.bin
       vxtx.bin: usr/share/virtualxt/bios/vxtx.bin
 
-  manual:
-    source: tools/manual
-    plugin: dump
-    prime:
-      - usr
-    organize:
-      manual: usr/share/virtualxt/manual
-
   virtualxt:
     stage:
       - usr/bin

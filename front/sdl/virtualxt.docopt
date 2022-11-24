@@ -2,7 +2,6 @@ Usage: virtualxt [options]
 
 Options:
   -h --help               Show this screen.
-  -m --manual             Open manual in browser.
   -v --version            Display version.
   -d --debug              Enable CLI debugger.
   --halt                  Debugger will stop after first instruction.

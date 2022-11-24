@@ -168,25 +168,6 @@ static const char *mgetline(void) {
 	return str;
 }
 
-static int open_url(const char *url) {
-	int ret = 0;
-	char *buffer = SDL_malloc(strlen(url) + 32);
-	if (!buffer)
-		return -1;
-
-	#if defined(_WIN32) || defined(__CYGWIN__)
-		strcpy(buffer, "cmd /c start ");
-	#elif defined(__APPLE__) && defined(__MACH__)
-		strcpy(buffer, "open ");
-	#else
-		strcpy(buffer, "xdg-open ");
-	#endif
-
-	ret = system(strcat(buffer, url));
-	SDL_free(buffer);
-	return ret;
-}
-
 static bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) {
 	#ifdef __APPLE__
 		int fh;
@@ -385,11 +366,6 @@ int ENTRY(int argc, char *argv[]) {
 
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
 	args.rifs = rifs_path ? rifs_path : args.rifs;
-
-	if (args.manual) {
-		const char *path = SDL_getenv("VXT_DEFAULT_MANUAL_INDEX");
-		return open_url(path ? path : "tools/manual/index.md.html");
-	}
 
 	#ifdef VXTP_NETWORK
 		if (args.list) {

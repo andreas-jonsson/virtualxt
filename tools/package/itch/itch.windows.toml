@@ -5,7 +5,3 @@ path = "virtualxt.exe"
 [[actions]]
 name = "VirtualXT - FreeDOS (Ethernet)"
 path = "virtualxt-net.bat"
-
-[[actions]]
-name = "manual"
-path = "tools/manual/index.md.html"
