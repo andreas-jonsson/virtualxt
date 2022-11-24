@@ -178,6 +178,15 @@ pub fn build(b: *Builder) void {
     opl3.setTarget(target);
     opl3.linkLibC();
 
+    // -------- microui --------
+
+    const microui = b.addStaticLibrary("microui", null);
+    microui.setBuildMode(mode);
+    microui.setTarget(target);
+    microui.linkLibC();
+    microui.addIncludePath("lib/microui/src");
+    microui.addCSourceFile("lib/microui/src/microui.c", c_options ++ &[_][]const u8{"-std=c11", "-pedantic"});
+
     // -------- pirepheral --------
 
     const pirepheral = b.addStaticLibrary("vxtp", null);
@@ -262,12 +271,17 @@ pub fn build(b: *Builder) void {
     exe_sdl.linkLibrary(ini);
     exe_sdl.addIncludePath("lib/inih");
 
+    exe_sdl.linkLibrary(microui);
+    exe_sdl.addIncludePath("lib/microui/src");
+
     exe_sdl.linkLibrary(opl3); // Part of vxtp?
 
     exe_sdl.linkLibC();
 
     const opt = c_options ++ &[_][]const u8{"-std=c11", "-pedantic"};
     exe_sdl.addCSourceFile("front/sdl/main.c", opt);
+    exe_sdl.addCSourceFile("front/sdl/mu_renderer.c", opt);
+    exe_sdl.addCSourceFile("front/sdl/window.c", opt);
     exe_sdl.addCSourceFile("front/sdl/docopt.c", &[_][]const u8{"-std=c11", "-Wno-unused-variable", "-Wno-unused-parameter"});
 
     if (cpu286) {

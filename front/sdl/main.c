@@ -42,7 +42,11 @@
 	#include <SDL2/SDL.h>
 #endif
 
+#include <microui.h>
+
 #include "main.h"
+#include "mu_renderer.h"
+#include "window.h"
 #include "keys.h"
 #include "docopt.h"
 
@@ -78,6 +82,23 @@ FILE *trace_offset_output = NULL;
 	extern struct vxt_validator *pi8088_validator(void);
 #endif
 
+static const char button_map[256] = {
+	[ SDL_BUTTON_LEFT   & 0xFF ] = MU_MOUSE_LEFT,
+	[ SDL_BUTTON_RIGHT  & 0xFF ] = MU_MOUSE_RIGHT,
+	[ SDL_BUTTON_MIDDLE & 0xFF ] = MU_MOUSE_MIDDLE,
+};
+
+static const char key_map[256] = {
+	[ SDLK_LSHIFT       & 0xFF ] = MU_KEY_SHIFT,
+	[ SDLK_RSHIFT       & 0xFF ] = MU_KEY_SHIFT,
+	[ SDLK_LCTRL        & 0xFF ] = MU_KEY_CTRL,
+	[ SDLK_RCTRL        & 0xFF ] = MU_KEY_CTRL,
+	[ SDLK_LALT         & 0xFF ] = MU_KEY_ALT,
+	[ SDLK_RALT         & 0xFF ] = MU_KEY_ALT,
+	[ SDLK_RETURN       & 0xFF ] = MU_KEY_RETURN,
+	[ SDLK_BACKSPACE    & 0xFF ] = MU_KEY_BACKSPACE,
+};
+
 Uint32 last_title_update = 0;
 int num_cycles = 0;
 double cpu_frequency = 4.772726;
@@ -104,6 +125,18 @@ static void trigger_breakpoint(void) {
 
 static long long ustimer(void) {
 	return SDL_GetPerformanceCounter() / (SDL_GetPerformanceFrequency() / 1000000);
+}
+
+static int text_width(mu_Font font, const char *text, int len) {
+	(void)font;
+	if (len == -1)
+		len = strlen(text);
+	return r_get_text_width(text, len);
+}
+
+static int text_height(mu_Font font) {
+	(void)font;
+	return r_get_text_height();
 }
 
 static const char *sprint(const char *fmt, ...) {
@@ -219,6 +252,23 @@ static int emu_loop(void *ptr) {
 		start = SDL_GetPerformanceCounter();
 	}
 	return 0;
+}
+
+static SDL_Rect *target_rect(SDL_Window *window, SDL_Rect *rect) {
+	const float crtAspect = 4.0f / 3.0f;
+	SDL_Rect windowRect = {0};
+	SDL_GetWindowSize(window, &windowRect.w, &windowRect.h);
+
+	int targetWidth = (int)((float)windowRect.h * crtAspect);
+	int targetHeight = windowRect.h;
+
+	if (((float)windowRect.w / (float)windowRect.h) < crtAspect) {
+		targetWidth = windowRect.w;
+		targetHeight = (int)((float)windowRect.w / crtAspect);
+	}
+
+	*rect = (SDL_Rect){windowRect.w / 2 - targetWidth / 2, windowRect.h / 2 - targetHeight / 2, targetWidth, targetHeight};
+	return rect;
 }
 
 static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
@@ -436,11 +486,13 @@ int ENTRY(int argc, char *argv[]) {
 		printf("SDL_CreateTexture() failed with error %s\n", SDL_GetError());
 		return -1;
 	}
-	
-	if (SDL_RenderSetLogicalSize(renderer, 640, 480)) {
-		printf("SDL_RenderSetLogicalSize() failed with error %s\n", SDL_GetError());
-		return -1;
-	}
+
+	r_init(renderer);
+
+	mu_Context *ctx = SDL_malloc(sizeof(mu_Context));
+	mu_init(ctx);
+	ctx->text_width = text_width;
+	ctx->text_height = text_height;
 
 	int num_sticks = 0;
 	SDL_Joystick *sticks[2] = {NULL};
@@ -645,12 +697,32 @@ int ENTRY(int argc, char *argv[]) {
 
 	while (SDL_AtomicGet(&running)) {
 		for (SDL_Event e; SDL_PollEvent(&e);) {
+			if (has_open_windows) {
+				switch (e.type) {
+					case SDL_MOUSEMOTION: mu_input_mousemove(ctx, e.motion.x, e.motion.y); break;
+					case SDL_MOUSEWHEEL: mu_input_scroll(ctx, 0, e.wheel.y * -30); break;
+					case SDL_TEXTINPUT: mu_input_text(ctx, e.text.text); break;
+					case SDL_MOUSEBUTTONDOWN: case SDL_MOUSEBUTTONUP: {
+						int b = button_map[e.button.button & 0xFF];
+						if (b && e.type == SDL_MOUSEBUTTONDOWN) { mu_input_mousedown(ctx, e.button.x, e.button.y, b); }
+						if (b && e.type == SDL_MOUSEBUTTONUP) { mu_input_mouseup(ctx, e.button.x, e.button.y, b); }
+						break;
+					}
+					case SDL_KEYDOWN: case SDL_KEYUP: {
+						int c = key_map[e.key.keysym.sym & 0xFF];
+						if (c && e.type == SDL_KEYDOWN) { mu_input_keydown(ctx, c); }
+						if (c && e.type == SDL_KEYUP) { mu_input_keyup(ctx, c); }
+						break;
+					}
+				}
+			}
+
 			switch (e.type) {
 				case SDL_QUIT:
 					SDL_AtomicSet(&running, 0);
 					break;
 				case SDL_MOUSEMOTION:
-					if (mouse && SDL_GetRelativeMouseMode()) {
+					if (mouse && SDL_GetRelativeMouseMode() && !has_open_windows) {
 						Uint32 state = SDL_GetMouseState(NULL, NULL);
 						struct vxtp_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
 						if (state & SDL_BUTTON_LMASK)
@@ -661,7 +733,7 @@ int ENTRY(int argc, char *argv[]) {
 					}
 					break;
 				case SDL_MOUSEBUTTONDOWN:
-					if (mouse) {
+					if (mouse && !has_open_windows) {
 						if (e.button.button == SDL_BUTTON_MIDDLE) {
 							SDL_SetRelativeMouseMode(false);
 							break;
@@ -707,10 +779,10 @@ int ENTRY(int argc, char *argv[]) {
 					break;
 				}
 				case SDL_KEYDOWN:
-					SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
+					if (!has_open_windows)
+						SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
-					//if ((e.key.keysym.sym == SDLK_RETURN) && (e.key.keysym.mod & KMOD_ALT)) {
 					if (e.key.keysym.sym == SDLK_F11) {
 						if (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) {
 							SDL_SetWindowFullscreen(window, 0);
@@ -725,16 +797,25 @@ int ENTRY(int argc, char *argv[]) {
 							SDL_SetWindowFullscreen(window, 0);
 							SDL_SetRelativeMouseMode(false);
 							SYNC(vxtu_debugger_interrupt(dbg));					
-						} else if (!SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Eject Floppy", "Eject mounted floppy image in A: drive?", window)) {
+						} else if ((e.key.keysym.mod & KMOD_CTRL) && !SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Eject Floppy", "Eject mounted floppy image in A: drive?", window)) {
 							SYNC(vxtp_disk_unmount(disk, 0));
+						} else {
+							mu_Container *cont = mu_get_container(ctx, "Help");
+							if (cont) {
+								cont->open = 1;
+								mu_bring_to_front(ctx, cont);
+							}
 						}
 						break;
 					}
-					SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, false));
+
+					if (!has_open_windows)
+						SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, false));
 					break;
 			}
 		}
 
+		// Update titlebar.
 		Uint32 ticks = SDL_GetTicks();
 		if ((ticks - last_title_update) > 1000) {
 			last_title_update = ticks;
@@ -747,26 +828,50 @@ int ENTRY(int argc, char *argv[]) {
 				num_cycles = 0;
 			);
 
-			if (mhz > 10.0)
-				snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%d MHz", (int)mhz);
-			else
-				snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%.2f MHz", mhz);
+			if (ticks > 10000) {
+				if (mhz > 10.0)
+					snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%d MHz", (int)mhz);
+				else
+					snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%.2f MHz", mhz);
+			} else {
+				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
+			}
 			SDL_SetWindowTitle(window, buffer);
 		}
 
-		vxt_dword bg = 0;
-		SYNC(
-			bg = video.border_color(video.device);
-			video.snapshot(video.device)
-		);
+		{ // Update all windows.
+			has_open_windows = false;
+			mu_begin(ctx);
+			help_window(ctx);
+			mu_end(ctx);
+			if (has_open_windows)
+				SDL_SetRelativeMouseMode(false);
+		}
 
-		SDL_SetRenderDrawColor(renderer, bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF);
-		SDL_RenderClear(renderer);
+		{ // Final rendering.
+			vxt_dword bg = 0;
+			SDL_Rect rect = {0};
 
-		video.render(video.device, &render_callback, renderer);
+			SYNC(
+				bg = video.border_color(video.device);
+				video.snapshot(video.device)
+			);
+			video.render(video.device, &render_callback, renderer);
 
-		SDL_RenderCopy(renderer, framebuffer, NULL, NULL);
-		SDL_RenderPresent(renderer);
+			r_clear(mu_color(bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF));
+			SDL_RenderCopy(renderer, framebuffer, NULL, target_rect(window, &rect));
+
+			mu_Command *cmd = NULL;
+			while (mu_next_command(ctx, &cmd)) {
+				switch (cmd->type) {
+					case MU_COMMAND_TEXT: r_draw_text(cmd->text.str, cmd->text.pos, cmd->text.color); break;
+					case MU_COMMAND_RECT: r_draw_rect(cmd->rect.rect, cmd->rect.color); break;
+					case MU_COMMAND_ICON: r_draw_icon(cmd->icon.id, cmd->icon.rect, cmd->icon.color); break;
+					case MU_COMMAND_CLIP: r_set_clip_rect(cmd->clip.rect); break;
+				}
+			}		
+			r_present();
+		}
 	}
 
 	SDL_WaitThread(emu_thread, NULL);
@@ -792,6 +897,9 @@ int ENTRY(int argc, char *argv[]) {
 		if (sticks[i])
 			SDL_JoystickClose(sticks[i]);
 	}
+
+	r_destroy();
+	SDL_free(ctx);
 
 	SDL_DestroyTexture(framebuffer);
 	SDL_DestroyRenderer(renderer);
