@@ -30,6 +30,8 @@
 // capture the mouse when windows are open.
 extern bool has_open_windows;
 
+mu_Container *open_window(mu_Context *ctx, const char *name);
 void help_window(mu_Context *ctx);
+bool eject_window(mu_Context *ctx, const char *path);
 
 #endif

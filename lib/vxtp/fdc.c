@@ -475,19 +475,22 @@ vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, void *fp) {
     if (num > 3)
         return VXT_USER_ERROR(0);
 
+    if (!fp)
+        return c->floppy[num].fp ? VXT_USER_ERROR(1) : VXT_NO_ERROR;
+
     if (fseek(fp, 0, SEEK_END))
-        return VXT_USER_ERROR(1);
+        return VXT_USER_ERROR(2);
 
     long size = 0;
     if ((size = ftell(fp)) < 0)
-        return VXT_USER_ERROR(2);
+        return VXT_USER_ERROR(3);
 
     if (fseek(fp, 0, SEEK_SET))
-        return VXT_USER_ERROR(3);
+        return VXT_USER_ERROR(4);
 
     if (size > 1474560) {
         fprintf(stderr, "invalid floppy image size\n");
-        return VXT_USER_ERROR(4);
+        return VXT_USER_ERROR(5);
     }
 
     struct diskette *d = &c->floppy[num];

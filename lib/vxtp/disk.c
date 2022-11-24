@@ -199,17 +199,20 @@ vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, void *fp) {
     VXT_DEC_DEVICE(c, disk, p);
     vxt_system *s = VXT_GET_SYSTEM(disk, p);
 
+    if (!fp)
+        return c->disks[num & 0xFF].fp ? VXT_USER_ERROR(0) : VXT_NO_ERROR;
+
     int size = 0;
     if (c->interface.seek(s, fp, 0, VXTP_SEEK_END))
-        return VXT_USER_ERROR(0);
-    if ((size = c->interface.tell(s, fp)) < 0)
         return VXT_USER_ERROR(1);
-    if (c->interface.seek(s, fp, 0, VXTP_SEEK_START))
+    if ((size = c->interface.tell(s, fp)) < 0)
         return VXT_USER_ERROR(2);
+    if (c->interface.seek(s, fp, 0, VXTP_SEEK_START))
+        return VXT_USER_ERROR(3);
 
     if ((size > 1474560) && (num < 0x80)) {
         VXT_LOG("Invalid harddrive number, expected 128+");
-        return VXT_USER_ERROR(3);
+        return VXT_USER_ERROR(4);
     }
 
     struct drive *d = &c->disks[num & 0xFF];

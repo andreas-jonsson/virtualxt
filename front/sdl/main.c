@@ -755,7 +755,7 @@ int ENTRY(int argc, char *argv[]) {
 					break;
 				}
 				case SDL_KEYDOWN:
-					if (!has_open_windows)
+					if (!has_open_windows && (e.key.keysym.sym != SDLK_F11) && (e.key.keysym.sym != SDLK_F12))
 						SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
@@ -773,14 +773,10 @@ int ENTRY(int argc, char *argv[]) {
 							SDL_SetWindowFullscreen(window, 0);
 							SDL_SetRelativeMouseMode(false);
 							SYNC(vxtu_debugger_interrupt(dbg));					
-						} else if ((e.key.keysym.mod & KMOD_CTRL) && !SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Eject Floppy", "Eject mounted floppy image in A: drive?", window)) {
-							SYNC(vxtp_disk_unmount(disk, 0));
+						} else if ((e.key.keysym.mod & KMOD_CTRL)) {
+							open_window(ctx, "Eject");
 						} else {
-							mu_Container *cont = mu_get_container(ctx, "Help");
-							if (cont) {
-								cont->open = 1;
-								mu_bring_to_front(ctx, cont);
-							}
+							open_window(ctx, "Help");
 						}
 						break;
 					}
@@ -815,10 +811,14 @@ int ENTRY(int argc, char *argv[]) {
 			SDL_SetWindowTitle(window, buffer);
 		}
 
-		{ // Update all windows.
+		{ // Update all windows and there functions.
 			has_open_windows = false;
 			mu_begin(ctx);
+
 			help_window(ctx);
+			if (eject_window(ctx, (vxtp_disk_mount(disk, 0, NULL) == VXT_NO_ERROR) ? "EMPTY" : args.floppy))
+				SYNC(vxtp_disk_unmount(disk, 0));
+
 			mu_end(ctx);
 			if (has_open_windows)
 				SDL_SetRelativeMouseMode(false);
