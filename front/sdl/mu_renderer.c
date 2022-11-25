@@ -1,179 +1,209 @@
-#ifdef _WIN32
-	#include <SDL.h>
-#else
-	#include <SDL2/SDL.h>
-#endif
+// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//
+// This software is provided 'as-is', without any express or implied
+// warranty. In no event will the authors be held liable for any damages
+// arising from the use of this software.
+//
+// Permission is granted to anyone to use this software for any purpose,
+// including commercial applications, and to alter it and redistribute it
+// freely, subject to the following restrictions:
+//
+// 1. The origin of this software must not be misrepresented; you must not
+//    claim that you wrote the original software. If you use this software in
+//    a product, an acknowledgment (see the following) in the product
+//    documentation is required.
+//
+//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//
+// 2. Altered source versions must be plainly marked as such, and must not be
+//    misrepresented as being the original software.
+//
+// 3. This notice may not be removed or altered from any source distribution.
 
-#include <microui.h>
+#include <stdlib.h>
 
 #include "mu_renderer.h"
-#include "atlas.inl"
+#include "mu_atlas.inl"
 
 #define BUFFER_SIZE 16384
 
-static float tex_buf[BUFFER_SIZE * 8];
-static float vert_buf[BUFFER_SIZE * 8];
-static uint8_t color_buf[BUFFER_SIZE * 16];
-static uint32_t index_buf[BUFFER_SIZE * 6];
+struct renderer {
+	float tex_buf[BUFFER_SIZE * 8];
+	float vert_buf[BUFFER_SIZE * 8];
+	uint8_t color_buf[BUFFER_SIZE * 16];
+	uint32_t index_buf[BUFFER_SIZE * 6];
 
-static int buf_idx;
+	int buf_idx;
 
-static SDL_Renderer *renderer;
-static SDL_Texture *texture;
+	SDL_Renderer *renderer;
+	SDL_Texture *texture;
+};
 
-void r_init(void *rend) {
-	renderer = (SDL_Renderer*)rend;
-	buf_idx = 0;
+mr_renderer *mr_init(SDL_Renderer *renderer) {
+	mr_renderer *r = (mr_renderer*)SDL_malloc(sizeof(struct renderer));
+	SDL_memset(r, 0, sizeof(struct renderer));
 
-	texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, ATLAS_WIDTH, ATLAS_HEIGHT);
-	if (texture == NULL) {
-			SDL_Log("Error creating texture: %s", SDL_GetError());
-			return;
+	r->renderer = renderer;
+	r->texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, ATLAS_WIDTH, ATLAS_HEIGHT);
+	
+	if (!r->texture) {
+		SDL_Log("Error creating texture: %s", SDL_GetError());
+		SDL_free(r);
+		return NULL;
 	}
-	/* atlas_texture only contains GL_ALPHA channel, so create an intermediate ABGR8888 for SDL2 */
+
 	{
 		Uint8 *ptr = SDL_malloc(4 * ATLAS_WIDTH * ATLAS_HEIGHT);
 		for (int x = 0; x < ATLAS_WIDTH * ATLAS_HEIGHT; x++) {
-				ptr[4 * x] = 255;
-				ptr[4 * x + 1] = 255;
-				ptr[4 * x + 2] = 255;
-				ptr[4 * x + 3] = atlas_texture[x];
+			ptr[4 * x] = 255;
+			ptr[4 * x + 1] = 255;
+			ptr[4 * x + 2] = 255;
+			ptr[4 * x + 3] = atlas_texture[x];
 		}
-		SDL_UpdateTexture(texture, NULL, ptr, 4 * ATLAS_WIDTH);
+		SDL_UpdateTexture(r->texture, NULL, ptr, 4 * ATLAS_WIDTH);
 		SDL_free(ptr);
 	}
-	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+	SDL_SetTextureBlendMode(r->texture, SDL_BLENDMODE_BLEND);
+	return r;
 }
 
-void r_destroy(void) {
-	SDL_DestroyTexture(texture);
+void mr_destroy(mr_renderer *r) {
+	SDL_DestroyTexture(r->texture);
+	SDL_memset(r, 0, sizeof(struct renderer));
+	SDL_free(r);
 }
 
-static void flush(void) {
-	if (buf_idx == 0) { return; }
+static void flush(mr_renderer *r) {
+	if (!r->buf_idx)
+		return;
 
 	int xy_stride = 2 * sizeof(float);
-	float *xy = vert_buf;
+	float *xy = r->vert_buf;
 
 	int uv_stride = 2 * sizeof(float);
-	float *uv = tex_buf;
+	float *uv = r->tex_buf;
 
 	int col_stride = 4 * sizeof(Uint8);
-	int *color = (int*)color_buf;
+	int *color = (int*)r->color_buf;
 
-	SDL_RenderGeometryRaw(renderer, texture,
-					xy, xy_stride, (const SDL_Color*)color,
-					col_stride,
-					uv, uv_stride,
-					buf_idx * 4,
-					index_buf, buf_idx * 6, sizeof (int));
+	SDL_RenderGeometryRaw(r->renderer, r->texture,
+		xy, xy_stride, (const SDL_Color*)color,
+		col_stride,
+		uv, uv_stride,
+		r->buf_idx * 4,
+		r->index_buf, r->buf_idx * 6, sizeof(int));
 
-	buf_idx = 0;
+	r->buf_idx = 0;
 }
 
-static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {
-	if (buf_idx == BUFFER_SIZE) { flush(); }
+static void push_quad(mr_renderer *r, mu_Rect dst, mu_Rect src, mu_Color color) {
+	if (r->buf_idx == BUFFER_SIZE)
+		flush(r);
 
-	int texvert_idx = buf_idx *  8;
-	int   color_idx = buf_idx * 16;
-	int element_idx = buf_idx *  4;
-	int   index_idx = buf_idx *  6;
-	buf_idx++;
+	int texvert_idx = r->buf_idx *  8;
+	int   color_idx = r->buf_idx * 16;
+	int element_idx = r->buf_idx *  4;
+	int   index_idx = r->buf_idx *  6;
+	r->buf_idx++;
 
 	/* update texture buffer */
 	float x = src.x / (float) ATLAS_WIDTH;
 	float y = src.y / (float) ATLAS_HEIGHT;
 	float w = src.w / (float) ATLAS_WIDTH;
 	float h = src.h / (float) ATLAS_HEIGHT;
-	tex_buf[texvert_idx + 0] = x;
-	tex_buf[texvert_idx + 1] = y;
-	tex_buf[texvert_idx + 2] = x + w;
-	tex_buf[texvert_idx + 3] = y;
-	tex_buf[texvert_idx + 4] = x;
-	tex_buf[texvert_idx + 5] = y + h;
-	tex_buf[texvert_idx + 6] = x + w;
-	tex_buf[texvert_idx + 7] = y + h;
+	r->tex_buf[texvert_idx + 0] = x;
+	r->tex_buf[texvert_idx + 1] = y;
+	r->tex_buf[texvert_idx + 2] = x + w;
+	r->tex_buf[texvert_idx + 3] = y;
+	r->tex_buf[texvert_idx + 4] = x;
+	r->tex_buf[texvert_idx + 5] = y + h;
+	r->tex_buf[texvert_idx + 6] = x + w;
+	r->tex_buf[texvert_idx + 7] = y + h;
 
 	/* update vertex buffer */
-	vert_buf[texvert_idx + 0] = dst.x;
-	vert_buf[texvert_idx + 1] = dst.y;
-	vert_buf[texvert_idx + 2] = dst.x + dst.w;
-	vert_buf[texvert_idx + 3] = dst.y;
-	vert_buf[texvert_idx + 4] = dst.x;
-	vert_buf[texvert_idx + 5] = dst.y + dst.h;
-	vert_buf[texvert_idx + 6] = dst.x + dst.w;
-	vert_buf[texvert_idx + 7] = dst.y + dst.h;
+	r->vert_buf[texvert_idx + 0] = dst.x;
+	r->vert_buf[texvert_idx + 1] = dst.y;
+	r->vert_buf[texvert_idx + 2] = dst.x + dst.w;
+	r->vert_buf[texvert_idx + 3] = dst.y;
+	r->vert_buf[texvert_idx + 4] = dst.x;
+	r->vert_buf[texvert_idx + 5] = dst.y + dst.h;
+	r->vert_buf[texvert_idx + 6] = dst.x + dst.w;
+	r->vert_buf[texvert_idx + 7] = dst.y + dst.h;
 
 	/* update color buffer */
-	memcpy(color_buf + color_idx +  0, &color, 4);
-	memcpy(color_buf + color_idx +  4, &color, 4);
-	memcpy(color_buf + color_idx +  8, &color, 4);
-	memcpy(color_buf + color_idx + 12, &color, 4);
+	memcpy(r->color_buf + color_idx +  0, &color, 4);
+	memcpy(r->color_buf + color_idx +  4, &color, 4);
+	memcpy(r->color_buf + color_idx +  8, &color, 4);
+	memcpy(r->color_buf + color_idx + 12, &color, 4);
 
 	/* update index buffer */
-	index_buf[index_idx + 0] = element_idx + 0;
-	index_buf[index_idx + 1] = element_idx + 1;
-	index_buf[index_idx + 2] = element_idx + 2;
-	index_buf[index_idx + 3] = element_idx + 2;
-	index_buf[index_idx + 4] = element_idx + 3;
-	index_buf[index_idx + 5] = element_idx + 1;
+	r->index_buf[index_idx + 0] = element_idx + 0;
+	r->index_buf[index_idx + 1] = element_idx + 1;
+	r->index_buf[index_idx + 2] = element_idx + 2;
+	r->index_buf[index_idx + 3] = element_idx + 2;
+	r->index_buf[index_idx + 4] = element_idx + 3;
+	r->index_buf[index_idx + 5] = element_idx + 1;
 }
 
-void r_draw_rect(mu_Rect rect, mu_Color color) {
-	push_quad(rect, atlas[ATLAS_WHITE], color);
+void mr_draw_rect(mr_renderer *r, mu_Rect rect, mu_Color color) {
+	push_quad(r, rect, atlas[ATLAS_WHITE], color);
 }
 
-void r_draw_text(const char *text, mu_Vec2 pos, mu_Color color) {
+void mr_draw_text(mr_renderer *r, const char *text, mu_Vec2 pos, mu_Color color) {
 	mu_Rect dst = { pos.x, pos.y, 0, 0 };
 	for (const char *p = text; *p; p++) {
-		if ((*p & 0xc0) == 0x80) { continue; }
+		if ((*p & 0xc0) == 0x80)
+			continue;
+
 		int chr = mu_min((unsigned char) *p, 127);
 		mu_Rect src = atlas[ATLAS_FONT + chr];
 		dst.w = src.w;
 		dst.h = src.h;
-		push_quad(dst, src, color);
+		push_quad(r, dst, src, color);
 		dst.x += dst.w;
 	}
 }
 
-void r_draw_icon(int id, mu_Rect rect, mu_Color color) {
+void mr_draw_icon(mr_renderer *r, int id, mu_Rect rect, mu_Color color) {
 	mu_Rect src = atlas[id];
 	int x = rect.x + (rect.w - src.w) / 2;
 	int y = rect.y + (rect.h - src.h) / 2;
-	push_quad(mu_rect(x, y, src.w, src.h), src, color);
+	push_quad(r, mu_rect(x, y, src.w, src.h), src, color);
 }
 
-int r_get_text_width(const char *text, int len) {
+int mr_get_text_width(const char *text, int len) {
 	int res = 0;
 	for (const char *p = text; *p && len--; p++) {
-		if ((*p & 0xc0) == 0x80) { continue; }
+		if ((*p & 0xc0) == 0x80)
+			continue;
+
 		int chr = mu_min((unsigned char) *p, 127);
 		res += atlas[ATLAS_FONT + chr].w;
 	}
 	return res;
 }
 
-int r_get_text_height(void) {
+int mr_get_text_height(void) {
 	return 18;
 }
 
-void r_set_clip_rect(mu_Rect rect) {
-	flush();
-	SDL_Rect r;
-	r.x = rect.x;
-	r.y = rect.y;
-	r.w = rect.w;
-	r.h = rect.h;
-	SDL_RenderSetClipRect(renderer, &r);
+void mr_set_clip_rect(mr_renderer *r, mu_Rect rect) {
+	flush(r);
+	SDL_Rect rc;
+	rc.x = rect.x;
+	rc.y = rect.y;
+	rc.w = rect.w;
+	rc.h = rect.h;
+	SDL_RenderSetClipRect(r->renderer, &rc);
 }
 
-void r_clear(mu_Color clr) {
-	flush();
-	SDL_SetRenderDrawColor(renderer, clr.r, clr.g, clr.b, clr.a);
-	SDL_RenderClear(renderer);
+void mr_clear(mr_renderer *r, mu_Color clr) {
+	flush(r);
+	SDL_SetRenderDrawColor(r->renderer, clr.r, clr.g, clr.b, clr.a);
+	SDL_RenderClear(r->renderer);
 }
 
-void r_present(void) {
-	flush();
-	SDL_RenderPresent(renderer);
+void mr_present(mr_renderer *r) {
+	flush(r);
+	SDL_RenderPresent(r->renderer);
 }

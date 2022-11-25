@@ -20,21 +20,30 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#ifndef _UM_RENDERER_H_
-#define _UM_RENDERER_H_
+#ifndef _MU_RENDERER_H_
+#define _MU_RENDERER_H_
+
+#ifdef _WIN32
+	#include <SDL.h>
+#else
+	#include <SDL2/SDL.h>
+#endif
 
 #include <microui.h>
 
-void r_init(void *rend);
-void r_destroy(void);
-void r_draw_rect(mu_Rect rect, mu_Color color);
-void r_draw_text(const char *text, mu_Vec2 pos, mu_Color color);
-void r_draw_icon(int id, mu_Rect rect, mu_Color color);
-int r_get_text_width(const char *text, int len);
-int r_get_text_height(void);
-void r_set_clip_rect(mu_Rect rect);
-void r_clear(mu_Color color);
-void r_present(void);
+typedef struct renderer mr_renderer;
+
+mr_renderer *mr_init(SDL_Renderer *renderer);
+void mr_destroy(mr_renderer *r);
+void mr_draw_rect(mr_renderer *r, mu_Rect rect, mu_Color color);
+void mr_draw_text(mr_renderer *r, const char *text, mu_Vec2 pos, mu_Color color);
+void mr_draw_icon(mr_renderer *r, int id, mu_Rect rect, mu_Color color);
+void mr_set_clip_rect(mr_renderer *r, mu_Rect rect);
+void mr_clear(mr_renderer *r, mu_Color color);
+void mr_present(mr_renderer *r);
+
+int mr_get_text_width(const char *text, int len);
+int mr_get_text_height(void);
 
 #endif
 

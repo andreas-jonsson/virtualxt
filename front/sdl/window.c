@@ -91,7 +91,7 @@ void error_window(mu_Context *ctx) {
 	if (mu_begin_window_ex(ctx, "Error", mu_rect(120, 40, 400, 100), MU_OPT_CLOSED|MU_OPT_NORESIZE)) {
 		has_open_windows = true;
 
-		int text_width = r_get_text_width(window_error_message, (int)strlen(window_error_message));
+		int text_width = mr_get_text_width(window_error_message, (int)strlen(window_error_message));
 		mu_layout_set_next(ctx, mu_rect(200 - text_width / 2, 0, text_width + 10, 25), 1);
 		mu_label(ctx, window_error_message);
 

@@ -134,12 +134,12 @@ static int text_width(mu_Font font, const char *text, int len) {
 	(void)font;
 	if (len == -1)
 		len = strlen(text);
-	return r_get_text_width(text, len);
+	return mr_get_text_width(text, len);
 }
 
 static int text_height(mu_Font font) {
 	(void)font;
-	return r_get_text_height();
+	return mr_get_text_height();
 }
 
 static const char *sprint(const char *fmt, ...) {
@@ -466,8 +466,7 @@ int ENTRY(int argc, char *argv[]) {
 		return -1;
 	}
 
-	r_init(renderer);
-
+	mr_renderer *mr = mr_init(renderer);
 	mu_Context *ctx = SDL_malloc(sizeof(mu_Context));
 	mu_init(ctx);
 	ctx->text_width = text_width;
@@ -846,23 +845,23 @@ int ENTRY(int argc, char *argv[]) {
 
 			SYNC(
 				bg = video.border_color(video.device);
-				video.snapshot(video.device)
+				video.snapshot(video.device);
 			);
 			video.render(video.device, &render_callback, renderer);
 
-			r_clear(mu_color(bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF));
+			mr_clear(mr, mu_color(bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF));
 			SDL_RenderCopy(renderer, framebuffer, NULL, target_rect(window, &rect));
 
 			mu_Command *cmd = NULL;
 			while (mu_next_command(ctx, &cmd)) {
 				switch (cmd->type) {
-					case MU_COMMAND_TEXT: r_draw_text(cmd->text.str, cmd->text.pos, cmd->text.color); break;
-					case MU_COMMAND_RECT: r_draw_rect(cmd->rect.rect, cmd->rect.color); break;
-					case MU_COMMAND_ICON: r_draw_icon(cmd->icon.id, cmd->icon.rect, cmd->icon.color); break;
-					case MU_COMMAND_CLIP: r_set_clip_rect(cmd->clip.rect); break;
+					case MU_COMMAND_TEXT: mr_draw_text(mr, cmd->text.str, cmd->text.pos, cmd->text.color); break;
+					case MU_COMMAND_RECT: mr_draw_rect(mr, cmd->rect.rect, cmd->rect.color); break;
+					case MU_COMMAND_ICON: mr_draw_icon(mr, cmd->icon.id, cmd->icon.rect, cmd->icon.color); break;
+					case MU_COMMAND_CLIP: mr_set_clip_rect(mr, cmd->clip.rect); break;
 				}
 			}		
-			r_present();
+			mr_present(mr);
 		}
 	}
 
@@ -890,7 +889,7 @@ int ENTRY(int argc, char *argv[]) {
 			SDL_JoystickClose(sticks[i]);
 	}
 
-	r_destroy();
+	mr_destroy(mr);
 	SDL_free(ctx);
 
 	SDL_DestroyTexture(framebuffer);
