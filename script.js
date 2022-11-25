@@ -289,6 +289,23 @@ function startEmulator(binary) {
             window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
             window.addEventListener("resize", () => { invalidateWindowSize = true; });
 
+            if (urlParams.get("mouse") != "0") {
+                const handler = (e) => {
+                    const hidden = (document.pointerLockElement == document.body);
+                    if (hidden && ((e.buttons & 4) != 0)) {
+                        document.body.exitPointerLock();
+                    } else if (!hidden && e.buttons != 0) {
+                        document.body.requestPointerLock();
+                    } else if (hidden) {
+                        C.wasm_send_mouse(e.movementX, e.movementY, e.buttons);
+                    }
+                };
+
+                window.addEventListener("pointermove", handler);
+                window.addEventListener("pointerdown", handler);
+                window.addEventListener("pointerup", handler);
+            }
+
             window.requestAnimationFrame(renderFrame);
 
             const targetFreq = urlParams.get("freq") || defaultTargetFreq;
@@ -317,7 +334,7 @@ function startEmulator(binary) {
                     audioCtx.resume();
                 }
             }, 1000);
-        }
+        };
 
         const waitForDisk = () => {
             if (!diskData) {
@@ -325,7 +342,7 @@ function startEmulator(binary) {
                 return;
             }
             initialize();
-        }
+        };
         setTimeout(waitForDisk);
     });
 }
