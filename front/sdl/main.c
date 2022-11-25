@@ -113,9 +113,6 @@ SDL_Point framebuffer_size = {640, 200};
 char floppy_image_path[FILENAME_MAX] = {0};
 char new_floppy_image_path[FILENAME_MAX] = {0};
 
-#define WINDOW_ERROR_MESSAGE_SIZE 1024
-char window_error_message[WINDOW_ERROR_MESSAGE_SIZE] = {0};
-
 int str_buffer_len = 0;
 char *str_buffer = NULL;
 
@@ -815,7 +812,7 @@ int ENTRY(int argc, char *argv[]) {
 			mu_begin(ctx);
 
 			help_window(ctx);
-			error_window(ctx, window_error_message);
+			error_window(ctx);
 
 			if (eject_window(ctx, (*floppy_image_path != 0) ? floppy_image_path: NULL)) {
 				SYNC(vxtp_disk_unmount(disk, 0));
@@ -825,14 +822,12 @@ int ENTRY(int argc, char *argv[]) {
 			if (mount_window(ctx, new_floppy_image_path)) {
 				FILE *fp = fopen(new_floppy_image_path, "rb+");
 				if (!fp) {
-					strncpy(window_error_message, "Could not open floppy image file!", sizeof(window_error_message));
-					open_window(ctx, "Error");
+					open_error_window(ctx, "Could not open floppy image file!");
 				} else {
 					vxt_error err = VXT_NO_ERROR;
 					SYNC(err = vxtp_disk_mount(disk, 0, fp));
 					if (err != VXT_NO_ERROR) {
-						strncpy(window_error_message, "Could not mount floppy image file!", sizeof(window_error_message));
-						open_window(ctx, "Error");
+						open_error_window(ctx, "Could not mount floppy image file!");
 						fclose(fp);
 					} else {
 						strncpy(floppy_image_path, new_floppy_image_path, sizeof(floppy_image_path));

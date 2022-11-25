@@ -30,6 +30,7 @@
 #include "mu_renderer.h"
 
 bool has_open_windows = false;
+char window_error_message[1024] = {0};
 
 mu_Container *open_window(mu_Context *ctx, const char *name) {
 	mu_Container *cont = mu_get_container(ctx, name);
@@ -38,6 +39,11 @@ mu_Container *open_window(mu_Context *ctx, const char *name) {
 		mu_bring_to_front(ctx, cont);
 	}
 	return cont;
+}
+
+void open_error_window(mu_Context *ctx, const char *msg) {
+	if (open_window(ctx, "Error"))
+		strncpy(window_error_message, msg, sizeof(window_error_message));
 }
 
 void help_window(mu_Context *ctx) {
@@ -81,13 +87,13 @@ void help_window(mu_Context *ctx) {
 	}
 }
 
-void error_window(mu_Context *ctx, const char *msg) {
+void error_window(mu_Context *ctx) {
 	if (mu_begin_window_ex(ctx, "Error", mu_rect(120, 40, 400, 100), MU_OPT_CLOSED|MU_OPT_NORESIZE)) {
 		has_open_windows = true;
 
-		int text_width = r_get_text_width(msg, (int)strlen(msg));
+		int text_width = r_get_text_width(window_error_message, (int)strlen(window_error_message));
 		mu_layout_set_next(ctx, mu_rect(200 - text_width / 2, 0, text_width + 10, 25), 1);
-		mu_label(ctx, msg);
+		mu_label(ctx, window_error_message);
 
 		mu_layout_set_next(ctx, mu_rect(170, 35, 60, 25), 1);
 		if (mu_button(ctx, "OK"))
