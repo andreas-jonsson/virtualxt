@@ -39,6 +39,10 @@ export fn wasm_send_key(scan: i32) void {
     c.send_key(@as(c_int, scan));
 }
 
+export fn wasm_send_mouse(xrel: i32, yrel: i32, buttons: u32) void {
+    c.send_mouse(@as(c_int, xrel), @as(c_int, yrel), @as(c_uint, buttons));
+}
+
 export fn wasm_step_emulation(cycles: i32) void {
     c.step_emulation(@as(c_int, cycles));
 }

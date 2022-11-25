@@ -103,7 +103,7 @@ Uint32 last_title_update = 0;
 int num_cycles = 0;
 double cpu_frequency = 4.772726;
 
-SDL_atomic_t running;
+SDL_atomic_t running = {1};
 SDL_mutex *emu_mutex = NULL;
 SDL_Thread *emu_thread = NULL;
 
@@ -647,7 +647,6 @@ int ENTRY(int argc, char *argv[]) {
 	vxt_system_reset(vxt);
 	vxt_system_registers(vxt)->debug = (bool)args.halt;
 
-	SDL_AtomicSet(&running, 1);
 	if (!(emu_mutex = SDL_CreateMutex())) {
 		printf("SDL_CreateMutex failed!\n");
 		return -1;

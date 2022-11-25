@@ -363,6 +363,7 @@ pub fn build(b: *Builder) void {
         wasm.addCSourceFile("lib/vxtp/pit.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/cga.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/dma.c", wasm_opt);
+        wasm.addCSourceFile("lib/vxtp/mouse.c", wasm_opt);
 
         // https://github.com/ziglang/zig/issues/8633
         const page_size = 0x10000;
@@ -372,7 +373,7 @@ pub fn build(b: *Builder) void {
         wasm.global_base = 6560; // offset in linear memory to place global data
 
         // TODO: Change this to a real copy step.
-        const web = b.addSystemCommand(&[_][]const u8{"cp", "-t", "build/web/", "front/web/index.html", "front/web/script.js", "boot/freedos_web_hd.img"});
+        const web = b.addSystemCommand(&[_][]const u8{"cp", "-t", "build/web/", "front/web/index.html", "front/web/script.js", "front/web/favicon.ico", "boot/freedos_web_hd.img"});
         web.step.dependOn(&wasm.step);
         b.step("web", "Build web-frontend").dependOn(&web.step);
     }
