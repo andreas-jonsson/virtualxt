@@ -149,6 +149,15 @@ static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_poin
 	return rom;
 }
 
+static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
+	(void)userdata;
+	if (cmd == VXTP_CTRL_SHUTDOWN) {
+		LOG("Guest OS shutdown!");
+		js_shutdown();
+	}
+	return 0;
+}
+
 static long long ustimer(void) {
     return (long long)js_ustimer();
 }
@@ -226,6 +235,7 @@ void initialize_emulator(void) {
         load_bios(get_vxtx_data(), (int)get_vxtx_size(), 0xE0000),
         vxtp_pic_create(&allocator),
 	    vxtp_dma_create(&allocator),
+		vxtp_ctrl_create(&allocator, &emu_control, NULL),
         pit,
         ppi,
 		cga,

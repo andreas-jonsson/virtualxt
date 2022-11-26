@@ -61,4 +61,5 @@ test
 *.trace
 
 tools/vxtdrv/vxtdrv.com
+tools/shutdown/shutdown.com
 __scrambler.tmp

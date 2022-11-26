@@ -324,6 +324,15 @@ static int tell_file(vxt_system *s, void *fp) {
 	return (int)ftell((FILE*)fp);
 }
 
+static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
+	(void)userdata;
+	if (cmd == VXTP_CTRL_SHUTDOWN) {
+		printf("Guest OS shutdown!\n");
+		SDL_AtomicSet(&running, 0);
+	}
+	return 0;
+}
+
 static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 	int size = 0;
 	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, path, &size);
@@ -564,6 +573,7 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
 	devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
 	devices[i++] = vxtp_rtc_create(&vxt_clib_malloc);
+	devices[i++] = vxtp_ctrl_create(&vxt_clib_malloc, &emu_control, NULL);
 	devices[i++] = pit;
 	devices[i++] = mouse;
 	devices[i++] = ppi;

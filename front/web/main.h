@@ -43,5 +43,6 @@ extern void js_set_border_color(unsigned int);
 extern void js_disk_read(void*, unsigned int, unsigned int);
 extern void js_disk_write(void*, unsigned int, unsigned int);
 extern unsigned int js_disk_size(void);
+extern void js_shutdown(void);
 
 #endif

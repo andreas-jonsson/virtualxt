@@ -224,6 +224,7 @@ pub fn build(b: *Builder) void {
         pirepheral.addCSourceFile("lib/vxtp/rtc.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/adlib.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/fdc.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/ctrl.c", opt);
 
         if (network) {
             pirepheral.defineCMacroRaw("VXTP_NETWORK");
@@ -364,6 +365,7 @@ pub fn build(b: *Builder) void {
         wasm.addCSourceFile("lib/vxtp/cga.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/dma.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/mouse.c", wasm_opt);
+        wasm.addCSourceFile("lib/vxtp/ctrl.c", wasm_opt);
 
         // https://github.com/ziglang/zig/issues/8633
         const page_size = 0x10000;

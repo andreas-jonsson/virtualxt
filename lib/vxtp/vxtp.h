@@ -149,6 +149,10 @@ struct vxtp_joystick_event {
     vxt_int16 yaxis;
 };
 
+enum vxtp_ctrl_command {
+	VXTP_CTRL_SHUTDOWN = 0x1
+};
+
 enum vxtp_disk_seek {
     VXTP_SEEK_START		= 0x0,
 	VXTP_SEEK_CURRENT 	= 0x1,
@@ -210,6 +214,8 @@ extern struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, long lo
 extern bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp_joystick_event *ev);
 
 extern struct vxt_pirepheral *vxtp_postcard_create(vxt_allocator *alloc);
+
+extern struct vxt_pirepheral *vxtp_ctrl_create(vxt_allocator *alloc, vxt_byte (*f)(enum vxtp_ctrl_command,void*), void *userdata);
 
 extern struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc);
 
