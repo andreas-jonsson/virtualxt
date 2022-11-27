@@ -30,9 +30,9 @@ org 256
     xor al, al      ; Reset command
     out 0xB4, al
     mov al, 1       ; Shutdown command
+    out 0xB4, al
 
 stop:
-    out 0xB4, al
     hlt
     jmp stop
 
