@@ -125,14 +125,24 @@ var importObject = {
     env: {
         memory: memory,
         js_puts: printCString,
+        js_shutdown: shutdown,
         js_disk_read: diskReadData,
         js_disk_write: diskWriteData,
         js_disk_size: () => { return diskData.length; },
         js_ustimer: () => { return performance.now() * 1000; },
         js_speaker_callback: (freq) => { oscillator.frequency.setValueAtTime(freq, null); },
-        js_set_border_color: (color) => { document.body.style.background = '#' + ('00000' + (color | 0).toString(16)).substr(-6); }
+        js_set_border_color: (color) => { document.body.style.background = "#" + ("00000" + (color | 0).toString(16)).substr(-6); }
     }
 };
+
+function shutdown() {
+    if (urlParams.has("ret")) {
+        window.open(urlParams.get("ret"), "_self");
+    } else {
+        document.body.innerHTML = "";
+        document.body.style.background = "black";
+    }
+}
 
 function diskReadData(ptr, size, head) {
     const view = new Uint8Array(memory.buffer, ptr, size);
