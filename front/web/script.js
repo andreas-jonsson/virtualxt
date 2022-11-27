@@ -115,6 +115,7 @@ const urlParams = new URLSearchParams(window.location.search);
 
 var diskData = null;
 var invalidateWindowSize = false;
+var shutdown = false;
 
 var memory = new WebAssembly.Memory({
     initial: 350, // Pages
@@ -125,7 +126,7 @@ var importObject = {
     env: {
         memory: memory,
         js_puts: printCString,
-        js_shutdown: shutdown,
+        js_shutdown: doDhutdown,
         js_disk_read: diskReadData,
         js_disk_write: diskWriteData,
         js_disk_size: () => { return diskData.length; },
@@ -135,12 +136,12 @@ var importObject = {
     }
 };
 
-function shutdown() {
+function doDhutdown() {
+    shutdown = true;
+    document.body.innerHTML = "";
+    document.body.style.background = "black";
     if (urlParams.has("ret")) {
         window.open(urlParams.get("ret"), "_self");
-    } else {
-        document.body.innerHTML = "";
-        document.body.style.background = "black";
     }
 }
 
@@ -289,7 +290,9 @@ function startEmulator(binary) {
             imageData.data.set(imageDataArray);
             context.putImageData(imageData, 0, 0);
 
-            window.requestAnimationFrame(renderFrame);
+            if (!shutdown) {
+                window.requestAnimationFrame(renderFrame);
+            }
         };
 
         const initialize = () => {
@@ -322,7 +325,7 @@ function startEmulator(binary) {
             const cycleCap = targetFreq * 15000;
             var stepper = { t: performance.now(), c: 0 };
 
-            setInterval(() => {
+            var stepInterval = setInterval(() => {
                 const t = performance.now();
                 const delta = t - stepper.t;
 
@@ -334,14 +337,22 @@ function startEmulator(binary) {
                 C.wasm_step_emulation(cycles);
                 stepper.c += cycles;
                 stepper.t = t;
+
+                if (shutdown) {
+                    clearInterval(stepInterval);
+                }
             }, 1);
 
-            setInterval(() => {
+            var updateInterval = setInterval(() => {
                 console.log("Frequency:", stepper.c / 1000000, "Mhz");
                 stepper.c = 0;
 
                 if (audioCtx.state == "suspended") {
                     audioCtx.resume();
+                }
+
+                if (shutdown) {
+                    clearInterval(updateInterval);
                 }
             }, 1000);
         };
