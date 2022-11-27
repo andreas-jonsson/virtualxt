@@ -113,9 +113,10 @@ const jsToXt = {
 
 const urlParams = new URLSearchParams(window.location.search);
 
+var targetFreq = urlParams.get("freq") || defaultTargetFreq;
 var diskData = null;
 var invalidateWindowSize = false;
-var shutdown = false;
+var halted = false;
 
 var memory = new WebAssembly.Memory({
     initial: 350, // Pages
@@ -126,7 +127,7 @@ var importObject = {
     env: {
         memory: memory,
         js_puts: printCString,
-        js_shutdown: doShutdown,
+        js_shutdown: shutdown,
         js_disk_read: diskReadData,
         js_disk_write: diskWriteData,
         js_disk_size: () => { return diskData.length; },
@@ -136,11 +137,14 @@ var importObject = {
     }
 };
 
-function doShutdown() {
-    if (!shutdown) {
-        shutdown = true;
-        document.body.innerHTML = "";
-        document.body.style.background = "black";
+function shutdown() {
+    if (!halted) {
+        halted = true;
+        targetFreq = 1 / 1000000;
+
+        document.body.style = "background-color: black; color: lightgray;";
+        document.body.innerHTML = "System halted!";
+        
         if (urlParams.has("ret")) {
             window.open(urlParams.get("ret"), "_self");
         }
@@ -321,7 +325,6 @@ function startEmulator(binary) {
 
             window.requestAnimationFrame(renderFrame);
 
-            const targetFreq = urlParams.get("freq") || defaultTargetFreq;
             const cycleCap = targetFreq * 15000;
             var stepper = { t: performance.now(), c: 0 };
 
@@ -356,7 +359,7 @@ function startEmulator(binary) {
             }
             initialize();
         };
-        setTimeout(waitForDisk);
+        waitForDisk();
     });
 }
 
