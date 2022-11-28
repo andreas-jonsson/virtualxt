@@ -140,13 +140,12 @@ var importObject = {
 function shutdown() {
     if (!halted) {
         halted = true;
-        targetFreq = 1 / 1000000;
-
-        document.body.style = "background-color: black; color: lightgray;";
-        document.body.innerHTML = "System halted!";
-        
         if (urlParams.has("ret")) {
             window.open(urlParams.get("ret"), "_self");
+        } else {
+            targetFreq = 1 / 1000000;
+            document.body.style = "background-color: black; color: lightgray;";
+            document.body.innerHTML = "System halted!";
         }
     }
 }
@@ -308,6 +307,9 @@ function startEmulator(binary) {
 
             if (urlParams.get("mouse") != "0") {
                 const handler = (e) => {
+                    if (halted) {
+                        return;
+                    }
                     const hidden = (document.pointerLockElement == document.body);
                     if (hidden && ((e.buttons & 4) != 0)) {
                         document.body.exitPointerLock();
