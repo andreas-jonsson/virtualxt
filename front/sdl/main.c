@@ -522,7 +522,7 @@ int ENTRY(int argc, char *argv[]) {
 	};
 
 	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, &interface);
-	struct vxt_pirepheral *fdc = vxtp_fdc_create(&vxt_clib_malloc, 0x3F0, 6);
+	struct vxt_pirepheral *fdc = vxtp_fdc_create(&vxt_clib_malloc, &ustimer, 0x3F0, 6);
 	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
 	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit);
 	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4); // COM1

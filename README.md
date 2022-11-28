@@ -10,6 +10,8 @@ VirtualXT is a IBM PC/XT (8088/V20) emulator that runs on modern hardware and op
 It is designed to be simple and lightweight yet still capable enough to run a large
 library of old application and games.
 
+Browser version is avalible [here](https://app.virtualxt.org).
+
 ## Features
 
 * Intel 8088 or NEC V20 CPU

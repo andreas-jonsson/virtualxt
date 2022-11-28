@@ -256,8 +256,8 @@ struct vxt_validator {
 // Use VXT_NO_LOG to disable logging in specific compile units
 // or use VXT_NO_LOGGING to disable all logging.
 #ifdef VXT_NO_LOG
-    #define VXT_PRINT(...)
-    #define VXT_LOG(...)
+    #define VXT_PRINT(...) {}
+    #define VXT_LOG(...) {}
 #else
 
     /// @private

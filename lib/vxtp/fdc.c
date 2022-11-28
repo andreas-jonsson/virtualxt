@@ -30,6 +30,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#define INT64 long long
+
 #define FIFO_SIZE 16
 #define SECTOR_SIZE 512
 
@@ -137,6 +139,10 @@ VXT_PIREPHERAL(fdc, {
     vxt_system *s;
     vxt_word base;
     int irq;
+    INT64 (*ustics)(void);
+
+    INT64 last_seek;
+    INT64 last_transfer;
 
     bool use_dma;
     struct vxt_pirepheral *dma_controller;
@@ -179,8 +185,6 @@ static void fifo_write(struct fdc *c, vxt_byte data) {
 }
 
 static void execute_command(struct fdc *c) {
-    VXT_LOG("Execute command: %d", *c->command & 0xF);
-
     c->fifo_len = 0;
     c->is_busy = false;
 
@@ -271,24 +275,15 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
                 status = MSR_MASK_DATAREG | MSR_MASK_DATAIO | MSR_MASK_BUSY;
             }
 
-            //if (c->command_len)
-            //    status |= MSR_MASK_BUSY;
-
             status |= c->use_dma ? 0 : MSR_MASK_DMA;
             for (int i = 0; i < 4; i++) {
                 if (c->position[i].is_seeking)
                     status |= 1 << i;
             }
-
-            VXT_LOG("MSR: 0x%X", status);
             return status;
         }
         case 5: // Data Register
-        {
-            vxt_byte data = fifo_read(c);
-            VXT_LOG("FIFO Read: 0x%X", data);
-            return data;
-        }
+            return fifo_read(c);
         default:
             VXT_LOG("Read port: 0x%X", port - c->base);
             return 0;
@@ -299,7 +294,6 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(c, fdc, p);
     switch (port - c->base) {
         case 2: // Digital Output Register (DOR)
-            VXT_LOG("DOR: 0x%X", data);
         	c->drive_num = data & 0x3;
             c->status_reg0 = (c->status_reg0 & 0xFC) | c->drive_num;
             c->status_reg3 = (c->status_reg3 & 0xFC) | c->drive_num;
@@ -311,7 +305,6 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             c->dor_reg = data;
             break;
         case 5:	// Data Register
-            VXT_LOG("Push command: 0x%X", data);
             push_command_byte(c, data);
             break;
         default:
@@ -393,8 +386,11 @@ static void update_transfer(struct fdc *c) {
                 int sz = c->floppy[i].sectors * SECTOR_SIZE;
                 int lba = drive->track * sz * 2 + drive->head * sz + (drive->sector - 1) * SECTOR_SIZE;
 
-                fseek(fp, SEEK_SET, lba);
-                fread(c->sector_buffer, 1, SECTOR_SIZE, fp);
+                if (fseek(fp, lba, SEEK_SET))
+                    VXT_LOG("Seek error!");
+                if (fread(c->sector_buffer, 1, SECTOR_SIZE, fp) != SECTOR_SIZE)
+                    VXT_LOG("Read error!");
+
             } else {
                 VXT_LOG("Trying to read from a unmounted drive!");
             }
@@ -407,9 +403,17 @@ static void update_transfer(struct fdc *c) {
 static vxt_error step(struct vxt_pirepheral *p, int cycles) {
     (void)cycles;
     VXT_DEC_DEVICE(c, fdc, p);
-    // TODO: Don't do this every step!
-    update_seek(c);
-    update_transfer(c);
+    
+    INT64 t = c->ustics();
+    //if ((t - c->last_seek) > 20000) {
+        c->last_seek = t;
+        update_seek(c);
+    //}
+
+    //if ((t - c->last_transfer) > 16) {
+        c->last_transfer = t;
+        update_transfer(c);
+    //}
     return VXT_NO_ERROR;
 }
 
@@ -441,11 +445,12 @@ static const char *name(struct vxt_pirepheral *p) {
     return "FDC (NEC 765)";
 }
 
-struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word base, int irq) {
+struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, INT64 (*ustics)(void), vxt_word base, int irq) {
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(fdc));
     vxt_memclear(p, VXT_PIREPHERAL_SIZE(fdc));
     VXT_DEC_DEVICE(c, fdc, p);
 
+    c->ustics = ustics;
     c->base = base;
     c->irq = irq;
 

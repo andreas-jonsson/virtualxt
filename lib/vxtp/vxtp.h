@@ -199,7 +199,7 @@ extern void vxtp_disk_set_boot_drive(struct vxt_pirepheral *p, int num);
 extern vxt_error vxtp_disk_mount(struct vxt_pirepheral *p, int num, void *fp);
 extern bool vxtp_disk_unmount(struct vxt_pirepheral *p, int num);
 
-extern struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word base, int irq);
+extern struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, long long (*ustics)(void), vxt_word base, int irq);
 extern vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, void *fp);
 extern bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num);
 
