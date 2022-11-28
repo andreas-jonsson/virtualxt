@@ -140,13 +140,12 @@ var importObject = {
 function shutdown() {
     if (!halted) {
         halted = true;
-        targetFreq = 1 / 1000000;
-
-        document.body.style = "background-color: black; color: lightgray;";
-        document.body.innerHTML = "System halted!";
-        
         if (urlParams.has("ret")) {
             window.open(urlParams.get("ret"), "_self");
+        } else {
+            targetFreq = 1 / 1000000;
+            document.body.style = "background-color: black; color: lightgray;";
+            document.body.innerHTML = "System halted!";
         }
     }
 }
