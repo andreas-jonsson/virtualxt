@@ -307,6 +307,9 @@ function startEmulator(binary) {
 
             if (urlParams.get("mouse") != "0") {
                 const handler = (e) => {
+                    if (halted) {
+                        return;
+                    }
                     const hidden = (document.pointerLockElement == document.body);
                     if (hidden && ((e.buttons & 4) != 0)) {
                         document.body.exitPointerLock();
