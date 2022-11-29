@@ -33,6 +33,7 @@ VXT_PIREPHERAL(debugger, {
     const char *(*getline)(void);
     int (*print)(const char*, ...);
 
+    vxt_byte post;
 	vxt_byte io_map[VXT_IO_MAP_SIZE];
 	vxt_byte mem_map[VXT_MEM_MAP_SIZE];
 })
@@ -271,6 +272,19 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     dev->io.write(dev, addr, data);
 }
 
+static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
+    VXT_DEC_DEVICE(dbg, debugger, p);
+    (void)port;
+	return dbg->post;
+}
+
+static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
+    VXT_DEC_DEVICE(dbg, debugger, p);
+    (void)port;
+    dbg->post = data;
+    dbg->print("POST: 0x%X (%d)\n", data, data);
+}
+
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(dbg, debugger, p);
 
@@ -282,6 +296,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     for (int i = 0; i < VXT_MEM_MAP_SIZE; i++)
         dbg->mem_map[i] = mem[i];
 
+    vxt_system_install_io_at(s, p, 0x80);
     vxt_system_install_mem(s, p, 0, 0xFFFFF);
     return VXT_NO_ERROR;
 }
@@ -343,5 +358,7 @@ struct vxt_pirepheral *vxtu_debugger_create(vxt_allocator *alloc, const struct v
     p->name = &name;
     p->io.read = &read;
     p->io.write = &write;
+    p->io.in = &in;
+    p->io.out = &out;
     return p;
 }

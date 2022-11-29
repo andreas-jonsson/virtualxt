@@ -37,7 +37,8 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(c, post, p);
     (void)port;
-    printf("POST: 0x%X\n", (c->code = data));
+    c->code = data;
+    printf("POST: 0x%X (%d)\n", data, data);
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {

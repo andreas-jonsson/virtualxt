@@ -101,7 +101,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
         }
         c->channel[ch].page = (vxt_dword)data << 16;
     } else {
-        switch ((port &= 0x0F)) {
+        switch ((port &= 0xF)) {
             case 0x0:
             case 0x1:
             case 0x2:

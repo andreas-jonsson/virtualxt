@@ -386,10 +386,8 @@ static void update_transfer(struct fdc *c) {
                 int sz = c->floppy[i].sectors * SECTOR_SIZE;
                 int lba = drive->track * sz * 2 + drive->head * sz + (drive->sector - 1) * SECTOR_SIZE;
 
-                if (fseek(fp, lba, SEEK_SET))
-                    VXT_LOG("Seek error!");
-                if (fread(c->sector_buffer, 1, SECTOR_SIZE, fp) != SECTOR_SIZE)
-                    VXT_LOG("Read error!");
+                if (fseek(fp, lba, SEEK_SET)) VXT_LOG("Seek error!");
+                if (fread(c->sector_buffer, 1, SECTOR_SIZE, fp) != SECTOR_SIZE) VXT_LOG("Read error!");
 
             } else {
                 VXT_LOG("Trying to read from a unmounted drive!");
