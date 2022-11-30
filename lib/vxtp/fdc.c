@@ -217,7 +217,7 @@ static void execute_command(struct fdc *c) {
         }
         case CMD_CHECK_INT:
             fifo_write(c, (vxt_byte)c->status_reg0);
-            fifo_write(c, c->position[c->drive_num].track); // Cylinder?
+            fifo_write(c, c->position[c->drive_num].track);
             break;
         //case CMD_WRITE_DEL_S:
         //    break;
@@ -359,7 +359,6 @@ static void update_transfer(struct fdc *c) {
 					if (c->fifo_len < FIFO_SIZE) {
 						fifo_write(c, c->sector_buffer[c->sector_read_index++]);
 						vxt_system_interrupt(c->s, c->irq);
-                        return;
 					}
 				}
 			} else if (c->sector_read_index == SECTOR_SIZE) {
@@ -378,7 +377,6 @@ static void update_transfer(struct fdc *c) {
 				fifo_write(c, 2);
 
 				vxt_system_interrupt(c->s, c->irq);
-				return;
 			}
 		} else if (drive->is_reading) {
             FILE *fp = c->floppy[i].fp;

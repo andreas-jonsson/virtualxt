@@ -3,9 +3,9 @@
 ; Post [num sectors][error num] on error.
 
 %define PATTERN 0xC3
-%define HEADS 2
-%define TRACKS 80
-%define SECTORS 18
+%define HEADS 1
+%define TRACKS 1
+%define SECTORS 1
 
 cpu 8086
 org 0x7C00
