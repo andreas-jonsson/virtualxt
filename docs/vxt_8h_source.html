@@ -312,8 +312,8 @@ $(document).ready(function(){initNavTree('vxt_8h_source.html',''); initResizable
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;<span class="comment">// Use VXT_NO_LOG to disable logging in specific compile units</span></div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;<span class="comment">// or use VXT_NO_LOGGING to disable all logging.</span></div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;<span class="preprocessor">#ifdef VXT_NO_LOG</span></div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;<span class="preprocessor">    #define VXT_PRINT(...)</span></div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;<span class="preprocessor">    #define VXT_LOG(...)</span></div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;<span class="preprocessor">    #define VXT_PRINT(...) {}</span></div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;<span class="preprocessor">    #define VXT_LOG(...) {}</span></div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160; </div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    <span class="keyword">extern</span> int (*_vxt_logger)(<span class="keyword">const</span> <span class="keywordtype">char</span>*, ...);</div>
