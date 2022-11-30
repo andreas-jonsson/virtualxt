@@ -38,7 +38,6 @@ struct channel {
 	bool enabled;
     bool toggle;
 	double frequency;
-	vxt_dword effective;
 	vxt_word counter;
     vxt_word data;
 	vxt_byte mode;
@@ -91,8 +90,13 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     else if ((ch->mode == MODE_HIGH_BYTE) || ((ch->mode == MODE_TOGGLE) && ch->toggle))
         ch->data = (ch->data & 0x00FF) | (((vxt_word)data) << 8);
 
-    ch->effective = ch->data ? (vxt_dword)ch->data : 65536;
-    ch->frequency = 1193182.0 / (double)ch->effective;
+    vxt_dword effective = (vxt_dword)ch->data;
+    if (!ch->data) {
+        ch->data = 65535;
+        effective = 65536;
+    }
+    
+    ch->frequency = 1193182.0 / (double)effective;
 
     if (ch->mode == MODE_TOGGLE)
         ch->toggle = !ch->toggle;
