@@ -890,12 +890,12 @@ static void fpu_dummy(CONSTSP(cpu) p, INST(inst)) {
 
 static void in_E4(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = (vxt_byte)system_in(p->s, read_opcode8(p));
+   p->regs.al = system_in(p->s, read_opcode8(p));
 }
 
 static void in_E5(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ax = system_in(p->s, read_opcode8(p));
+   p->regs.ax = (vxt_word)system_in(p->s, read_opcode8(p));
 }
 
 static void out_E6(CONSTSP(cpu) p, INST(inst)) {
@@ -905,7 +905,9 @@ static void out_E6(CONSTSP(cpu) p, INST(inst)) {
 
 static void out_E7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   system_out(p->s, read_opcode8(p), p->regs.ax);
+   vxt_word port = read_opcode8(p);
+   system_out(p->s, port, LBYTE(p->regs.ax));
+   system_out(p->s, port + 1, HBYTE(p->regs.ax));
 }
 
 static void call_E8(CONSTSP(cpu) p, INST(inst)) {
@@ -939,7 +941,7 @@ static void in_EC(CONSTSP(cpu) p, INST(inst)) {
 
 static void in_ED(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ax = (system_in(p->s, p->regs.dx + 1) << 8) | system_in(p->s, p->regs.dx);
+   p->regs.ax = WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx));
 }
 
 static void out_EE(CONSTSP(cpu) p, INST(inst)) {
@@ -949,7 +951,8 @@ static void out_EE(CONSTSP(cpu) p, INST(inst)) {
 
 static void out_EF(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   system_out(p->s, p->regs.dx, p->regs.ax);
+   system_out(p->s, p->regs.dx, LBYTE(p->regs.ax));
+   system_out(p->s, p->regs.dx + 1, HBYTE(p->regs.ax));
 }
 
 static void lock_F0(CONSTSP(cpu) p, INST(inst)) {
