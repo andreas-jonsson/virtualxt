@@ -42,15 +42,6 @@ var vxt_8h =
     [ "vxt_pointer", "vxt_8h.html#af39a2a43386c5266fe94d53223308671", null ],
     [ "vxt_system", "vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802", null ],
     [ "vxt_word", "vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54", null ],
-    [ "VXT_CARRY", "vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad55c07a626cc0ea951c59a5a2f482640", null ],
-    [ "VXT_PARITY", "vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55ba656d5c6ea5e317fb09b9422ee78e1795", null ],
-    [ "VXT_AUXILIARY", "vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55bac803e48d87f424f461b34ed178832bbd", null ],
-    [ "VXT_ZERO", "vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55ba5db83a714002cd9f4aeb1986161c5fbf", null ],
-    [ "VXT_SIGN", "vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55badbce4bdae517aba0f253b413631ae285", null ],
-    [ "VXT_TRAP", "vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55ba38d07a35360c5b55131e6330d5f911bb", null ],
-    [ "VXT_INTERRUPT", "vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55ba1e19b9ffe254cd61cc1ab16b0b36fff0", null ],
-    [ "VXT_DIRECTION", "vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55ba85b18f694eb08b980b3c9cf9e61ef23e", null ],
-    [ "VXT_OVERFLOW", "vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55ba49331db6c7d0401c8161b47b96aeda71", null ],
     [ "vxt_error", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047", [
       [ "VXT_NO_ERROR", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a303639ce6216d5df97fd907ec6be0bef", null ],
       [ "VXT_INVALID_VERSION", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ae0b9ce2aef425ed0ed1e06daf943d9c2", null ],
@@ -58,7 +49,7 @@ var vxt_8h =
       [ "VXT_USER_TERMINATION", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047aebc9bde81021d51eb886bfea944c558c", null ],
       [ "VXT_NO_PIC", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a80ff11543be9e05d7582d046639c7d98", null ],
       [ "VXT_NO_DMA", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a3d4155ce6f53a99a61ec44ee7ff74c11", null ],
-      [ "__VXT_NUM_ERRORS", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ac6a3e5326ad48de3d6b4283d9acdeecd", null ]
+      [ "_______VXT_NUM_ERRORS", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047abdefb94c83d862989a3f4bc64289d83f", null ]
     ] ],
     [ "vxt_pclass", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7", [
       [ "VXT_PCLASS_GENERIC", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7a77eada4e490e3da25d6a21f419528a09", null ],
