@@ -66,8 +66,11 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     VXT_DEC_DEVICE(c, ppi, p);
 	switch (port) {
         case 0x60:
-            c->command_port = 0;
-            return c->data_port;
+        {
+            vxt_byte data = c->data_port;
+            c->command_port = c->data_port = 0; // Not sure if the data port should be cleared on read?
+            return data;
+        }
         case 0x61:
             #ifdef VXT_CPU_286
                 c->refresh_request ^= 0x10;
@@ -95,15 +98,24 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
         #endif
         case 0x61:
         {
-            c->port_61 = data;
-            bool enabled = (data & 3) == 3;
-            if (enabled != c->spk_enabled) {
-                c->spk_enabled = enabled;
+            bool spk_enable = (data & 3) == 3;
+            if (spk_enable != c->spk_enabled) {
+                c->spk_enabled = spk_enable;
                 c->spk_sample_index = 0;
 
                 if (c->speaker_callback)
-                    c->speaker_callback(p, enabled ? vxtp_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
+                    c->speaker_callback(p, spk_enable ? vxtp_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
             }
+            
+            bool kb_reset = !(c->port_61 & 0xC0) && (data & 0xC0);
+            if (kb_reset) {
+                c->queue_size = 0;
+                c->data_port = 0xAA;
+                c->command_port = COMMAND_READY | DATA_READY;
+                vxt_system_interrupt(VXT_GET_SYSTEM(ppi, p), 1);
+            }
+
+            c->port_61 = data;
             break;
         }
         #ifdef VXT_CPU_286
