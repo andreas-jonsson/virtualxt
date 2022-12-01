@@ -109,7 +109,7 @@ VXT_PIREPHERAL(vga_video, {
         vxt_byte pixel_mask;
 
         vxt_byte dac_state;
-        vxt_byte pal_rgb;
+        vxt_dword pal_rgb;
         vxt_byte pal_read_index;
 		vxt_byte pal_read_latch;
         vxt_byte pal_write_index;
@@ -136,7 +136,7 @@ static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
     addr -= MEMORY_START;
 
     if (v->reg.seq_reg[5] & 8) {
-        fprintf(stderr, "Readmode 1 is unsupported!\n");
+        VXT_LOG("Readmode 1 is unsupported!");
         return 0;
     }
 
@@ -159,7 +159,7 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     v->is_dirty = true;
 
     if ((addr == VIDEO_MODE_BDA_ADDRESS) && (v->video_mode != data)) {
-        printf("Switch video mode: 0x%X\n", data);
+        VXT_LOG("Switch video mode: 0x%X", data);
         v->video_mode = data;
         v->reg.seq_reg[4] = 0; // Set chained mode.
         return;
@@ -315,8 +315,8 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             break;
         case 0x3C9:
         {
-            vxt_byte value = data & 0x3F;
-            switch (v->reg.pal_write_latch) {
+            vxt_dword value = data & 0x3F;
+            switch (v->reg.pal_write_latch++) {
                 case 0:
                     v->reg.pal_rgb = value << 18;
                     break;
@@ -325,6 +325,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
                     break;
                 case 2:
                     v->reg.pal_rgb |= value << 2;
+                    v->reg.pal_write_latch = 0;
                     v->palette[v->reg.pal_write_index++] = v->reg.pal_rgb;
                     break;
             }            
@@ -624,9 +625,9 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
         case 0xE: // EGA 640x200x16
             height = 200;
         case 0x10: // EGA 640x350x16
-            height = 350;
         case 0x12: // VGA 640x480x16
         {
+            height = (snap->video_mode == 0x10) ? 350 : height;
             int width = num_col * 8;
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
@@ -659,6 +660,6 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             return f(320, 200, snap->rgba_surface, userdata);
     }
     
-    fprintf(stderr, "Unsupported video mode: 0x%X\n", snap->video_mode);
+    VXT_LOG("Unsupported video mode: 0x%X", snap->video_mode);
     return -1;
 }
