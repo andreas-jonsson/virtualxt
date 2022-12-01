@@ -29,6 +29,7 @@ cp $SRC/libgpg-error.so* $DST
 
 cp build/bin/virtualxt $APP_DIR/
 cp bios/pcxtbios.bin $APP_DIR/bios/
+cp bios/glabios.bin $APP_DIR/bios/
 cp bios/vxtx.bin $APP_DIR/bios/
 cp boot/freedos_hd.img $APP_DIR/boot/
 cp tools/icon/icon.png $APP_DIR/virtualxt-icon.png

@@ -36,6 +36,7 @@ modules:
 
       - install -Dm00755 build/bin/virtualxt $FLATPAK_DEST/bin/virtualxt
       - install -Dm00644 bios/pcxtbios.bin $FLATPAK_DEST/share/virtualxt/pcxtbios.bin
+      - install -Dm00644 bios/glabios.bin $FLATPAK_DEST/share/virtualxt/glabios.bin
       - install -Dm00644 bios/vxtx.bin $FLATPAK_DEST/share/virtualxt/vxtx.bin
       - install -Dm00644 boot/freedos.img $FLATPAK_DEST/share/virtualxt/freedos.img
       - install -Dm00644 boot/freedos_hd.img $FLATPAK_DEST/share/virtualxt/freedos_hd.img

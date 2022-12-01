@@ -6,6 +6,7 @@ mkdir %PACKAGE_DEST%\bios %PACKAGE_DEST%\boot
 
 copy build\bin\virtualxt.exe %PACKAGE_DEST%
 copy bios\pcxtbios.bin %PACKAGE_DEST%\bios
+copy bios\glabios.bin %PACKAGE_DEST%\bios
 copy bios\vxtx.bin %PACKAGE_DEST%\bios
 copy boot\freedos_hd.img %PACKAGE_DEST%\boot
 copy tools\package\itch\itch.windows.toml %PACKAGE_DEST%\.itch.toml
