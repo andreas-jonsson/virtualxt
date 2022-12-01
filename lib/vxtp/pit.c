@@ -92,7 +92,9 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 
     vxt_dword effective = (vxt_dword)ch->data;
     if (!ch->data) {
-        ch->data = 65535;
+        #ifdef VXTP_GLEBIOS_TIMER_FIX
+            ch->data = 65535;
+        #endif
         effective = 65536;
     }
     
