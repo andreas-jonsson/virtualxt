@@ -213,6 +213,7 @@ static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
 
 static int emu_loop(void *ptr) {
 	vxt_system *vxt = (vxt_system*)ptr;
+	Sint64 penelty = 0;
 	double frequency = cpu_frequency;
 	Uint64 start = SDL_GetPerformanceCounter();
 
@@ -238,9 +239,19 @@ static int emu_loop(void *ptr) {
 		);
 
 		while (frequency > 0.0) {
-			Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)(frequency * 1000000.0);
-			if (!f || (((SDL_GetPerformanceCounter() - start) / f) >= (Uint64)res.cycles))
+			const Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)(frequency * 1000000.0);
+			if (!f) {
+				penelty = 0;
 				break;
+			}
+
+			const Sint64 max_penelty = (Sint64)(frequency * 1000.0); // Max 1ms penelty per step.
+			const Sint64 c = (Sint64)((SDL_GetPerformanceCounter() - start) / f) + penelty;
+			const Sint64 d = c - (Uint64)res.cycles;
+			if (d >= 0) {
+				penelty = (d > max_penelty) ? max_penelty : d;
+				break;
+			}
 		}
 		start = SDL_GetPerformanceCounter();
 	}
