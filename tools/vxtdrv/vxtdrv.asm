@@ -28,12 +28,12 @@ org 256
 start:
     jmp init
 
-int10_org:
-    dd 0
-
-int10_handler:
-    out 0xB3, al
-    jmp far [cs:int10_org]
+;int10_org:
+;    dd 0
+;
+;int10_handler:
+;    out 0xB3, al
+;    jmp far [cs:int10_org]
 
 ;int21_org:
 ;    dd 0
@@ -66,14 +66,14 @@ init_text:
 init:
     ; Initialize video extensions.
 
-    mov ax, 3510h ; Get interrupt vector.
-    int 21h
-    mov word [int10_org + 2], es
-    mov word [int10_org], bx
+    ;mov ax, 3510h ; Get interrupt vector.
+    ;int 21h
+    ;mov word [int10_org + 2], es
+    ;mov word [int10_org], bx
 
-    mov ax, 2510h ; Set interrupt vector.
-    mov dx, int10_handler
-    int 21h
+    ;mov ax, 2510h ; Set interrupt vector.
+    ;mov dx, int10_handler
+    ;int 21h
 
     ; Initialize DOS extensions.
 
@@ -92,7 +92,7 @@ init:
     cmp al, 0
     jne .no_network
 
-    mov ax, 25fch
+    mov ax, 25FCh
     mov dx, intFC_handler
     int 21h
 

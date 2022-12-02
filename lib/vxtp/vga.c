@@ -70,8 +70,7 @@ struct snapshot {
     vxt_dword palette[0x100];
 
     bool cursor_visible;
-    int cursor_x;
-    int cursor_y;
+    int cursor_offset;
 
     int video_page;
     int pixel_shift;
@@ -91,6 +90,9 @@ VXT_PIREPHERAL(vga_video, {
 
     INT64 (*ustics)(void);
     INT64 application_start;
+
+    bool cursor_visible;
+    int cursor_offset;
 
     vxt_byte video_mode;
     vxt_byte mem_latch[4];
@@ -344,6 +346,17 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
         case 0x3B5:
         case 0x3D5:
         	v->reg.crt_reg[v->reg.crt_addr] = data;
+            switch (v->reg.crt_addr) {
+                case 0xA:
+                    v->cursor_visible = (data & 0x20) == 0;
+                    break;
+                case 0xE:
+                    v->cursor_offset = (v->cursor_offset & 0x00FF) | ((vxt_word)data << 8);
+                    break;
+                case 0xF:
+                    v->cursor_offset = (v->cursor_offset & 0xFF00) | (vxt_word)data;
+                    break;
+            }
             break;
         case 0x3D8:
             v->reg.mode_ctrl_reg = data;
@@ -521,19 +534,16 @@ bool vxtp_vga_snapshot(struct vxt_pirepheral *p) {
     if (!v->is_dirty)
         return false;
 
-    vxt_system *s = VXT_GET_SYSTEM(vga_video, p);
     memcpy(v->snap.mem, v->mem, MEMORY_SIZE);
     memcpy(v->snap.palette, v->palette, sizeof(v->snap.palette));
     
     v->snap.video_mode = v->video_mode;
     v->snap.video_page = ((int)v->reg.crt_reg[0xC] << 8) + (int)v->reg.crt_reg[0xD];
-    v->snap.plane_mode = (v->reg.seq_reg[0x4] & 6) != 0;
+    v->snap.plane_mode = !(v->reg.seq_reg[0x4] & 6);
     v->snap.pixel_shift = v->reg.attr_reg[0x13] & 15;
 
-    vxt_pointer cursor_addr = VXT_POINTER(0x40, 0x50 + v->snap.video_page * 2);
-    v->snap.cursor_x = vxt_system_read_byte(s, cursor_addr);
-    v->snap.cursor_y = vxt_system_read_byte(s, cursor_addr + 1);
-    v->snap.cursor_visible = !(v->reg.crt_reg[0xE] & 0x20);
+    v->snap.cursor_offset = v->cursor_offset;
+    v->snap.cursor_visible = v->cursor_visible;
 
     v->snap.mode_ctrl_reg = v->reg.mode_ctrl_reg;
     v->snap.color_ctrl_reg = v->reg.color_ctrl_reg;
@@ -566,8 +576,8 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             }
 
             if (blink_tick(p) && snap->cursor_visible) {
-                const int x = snap->cursor_x;
-                const int y = snap->cursor_y;
+                int x = snap->cursor_offset % num_col;
+                int y = snap->cursor_offset / num_col;
                 if (x < num_col && y < 25) {
                     vxt_byte attr = (MEMORY(snap->mem, CGA_BASE + snap->video_page + (num_col * 2 * y + x * 2 + 1)) & 0x70) | 0xF;
                     blit_char(p, '_', attr, x * 8, y * 16);
