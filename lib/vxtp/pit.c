@@ -27,6 +27,9 @@
     #define VXTP_PIT_COUNTER_STEP 1
 #endif
 
+#define TOGGLE_HIGH(ch) ( ((ch)->mode == MODE_TOGGLE) && (ch)->toggle )
+#define TOGGLE_LOW(ch) ( ((ch)->mode == MODE_TOGGLE) && !(ch)->toggle )
+
 enum chmode {
     MODE_LATCH_COUNT,
     MODE_LOW_BYTE,
@@ -61,9 +64,9 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     vxt_word ret = 0;
 	struct channel *ch = &c->channels[port & 3];
 
-	if ((ch->mode == MODE_LATCH_COUNT) || (ch->mode == MODE_LOW_BYTE) || ((ch->mode == MODE_TOGGLE) && !ch->toggle))
+	if ((ch->mode == MODE_LATCH_COUNT) || (ch->mode == MODE_LOW_BYTE) || TOGGLE_LOW(ch))
 		ret = ch->counter & 0xFF;
-	else if ((ch->mode == MODE_HIGH_BYTE) || ((ch->mode == MODE_TOGGLE) && ch->toggle))
+	else if ((ch->mode == MODE_HIGH_BYTE) || TOGGLE_HIGH(ch))
 		ret = ch->counter >> 8;
 
 	if ((ch->mode == MODE_LATCH_COUNT) || (ch->mode == MODE_TOGGLE))
@@ -85,20 +88,19 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     struct channel *ch = &c->channels[port & 3];
     ch->enabled = true;
 
-    if ((ch->mode == MODE_LOW_BYTE) || ((ch->mode == MODE_TOGGLE) && !ch->toggle))
+    if ((ch->mode == MODE_LOW_BYTE) || TOGGLE_LOW(ch))
         ch->data = (ch->data & 0xFF00) | ((vxt_word)data);
-    else if ((ch->mode == MODE_HIGH_BYTE) || ((ch->mode == MODE_TOGGLE) && ch->toggle))
+    else if ((ch->mode == MODE_HIGH_BYTE) || TOGGLE_HIGH(ch))
         ch->data = (ch->data & 0x00FF) | (((vxt_word)data) << 8);
 
     vxt_dword effective = (vxt_dword)ch->data;
-    if (!ch->data) {
-        #ifdef VXTP_GLEBIOS_TIMER_FIX
-            ch->data = 65535;
-        #endif
-        effective = 65536;
+    if (!ch->data && TOGGLE_HIGH(ch)) {
+        ch->data = 0xFFFF;
+        effective = 0x10000;
     }
     
-    ch->frequency = 1193182.0 / (double)effective;
+    if (effective)
+        ch->frequency = 1193182.0 / (double)effective;
 
     if (ch->mode == MODE_TOGGLE)
         ch->toggle = !ch->toggle;
@@ -143,7 +145,7 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
 	}
 
 	const INT64 step = VXTP_PIT_COUNTER_STEP;
-	const INT64 next = 1000000 / (1193182 / step);
+	const INT64 next = 1000000ll / (1193182ll / step);
 
 	if (ticks >= (c->device_ticks + next)) {
         for (int i = 0; i < 3; i++) {

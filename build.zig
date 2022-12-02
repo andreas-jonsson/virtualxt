@@ -155,7 +155,6 @@ pub fn build(b: *Builder) void {
     const sdl_path = b.option([]const u8, "sdl-path", "Path to SDL2 headers and libs") orelse null;
     const cpu286 = b.option(bool, "at", "Enable Intel 286 and IBM AT support") orelse false;
     const cpuV20 = b.option(bool, "v20", "Enable NEC V20 CPU support") orelse false;
-    const glebios = b.option(bool, "glebios", "Patch issues in regards to GLeBIOS") orelse false;
 
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
@@ -197,10 +196,6 @@ pub fn build(b: *Builder) void {
         pirepheral.linkLibC();
         pirepheral.addIncludePath("lib/vxtp");
         pirepheral.addIncludePath("lib/vxt/include");
-
-        if (glebios) {
-            pirepheral.defineCMacroRaw("VXTP_GLEBIOS_TIMER_FIX");
-        }
 
         if (validator) {
             pirepheral.defineCMacroRaw("PI8088");

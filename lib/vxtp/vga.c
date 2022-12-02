@@ -633,11 +633,10 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             num_col = 40;
             snap->mode_ctrl_reg &= ~1;
         case 0xE: // EGA 640x200x16
-            height = 200;
         case 0x10: // EGA 640x350x16
+            height = (snap->video_mode == 0x10) ? 350 : 200;
         case 0x12: // VGA 640x480x16
         {
-            height = (snap->video_mode == 0x10) ? 350 : height;
             int width = num_col * 8;
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
