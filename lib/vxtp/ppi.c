@@ -49,12 +49,13 @@ VXT_PIREPHERAL(ppi, {
     vxt_byte a20_data;
     vxt_byte refresh_request;
     bool keyboard_enable;
+    bool turbo_enabled;
 
     int queue_size;
     enum vxtp_scancode queue[MAX_EVENTS];
 
     INT64 spk_sample_index;
-	bool spk_enabled;
+	bool spk_enabled;    
 
     void (*speaker_callback)(struct vxt_pirepheral*,double,void*);
     void *speaker_callback_data;
@@ -106,6 +107,12 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
                 if (c->speaker_callback)
                     c->speaker_callback(p, spk_enable ? vxtp_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
             }
+
+            bool turbo_enabled = (data & 4) != 0;
+            if (turbo_enabled != c->turbo_enabled) {
+                c->turbo_enabled = turbo_enabled;
+                VXT_LOG("Turbo mode %s!", turbo_enabled ? "on" : "off");
+            }
             
             bool kb_reset = !(c->port_61 & 0xC0) && (data & 0xC0);
             if (kb_reset) {
@@ -140,6 +147,10 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
+static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
+    (void)p; return VXT_PCLASS_PPI;
+}
+
 static vxt_error step(struct vxt_pirepheral *p, int cycles) {
     (void)cycles;
     VXT_DEC_DEVICE(c, ppi, p);
@@ -162,6 +173,7 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, ppi, p);
     c->command_port = c->data_port = 0;
     c->port_61 = 14;
+    c->turbo_enabled = false;
 
 	c->spk_sample_index = 0;
 	c->spk_enabled = false;
@@ -202,6 +214,7 @@ struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepher
     p->reset = &reset;
     p->step = &step;
     p->name = &name;
+    p->pclass = &pclass;
     p->io.in = &in;
     p->io.out = &out;
     return p;
@@ -216,6 +229,10 @@ bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool f
         c->queue[MAX_EVENTS - 1] = key;
     }
     return false;
+}
+
+bool vxtp_ppi_turbo_enabled(struct vxt_pirepheral *p) {
+    return (VXT_GET_DEVICE(ppi, p))->turbo_enabled;
 }
 
 void vxtp_ppi_set_speaker_callback(struct vxt_pirepheral *p, void (*f)(struct vxt_pirepheral*,double,void*), void *userdata) {

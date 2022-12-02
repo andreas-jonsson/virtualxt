@@ -213,7 +213,15 @@ static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
 
 static int emu_loop(void *ptr) {
 	vxt_system *vxt = (vxt_system*)ptr;
+	double frequency = cpu_frequency;
 	Uint64 start = SDL_GetPerformanceCounter();
+
+	struct vxt_pirepheral *ppi = NULL;
+	for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
+		ppi = vxt_system_pirepheral(vxt, i);
+		if (ppi && (vxt_pirepheral_class(ppi) == VXT_PCLASS_PPI))
+			break;
+	}
 
 	while (SDL_AtomicGet(&running)) {
 		struct vxt_step res;
@@ -226,10 +234,11 @@ static int emu_loop(void *ptr) {
 					printf("step error: %s", vxt_error_str(res.err));
 			}
 			num_cycles += res.cycles;
+			//frequency = vxtp_ppi_turbo_enabled(ppi) ? 0.0 : cpu_frequency;
 		);
 
-		while (cpu_frequency > 0.0) {
-			Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)(cpu_frequency * 1000000.0);
+		while (frequency > 0.0) {
+			Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)(frequency * 1000000.0);
 			if (!f || (((SDL_GetPerformanceCounter() - start) / f) >= (Uint64)res.cycles))
 				break;
 		}

@@ -173,6 +173,7 @@ extern double vxtp_pit_get_frequency(struct vxt_pirepheral *p, int channel);
 
 extern struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit);
 extern bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool force);
+extern bool vxtp_ppi_turbo_enabled(struct vxt_pirepheral *p);
 extern vxt_int16 vxtp_ppi_generate_sample(struct vxt_pirepheral *p, int freq);
 extern void vxtp_ppi_set_speaker_callback(struct vxt_pirepheral *p, void (*f)(struct vxt_pirepheral*,double,void*), void *userdata);
 extern void vxtp_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data);
