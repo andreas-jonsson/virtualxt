@@ -50,6 +50,9 @@
 #include "keys.h"
 #include "docopt.h"
 
+#define MIN_CLOCKS_PER_STEP 100
+#define MAX_PENALTY_USEC 1000
+
 struct video_adapter {
 	struct vxt_pirepheral *device;
 	vxt_dword (*border_color)(struct vxt_pirepheral *p);
@@ -213,7 +216,7 @@ static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
 
 static int emu_loop(void *ptr) {
 	vxt_system *vxt = (vxt_system*)ptr;
-	Sint64 penelty = 0;
+	Sint64 penalty = 0;
 	double frequency = cpu_frequency;
 	Uint64 start = SDL_GetPerformanceCounter();
 
@@ -227,7 +230,7 @@ static int emu_loop(void *ptr) {
 	while (SDL_AtomicGet(&running)) {
 		struct vxt_step res;
 		SYNC(
-			res = vxt_system_step(vxt, 100);
+			res = vxt_system_step(vxt, MIN_CLOCKS_PER_STEP); //(frequency > 0.0) ? 0 : MIN_CLOCKS_PER_STEP);
 			if (res.err != VXT_NO_ERROR) {
 				if (res.err == VXT_USER_TERMINATION)
 					SDL_AtomicSet(&running, 0);
@@ -241,15 +244,15 @@ static int emu_loop(void *ptr) {
 		while (frequency > 0.0) {
 			const Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)(frequency * 1000000.0);
 			if (!f) {
-				penelty = 0;
+				penalty = 0;
 				break;
 			}
 
-			const Sint64 max_penelty = (Sint64)(frequency * 1000.0); // Max 1ms penelty per step.
-			const Sint64 c = (Sint64)((SDL_GetPerformanceCounter() - start) / f) + penelty;
+			const Sint64 max_penalty = (Sint64)(frequency * (double)MAX_PENALTY_USEC);
+			const Sint64 c = (Sint64)((SDL_GetPerformanceCounter() - start) / f) + penalty;
 			const Sint64 d = c - (Uint64)res.cycles;
 			if (d >= 0) {
-				penelty = (d > max_penelty) ? max_penelty : d;
+				penalty = (d > max_penalty) ? max_penalty : d;
 				break;
 			}
 		}
