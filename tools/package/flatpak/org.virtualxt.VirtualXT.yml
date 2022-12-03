@@ -1,6 +1,6 @@
 app-id: org.virtualxt.VirtualXT
 runtime: org.freedesktop.Platform
-runtime-version: '21.08'
+runtime-version: '22.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.ziglang
@@ -26,8 +26,8 @@ modules:
       - /share
     sources:
       - type: archive
-        url: https://www.libsdl.org/release/SDL2-2.0.20.tar.gz
-        sha256: c56aba1d7b5b0e7e999e4a7698c70b63a3394ff9704b5f6e1c57e0c16f04dd06
+        url: https://github.com/libsdl-org/SDL/releases/download/release-2.24.1/SDL2-2.24.1.tar.gz
+        sha256: bc121588b1105065598ce38078026a414c28ea95e66ed2adab4c44d80b309e1b
 
   - name: virtualxt
     buildsystem: simple
@@ -48,8 +48,8 @@ modules:
       - install -Dm00644 $FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
     sources:
       - type: archive
-        url: https://github.com/andreas-jonsson/virtualxt/archive/refs/heads/0.7.tar.gz
-        sha256: 57907246146e196dcc129013c84b7c445b0ffabd7722971b07a1f9b1687644ab
+        url: https://github.com/andreas-jonsson/virtualxt/archive/refs/heads/develop.tar.gz
+        sha256: 4abb7ce9a4b9e51416ee48ab29c4caedcc25372e56c2a89f0b3c8a2ee41de799
 
       - type: file
         path: org.virtualxt.VirtualXT.appdata.xml
