@@ -274,15 +274,17 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     VXT_DEC_DEVICE(dbg, debugger, p);
-    (void)port;
-	return dbg->post;
+	return (port == 0x80) ? dbg->post : 0xFF;
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(dbg, debugger, p);
-    (void)port;
-    dbg->post = data;
-    dbg->print("POST: 0x%X (%d)\n", data, data);
+    if (port == 0x80) {
+        dbg->post = data;
+        dbg->print("POST: 0x%X (%d)\n", data, data);
+    } else {
+        dbg->print("%c", data);
+    }
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
@@ -297,6 +299,8 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
         dbg->mem_map[i] = mem[i];
 
     vxt_system_install_io_at(s, p, 0x80);
+    vxt_system_install_io_at(s, p, 0xE9);
+    vxt_system_install_io_at(s, p, 0x500);
     vxt_system_install_mem(s, p, 0, 0xFFFFF);
     return VXT_NO_ERROR;
 }
