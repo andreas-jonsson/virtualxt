@@ -51,7 +51,7 @@ parts:
       zig build -Drelease-fast -Dv20
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin
       cp $SNAPCRAFT_PART_BUILD/build/bin/virtualxt $SNAPCRAFT_PART_INSTALL/usr/bin
-    build-packages: [gcc, pkg-config, libsdl2-dev, libpcap0.8-dev]
+    build-packages: [gcc, pkg-config, libsdl2-dev, libpcap0.8-dev, libgles2-mesa-dev, xserver-xorg-video-all]
     stage-packages:
       - libasound2
       - libasyncns0
@@ -80,6 +80,9 @@ parts:
       - libxss1
       - libxxf86vm1
       - libpcap0.8
+      - libgles2-mesa
+      - libgl1-mesa-dri
+      - xserver-xorg-video-all
     prime:
       - usr/bin
       - -usr/bin/X11
