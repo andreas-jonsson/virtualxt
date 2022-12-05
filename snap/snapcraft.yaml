@@ -51,9 +51,9 @@ parts:
     source: .
     plugin: nil
     override-build: |
+      snap install zig --classic --beta
       zig build -Drelease-fast -Dv20
     build-packages: [gcc, pkg-config, libsdl2-dev, libpcap0.8-dev]
-    build-snaps: [zig/beta]
     stage-packages:
       - libasound2
       - libasyncns0
@@ -94,8 +94,6 @@ apps:
   virtualxt:
     command: usr/bin/virtualxt.freedos
     desktop: usr/share/applications/virtualxt.desktop
-    #extensions:
-    #  - gnome-3-28    # TODO: Using this extension because it seems to fix the issue of ALSA not findig config files. (Requires core18)
     plugs:
       - desktop
       - desktop-legacy
