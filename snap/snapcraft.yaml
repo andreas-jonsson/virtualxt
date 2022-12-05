@@ -62,7 +62,6 @@ parts:
       - libpulse0
       - libsdl2-2.0-0
       - libsndfile1
-      - libsndio6.1
       - libvorbis0a
       - libvorbisenc2
       - libwayland-client0
