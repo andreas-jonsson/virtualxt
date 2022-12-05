@@ -46,13 +46,13 @@ parts:
     stage:
       - usr/bin
       - usr/lib
-    organize:
-      build/bin/virtualxt: usr/bin/virtualxt
     source: .
     plugin: nil
     override-build: |
       snap install zig --classic --beta
-      zig build -Drelease-fast -Dv20
+      zig build -Drelease-fast -Dv20 -Dpcap
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin
+      cp $SNAPCRAFT_PART_BUILD/build/bin/virtualxt $SNAPCRAFT_PART_INSTALL/usr/bin
     build-packages: [gcc, pkg-config, libsdl2-dev, libpcap0.8-dev]
     stage-packages:
       - libasound2
