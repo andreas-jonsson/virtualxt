@@ -5,8 +5,6 @@ icon: tools/package/snap/usr/share/icons/hicolor/128x128/apps/virtualxt.png
 architectures:
   - build-on: amd64
   - build-on: arm64
-  - build-on: armhf
-  - build-on: i386
 license: zlib-acknowledgement
 description: |
   VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.
@@ -50,7 +48,7 @@ parts:
     plugin: nil
     override-build: |
       snap install zig --classic --beta
-      zig build -Drelease-fast -Dv20 -Dpcap
+      zig build -Drelease-fast -Dv20
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin
       cp $SNAPCRAFT_PART_BUILD/build/bin/virtualxt $SNAPCRAFT_PART_INSTALL/usr/bin
     build-packages: [gcc, pkg-config, libsdl2-dev, libpcap0.8-dev]
