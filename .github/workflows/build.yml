@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  VXT_VERSION: 0.7.0
+  VXT_VERSION: 0.8.0
   ZIG_VERSION: 0.10.0
   SDL2_VERSION: 2.24.1
 

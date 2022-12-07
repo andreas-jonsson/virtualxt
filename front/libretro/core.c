@@ -143,7 +143,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {
 void retro_get_system_info(struct retro_system_info *info) {
     vxt_memclear(info, sizeof(struct retro_system_info));
     info->library_name = "VirtualXT";
-    info->library_version = "0.7.0";
+    info->library_version = "0.8.0";
     info->valid_extensions = "img";
     info->need_fullpath = true;
 }

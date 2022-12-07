@@ -1,5 +1,5 @@
 name: virtualxt
-version: 0.7.0
+version: 0.8.0
 summary: Lightweight IBM PC/XT emulator
 icon: tools/package/snap/usr/share/icons/hicolor/128x128/apps/virtualxt.png
 architectures:
