@@ -117,6 +117,7 @@ var targetFreq = urlParams.get("freq") || defaultTargetFreq;
 var diskData = null;
 var invalidateWindowSize = false;
 var halted = false;
+var dbQueue = null;
 
 var memory = new WebAssembly.Memory({
     initial: 350, // Pages
@@ -159,8 +160,15 @@ function diskReadData(ptr, size, head) {
 
 function diskWriteData(ptr, size, head) {
     const view = new Uint8Array(memory.buffer, ptr, size);
+    const message = { sector: head / 512, data: new Array(512) };
+
     for (let i = 0; i < size; i++) {
-        diskData[head + i] = view[i];
+        const data = view[i];
+        diskData[head + i] = data;
+        message.data[i] = data;
+    }
+    if (dbQueue) {
+        dbQueue.push(message);
     }
 }
 
@@ -198,6 +206,64 @@ function handleKeyEvent(event, mask, callback) {
 
     callback(scan | mask)
     event.preventDefault();
+}
+
+function initLocalStorage() {
+    if (!window.localStorage) {
+        console.error("Local storage not supported!");
+        return;
+    }
+
+    console.log("Initialize local storage");
+    dbQueue = [];
+
+    if (urlParams.get("storage") == "clear") {
+        console.log("Clear local storage!");
+        window.localStorage.clear();
+    }
+
+    const calc_crc32 = (r) => {
+        for (var a, o = [], c = 0; c < 256; c++) {
+            a = c;
+            for (var f = 0; f < 8; f++) {
+                a = (1 & a) ? 3988292384 ^ a >>> 1 : a >>> 1;
+            }
+            o[c] = a;
+        }
+        for (var n = -1, t = 0; t < r.length; t++) {
+            n = n >>> 8 ^ o[255 & (n ^ r[t])];
+        }
+        return (-1 ^ n) >>> 0;
+    };
+    
+    const crc_str = calc_crc32(diskData).toString();
+    for (var key of Object.keys(window.localStorage)) {
+        const pair = key.split(" ", 2);
+        if (pair[0] != crc_str) {
+            continue;
+        }
+        const sector = parseInt(pair[1]);
+        const data = JSON.parse(window.localStorage.getItem(key));
+        diskData.set(new Uint8Array(data), sector * 512);
+        console.log("Restore sector:", sector);
+    }
+
+    setInterval(() => {
+        var i = 0;
+        for (; i < dbQueue.length; i++) {
+            const msg = dbQueue.shift();
+            const str = JSON.stringify(msg.data);
+
+            try { window.localStorage.setItem(crc_str + " " + msg.sector, str); } catch {
+                console.error("Local storager is full!");
+                alert("Local storager is full! All persistant data will be deleted.");
+                window.localStorage.clear(); // This will remove all data including CRC.
+            }
+        }
+        if (i > 0) {
+            console.log(i + " sectors written to local storage!");
+        }
+    }, 1000);
 }
 
 function uploadDiskImage(afterPickCallback) {
@@ -300,6 +366,10 @@ function startEmulator(binary) {
 
         const initialize = () => {
             C.wasm_initialize_emulator();
+
+            if (urlParams.has("storage") && (urlParams.get("storage") != "0")) {
+                initLocalStorage();
+            }
 
             window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
             window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
