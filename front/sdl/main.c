@@ -357,11 +357,27 @@ static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
 }
 
 static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
+	size_t path_len = strcspn(path, "@");
+	char *file_path = (char*)SDL_malloc(path_len + 1);
+	strncpy(file_path, path, path_len);
+	
 	int size = 0;
-	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, path, &size);
+	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, file_path, &size);
+	SDL_free(file_path);
+
 	if (!data) {
 		printf("vxtu_read_file() failed!\n");
 		return NULL;
+	}
+
+	if (path_len != strlen(path)) {
+		unsigned int addr = 0;
+		if (sscanf(path + path_len + 1, "%x", &addr) == 1) {
+			base = (vxt_pointer)addr;
+		} else {
+			printf("Invalid address format!\n");
+			return NULL;
+		}
 	}
 	
 	struct vxt_pirepheral *rom = vxtu_memory_create(&vxt_clib_malloc, base, size, true);
