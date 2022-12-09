@@ -263,6 +263,12 @@ pub fn build(b: *Builder) void {
 
     exe_sdl.linkSystemLibrary("SDL2");
 
+    // This is a hack for FreeBSD. SDL2 is missing symbols from these libs.
+    if (target.getOsTag() == .freebsd) {
+        exe_sdl.linkSystemLibrary("usbhid");
+        exe_sdl.linkSystemLibrary("inotify");
+    }
+
     exe_sdl.linkLibrary(libvxt);
     exe_sdl.addIncludePath("lib/vxt/include");
 
