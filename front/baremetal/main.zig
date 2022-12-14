@@ -46,7 +46,7 @@ comptime {
         \\ msr vbar_el3,x0
         \\ msr vbar_el2,x0
         \\ msr vbar_el1,x0
-        \\ bl zigMain
+        \\ bl main
         \\.balign 0x800
         \\.section .text.exception_vector_table
         \\exception_vector_table:
@@ -89,7 +89,7 @@ export fn nop() void {
     asm volatile ("nop");
 }
 
-export fn zigMain() noreturn {
+export fn main() noreturn {
     while (true) {
         @memset(@as(*volatile [1]u8, &__bss_start), 0, @ptrToInt(&__bss_end) - @ptrToInt(&__bss_start));
         _ = c.c_main(0, null);

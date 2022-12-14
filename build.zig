@@ -341,7 +341,7 @@ pub fn build(b: *Builder) void {
         baremetal.defineCMacroRaw("ENTRY=c_main");
 
         // RaspberryPI3
-        const bm_target = .{.cpu_arch = .aarch64, .os_tag = .freestanding, .abi = .eabihf};
+        const bm_target = .{.cpu_arch = .aarch64, .cpu_model = .{ .explicit = &std.Target.aarch64.cpu.cortex_a53 }, .os_tag = .freestanding, .abi = .eabihf};
 
         baremetal.setBuildMode(mode);
         baremetal.setTarget(bm_target);
@@ -349,16 +349,22 @@ pub fn build(b: *Builder) void {
         baremetal.setLinkerScriptPath(.{.path = "front/baremetal/link.ld"});
         baremetal.setMainPkgPath(".");
 
-        //baremetal.linkLibrary(build_libvxt(b, mode, bm_target, cpu286, cpuV20, false));
+        baremetal.linkLibrary(build_libvxt(b, mode, bm_target, cpu286, cpuV20, false));
         baremetal.addIncludePath("lib/vxt/include");
 
         const bm_opt = c_options ++ &[_][]const u8{"-std=c11", "-pedantic"};
         baremetal.addCSourceFile("front/baremetal/main.c", bm_opt);
         baremetal.addCSourceFile("front/baremetal/uart.c", bm_opt);
+        baremetal.addCSourceFile("front/baremetal/mbox.c", bm_opt);
+        baremetal.addCSourceFile("front/baremetal/video.c", bm_opt);
+
+        baremetal.addIncludePath("lib/printf");
+        baremetal.addCSourceFile("lib/printf/printf.c", bm_opt);
 
         const objcopy = b.addSystemCommand(&[_][]const u8{
-            "llvm-objcopy", "-O", "binary",
+            "llvm-objcopy",
             "build/baremetal/virtualxt",
+            "-O", "binary",
             "build/baremetal/virtualxt-raspi3.img",
         });
         objcopy.step.dependOn(&baremetal.step);

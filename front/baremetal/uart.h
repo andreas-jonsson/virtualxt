@@ -20,6 +20,9 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
+#ifndef _UART_H_
+#define _UART_H_
+
 #include <vxt/vxt.h>
 
 // UART1 registers
@@ -40,3 +43,5 @@ void uart_init(void);
 void uart_write_byte(vxt_byte b);
 vxt_byte uart_read_byte(void);
 bool uart_peak(void);
+
+#endif

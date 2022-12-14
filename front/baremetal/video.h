@@ -20,28 +20,17 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
+#ifndef _VIDEO_H_
+#define _VIDEO_H_
+
 #include <vxt/vxt.h>
-#include <vxt/vxtu.h>
-#include <printf.h>
 
-#include "uart.h"
-#include "video.h"
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
 
-int ENTRY(int argc, char *argv[]) {
-	(void)argc; (void)argv;
+bool video_init(int w, int h);
+void video_put_pixel(int x, int y, vxt_dword col);
+int video_width(void);
+int video_height(void);
 
-	uart_init();
-	video_init(SCREEN_WIDTH, SCREEN_HEIGHT);
-
-	printf("hello world!\n");
-
-	//vxt_dword col = 0;
-	for (;;) {
-		for (int y = 0; y < video_height(); y++) {
-			for (int x = 0; x < video_width(); x++) {
-				video_put_pixel(x, y, 0x555555);
-			}
-		}
-	}
-	return 0;
-}
+#endif

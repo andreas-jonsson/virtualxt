@@ -20,28 +20,32 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include <vxt/vxt.h>
-#include <vxt/vxtu.h>
-#include <printf.h>
+#include "mbox.h"
+#include "gpio.h"
 
-#include "uart.h"
-#include "video.h"
+void nop(void);
 
-int ENTRY(int argc, char *argv[]) {
-	(void)argc; (void)argv;
+volatile vxt_dword __attribute__((aligned(16))) mbox[39];
 
-	uart_init();
-	video_init(SCREEN_WIDTH, SCREEN_HEIGHT);
+static vxt_dword read(vxt_byte channel) {
+	vxt_dword res;
+	do {
+		do nop(); while (*MBOX0_STATUS & MBOX_EMPTY);
+		res = *MBOX0_READ;
+	} while ((res & 0xF) != channel);
+	return res;
+}
 
-	printf("hello world!\n");
+static void send(vxt_dword msg) {
+	do nop(); while (*MBOX1_STATUS & MBOX_FULL);
+	*MBOX1_WRITE = msg;
+}
 
-	//vxt_dword col = 0;
-	for (;;) {
-		for (int y = 0; y < video_height(); y++) {
-			for (int x = 0; x < video_width(); x++) {
-				video_put_pixel(x, y, 0x555555);
-			}
-		}
+bool mbox_call(vxt_dword buffer_addr, vxt_byte channel) {
+	vxt_dword msg = (buffer_addr & ~0xF) | (channel & 0xF);
+	send(msg);
+	if (msg == read(channel)) {
+		return mbox[1] == MBOX_RESPONSE;
 	}
-	return 0;
+    return false;
 }
