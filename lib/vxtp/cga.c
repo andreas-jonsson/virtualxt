@@ -23,8 +23,6 @@
 #include "vxtp.h"
 #include "cga_font.h"
 
-#include <string.h>
-
 #define MEMORY_SIZE 0x10000
 #define MEMORY_START 0xB0000
 #define CGA_BASE 0x8000

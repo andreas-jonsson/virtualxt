@@ -28,7 +28,6 @@ extern "C" {
 #endif
 
 #include <vxt/vxtu.h>
-#include <stdio.h>
 
 enum vxtp_scancode {
 	VXTP_SCAN_INVALID,

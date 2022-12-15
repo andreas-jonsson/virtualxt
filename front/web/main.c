@@ -32,8 +32,7 @@
 #include "main.h"
 
 #define ALLOCATOR_SIZE (20 * 1024 * 1024)
-vxt_byte allocator_data[ALLOCATOR_SIZE];
-vxt_byte *allocator_ptr = allocator_data;
+vxtu_static_allocator(ALLOCATOR, ALLOCATOR_SIZE)
 
 #define LOG(...) ( log_wrapper(__VA_ARGS__) )
 
@@ -59,25 +58,6 @@ static int log_wrapper(const char *fmt, ...) {
 
 	va_end(args);
 	return n;
-}
-
-static void *allocator(void *ptr, int sz) {
-	if (!sz) {
-		return NULL;
-	} else if (ptr) {
-		LOG("Reallocation is not support!\n");
-		return NULL;
-	}
-
-	vxt_byte *p = allocator_ptr;
-	sz += 8 - (sz % 8);
-	allocator_ptr += sz;
-	
-	if (allocator_ptr >= (allocator_data + ALLOCATOR_SIZE)) {
-		LOG("Allocator is out of memory!\n");
-		return NULL;
-	}
-	return p;
 }
 
 static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
@@ -120,7 +100,7 @@ static int seek_file(vxt_system *s, void *fp, int offset, enum vxtp_disk_seek wh
 			if ((pos < 0) || (pos > disk_sz))
 				return -1;
 			break;
-		case SEEK_END:
+		case VXTP_SEEK_END:
 			pos = disk_sz - offset;
 			if ((pos < 0) || (pos > disk_sz))
 				return -1;
@@ -140,7 +120,7 @@ static int tell_file(vxt_system *s, void *fp) {
 }
 
 static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
-	struct vxt_pirepheral *rom = vxtu_memory_create(&allocator, base, size, true);
+	struct vxt_pirepheral *rom = vxtu_memory_create(&ALLOCATOR, base, size, true);
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		LOG("vxtu_memory_device_fill() failed!\n");
 		return NULL;
@@ -220,22 +200,22 @@ void initialize_emulator(void) {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
 	
-	struct vxt_pirepheral *disk = vxtp_disk_create(&allocator, &interface);
-	struct vxt_pirepheral *pit = vxtp_pit_create(&allocator, &ustimer);
+	struct vxt_pirepheral *disk = vxtp_disk_create(&ALLOCATOR, &interface);
+	struct vxt_pirepheral *pit = vxtp_pit_create(&ALLOCATOR, &ustimer);
 	
-	ppi = vxtp_ppi_create(&allocator, pit);
+	ppi = vxtp_ppi_create(&ALLOCATOR, pit);
 	vxtp_ppi_set_speaker_callback(ppi, &speaker_callback, NULL);
 
-    cga = vxtp_cga_create(&allocator, &ustimer);
-	mouse = vxtp_mouse_create(&allocator, 0x3F8, 4); // COM1
+    cga = vxtp_cga_create(&ALLOCATOR, &ustimer);
+	mouse = vxtp_mouse_create(&ALLOCATOR, 0x3F8, 4); // COM1
 
 	struct vxt_pirepheral *devices[] = {
-		vxtu_memory_create(&allocator, 0x0, 0x100000, false),
+		vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false),
         load_bios(get_pcxtbios_data(), (int)get_pcxtbios_size(), 0xFE000),
         load_bios(get_vxtx_data(), (int)get_vxtx_size(), 0xE0000),
-        vxtp_pic_create(&allocator),
-	    vxtp_dma_create(&allocator),
-		vxtp_ctrl_create(&allocator, &emu_control, NULL),
+        vxtp_pic_create(&ALLOCATOR),
+	    vxtp_dma_create(&ALLOCATOR),
+		vxtp_ctrl_create(&ALLOCATOR, &emu_control, NULL),
         pit,
         ppi,
 		cga,
@@ -244,7 +224,7 @@ void initialize_emulator(void) {
 		NULL
 	};
 
-	sys = vxt_system_create(&allocator, devices);
+	sys = vxt_system_create(&ALLOCATOR, devices);
 	vxt_system_initialize(sys);
 	
 	LOG("Installed pirepherals:\n");

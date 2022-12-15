@@ -356,10 +356,21 @@ pub fn build(b: *Builder) void {
         baremetal.addCSourceFile("front/baremetal/main.c", bm_opt);
         baremetal.addCSourceFile("front/baremetal/uart.c", bm_opt);
         baremetal.addCSourceFile("front/baremetal/mbox.c", bm_opt);
+        baremetal.addCSourceFile("front/baremetal/timer.c", bm_opt);
         baremetal.addCSourceFile("front/baremetal/video.c", bm_opt);
 
         baremetal.addIncludePath("lib/printf");
         baremetal.addCSourceFile("lib/printf/printf.c", bm_opt);
+
+        // Add the vxt pirepherals directly.
+        baremetal.addIncludePath("lib/vxtp");
+        baremetal.addCSourceFile("lib/vxtp/disk.c", bm_opt);
+        baremetal.addCSourceFile("lib/vxtp/pic.c", bm_opt);
+        baremetal.addCSourceFile("lib/vxtp/ppi.c", bm_opt);
+        baremetal.addCSourceFile("lib/vxtp/pit.c", bm_opt);
+        baremetal.addCSourceFile("lib/vxtp/cga.c", bm_opt);
+        baremetal.addCSourceFile("lib/vxtp/dma.c", bm_opt);
+        baremetal.addCSourceFile("lib/vxtp/ctrl.c", bm_opt);
 
         const objcopy = b.addSystemCommand(&[_][]const u8{
             "llvm-objcopy",

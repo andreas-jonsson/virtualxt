@@ -29,4 +29,13 @@
 
 extern int ENTRY(int argc, char *argv[]);
 
+extern void exception_handler(unsigned int);
+
+extern const unsigned char *get_pcxtbios_data(void);
+extern unsigned int get_pcxtbios_size(void);
+extern const unsigned char *get_vxtx_data(void);
+extern unsigned int get_vxtx_size(void);
+extern const unsigned char *get_disk_data(void);
+extern unsigned int get_disk_size(void);
+
 #endif

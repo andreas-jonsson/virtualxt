@@ -25,7 +25,7 @@
 #define SECTOR_SIZE 512
 
 struct drive {
-    FILE *fp;
+    void *fp;
     int size;
     bool is_hd;
 

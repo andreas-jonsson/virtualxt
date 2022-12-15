@@ -28,7 +28,6 @@
 #include <assert.h>
 
 #define VXT_LIBC
-#define VXT_LIBC_ALLOCATOR
 #define VXTU_LIBC_IO
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
@@ -362,7 +361,7 @@ static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 	strncpy(file_path, path, path_len);
 	
 	int size = 0;
-	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, file_path, &size);
+	vxt_byte *data = vxtu_read_file(&realloc, file_path, &size);
 	SDL_free(file_path);
 
 	if (!data) {
@@ -380,12 +379,12 @@ static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 		}
 	}
 	
-	struct vxt_pirepheral *rom = vxtu_memory_create(&vxt_clib_malloc, base, size, true);
+	struct vxt_pirepheral *rom = vxtu_memory_create(&realloc, base, size, true);
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		printf("vxtu_memory_device_fill() failed!\n");
 		return NULL;
 	}
-	vxt_clib_malloc(data, 0);
+	realloc(data, 0);
 
 	printf("Loaded BIOS @ 0x%X-0x%X: %s\n", base, base + size - 1, path);
 	return rom;
@@ -547,7 +546,7 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *dbg = NULL;
 	if (args.debug) {
 		struct vxtu_debugger_interface dbgif = {&pdisasm, &mgetline, &printf};
-		dbg = vxtu_debugger_create(&vxt_clib_malloc, &dbgif);
+		dbg = vxtu_debugger_create(&realloc, &dbgif);
 	}
 
 	struct vxt_pirepheral *rom = load_bios(args.bios, 0xFE000);
@@ -560,20 +559,20 @@ int ENTRY(int argc, char *argv[]) {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
 
-	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, &interface);
-	struct vxt_pirepheral *fdc = vxtp_fdc_create(&vxt_clib_malloc, &ustimer, 0x3F0, 6);
-	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
-	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit);
-	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4); // COM1
-	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&vxt_clib_malloc);
+	struct vxt_pirepheral *disk = vxtp_disk_create(&realloc, &interface);
+	struct vxt_pirepheral *fdc = vxtp_fdc_create(&realloc, &ustimer, 0x3F0, 6);
+	struct vxt_pirepheral *pit = vxtp_pit_create(&realloc, &ustimer);
+	struct vxt_pirepheral *ppi = vxtp_ppi_create(&realloc, pit);
+	struct vxt_pirepheral *mouse = vxtp_mouse_create(&realloc, 0x3F8, 4); // COM1
+	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&realloc);
 	struct vxt_pirepheral *joystick = NULL;
 
 	int i = 2;
-	struct vxt_pirepheral *devices[32] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
+	struct vxt_pirepheral *devices[32] = {vxtu_memory_create(&realloc, 0x0, 0x100000, false), rom};
 
 	struct video_adapter video = {0};
 	if (args.vga) {
-		video.device = vxtp_vga_create(&vxt_clib_malloc, &ustimer);
+		video.device = vxtp_vga_create(&realloc, &ustimer);
 		video.border_color = &vxtp_vga_border_color;
 		video.snapshot = &vxtp_vga_snapshot;
 		video.render = &vxtp_vga_render;
@@ -584,14 +583,14 @@ int ENTRY(int argc, char *argv[]) {
 
 		devices[i++] = rom;
 	} else {
-		video.device = vxtp_cga_create(&vxt_clib_malloc, &ustimer);
+		video.device = vxtp_cga_create(&realloc, &ustimer);
 		video.border_color = &vxtp_cga_border_color;
 		video.snapshot = &vxtp_cga_snapshot;
 		video.render = &vxtp_cga_render;
 	}
 
 	if (num_sticks)
-		devices[i++] = joystick = vxtp_joystick_create(&vxt_clib_malloc, ustimer, sticks[0], sticks[1]);
+		devices[i++] = joystick = vxtp_joystick_create(&realloc, ustimer, sticks[0], sticks[1]);
 
 	if (!args.no_adlib)
 		devices[i++] = adlib;
@@ -606,26 +605,26 @@ int ENTRY(int argc, char *argv[]) {
 	if (args.rifs) {
 		bool ro = *args.rifs != '*';
 		const char *root = ro ? args.rifs : &args.rifs[1];
-		devices[i++] = vxtp_rifs_create(&vxt_clib_malloc, 0x178, root, ro);
+		devices[i++] = vxtp_rifs_create(&realloc, 0x178, root, ro);
 	}
 
-	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
-	devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
-	devices[i++] = vxtp_rtc_create(&vxt_clib_malloc);
-	devices[i++] = vxtp_ctrl_create(&vxt_clib_malloc, &emu_control, NULL);
+	devices[i++] = vxtp_pic_create(&realloc);
+	devices[i++] = vxtp_dma_create(&realloc);
+	devices[i++] = vxtp_rtc_create(&realloc);
+	devices[i++] = vxtp_ctrl_create(&realloc, &emu_control, NULL);
 	devices[i++] = pit;
 	devices[i++] = mouse;
 	devices[i++] = ppi;
 	devices[i++] = video.device;
 
 	#ifdef VXT_CPU_286
-		devices[i++] = vxtp_postcard_create(&vxt_clib_malloc);
+		devices[i++] = vxtp_postcard_create(&realloc);
 	#endif
 
 	SDL_TimerID network_timer = 0;
 	if (args.network) {
 		#ifdef VXTP_NETWORK
-			struct vxt_pirepheral *net = vxtp_network_create(&vxt_clib_malloc, atoi(args.network));
+			struct vxt_pirepheral *net = vxtp_network_create(&realloc, atoi(args.network));
 			if (net) {
 				devices[i++] = net;
 				if (!(network_timer = SDL_AddTimer(10, &network_callback, net))) {
@@ -642,7 +641,7 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i++] = dbg;
 	devices[i] = NULL;
 
-	vxt_system *vxt = vxt_system_create(&vxt_clib_malloc, devices);
+	vxt_system *vxt = vxt_system_create(&realloc, devices);
 
 	if (args.trace) {
 		if (!(trace_op_output = fopen(args.trace, "wb"))) {

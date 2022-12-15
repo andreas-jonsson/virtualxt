@@ -20,17 +20,21 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#ifndef _VIDEO_H_
-#define _VIDEO_H_
+#include "timer.h"
 
-#include <vxt/vxt.h>
+extern unsigned int cntfrq(void);
+extern unsigned int cntpct32(void);
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+void timer_init(struct timer *t, unsigned int scale) {
+	t->frequency = cntfrq() / scale;
+    t->last_low = cntpct32();
+    t->overflow = 0;
+}
 
-bool video_init(int w, int h);
-void video_put_pixel(int x, int y, vxt_dword col);
-int video_width(void);
-int video_height(void);
-
-#endif
+unsigned int timer_read(struct timer *t) {
+	unsigned int low = cntpct32();
+	if (low < t->last_low)
+		t->overflow += 0xFFFFFFFF / t->frequency;
+	t->last_low = low;
+	return low / t->frequency + t->overflow;
+}

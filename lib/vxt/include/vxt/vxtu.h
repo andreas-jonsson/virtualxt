@@ -29,6 +29,25 @@ extern "C" {
 
 #include "vxt.h"
 
+#define vxtu_static_allocator(name, size)                               \
+    static vxt_byte name ## allocator_data[(size)];                     \
+    static vxt_byte * name ## allocator_ptr = name ## allocator_data;   \
+                                                                        \
+    void * name (void *ptr, size_t sz) {                                \
+        if (!sz)                                                        \
+            return NULL;                                                \
+        else if (ptr) /* Reallocation is not support! */                \
+            return NULL;                                                \
+                                                                        \
+        vxt_byte *p = name ## allocator_ptr;                            \
+        sz += 8 - (sz % 8);                                             \
+        name ## allocator_ptr += sz;                                    \
+                                                                        \
+        if (name ## allocator_ptr >= (name ## allocator_data + (size))) \
+            return NULL; /* Allocator is out of memory! */              \
+        return p;                                                       \
+    }                                                                   \
+
 #if defined(VXT_LIBC) && defined(VXTU_LIBC_IO)
     #include <stdio.h>
     #include <string.h>

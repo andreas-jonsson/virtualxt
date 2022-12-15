@@ -47,6 +47,7 @@ extern "C" {
     #include <stdint.h>
     #include <stdbool.h>
     #include <string.h>
+    #include <stdlib.h>
 
     typedef int8_t vxt_int8;
     typedef int16_t vxt_int16;
@@ -56,8 +57,6 @@ extern "C" {
     typedef uint16_t vxt_word;
     typedef uint32_t vxt_dword;
     typedef uint32_t vxt_pointer;
-
-    #define vxt_memclear(p, s) ( memset((p), 0, (int)(s)) )
 #else
     typedef char vxt_int8;
     typedef short vxt_int16;
@@ -74,24 +73,28 @@ extern "C" {
         static const bool false = 0;
     #endif
 
+    #ifndef size_t
+        typedef __SIZE_TYPE__ size_t;
+    #endif
+
     #ifndef NULL
         #define NULL ((void*)0)
     #endif
 
-    #define vxt_memclear(p, s) {            \
-        vxt_byte *bp = (vxt_byte*)(p);      \
-        for (int i = 0; i < (int)(s); i++)  \
-            bp[i] = 0;                      \
-    }                                       \
+    #ifndef memmove
+        void *memmove(void*, const void*, size_t);
+    #endif
 
+    #ifndef memcpy
+        void *memcpy(void*, const void*, size_t);
+    #endif
+
+    #ifndef memset
+        void *memset(void*, int, size_t);
+    #endif
 #endif
 
-#if defined(VXT_LIBC) && defined(VXT_LIBC_ALLOCATOR) 
-    #include <stdlib.h>
-    static void *vxt_clib_malloc(void *p, int s) {
-        return realloc(p, s);
-    }
-#endif
+#define vxt_memclear(p, s) ( memset((p), 0, (int)(s)) )
 
 #ifdef _MSC_VER
    #define VXT_PACK(x) __pragma(pack(push, 1)) x __pragma(pack(pop))
@@ -132,7 +135,7 @@ typedef vxt_byte vxt_device_id;
 
 typedef struct system vxt_system;
 
-typedef void *vxt_allocator(void*,int);
+typedef void *vxt_allocator(void*, size_t);
 
 enum {
     VXT_CARRY     = 0x001,

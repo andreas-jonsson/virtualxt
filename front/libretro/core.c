@@ -29,7 +29,6 @@
 #include <time.h>
 
 #define VXT_LIBC
-#define VXT_LIBC_ALLOCATOR
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 #include <vxtp.h>
@@ -80,7 +79,7 @@ static long long ustimer(void) {
 }
 
 static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
-	struct vxt_pirepheral *rom = vxtu_memory_create(&vxt_clib_malloc, base, size, true);
+	struct vxt_pirepheral *rom = vxtu_memory_create(&realloc, base, size, true);
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		printf("vxtu_memory_device_fill() failed!\n");
 		return NULL;
@@ -92,18 +91,18 @@ static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_poin
 void retro_init(void) {
 	vxt_set_logger(&log_wrapper);
 	
-	//struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, NULL);
-	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
+	//struct vxt_pirepheral *disk = vxtp_disk_create(&realloc, NULL);
+	struct vxt_pirepheral *pit = vxtp_pit_create(&realloc, &ustimer);
 
-	ppi = vxtp_ppi_create(&vxt_clib_malloc, pit);
-    cga = vxtp_cga_create(&vxt_clib_malloc, &ustimer);
+	ppi = vxtp_ppi_create(&realloc, pit);
+    cga = vxtp_cga_create(&realloc, &ustimer);
 
 	struct vxt_pirepheral *devices[] = {
-		vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false),
+		vxtu_memory_create(&realloc, 0x0, 0x100000, false),
         load_bios(get_pcxtbios_data(), (int)get_pcxtbios_size(), 0xFE000),
         load_bios(get_vxtx_data(), (int)get_vxtx_size(), 0xE0000),
-        vxtp_pic_create(&vxt_clib_malloc),
-	    vxtp_dma_create(&vxt_clib_malloc),
+        vxtp_pic_create(&realloc),
+	    vxtp_dma_create(&realloc),
         pit,
         ppi,
 		cga,
@@ -112,7 +111,7 @@ void retro_init(void) {
 	};
 
 	assert(!sys);
-	sys = vxt_system_create(&vxt_clib_malloc, devices);
+	sys = vxt_system_create(&realloc, devices);
 	vxt_system_initialize(sys);
 
 	LOG("Installed pirepherals:\n");

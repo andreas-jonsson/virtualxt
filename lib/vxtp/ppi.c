@@ -22,8 +22,6 @@
 
 #include "vxtp.h"
 
-#include <string.h>
-
 #ifndef VXTP_PPI_TONE_VOLUME
     #define VXTP_PPI_TONE_VOLUME 8192
 #endif

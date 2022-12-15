@@ -89,8 +89,31 @@ export fn nop() void {
     asm volatile ("nop");
 }
 
+
+pub fn setcntfrq(word: u32) void {
+    asm volatile ("msr cntfrq_el0, %[word]"
+        :
+        : [word] "{x0}" (word)
+    );
+}
+
+export fn cntfrq() u32 {
+    var word: usize = asm volatile ("mrs %[word], cntfrq_el0"
+        : [word] "=r" (-> usize)
+    );
+    return @truncate(u32, word);
+}
+
+export fn cntpct32() u32 {
+    var word: usize = asm volatile ("mrs %[word], cntpct_el0"
+        : [word] "=r" (-> usize)
+    );
+    return @truncate(u32, word);
+}
+
 export fn main() noreturn {
     while (true) {
+        //setcntfrq(1000000); // This breaks QEMU?
         @memset(@as(*volatile [1]u8, &__bss_start), 0, @ptrToInt(&__bss_end) - @ptrToInt(&__bss_start));
         _ = c.c_main(0, null);
     }
@@ -161,7 +184,36 @@ export fn exceptionEntry0x0F() noreturn {
 }
 
 fn exceptionHandler(entry_number: u32) noreturn {
-    while (true) {
-        while (entry_number != 0xFF) {}
-    }
+    c.exception_handler(entry_number);
+    while (true) {}
+}
+
+// -------- Embedded files --------
+
+const disk = @embedFile("../../boot/freedos.img");
+const pcxtbios = @embedFile("../../bios/pcxtbios.bin");
+const vxtx = @embedFile("../../bios/vxtx.bin");
+
+export fn get_disk_data() [*]const u8 {
+    return disk;
+}
+
+export fn get_disk_size() u32 {
+    return disk.len;
+}
+
+export fn get_pcxtbios_data() [*]const u8 {
+    return pcxtbios;
+}
+
+export fn get_pcxtbios_size() u32 {
+    return pcxtbios.len;
+}
+
+export fn get_vxtx_data() [*]const u8 {
+    return vxtx;
+}
+
+export fn get_vxtx_size() u32 {
+    return vxtx.len;
 }

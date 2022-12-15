@@ -20,17 +20,18 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#ifndef _VIDEO_H_
-#define _VIDEO_H_
+#ifndef _TIMER_H_
+#define _TIMER_H_
 
 #include <vxt/vxt.h>
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+struct timer {
+    unsigned int frequency;
+    unsigned int last_low;
+    unsigned int overflow;
+};
 
-bool video_init(int w, int h);
-void video_put_pixel(int x, int y, vxt_dword col);
-int video_width(void);
-int video_height(void);
+void timer_init(struct timer *t, unsigned int scale);
+unsigned int timer_read(struct timer *t);
 
 #endif

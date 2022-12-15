@@ -26,7 +26,6 @@
 #include <assert.h>
 
 #define VXT_LIBC
-#define VXT_LIBC_ALLOCATOR
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 
@@ -40,7 +39,7 @@ int main(int argc, char *argv[]) {
 	vxt_set_logger(&printf);
 	srand((unsigned)time(NULL));
 
-	struct vxt_pirepheral *ram = vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false);
+	struct vxt_pirepheral *ram = vxtu_memory_create(&realloc, 0x0, 0x100000, false);
 	for (int i = 0; i < 0x100000; i++)
 		ram->io.write(ram, (vxt_pointer)i, (vxt_byte)rand());
 
@@ -49,7 +48,7 @@ int main(int argc, char *argv[]) {
 		NULL
 	};
 
-	vxt_system *vxt = vxt_system_create(&vxt_clib_malloc, devices);
+	vxt_system *vxt = vxt_system_create(&realloc, devices);
 	vxt_system_set_validator(vxt, pi8088_validator());
 
 	vxt_error err = vxt_system_initialize(vxt);

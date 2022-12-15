@@ -31,7 +31,7 @@ int width, height, pitch;
 vxt_byte *frame_buffer;
 
 bool video_init(int w, int h) {
-	mbox[0] = 39 * 4; 			// Length of message in bytes
+	mbox[0] = 35 * 4; 			// Length of message in bytes
 	mbox[1] = MBOX_REQUEST;
 
 	mbox[2] = MBOX_TAG_SETPHYWH; // Set physical width-height
@@ -73,12 +73,12 @@ bool video_init(int w, int h) {
 	mbox[32] = 0;
 	mbox[33] = 0; // Will get pitch value here
 
-	mbox[34] = MBOX_TAG_SETALPHA;
-	mbox[35] = 4;
-	mbox[36] = 0;
-	mbox[37] = ALPHA_MODE;
+	//mbox[34] = MBOX_TAG_SETALPHA;
+	//mbox[35] = 4;
+	//mbox[36] = 0;
+	//mbox[37] = ALPHA_MODE;
 
-	mbox[38] = MBOX_TAG_LAST;
+	mbox[34] = MBOX_TAG_LAST;
 
 	bool res = mbox_call(ADDR(mbox), MBOX_CH_PROP);
 	if (res	&& (mbox[20] == COLOR_DEPTH) && (mbox[24] == PIXEL_ORDER) && mbox[28]) {
