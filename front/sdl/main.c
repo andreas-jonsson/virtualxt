@@ -384,7 +384,7 @@ static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 		printf("vxtu_memory_device_fill() failed!\n");
 		return NULL;
 	}
-	realloc(data, 0);
+	(void)realloc(data, 0);
 
 	printf("Loaded BIOS @ 0x%X-0x%X: %s\n", base, base + size - 1, path);
 	return rom;
