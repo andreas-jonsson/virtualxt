@@ -175,7 +175,7 @@ int ENTRY(int argc, char *argv[]) {
 		}
 		printf("one frame!\n");
 	}
-	return 0;
+	for (;;) {};
 	*/
 
 	vxt_set_logger(&printf);
@@ -251,5 +251,5 @@ int ENTRY(int argc, char *argv[]) {
 }
 
 void exception_handler(unsigned int n) {
-	LOG("Exception: %d", n);
+	LOG("Exception: 0x%X", n);
 }
