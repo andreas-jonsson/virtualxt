@@ -46,12 +46,8 @@ static struct Test {
 #define TENSURE_NO_ERR(e)  { vxt_error __err = (e); TASSERT(__err == VXT_NO_ERROR, "%s", vxt_error_str(__err)); }
 #define TEST(n, ...)       int test_ ## n (struct Test T) { T.name = #n ; { __VA_ARGS__ } return 0; }
 #define TLOG(...)          { fprintf(T.output, __VA_ARGS__); fprintf(T.output, "%s", "\n"); }
-#define TALLOC             test_malloc
-#define TFREE(p)           { void *_ = test_malloc(p, 0); (void)_; }
-
-static void *test_malloc(void *p, int s) {
-   return realloc(p, s);
-}
+#define TALLOC             realloc
+#define TFREE(p)           { void *_ = realloc(p, 0); (void)_; }
 
 static bool run_test(int (*t)(struct Test T)) {
    if (!test_state.output) test_state.output = stderr;
