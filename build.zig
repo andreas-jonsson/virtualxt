@@ -372,15 +372,10 @@ pub fn build(b: *Builder) void {
         baremetal.addCSourceFile("lib/vxtp/dma.c", bm_opt);
         baremetal.addCSourceFile("lib/vxtp/ctrl.c", bm_opt);
 
-        const objcopy = b.addSystemCommand(&[_][]const u8{
-            "llvm-objcopy",
-            "build/baremetal/virtualxt",
-            "-O", "binary",
-            "build/baremetal/virtualxt-raspi3.img",
-        });
-        objcopy.step.dependOn(&baremetal.step);
+        const raw = b.addInstallRaw(baremetal, "../../build/baremetal/virtualxt-raspi3.img", .{.format = .bin});
+        raw.step.dependOn(&baremetal.step);
 
-        b.step("baremetal", "Build VirtualXT for bare metal target").dependOn(&objcopy.step);
+        b.step("baremetal", "Build VirtualXT for bare metal target").dependOn(&raw.step);
     }
 
     // -------- virtualxt web --------
