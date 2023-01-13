@@ -80,7 +80,7 @@ PUSH_POP(di)
 static void push_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      vxt_system_write_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp), p->regs.sp);
+      cpu_write_word(p, VXT_POINTER(p->regs.ss, p->regs.sp), p->regs.sp);
       p->regs.sp -= 2;
    #else
       push(p, p->regs.sp);
@@ -90,7 +90,7 @@ static void push_sp(CONSTSP(cpu) p, INST(inst)) {
 static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      p->regs.sp = vxt_system_read_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp));
+      p->regs.sp = cpu_read_word(p, VXT_POINTER(p->regs.ss, p->regs.sp));
    #else
       p->regs.sp = pop(p);
    #endif
@@ -377,7 +377,7 @@ static void bound_62(CONSTSP(cpu) p, INST(inst)) {
    vxt_dword idx = SIGNEXT32(reg_read16(&p->regs, p->mode.reg));
    vxt_pointer addr = get_effective_address(p);
 
-   if ((idx < SIGNEXT32(vxt_system_read_word(p->s, addr))) || (idx > SIGNEXT32(vxt_system_read_word(p->s, addr + 2)))) {
+   if ((idx < SIGNEXT32(cpu_read_word(p, addr))) || (idx > SIGNEXT32(cpu_read_word(p, addr + 2)))) {
       p->regs.ip = p->inst_start;
       call_int(p, 5);
    }
@@ -407,25 +407,25 @@ static void push_6A(CONSTSP(cpu) p, INST(inst)) {
 
 static void insb_6C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_system_write_byte(p->s, VXT_POINTER(p->regs.ds, p->regs.si), system_in(p->s, p->regs.dx));
+   cpu_write_byte(p, VXT_POINTER(p->regs.ds, p->regs.si), system_in(p->s, p->regs.dx));
    update_di_si(p, 1);
 }
 
 static void insw_6D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_system_write_word(p->s, VXT_POINTER(p->regs.ds, p->regs.si), WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
+   cpu_write_word(p, VXT_POINTER(p->regs.ds, p->regs.si), WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
    update_di_si(p, 2);
 }
 
 static void outsb_6E(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   system_out(p->s, p->regs.dx, vxt_system_read_byte(p->s, VXT_POINTER(p->regs.ds, p->regs.si)));
+   system_out(p->s, p->regs.dx, cpu_read_byte(p, VXT_POINTER(p->regs.ds, p->regs.si)));
    update_di_si(p, 1);
 }
 
 static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_word data = vxt_system_read_word(p->s, VXT_POINTER(p->regs.ds, p->regs.si));
+   vxt_word data = cpu_read_word(p, VXT_POINTER(p->regs.ds, p->regs.si));
    system_out(p->s, p->regs.dx, (vxt_byte)(data & 0xFF));
    system_out(p->s, p->regs.dx + 1, (vxt_byte)(data >> 8));
    update_di_si(p, 2);
@@ -438,6 +438,7 @@ static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
       if (cond) {                                              \
          p->regs.ip += offset;                                 \
          p->cycles += 12;                                      \
+         p->inst_queue_dirty = true;                           \
       }                                                        \
    }                                                           \
 
@@ -639,6 +640,7 @@ static void call_9A(CONSTSP(cpu) p, INST(inst)) {
    push(p, p->regs.ip);
    p->regs.ip = ip;
    p->regs.cs = cs;
+   p->inst_queue_dirty = true;
 }
 
 static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
@@ -677,22 +679,22 @@ static void lahf_9F(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A0(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, read_opcode16(p)));
+   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, read_opcode16(p)));
 }
 
 static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ax = vxt_system_read_word(p->s, VXT_POINTER(p->seg, read_opcode16(p)));
+   p->regs.ax = cpu_read_word(p, VXT_POINTER(p->seg, read_opcode16(p)));
 }
 
 static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_system_write_byte(p->s, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.al);
+   cpu_write_byte(p, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.al);
 }
 
 static void mov_A3(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_system_write_word(p->s, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.ax);
+   cpu_write_word(p, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.ax);
 }
 
 static void test_A8(CONSTSP(cpu) p, INST(inst)) {
@@ -730,20 +732,22 @@ static void ret_C2(CONSTSP(cpu) p, INST(inst)) {
    vxt_word ip = pop(p);
    p->regs.sp += read_opcode16(p);
    p->regs.ip = ip;
+   p->inst_queue_dirty = true;
 }
 
 static void ret_C3(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ip = pop(p);
+   p->inst_queue_dirty = true;
 }
 
-#define LOAD(name, r)                                                         \
-   static void name (CONSTSP(cpu) p, INST(inst)) {                            \
-      UNUSED(inst);                                                           \
-      vxt_pointer ea = get_effective_address(p);                              \
-      reg_write16(&p->regs, p->mode.reg, vxt_system_read_word(p->s, ea));     \
-      p->regs.r = vxt_system_read_word(p->s, ea + 2);                         \
-   }                                                                          \
+#define LOAD(name, r)                                                \
+   static void name (CONSTSP(cpu) p, INST(inst)) {                   \
+      UNUSED(inst);                                                  \
+      vxt_pointer ea = get_effective_address(p);                     \
+      reg_write16(&p->regs, p->mode.reg, cpu_read_word(p, ea));      \
+      p->regs.r = cpu_read_word(p, ea + 2);                          \
+   }                                                                 \
 
 LOAD(les_C4, es)
 LOAD(lds_C5, ds)
@@ -791,12 +795,14 @@ static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
    p->regs.sp += sp;
+   p->inst_queue_dirty = true;
 }
 
 static void retf_CB(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
+   p->inst_queue_dirty = true;
 }
 
 static void int_CC(CONSTSP(cpu) p, INST(inst)) {
@@ -823,6 +829,7 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
    p->regs.flags = pop(p);
+   p->inst_queue_dirty = true;
 }
 
 static void grp2_D0(CONSTSP(cpu) p, INST(inst)) {
@@ -871,7 +878,7 @@ static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
 
 static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, p->regs.bx + p->regs.al));
+   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.bx + p->regs.al));
 }
 
 static void salc_D6(CONSTSP(cpu) p, INST(inst)) {
@@ -915,11 +922,13 @@ static void call_E8(CONSTSP(cpu) p, INST(inst)) {
    vxt_word offset = read_opcode16(p);
    push(p, p->regs.ip);
    p->regs.ip += offset;
+   p->inst_queue_dirty = true;
 }
 
 static void jmp_E9(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ip += read_opcode16(p);
+   p->inst_queue_dirty = true;
 }
 
 static void jmp_EA(CONSTSP(cpu) p, INST(inst)) {
@@ -927,11 +936,13 @@ static void jmp_EA(CONSTSP(cpu) p, INST(inst)) {
    vxt_word ip = read_opcode16(p);
    p->regs.cs = read_opcode16(p);
    p->regs.ip = ip;
+   p->inst_queue_dirty = true;
 }
 
 static void jmp_EB(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ip += SIGNEXT16(read_opcode8(p));
+   p->inst_queue_dirty = true;
 }
 
 static void in_EC(CONSTSP(cpu) p, INST(inst)) {
@@ -1230,6 +1241,7 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
       case 2: // CALL
          push(p, p->regs.ip);
          p->regs.ip = v;
+         p->inst_queue_dirty = true;
          break;
       case 3: // CALL Mp
       {
@@ -1237,18 +1249,21 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
          push(p, p->regs.ip);
 
          vxt_pointer ea = get_effective_address(p);
-         p->regs.ip = vxt_system_read_word(p->s, ea);
-         p->regs.cs = vxt_system_read_word(p->s, ea + 2);
+         p->regs.ip = cpu_read_word(p, ea);
+         p->regs.cs = cpu_read_word(p, ea + 2);
+         p->inst_queue_dirty = true;
          break;
       }
       case 4: // JMP
          p->regs.ip = v;
+         p->inst_queue_dirty = true;
          break;
       case 5: // JMP Mp
       {
          vxt_pointer ea = get_effective_address(p);
-         p->regs.ip = vxt_system_read_word(p->s, ea);
-         p->regs.cs = vxt_system_read_word(p->s, ea + 2);
+         p->regs.ip = cpu_read_word(p, ea);
+         p->regs.cs = cpu_read_word(p, ea + 2);
+         p->inst_queue_dirty = true;
          break;
       }
       case 6: // PUSH

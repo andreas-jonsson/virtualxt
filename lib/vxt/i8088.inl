@@ -27,6 +27,7 @@
 static void pop_cs(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.cs = pop(p);
+   p->inst_queue_dirty = true;
 }
 
 #define X 1

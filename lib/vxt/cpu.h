@@ -50,12 +50,23 @@ struct cpu {
    vxt_word seg;
    vxt_byte seg_override;
 
+   int bus_transfers;
+
+   bool inst_queue_dirty;
+   int inst_queue_count;
+   vxt_byte inst_queue[6];
+   vxt_pointer inst_queue_debug[6];
+
    void (*tracer)(vxt_system*,vxt_pointer,vxt_byte);
    const struct vxt_validator *validator;
    struct vxt_pirepheral *pic;
    vxt_system *s;
 };
 
+extern vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr);
+extern void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data);
+extern vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr);
+extern void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data);
 extern void cpu_reset(CONSTSP(cpu) p);
 extern void cpu_reset_cycle_count(CONSTSP(cpu) p);
 extern int cpu_step(CONSTSP(cpu) p);
