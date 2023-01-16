@@ -141,16 +141,12 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Real Time Clock";
 }
 
-struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(rtc));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(rtc));
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->reset = &reset;
-    //p->step = &step;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, rtc, {
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->reset = &reset;
+    //PIREPHERAL->step = &step;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})

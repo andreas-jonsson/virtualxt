@@ -129,18 +129,14 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "PIC (Intel 8259)";
 }
 
-struct vxt_pirepheral *vxtp_pic_create(vxt_allocator *alloc) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(pic));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(pic));
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->reset = &reset;
-    p->name = &name;
-    p->pclass = &pclass;
-    p->io.in = &in;
-    p->io.out = &out;
-    p->pic.next = &next;
-    p->pic.irq = &irq;
-    return p;
-}
+struct vxt_pirepheral *vxtp_pic_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pic, {
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+    PIREPHERAL->pic.next = &next;
+    PIREPHERAL->pic.irq = &irq;
+})

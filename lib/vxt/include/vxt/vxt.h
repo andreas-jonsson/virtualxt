@@ -159,6 +159,15 @@ enum {
 #define VXT_GET_DEVICE(type, pir) &((struct _ ## type*)(pir))->u
 #define VXT_DEC_DEVICE(var, type, pir) struct type* const var = VXT_GET_DEVICE(type, pir)
 
+#define VXT_PIREPHERAL_CREATE(alloc, type, body) {              \
+        struct vxt_pirepheral *PIREPHERAL = (struct vxt_pirepheral*)(alloc)(NULL, VXT_PIREPHERAL_SIZE(type)); \
+        vxt_memclear(PIREPHERAL, VXT_PIREPHERAL_SIZE(type));    \
+        VXT_DEC_DEVICE(DEVICE, type, PIREPHERAL);               \
+        { body ; }                                              \
+        (void)DEVICE;                                           \
+        return PIREPHERAL;                                      \
+    }                                                           \
+
 #define VXT_PIREPHERAL(name, body)                      \
     struct name                                         \
         body;                                           \

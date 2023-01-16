@@ -441,23 +441,18 @@ static const char *name(struct vxt_pirepheral *p) {
     return "FDC (NEC 765)";
 }
 
-struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, INT64 (*ustics)(void), vxt_word base, int irq) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(fdc));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(fdc));
-    VXT_DEC_DEVICE(c, fdc, p);
+struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, INT64 (*ustics)(void), vxt_word base, int irq) VXT_PIREPHERAL_CREATE(alloc, fdc, {
+    DEVICE->ustics = ustics;
+    DEVICE->base = base;
+    DEVICE->irq = irq;
 
-    c->ustics = ustics;
-    c->base = base;
-    c->irq = irq;
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->step = &step;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->step = &step;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num) {
     VXT_DEC_DEVICE(c, fdc, p);

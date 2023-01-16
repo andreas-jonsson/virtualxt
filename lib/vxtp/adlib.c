@@ -75,19 +75,16 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "AdLib Music Synthesizer";
 }
 
-struct vxt_pirepheral *vxtp_adlib_create(vxt_allocator *alloc) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(adlib));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(adlib));
-    (VXT_GET_DEVICE(adlib, p))->freq = 48000;
+struct vxt_pirepheral *vxtp_adlib_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, adlib, {
+    DEVICE->freq = 48000;
 
-    p->install = &install;
-    p->destroy = &destroy;
-    p->reset = &reset;
-    p->name = &name;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 vxt_int16 vxtp_adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
     VXT_DEC_DEVICE(a, adlib, p);

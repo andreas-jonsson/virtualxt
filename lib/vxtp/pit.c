@@ -163,20 +163,17 @@ static const char *name(struct vxt_pirepheral *p) {
     return "PIT (Intel 8253)";
 }
 
-struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, INT64 (*ustics)(void)) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(pit));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(pit));
-    (VXT_GET_DEVICE(pit, p))->get_ticks = ustics;
+struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, INT64 (*ustics)(void)) VXT_PIREPHERAL_CREATE(alloc, pit, {
+    DEVICE->get_ticks = ustics;
 
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->reset = &reset;
-    p->step = &step;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->step = &step;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 double vxtp_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
     if ((channel > 2) || (channel < 0))

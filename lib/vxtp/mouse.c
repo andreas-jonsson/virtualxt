@@ -111,22 +111,17 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Microsoft Serial Mouse";
 }
 
-struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(serial_mouse));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(serial_mouse));
-    VXT_DEC_DEVICE(m, serial_mouse, p);
+struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq) VXT_PIREPHERAL_CREATE(alloc, serial_mouse, {
+    DEVICE->base_port = base_port;
+    DEVICE->irq = irq;
 
-    m->base_port = base_port;
-    m->irq = irq;
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->reset = &reset;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 bool vxtp_mouse_push_event(struct vxt_pirepheral *p, const struct vxtp_mouse_event *ev) {
     vxt_byte upper = 0;

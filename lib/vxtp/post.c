@@ -56,14 +56,10 @@ static const char *name(struct vxt_pirepheral *p) {
     return "POST Card";
 }
 
-struct vxt_pirepheral *vxtp_postcard_create(vxt_allocator *alloc) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(post));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(post));
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+struct vxt_pirepheral *vxtp_postcard_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, post, {
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})

@@ -98,22 +98,17 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Gameport Joystick Controller";
 }
 
-struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, INT64 (*ustics)(void), void *stick_a, void *stick_b) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(gameport));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(gameport));
-    VXT_DEC_DEVICE(g, gameport, p);
+struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, INT64 (*ustics)(void), void *stick_a, void *stick_b) VXT_PIREPHERAL_CREATE(alloc, gameport, {
+    DEVICE->ustics = ustics;
+    DEVICE->joysticks[0].id = stick_a;
+    DEVICE->joysticks[1].id = stick_b;
 
-    g->ustics = ustics;
-    g->joysticks[0].id = stick_a;
-    g->joysticks[1].id = stick_b;
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp_joystick_event *ev) {
     VXT_DEC_DEVICE(g, gameport, p);

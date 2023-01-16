@@ -345,24 +345,19 @@ void vxtu_debugger_interrupt(struct vxt_pirepheral *p) {
     dbg->print("\aInterrupted!\n");
 }
 
-struct vxt_pirepheral *vxtu_debugger_create(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(debugger));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(debugger));
-    VXT_DEC_DEVICE(d, debugger, p);
+struct vxt_pirepheral *vxtu_debugger_create(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface) VXT_PIREPHERAL_CREATE(alloc, debugger, {
+    DEVICE->pdisasm = interface->pdisasm;
+    DEVICE->getline = interface->getline;
+    DEVICE->print = interface->print;
+    DEVICE->breakpoint = DEVICE->until = DEVICE->watch = -1;
 
-    d->pdisasm = interface->pdisasm;
-    d->getline = interface->getline;
-    d->print = interface->print;
-    d->breakpoint = d->until = d->watch = -1;
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->step = &step;
-    p->pclass = &pclass;
-    p->name = &name;
-    p->io.read = &read;
-    p->io.write = &write;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->step = &step;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.read = &read;
+    PIREPHERAL->io.write = &write;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})

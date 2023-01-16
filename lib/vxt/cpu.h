@@ -56,8 +56,8 @@ struct cpu {
    vxt_system *s;
 };
 
-extern void cpu_reset(CONSTSP(cpu) p);
-extern void cpu_reset_cycle_count(CONSTSP(cpu) p);
-extern int cpu_step(CONSTSP(cpu) p);
+void cpu_reset(CONSTSP(cpu) p);
+void cpu_reset_cycle_count(CONSTSP(cpu) p);
+int cpu_step(CONSTSP(cpu) p);
 
 #endif

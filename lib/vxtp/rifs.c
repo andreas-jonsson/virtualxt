@@ -506,25 +506,20 @@ static const char *name(struct vxt_pirepheral *p) {
     return "RIFS Server";
 }
 
-struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root, bool ro) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(rifs));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(rifs));
-    VXT_DEC_DEVICE(fs, rifs, p);
-
+struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root, bool ro) VXT_PIREPHERAL_CREATE(alloc, rifs, {
     // This is still a beta feature. Be safe!
     if (!ro)
         printf("WARNING: '%s' is writable from guest!\n", root);
 
-    fs->readonly = ro;
-    fs->base_port = base_port;
+    DEVICE->readonly = ro;
+    DEVICE->base_port = base_port;
     // TODO: Add autoexec.
-    rifs_copy_root(fs->root_path, root);
+    rifs_copy_root(DEVICE->root_path, root);
 
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->reset = &reset;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})

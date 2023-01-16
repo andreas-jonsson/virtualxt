@@ -313,26 +313,21 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 	}
 }
 
-struct vxt_pirepheral *vxtp_cga_create(vxt_allocator *alloc, INT64 (*ustics)(void)) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(cga_video));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(cga_video));
-    VXT_DEC_DEVICE(c, cga_video, p);
+struct vxt_pirepheral *vxtp_cga_create(vxt_allocator *alloc, INT64 (*ustics)(void)) VXT_PIREPHERAL_CREATE(alloc, cga_video, {
+    DEVICE->ustics = ustics;
+    DEVICE->application_start = ustics();
 
-    c->ustics = ustics;
-    c->application_start = ustics();
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->pclass = &pclass;
-    p->reset = &reset;
-    p->step = &step;
-    p->io.read = &read;
-    p->io.write = &write;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->step = &step;
+    PIREPHERAL->io.read = &read;
+    PIREPHERAL->io.write = &write;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 vxt_dword vxtp_cga_border_color(struct vxt_pirepheral *p) {
     return cga_palette[(VXT_GET_DEVICE(cga_video, p))->color_ctrl_reg & 0xF];

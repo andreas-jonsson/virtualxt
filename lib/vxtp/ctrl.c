@@ -64,18 +64,13 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Emulator Control";
 }
 
-struct vxt_pirepheral *vxtp_ctrl_create(vxt_allocator *alloc, vxt_byte (*f)(enum vxtp_ctrl_command,void*), void *userdata) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(ctrl));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(ctrl));
+struct vxt_pirepheral *vxtp_ctrl_create(vxt_allocator *alloc, vxt_byte (*f)(enum vxtp_ctrl_command,void*), void *userdata) VXT_PIREPHERAL_CREATE(alloc, ctrl, {
+    DEVICE->callback = f;
+    DEVICE->userdata = userdata;
 
-    VXT_DEC_DEVICE(c, ctrl, p);
-    c->callback = f;
-    c->userdata = userdata;
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})

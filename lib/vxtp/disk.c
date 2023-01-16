@@ -280,17 +280,13 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "Disk Controller";
 }
 
-struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const struct vxtp_disk_interface *interface) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(disk));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(disk));
-    VXT_DEC_DEVICE(c, disk, p);
-    c->interface = *interface;
+struct vxt_pirepheral *vxtp_disk_create(vxt_allocator *alloc, const struct vxtp_disk_interface *interface) VXT_PIREPHERAL_CREATE(alloc, disk, {
+    DEVICE->interface = *interface;
 
-    p->install = &install;
-    p->destroy = &destroy;
-    p->reset = &reset;
-    p->name = &name;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})

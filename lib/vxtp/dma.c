@@ -204,18 +204,14 @@ static void dma_write(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte data) {
     update_count(c, ch);
 }
 
-struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(dma));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(dma));
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->pclass = &pclass;
-    p->reset = &reset;
-    p->io.in = &in;
-    p->io.out = &out;
-    p->dma.read = &dma_read;
-    p->dma.write = &dma_write;
-    return p;
-}
+struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, dma, {
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+    PIREPHERAL->dma.read = &dma_read;
+    PIREPHERAL->dma.write = &dma_write;
+})

@@ -196,27 +196,21 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "PPI (Intel 8255)";
 }
 
-struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(ppi));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(ppi));
-    VXT_DEC_DEVICE(c, ppi, p);
-
+struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit) VXT_PIREPHERAL_CREATE(alloc, ppi, {
     // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
     //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
-    c->xt_switches = 0x2; // CGA video bits.
+    DEVICE->xt_switches = 0x2; // CGA video bits.
+    DEVICE->pit = pit;
 
-    c->pit = pit;
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->reset = &reset;
-    p->step = &step;
-    p->name = &name;
-    p->pclass = &pclass;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->step = &step;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool force) {
     VXT_DEC_DEVICE(c, ppi, p);

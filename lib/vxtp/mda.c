@@ -124,21 +124,17 @@ static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
     (void)p; return VXT_PCLASS_VIDEO;
 }
 
-struct vxt_pirepheral *vxtp_mda_create(vxt_allocator *alloc) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(mda_video));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(mda_video));
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->pclass = &pclass;
-    p->reset = &reset;
-    p->io.read = &read;
-    p->io.write = &write;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+struct vxt_pirepheral *vxtp_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, mda_video, {
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->io.read = &read;
+    PIREPHERAL->io.write = &write;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 void vxtp_mda_invalidate(struct vxt_pirepheral *p) { 
     (VXT_GET_DEVICE(mda_video, p))->is_dirty = true;
