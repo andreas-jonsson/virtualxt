@@ -355,11 +355,17 @@ static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
 	return 0;
 }
 
+// path is the path to the file. An optional @address suffix changes the load
+// base to that address. Example: "bios.bin@0xFE000"
 static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
-	size_t path_len = strcspn(path, "@");
+	char *path_sep = strchr(path, '@');
+
+	size_t path_len = path_sep ? path_sep - path : strlen(path);
 	char *file_path = (char*)SDL_malloc(path_len + 1);
-	strncpy(file_path, path, path_len + 1);
-	
+	if (!file_path)
+		return NULL;
+	snprintf(file_path, path_len + 1, "%s", path);
+
 	int size = 0;
 	vxt_byte *data = vxtu_read_file(&realloc, file_path, &size);
 	SDL_free(file_path);
@@ -369,9 +375,9 @@ static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 		return NULL;
 	}
 
-	if (path_len != strlen(path)) {
+	if (path_sep) {
 		unsigned int addr = 0;
-		if (sscanf(path + path_len + 1, "%x", &addr) == 1) {
+		if (sscanf(path_sep + 1, "%x", &addr) == 1) {
 			base = (vxt_pointer)addr;
 		} else {
 			printf("Invalid address format!\n");

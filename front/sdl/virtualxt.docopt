@@ -14,8 +14,8 @@ Options:
   --joystick              Enable joystick support.
   --rifs=PATH             Enable experimental RIFS support. (Shared folders)
   --config=PATH           Set config directory.
-  --bios=FILE             BIOS binary.
-  --extension=FILE        VirtualXT BIOS extension binary.
+  --bios=FILE[@addr]      BIOS binary.
+  --extension=FILE[@addr] VirtualXT BIOS extension binary.
   --trace=FILE            Write CPU trace to file.
   --vga=FILE              Load VGA BIOS.
   -f --frequency=MHZ      CPU frequency lock (0 to disable) [default: 4.77].
