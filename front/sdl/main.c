@@ -75,10 +75,13 @@ FILE *trace_offset_output = NULL;
 	#define CPU_NAME "8088"
 #endif
 
-#define SYNC(...) {						\
-	while (SDL_LockMutex(emu_mutex));	\
-	{ __VA_ARGS__ ; }					\
-	SDL_UnlockMutex(emu_mutex); }		\
+#define SYNC(...) {								   	\
+	if (SDL_LockMutex(emu_mutex) == -1)			   	\
+		printf("sync error: %s\n", SDL_GetError());	\
+	{ __VA_ARGS__ ; }							   	\
+	if (SDL_UnlockMutex(emu_mutex) == -1)		   	\
+		printf("sync error: %s\n", SDL_GetError());	\
+}
 
 #ifdef PI8088
 	extern struct vxt_validator *pi8088_validator(void);
@@ -281,11 +284,17 @@ static int render_callback(int width, int height, const vxt_byte *rgba, void *us
 	if ((framebuffer_size.x != width) || (framebuffer_size.y != height)) {
 		SDL_DestroyTexture(framebuffer);
 		framebuffer = SDL_CreateTexture(userdata, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height);
-		if (!framebuffer)
+		if (!framebuffer) {
+			printf("SDL_CreateTexture() failed with error %s\n", SDL_GetError());
 			return -1;
+		}
 		framebuffer_size = (SDL_Point){width, height};
 	}
-	return SDL_UpdateTexture(framebuffer, NULL, rgba, width * 4);
+
+	int status = SDL_UpdateTexture(framebuffer, NULL, rgba, width * 4);
+	if (status != 0)
+		printf("SDL_UpdateTexture() failed with error %s\n", SDL_GetError());
+	return status;
 }
 
 #ifdef VXTP_NETWORK
@@ -487,7 +496,10 @@ int ENTRY(int argc, char *argv[]) {
 		SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
 	#endif
 
-	SDL_Init(SDL_INIT_EVERYTHING);
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+		printf("SDL_Init() failed with error %s\n", SDL_GetError());
+		return -1;
+	}
 
 	SDL_SetHint(SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1");
 	SDL_Window *window = SDL_CreateWindow(
@@ -718,7 +730,12 @@ int ENTRY(int argc, char *argv[]) {
 		spec.userdata = audio_sources;
 		spec.callback = &audio_callback;
 
-		audio_device = SDL_OpenAudioDevice(NULL, false, &spec, &audio_spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
+		int allowed_changes = SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE;
+
+		if (!(audio_device = SDL_OpenAudioDevice(NULL, false, &spec, &audio_spec, allowed_changes))) {
+			printf("SDL_OpenAudioDevice() failed with error %s\n", SDL_GetError());
+			return -1;
+		}
 		SDL_PauseAudioDevice(audio_device, 0);
 	}
 
@@ -897,7 +914,8 @@ int ENTRY(int argc, char *argv[]) {
 			video.render(video.device, &render_callback, renderer);
 
 			mr_clear(mr, mu_color(bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF));
-			SDL_RenderCopy(renderer, framebuffer, NULL, target_rect(window, &rect));
+			if (SDL_RenderCopy(renderer, framebuffer, NULL, target_rect(window, &rect)) != 0)
+				printf("SDL_RenderCopy() failed with error %s\n", SDL_GetError());
 
 			mu_Command *cmd = NULL;
 			while (mu_next_command(ctx, &cmd)) {
@@ -913,13 +931,14 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	SDL_WaitThread(emu_thread, NULL);
-	SDL_DestroyMutex(emu_mutex);
 
 	if (network_timer)
 		SDL_RemoveTimer(network_timer);
 
 	if (audio_device)
 		SDL_CloseAudioDevice(audio_device);
+
+	SDL_DestroyMutex(emu_mutex);
 
 	vxt_system_destroy(vxt);
 
