@@ -367,7 +367,8 @@ static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
 static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 	size_t path_len = strcspn(path, "@");
 	char *file_path = (char*)SDL_malloc(path_len + 1);
-	strncpy(file_path, path, path_len);
+	memcpy(file_path, path, path_len);
+	file_path[path_len] = 0;
 	
 	int size = 0;
 	vxt_byte *data = vxtu_read_file(&realloc, file_path, &size);
