@@ -22,41 +22,43 @@
 
 #include "vxtp.h"
 
-#include <stdio.h>
-
-VXT_PIREPHERAL(post, {
- 	vxt_byte code;
+VXT_PIREPHERAL(serial_dbg, {
+    vxt_word base_port;
 })
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(c, post, p);
-    (void)port;
-	return c->code;
+    (void)p; (void)port;
+    VXT_DEC_DEVICE(d, serial_dbg, p);
+    vxt_word reg = port - d->base_port;
+    if (reg == 5)
+        return 0x20; // Set transmission holding register empty (THRE); data can be sent.
+    return 0;
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(c, post, p);
-    (void)port;
-    c->code = data;
-    printf("POST: 0x%X (%d)\n", data, data);
+    (void)p; (void)port;
+    VXT_PRINT("%c", data);
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io_at(s, p, 0x80);
+    VXT_DEC_DEVICE(d, serial_dbg, p);
+    vxt_system_install_io(s, p, d->base_port, d->base_port + 7);
     return VXT_NO_ERROR;
 }
 
 static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(post, p))(p, 0);
+    vxt_system_allocator(VXT_GET_SYSTEM(serial_dbg, p))(p, 0);
     return VXT_NO_ERROR;
 }
 
 static const char *name(struct vxt_pirepheral *p) {
     (void)p;
-    return "POST Card";
+    return "Serial Debug Printer";
 }
 
-struct vxt_pirepheral *vxtp_postcard_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, post, {
+struct vxt_pirepheral *vxtp_serial_dbg_create(vxt_allocator *alloc, vxt_word base_port) VXT_PIREPHERAL_CREATE(alloc, serial_dbg, {
+    DEVICE->base_port = base_port;
+
     PIREPHERAL->install = &install;
     PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;

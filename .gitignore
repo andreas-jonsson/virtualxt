@@ -51,6 +51,8 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+__pycache__
+
 zig-cache
 zig-out
 kcov-out

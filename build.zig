@@ -219,8 +219,8 @@ pub fn build(b: *Builder) void {
         pirepheral.addCSourceFile("lib/vxtp/vga.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/rifs.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/mouse.c", opt);
+        pirepheral.addCSourceFile("lib/vxtp/serial_dbg.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/joystick.c", opt);
-        pirepheral.addCSourceFile("lib/vxtp/post.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/rtc.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/adlib.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/fdc.c", opt);
@@ -371,6 +371,7 @@ pub fn build(b: *Builder) void {
         baremetal.addCSourceFile("lib/vxtp/cga.c", bm_opt);
         baremetal.addCSourceFile("lib/vxtp/dma.c", bm_opt);
         baremetal.addCSourceFile("lib/vxtp/ctrl.c", bm_opt);
+        baremetal.addCSourceFile("lib/vxtp/serial_dbg.c", bm_opt);
 
         const raw = b.addInstallRaw(baremetal, "../../build/baremetal/virtualxt-raspi3.img", .{.format = .bin});
         raw.step.dependOn(&baremetal.step);
@@ -417,6 +418,7 @@ pub fn build(b: *Builder) void {
         wasm.addCSourceFile("lib/vxtp/dma.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/mouse.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/ctrl.c", wasm_opt);
+        wasm.addCSourceFile("lib/vxtp/serial_dbg.c", wasm_opt);
 
         // https://github.com/ziglang/zig/issues/8633
         const page_size = 0x10000;

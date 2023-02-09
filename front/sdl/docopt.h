@@ -106,11 +106,12 @@ struct DocoptArgs {
     char *harddrive;
     char *network;
     char *rifs;
+    char *serial_debug;
     char *trace;
     char *vga;
     /* special */
     const char *usage_pattern;
-    const char *help_message[23];
+    const char *help_message[24];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

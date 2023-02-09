@@ -630,9 +630,8 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i++] = ppi;
 	devices[i++] = video.device;
 
-	#ifdef VXT_CPU_286
-		devices[i++] = vxtp_postcard_create(&realloc);
-	#endif
+	if (args.serial_debug)
+		devices[i++] = vxtp_serial_dbg_create(&realloc, atoi(args.serial_debug));
 
 	SDL_TimerID network_timer = 0;
 	if (args.network) {

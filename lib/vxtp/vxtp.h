@@ -205,6 +205,8 @@ extern bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num);
 
 extern struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc);
 
+extern struct vxt_pirepheral *vxtp_serial_dbg_create(vxt_allocator *alloc, vxt_word base_port);
+
 extern struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq);
 extern bool vxtp_mouse_push_event(struct vxt_pirepheral *p, const struct vxtp_mouse_event *ev);
 

@@ -18,6 +18,7 @@ Options:
   --extension=FILE        VirtualXT BIOS extension binary.
   --trace=FILE            Write CPU trace to file.
   --vga=FILE              Load VGA BIOS.
+  --serial-debug=PORT     Enable debug print on serial port.
   -f --frequency=MHZ      CPU frequency lock (0 to disable) [default: 4.77].
   -a --floppy=FILE        Mount floppy image as drive A.
   -c --harddrive=FILE     Mount harddrive image as drive C.
