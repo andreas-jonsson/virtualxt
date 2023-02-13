@@ -430,7 +430,10 @@ pub fn build(b: *Builder) void {
         // TODO: Change this to a real copy step.
         const web = b.addSystemCommand(&[_][]const u8{"cp", "-t", "build/web/", "front/web/index.html", "front/web/script.js", "front/web/favicon.ico", "boot/freedos_web_hd.img"});
         web.step.dependOn(&wasm.step);
-        b.step("web", "Build web-frontend").dependOn(&web.step);
+        const kb = b.addSystemCommand(&[_][]const u8{"cp", "-r", "lib/simple-keyboard/build/", "build/web/kb/"});
+        kb.step.dependOn(&web.step);
+
+        b.step("web", "Build web-frontend").dependOn(&kb.step);
     }
 
     // -------- scrambler --------

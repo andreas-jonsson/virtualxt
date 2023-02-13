@@ -111,6 +111,30 @@ const jsToXt = {
     "Delete": 83
 };
 
+const modelFLayout = {
+    'default': [
+        '{esc} 1 2 3 4 5 6 7 8 9 0 - = {bksp}',
+        '{tab} q w e r t y u i o p [ ]',
+        'ctrl a s d m m m m k l ; \' ~ {enter}',
+        '{shift} \\ z x c v b n m , . / {shift}',
+        '{alt} {space} {delete} pad'
+    ],
+    'shift': [
+        '{esc} ! @ # $ % ^ &amp; * ( ) _ + {bksp}',
+        '{tab} Q W E R T Y U I O P { }',
+        '{lock} A S D F G H J K L : " ` {enter}',
+        '{shift} | Z X C V B N M &lt; &gt; ? {shift}',
+        '{alt} {space} {delete} pad'
+    ],
+    'pad': [
+        'F1 F2 {esc} ! @ # $ % ^ &amp; * ( ) _ + {bksp}',
+        'F3 F4 {tab} Q W E R T Y U I O P { }',
+        'F5 F6 {lock} A S D F G H J K L : " ` {enter}',
+        'F7 F8 {shift} | Z X C V B N M &lt; &gt; ? {shift}',
+        'F9 F10 {alt} {space} {delete} pad'
+    ]
+}
+
 const urlParams = new URLSearchParams(window.location.search);
 
 var targetFreq = urlParams.get("freq") || defaultTargetFreq;
@@ -149,6 +173,15 @@ function shutdown() {
             document.body.innerHTML = "System halted!";
         }
     }
+}
+
+function isTouchDevice() {
+    if (urlParams.has("touch"))
+        return urlParams.get("touch") != "0";
+    return false; // TODO: Enable this!
+    return ('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (navigator.msMaxTouchPoints > 0);
 }
 
 function diskReadData(ptr, size, head) {
@@ -206,6 +239,37 @@ function handleKeyEvent(event, mask, callback) {
 
     callback(scan | mask)
     event.preventDefault();
+}
+
+function handleVirtualKeyEvent(button, keyboard, mask, callback) {
+    if (mask == 0 && (button == "{lock}" || button == "{shift}" || button == "pad")) {
+        if (button == "pad") {
+            keyboard.setOptions({
+                layoutName: "pad"
+            });
+        } else {
+            keyboard.setOptions({
+                layoutName: (keyboard.options.layoutName == "shift") ? "default" : "shift"
+            });
+        }
+    }
+
+    var scan = 0;
+    switch (button) {
+        case "{enter}":
+            scan = 28;
+            break;
+        case "{space}":
+            scan = 57;
+            break;
+        default:
+            scan = jsToXt[button];
+            if (!scan) {
+                console.log("Unknown virtual key:", button);
+                return;
+            }
+    }
+    callback(scan | mask)
 }
 
 function initLocalStorage() {
@@ -374,6 +438,14 @@ function startEmulator(binary) {
             window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
             window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
             window.addEventListener("resize", () => { invalidateWindowSize = true; });
+
+            if (isTouchDevice()) {
+                const kb = new window.SimpleKeyboard.default({
+                    onKeyReleased: button => { handleVirtualKeyEvent(button, kb, 0x80, C.wasm_send_key); },
+                    onKeyPress: button => { handleVirtualKeyEvent(button, kb, 0x0, C.wasm_send_key); },
+                    layout: modelFLayout
+                });
+            }
 
             if (urlParams.get("mouse") != "0") {
                 const handler = (e) => {
