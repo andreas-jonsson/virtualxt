@@ -1,0 +1,44 @@
+name: Build
+on:
+  push:
+    paths-ignore:
+      - README.md
+      - .gitignore
+      - .github/**
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    if: contains(github.ref, 'master')
+    strategy:
+      matrix:
+        node-version: [16.x]
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v1
+      - name: Use Node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node_version }}
+      - name: npm install, build, and test
+        run: |
+          npm install
+          npm run coverage
+
+      - name: Discord notification
+        continue-on-error: true
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: "simple-keyboard - CI Build Passed"
+
+      - name: Discord notification
+        continue-on-error: true
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: "simple-keyboard - CI Build Failed"
