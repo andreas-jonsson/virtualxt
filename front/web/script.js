@@ -178,7 +178,6 @@ function shutdown() {
 function isTouchDevice() {
     if (urlParams.has("touch"))
         return urlParams.get("touch") != "0";
-    return false; // TODO: Enable this!
     return ('ontouchstart' in window) ||
         (navigator.maxTouchPoints > 0) ||
         (navigator.msMaxTouchPoints > 0);
@@ -435,8 +434,8 @@ function startEmulator(binary) {
                 initLocalStorage();
             }
 
-            window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
-            window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
+            window.addEventListener("keyup", e => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
+            window.addEventListener("keydown", e => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
             window.addEventListener("resize", () => { invalidateWindowSize = true; });
 
             if (isTouchDevice()) {
@@ -445,9 +444,19 @@ function startEmulator(binary) {
                     onKeyPress: button => { handleVirtualKeyEvent(button, kb, 0x0, C.wasm_send_key); },
                     layout: modelFLayout
                 });
-            }
-
-            if (urlParams.get("mouse") != "0") {
+                
+                const kbDiv = document.getElementById("keyboard");
+                if (kbDiv) {
+                    const handler = () => {
+                        if (kbDiv.style.getPropertyValue("display") == "none")
+                            kbDiv.style.removeProperty("display");
+                        else
+                            kbDiv.style.setProperty("display", "none");
+                    }
+                    window.addEventListener("pointerdown", handler);
+                    window.addEventListener("touchstart", handler);
+                }
+            } else if (urlParams.get("mouse") != "0") {
                 const handler = (e) => {
                     if (halted) {
                         return;
