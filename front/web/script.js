@@ -111,27 +111,108 @@ const jsToXt = {
     "Delete": 83
 };
 
+const vkbToXt = {
+    "{esc}": 1,
+    "1": 2, "!": 2,
+    "2": 3, "@": 3,
+    "3": 4, "#": 4,
+    "4": 5, "$": 5,
+    "5": 6, "%": 6,
+    "6": 7, "^": 7,
+    "7": 8, "&": 8,
+    "8": 9, "*": 9,
+    "9": 10, "(": 10,
+    "0": 11, ")": 11,
+    "-": 12, "_": 12,
+    "=": 13, "+": 13,
+    "{bksp}": 14,
+    "{tab}": 15,
+    "q": 16, "Q": 16,
+    "w": 17, "W": 17,
+    "e": 18, "E": 18,
+    "r": 19, "R": 19,
+    "t": 20, "T": 20,
+    "y": 21, "Y": 21,
+    "u": 22, "U": 22,
+    "i": 23, "I": 23,
+    "o": 24, "O": 24,
+    "p": 25, "P": 25,
+    "[": 26, "{": 26,
+    "]": 27, "}": 27,
+    "{enter}": 28,
+    "ctrl": 29,
+    "a": 30, "A": 30,
+    "s": 31, "S": 31,
+    "d": 32, "D": 32,
+    "f": 33, "F": 33,
+    "g": 34, "G": 34,
+    "h": 35, "H": 35,
+    "j": 36, "J": 36,
+    "k": 37, "K": 37,
+    "l": 38, "L": 38,
+    ";": 39, ":": 39,
+    "'": 40, "\"": 40,
+    "`": 41,
+    "shift": 42,
+    "\\": 43, "|": 43,
+    "z": 44, "Z": 44,
+    "x": 45, "X": 45,
+    "c": 46, "C": 46,
+    "v": 47, "V": 47,
+    "b": 48, "B": 48,
+    "n": 49, "N": 49,
+    "m": 50, "M": 50,
+    ",": 51, "<": 51,
+    ".": 52, ">": 52,
+    "/": 53, "?": 53,
+    // VXTP_SCAN_RSHIFT
+    "print": 55,
+    "{alt}": 56,
+    " ": 57,
+    "{lock}": 58,
+    "F1": 59,
+    "F2": 60,
+    "F3": 61,
+    "F4": 62,
+    "F5": 63,
+    "F6": 64,
+    "F7": 65,
+    "F8": 66,
+    "F9": 67,
+    "F10": 68,
+    "num": 69,
+    "{lock}": 70,
+    "home": 71,
+    "up": 72,
+    "pgup": 73,
+    // VXTP_SCAN_KP_MINUS
+    "left": 75,
+    // VXTP_SCAN_KP_5
+    "right": 77,
+    // VXTP_SCAN_KP_PLUS
+    "end": 79,
+    "down": 80,
+    "pgdown": 81,
+    "ins": 82,
+    "{delete}": 83
+};
+
 const modelFLayout = {
     'default': [
+        'F1 F2 F3 F4 F5 F6 F7 F8 F9 F10 scrl num',
         '{esc} 1 2 3 4 5 6 7 8 9 0 - = {bksp}',
-        '{tab} q w e r t y u i o p [ ]',
-        'ctrl a s d m m m m k l ; \' ~ {enter}',
-        '{shift} \\ z x c v b n m , . / {shift}',
-        '{alt} {space} {delete} pad'
+        '{tab} q w e r t y u i o p [ ] {enter}',
+        '{lock} a s d f g h j k l ; \' ~ print',
+        'shift \\ z x c v b n m , . /',
+        'ctrl {alt} {space} {delete}'
     ],
     'shift': [
+        'up down left right pgup pgdown home end ins scrl num',
         '{esc} ! @ # $ % ^ &amp; * ( ) _ + {bksp}',
-        '{tab} Q W E R T Y U I O P { }',
-        '{lock} A S D F G H J K L : " ` {enter}',
-        '{shift} | Z X C V B N M &lt; &gt; ? {shift}',
-        '{alt} {space} {delete} pad'
-    ],
-    'pad': [
-        'F1 F2 {esc} ! @ # $ % ^ &amp; * ( ) _ + {bksp}',
-        'F3 F4 {tab} Q W E R T Y U I O P { }',
-        'F5 F6 {lock} A S D F G H J K L : " ` {enter}',
-        'F7 F8 {shift} | Z X C V B N M &lt; &gt; ? {shift}',
-        'F9 F10 {alt} {space} {delete} pad'
+        '{tab} Q W E R T Y U I O P { } {enter}',
+        '{lock} A S D F G H J K L : " ` print',
+        'shift | Z X C V B N M &lt; &gt; ?',
+        'ctrl {alt} {space} {delete}'
     ]
 }
 
@@ -241,32 +322,16 @@ function handleKeyEvent(event, mask, callback) {
 }
 
 function handleVirtualKeyEvent(button, keyboard, mask, callback) {
-    if (mask == 0 && (button == "{lock}" || button == "{shift}" || button == "pad")) {
-        if (button == "pad") {
-            keyboard.setOptions({
-                layoutName: "pad"
-            });
-        } else {
-            keyboard.setOptions({
-                layoutName: (keyboard.options.layoutName == "shift") ? "default" : "shift"
-            });
-        }
+    if (mask == 0 && (button == "{lock}")) { // || button == "{shift}")) {
+        keyboard.setOptions({
+            layoutName: (keyboard.options.layoutName == "shift") ? "default" : "shift"
+        });
     }
 
-    var scan = 0;
-    switch (button) {
-        case "{enter}":
-            scan = 28;
-            break;
-        case "{space}":
-            scan = 57;
-            break;
-        default:
-            scan = jsToXt[button];
-            if (!scan) {
-                console.log("Unknown virtual key:", button);
-                return;
-            }
+    const scan = vkbToXt[button];
+    if (!scan) {
+        console.log("Unknown virtual key:", button);
+        return;
     }
     callback(scan | mask)
 }
@@ -442,9 +507,10 @@ function startEmulator(binary) {
                 const kb = new window.SimpleKeyboard.default({
                     onKeyReleased: button => { handleVirtualKeyEvent(button, kb, 0x80, C.wasm_send_key); },
                     onKeyPress: button => { handleVirtualKeyEvent(button, kb, 0x0, C.wasm_send_key); },
+                    physicalKeyboardHighlightPress: false,
                     layout: modelFLayout
                 });
-                
+
                 const kbDiv = document.getElementById("keyboard");
                 if (kbDiv) {
                     const handler = () => {
@@ -453,8 +519,8 @@ function startEmulator(binary) {
                         else
                             kbDiv.style.setProperty("display", "none");
                     }
-                    window.addEventListener("pointerdown", handler);
-                    window.addEventListener("touchstart", handler);
+                    canvas.addEventListener("pointerdown", handler);
+                    canvas.addEventListener("touchstart", handler);
                 }
             } else if (urlParams.get("mouse") != "0") {
                 const handler = (e) => {
