@@ -519,8 +519,8 @@ function startEmulator(binary) {
                         else
                             kbDiv.style.setProperty("display", "none");
                     }
-                    canvas.addEventListener("pointerdown", handler);
-                    canvas.addEventListener("touchstart", handler);
+                    canvas.addEventListener("pointerdown", handler, true);
+                    canvas.addEventListener("touchstart", handler, true);
                 }
             } else if (urlParams.get("mouse") != "0") {
                 const handler = (e) => {
