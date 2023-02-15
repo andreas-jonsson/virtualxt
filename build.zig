@@ -153,7 +153,7 @@ pub fn build(b: *Builder) void {
     const validator = b.option(bool, "validator", "Enable PI8088 hardware validator") orelse false;
     const network = b.option(bool, "pcap", "Link with libpcap") orelse false;
     const sdl_path = b.option([]const u8, "sdl-path", "Path to SDL2 headers and libs") orelse null;
-    const cpu286 = b.option(bool, "at", "Enable Intel 286 and IBM AT support") orelse false;
+    const cpu286 = b.option(bool, "i286", "Enable some Intel 286 behaviour") orelse false;
     const cpuV20 = b.option(bool, "v20", "Enable NEC V20 CPU support") orelse false;
 
     const mode = b.standardReleaseOptions();
@@ -203,7 +203,6 @@ pub fn build(b: *Builder) void {
         
         if (cpu286) {
             pirepheral.defineCMacroRaw("VXT_CPU_286");
-            pirepheral.defineCMacroRaw("VXTP_SYS_AT");
         } else if (cpuV20) {
             pirepheral.defineCMacroRaw("VXT_CPU_V20");
         }
@@ -293,7 +292,6 @@ pub fn build(b: *Builder) void {
 
     if (cpu286) {
         exe_sdl.defineCMacroRaw("VXT_CPU_286");
-        exe_sdl.defineCMacroRaw("VXTP_SYS_AT");
     } else if (cpuV20) {
         exe_sdl.defineCMacroRaw("VXT_CPU_V20");
     }

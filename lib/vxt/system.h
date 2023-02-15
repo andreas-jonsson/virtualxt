@@ -32,9 +32,6 @@ struct system {
    vxt_byte io_map[VXT_IO_MAP_SIZE];
    vxt_byte mem_map[VXT_MEM_MAP_SIZE];
 
-   bool a20_enable;
-   vxt_byte high_mem[VXT_EXTENDED_MEMORY];
-
    vxt_allocator *alloc;
    struct cpu cpu;
 

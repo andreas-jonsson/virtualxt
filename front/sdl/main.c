@@ -67,14 +67,6 @@ struct ini_config config = {0};
 FILE *trace_op_output = NULL;
 FILE *trace_offset_output = NULL;
 
-#if defined(VXT_CPU_286)
-	#define CPU_NAME "i286"
-#elif defined(VXT_CPU_V20)
-	#define CPU_NAME "V20"
-#else
-	#define CPU_NAME "8088"
-#endif
-
 #define SYNC(...) {								   	\
 	if (SDL_LockMutex(emu_mutex) == -1)			   	\
 		printf("sync error: %s\n", SDL_GetError());	\
@@ -461,13 +453,8 @@ int ENTRY(int argc, char *argv[]) {
 
 	if (!args.bios) {
 		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
-		if (!args.bios) {
-			#ifdef VXT_CPU_286
-				args.bios = "bios/vxt286.bin";
-			#else
-				args.bios = "bios/pcxtbios.bin";
-			#endif
-		}
+		if (!args.bios)
+			args.bios = "bios/pcxtbios.bin";
 	}
 
 	if (!args.extension) {
@@ -860,10 +847,7 @@ int ENTRY(int argc, char *argv[]) {
 			);
 
 			if (ticks > 10000) {
-				if (mhz > 10.0)
-					snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%d MHz", (int)mhz);
-				else
-					snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%.2f MHz", mhz);
+				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz", vxt_cpu_name(), mhz);
 			} else {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
 			}

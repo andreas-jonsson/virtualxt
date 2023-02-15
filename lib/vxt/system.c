@@ -55,6 +55,16 @@ const char *vxt_error_str(vxt_error err) {
     return "user error";
 }
 
+const char *vxt_cpu_name(void) {
+    #if defined(VXT_CPU_V20)
+        return "V20";
+    #elif defined(VXT_CPU_286)
+        return "i80286";
+    #else
+        return "i8088";
+    #endif
+}
+
 const char *vxt_lib_version(void) { return VXT_VERSION; }
 int vxt_lib_version_major(void) { return VXT_VERSION_MAJOR; }
 int vxt_lib_version_minor(void) { return VXT_VERSION_MINOR; }
@@ -228,18 +238,6 @@ void vxt_system_interrupt(CONSTP(vxt_system) s, int n) {
         s->cpu.pic->pic.irq(s->cpu.pic, n);
 }
 
-bool vxt_system_a20(vxt_system *s) {
-    return s->a20_enable;
-}
-
-void vxt_system_set_a20(vxt_system *s, bool b) {
-    #ifdef VXT_CPU_286
-        s->a20_enable = b;
-    #else
-        (void)s; (void)b;
-    #endif
-}
-
 void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word addr) {
     s->io_map[addr] = (vxt_byte)vxt_pirepheral_id(dev);
 }
@@ -262,13 +260,6 @@ void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vx
 }
 
 vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
-    #ifdef VXT_CPU_286
-        if ((addr > 0xFFFFF) && s->a20_enable) {
-            addr &= (VXT_EXTENDED_MEMORY_MASK | 0xFFFFF);
-            return s->high_mem[addr - 0x100000];
-        }
-    #endif
-
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
     vxt_byte data = dev->io.read(dev, addr);
@@ -277,14 +268,6 @@ vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
 }
 
 void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
-    #ifdef VXT_CPU_286
-        if ((addr > 0xFFFFF) && s->a20_enable) {
-            addr &= (VXT_EXTENDED_MEMORY_MASK | 0xFFFFF);
-            s->high_mem[addr - 0x100000] = data;
-            return;
-        }
-    #endif
-
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
     dev->io.write(dev, addr, data);

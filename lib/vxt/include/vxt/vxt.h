@@ -102,17 +102,7 @@ extern "C" {
    #define VXT_PACK(x) x __attribute__((__packed__))
 #endif
 
-#ifdef VXT_CPU_286
-    #define VXT_POINTER(s, o) ( (((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o) )
-#else
-    #define VXT_POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
-#endif
-
-#ifndef VXT_EXTENDED_MEMORY
-    #define VXT_EXTENDED_MEMORY (0x1000000 - 0x100000) // 15MB
-    #define VXT_EXTENDED_MEMORY_MASK 0xF00000
-#endif
-
+#define VXT_POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
 #define VXT_INVALID_POINTER ((vxt_pointer)0xFFFFFFFF)
 #define VXT_INVALID_DEVICE_ID ((vxt_device_id)0xFF)
 
@@ -297,6 +287,7 @@ extern void vxt_set_breakpoint(void (*f)(void));
 extern int vxt_lib_version_major(void);
 extern int vxt_lib_version_minor(void);
 extern int vxt_lib_version_patch(void);
+const char *vxt_cpu_name(void);
 
 extern const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
 extern enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
@@ -319,8 +310,6 @@ extern struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx)
 extern vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p);
 extern vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p);
 extern void vxt_system_interrupt(vxt_system *s, int n);
-extern bool vxt_system_a20(vxt_system *s);
-extern void vxt_system_set_a20(vxt_system *s, bool b);
 
 extern void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_word addr);
 extern void vxt_system_install_mem_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer addr);

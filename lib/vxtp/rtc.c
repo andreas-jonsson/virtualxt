@@ -109,11 +109,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    #ifdef VXT_CPU_286
-        vxt_system_install_io(s, p, 0x70, 0x71);
-    #else
-        vxt_system_install_io(s, p, 0x240, 0x241);
-    #endif
+    vxt_system_install_io(s, p, 0x240, 0x241);
     return VXT_NO_ERROR;
 }
 

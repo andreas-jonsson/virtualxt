@@ -44,7 +44,6 @@ VXT_PIREPHERAL(ppi, {
     vxt_byte xt_switches;
 
     vxt_byte command;
-    vxt_byte a20_data;
     vxt_byte refresh_request;
     bool keyboard_enable;
     bool turbo_enabled;
@@ -71,9 +70,6 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
             return data;
         }
         case 0x61:
-            #ifdef VXT_CPU_286
-                c->refresh_request ^= 0x10;
-            #endif
             return (c->port_61 & 0xEF) | c->refresh_request;
         case 0x62:
             return c->xt_switches;
@@ -85,57 +81,31 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(c, ppi, p);
-    switch (port) {
-        #ifdef VXT_CPU_286
-            case 0x60:
-                if (!c->keyboard_enable && (c->command == WRITE_OUTPUT_CMD)) {
-                    c->command = 0;
-                    c->a20_data = data;
-                    vxt_system_set_a20(VXT_GET_SYSTEM(ppi, p), (data & 2) != 0);
-                }
-                break;
-        #endif
-        case 0x61:
-        {
-            bool spk_enable = (data & 3) == 3;
-            if (spk_enable != c->spk_enabled) {
-                c->spk_enabled = spk_enable;
-                c->spk_sample_index = 0;
+    if (port == 0x61) {
+        bool spk_enable = (data & 3) == 3;
+        if (spk_enable != c->spk_enabled) {
+            c->spk_enabled = spk_enable;
+            c->spk_sample_index = 0;
 
-                if (c->speaker_callback)
-                    c->speaker_callback(p, spk_enable ? vxtp_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
-            }
-
-            bool turbo_enabled = (data & 4) != 0;
-            if (turbo_enabled != c->turbo_enabled) {
-                c->turbo_enabled = turbo_enabled;
-                VXT_LOG("Turbo mode %s!", turbo_enabled ? "on" : "off");
-            }
-            
-            bool kb_reset = !(c->port_61 & 0xC0) && (data & 0xC0);
-            if (kb_reset) {
-                c->queue_size = 0;
-                c->data_port = 0xAA;
-                c->command_port = COMMAND_READY | DATA_READY;
-                vxt_system_interrupt(VXT_GET_SYSTEM(ppi, p), 1);
-            }
-
-            c->port_61 = data;
-            break;
+            if (c->speaker_callback)
+                c->speaker_callback(p, spk_enable ? vxtp_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
         }
-        #ifdef VXT_CPU_286
-            case 0x64:
-                c->command = data;
-                switch (data) {
-                    case ENABLE_KEYBOARD_CMD:
-                        c->keyboard_enable = true;
-                        break;
-                    case DISABLE_KEYBOARD_CMD:
-                        c->keyboard_enable = false;
-                        break;
-                }
-                break;
-        #endif
+
+        bool turbo_enabled = (data & 4) != 0;
+        if (turbo_enabled != c->turbo_enabled) {
+            c->turbo_enabled = turbo_enabled;
+            VXT_LOG("Turbo mode %s!", turbo_enabled ? "on" : "off");
+        }
+        
+        bool kb_reset = !(c->port_61 & 0xC0) && (data & 0xC0);
+        if (kb_reset) {
+            c->queue_size = 0;
+            c->data_port = 0xAA;
+            c->command_port = COMMAND_READY | DATA_READY;
+            vxt_system_interrupt(VXT_GET_SYSTEM(ppi, p), 1);
+        }
+
+        c->port_61 = data;
     }
 }
 
@@ -162,7 +132,6 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
         }
     } else if (c->command == READ_INPUT_CMD) {
         c->command_port |= DATA_READY;
-        c->data_port = c->a20_data;
     }
     return VXT_NO_ERROR;
 }
@@ -181,9 +150,7 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 
     c->keyboard_enable = true;
     c->queue_size = 0;
-
-    c->a20_data = 0;
-    vxt_system_set_a20(VXT_GET_SYSTEM(ppi, p), false);
+    
     return VXT_NO_ERROR;
 }
 
