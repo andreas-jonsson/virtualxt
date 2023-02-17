@@ -187,10 +187,11 @@ void send_mouse(int xrel, int yrel, unsigned int buttons) {
 	vxtp_mouse_push_event(mouse, &ev);
 }
 
-void step_emulation(int cycles) {
+int step_emulation(int cycles) {
 	struct vxt_step s = vxt_system_step(sys, cycles);
 	if (s.err != VXT_NO_ERROR)
 		LOG(vxt_error_str(s.err));
+	return s.cycles;
 }
 
 void initialize_emulator(void) {
@@ -224,7 +225,7 @@ void initialize_emulator(void) {
 		NULL
 	};
 
-	sys = vxt_system_create(&ALLOCATOR, devices);
+	sys = vxt_system_create(&ALLOCATOR, VXT_DEFAULT_FREQUENCY, devices);
 	vxt_system_initialize(sys);
 	
 	LOG("Installed pirepherals:\n");

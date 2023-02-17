@@ -213,7 +213,7 @@ int ENTRY(int argc, char *argv[]) {
 		NULL
 	};
 
-	vxt_system *sys = vxt_system_create(&ALLOCATOR, devices);
+	vxt_system *sys = vxt_system_create(&ALLOCATOR, VXT_DEFAULT_FREQUENCY, devices);
 	vxt_system_initialize(sys);
 	
 	LOG("Installed pirepherals:");
@@ -237,7 +237,8 @@ int ENTRY(int argc, char *argv[]) {
 	//reg->debug = true;
 
 	for (;;) {
-		struct vxt_step s = vxt_system_step(sys, 4770000 / 60);
+		// TODO: Fix propper timing.
+		struct vxt_step s = vxt_system_step(sys, VXT_DEFAULT_FREQUENCY / 60);
 		if (s.err != VXT_NO_ERROR)
 			LOG(vxt_error_str(s.err));
 		

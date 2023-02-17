@@ -42,6 +42,18 @@
    int (*_vxt_logger)(const char*, ...) = &no_print;
 #endif
 
+static vxt_error update_timers(CONSTP(vxt_system) s, int ticks) {
+    for (int i = 0; i < s->num_timers; i++) {
+        struct timer *t = &s->timers[i];
+        t->ticks += ticks;
+        if (t->ticks >= (INT64)(t->interval * (double)s->frequency)) {
+            t->dev->timer(t->dev, t->id, (int)t->ticks);
+            t->ticks = 0;
+        }
+    }
+    return VXT_NO_ERROR;
+}
+
 static void no_breakpoint(void) {}
 void (*breakpoint)(void) = &no_breakpoint;
 
@@ -78,10 +90,11 @@ void vxt_set_breakpoint(void (*f)(void)) {
     breakpoint = f;
 }
 
-vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral * const devs[]) {
+vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struct vxt_pirepheral * const devs[]) {
     vxt_system *s = (vxt_system*)alloc(NULL, sizeof(struct system));
     vxt_memclear(s, sizeof(struct system));
     s->alloc = alloc;
+    s->frequency = frequency;
     s->cpu.s = s;
 
     int i = 1;
@@ -123,7 +136,7 @@ vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, unsigned reg_size, int v_
 }
 
 TEST(system_initialize,
-    CONSTP(vxt_system) sp = vxt_system_create(TALLOC, NULL);
+    CONSTP(vxt_system) sp = vxt_system_create(TALLOC, VXT_DEFAULT_FREQUENCY, NULL);
     TENSURE(sp);
     TENSURE_NO_ERR(vxt_system_initialize(sp));
     vxt_system_destroy(sp);
@@ -175,6 +188,9 @@ struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
         oldc = newc;
         step.cycles += c;
         step.halted = s->cpu.halt;
+
+        if ((step.err = update_timers(s, c) != VXT_NO_ERROR))
+            return step;
 
         for (int i = 0; i < s->num_devices; i++) {
             CONSTSP(vxt_pirepheral) d = s->devices[i];
@@ -236,6 +252,25 @@ enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p) {
 void vxt_system_interrupt(CONSTP(vxt_system) s, int n) {
     if (s->cpu.pic)
         s->cpu.pic->pic.irq(s->cpu.pic, n);
+}
+
+int vxt_system_frequency(CONSTP(vxt_system) s) {
+    return s->frequency;
+}
+
+void vxt_system_set_frequency(CONSTP(vxt_system) s, int freq) {
+    s->frequency = freq;
+}
+
+vxt_timer_id vxt_system_install_timer(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, unsigned int us) {
+    if (s->num_timers >= MAX_TIMERS)
+        return VXT_INVALID_TIMER_ID;
+    struct timer *t = &s->timers[s->num_timers];
+    t->ticks = 0;
+    t->interval = (double)us / 1000000.0;
+    t->dev = dev;
+    t->id = (vxt_timer_id)s->num_timers++;
+    return t->id;
 }
 
 void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word addr) {

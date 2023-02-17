@@ -26,6 +26,16 @@
 #include "common.h"
 #include "cpu.h"
 
+#define MAX_TIMERS 256
+#define INT64 long long
+
+struct timer {
+   vxt_timer_id id;
+   struct vxt_pirepheral *dev;
+   INT64 ticks;
+   double interval;
+};
+
 struct system {
    void *userdata;
 
@@ -34,6 +44,10 @@ struct system {
 
    vxt_allocator *alloc;
    struct cpu cpu;
+   int frequency;
+
+   int num_timers;
+   struct timer timers[MAX_TIMERS];
 
    int num_devices;
    struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS];

@@ -28,7 +28,7 @@ extern unsigned int get_pcxtbios_size(void);
 extern const unsigned char *get_vxtx_data(void);
 extern unsigned int get_vxtx_size(void);
 
-extern void step_emulation(int);
+extern int step_emulation(int);
 extern void initialize_emulator(void);
 extern const void *video_rgba_memory_pointer(void);
 extern int video_width(void);

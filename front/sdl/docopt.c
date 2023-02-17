@@ -319,8 +319,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *) "4.77",
-        NULL, NULL, NULL, NULL, NULL, NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
+        "4.772726", NULL, NULL, NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -343,7 +343,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --trace=FILE            Write CPU trace to file.",
               "  --vga=FILE              Load VGA BIOS.",
               "  --serial-debug=PORT     Enable debug print on serial port.",
-              "  -f --frequency=MHZ      CPU frequency lock (0 to disable) [default: 4.77].",
+              "  --frequency=MHZ         CPU frequency. [default: 4.772726]",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
               "  -c --harddrive=FILE     Mount harddrive image as drive C."}
     };
@@ -366,7 +366,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--config", 1, 0, NULL},
         {NULL, "--extension", 1, 0, NULL},
         {"-a", "--floppy", 1, 0, NULL},
-        {"-f", "--frequency", 1, 0, NULL},
+        {NULL, "--frequency", 1, 0, NULL},
         {"-c", "--harddrive", 1, 0, NULL},
         {NULL, "--network", 1, 0, NULL},
         {NULL, "--rifs", 1, 0, NULL},

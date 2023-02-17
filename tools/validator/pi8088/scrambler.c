@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 		NULL
 	};
 
-	vxt_system *vxt = vxt_system_create(&realloc, devices);
+	vxt_system *vxt = vxt_system_create(&realloc, VXT_DEFAULT_FREQUENCY, devices);
 	vxt_system_set_validator(vxt, pi8088_validator());
 
 	vxt_error err = vxt_system_initialize(vxt);

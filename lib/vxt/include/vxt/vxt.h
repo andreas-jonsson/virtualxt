@@ -105,6 +105,7 @@ extern "C" {
 #define VXT_POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
 #define VXT_INVALID_POINTER ((vxt_pointer)0xFFFFFFFF)
 #define VXT_INVALID_DEVICE_ID ((vxt_device_id)0xFF)
+#define VXT_INVALID_TIMER_ID ((vxt_timer_id)-1)
 
 #define _VXT_ERROR_CODES(x)                                                     \
     x(0, VXT_NO_ERROR,                  "no error")                             \
@@ -122,6 +123,7 @@ typedef enum {_VXT_ERROR_CODES(_VXT_ERROR_ENUM) _VXT_NUM_ERRORS} vxt_error;
 #define VXT_GET_USER_ERROR(e) ((vxt_error)(e) - _VXT_NUM_ERRORS)
 
 typedef vxt_byte vxt_device_id;
+typedef int vxt_timer_id;
 
 typedef struct system vxt_system;
 
@@ -142,6 +144,7 @@ enum {
 #define VXT_IO_MAP_SIZE 0x10000
 #define VXT_MEM_MAP_SIZE 0x100000
 #define VXT_MAX_PIREPHERALS 0xFF
+#define VXT_DEFAULT_FREQUENCY 4772726
 
 #define VXT_PIREPHERAL_SIZE(type) sizeof(struct _ ## type)
 #define VXT_GET_DEVICE_DATA(type, pir) ((struct _ ## type*)(pir))->d
@@ -212,9 +215,11 @@ struct vxt_pirepheral {
 	vxt_error (*install)(vxt_system*,struct vxt_pirepheral*);
     vxt_error (*destroy)(struct vxt_pirepheral*);
     vxt_error (*reset)(struct vxt_pirepheral*);
-
+    vxt_error (*timer)(struct vxt_pirepheral*,vxt_timer_id,int);
     const char* (*name)(struct vxt_pirepheral*);
     enum vxt_pclass (*pclass)(struct vxt_pirepheral*);
+
+    // step, is deprecated. Use timer callback with interval of 0 instead.
     vxt_error (*step)(struct vxt_pirepheral*,int);
 
     struct {
@@ -292,12 +297,14 @@ const char *vxt_cpu_name(void);
 extern const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
 extern enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
 
-extern vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral * const devs[]);
+extern vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struct vxt_pirepheral * const devs[]);
 extern vxt_error vxt_system_destroy(vxt_system *s);
 extern struct vxt_step vxt_system_step(vxt_system *s, int cycles);
 extern void vxt_system_reset(vxt_system *s);
 extern struct vxt_registers *vxt_system_registers(vxt_system *s);
 
+extern int vxt_system_frequency(vxt_system *s);
+extern void vxt_system_set_frequency(vxt_system *s, int freq);
 extern void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte));
 extern void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *interface);
 extern void vxt_system_set_userdata(vxt_system *s, void *data);
@@ -315,6 +322,7 @@ extern void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, 
 extern void vxt_system_install_mem_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer addr);
 extern void vxt_system_install_io(vxt_system *s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to);
 extern void vxt_system_install_mem(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to);
+extern vxt_timer_id vxt_system_install_timer(vxt_system *s, struct vxt_pirepheral *dev, unsigned int us);
 
 extern vxt_byte vxt_system_read_byte(vxt_system *s, vxt_pointer addr);
 extern void vxt_system_write_byte(vxt_system *s, vxt_pointer addr, vxt_byte data);
@@ -323,6 +331,9 @@ extern void vxt_system_write_word(vxt_system *s, vxt_pointer addr, vxt_word data
 
 /// @private
 _Static_assert(sizeof(vxt_pointer) == 4 && sizeof(vxt_int32) == 4, "invalid integer size");
+
+/// @private
+_Static_assert(sizeof(long long) == 8, "invalid size of 'long long'");
 
 #ifdef __cplusplus
 }

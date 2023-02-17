@@ -111,7 +111,7 @@ void retro_init(void) {
 	};
 
 	assert(!sys);
-	sys = vxt_system_create(&realloc, devices);
+	sys = vxt_system_create(&realloc, VXT_DEFAULT_FREQUENCY, devices);
 	vxt_system_initialize(sys);
 
 	LOG("Installed pirepherals:\n");
@@ -229,7 +229,8 @@ void retro_run(void) {
         check_variables();
     }
 
-	vxt_system_step(sys, 4770000 / 60);
+    // TODO: Fix timing.
+	vxt_system_step(sys, VXT_DEFAULT_FREQUENCY / 60);
 
     vxtp_cga_snapshot(cga);
     vxtp_cga_render(cga, &render_callback, NULL);

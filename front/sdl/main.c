@@ -98,7 +98,7 @@ static const char key_map[256] = {
 
 Uint32 last_title_update = 0;
 int num_cycles = 0;
-double cpu_frequency = 4.772726;
+double cpu_frequency = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
 
 SDL_atomic_t running = {1};
 SDL_mutex *emu_mutex = NULL;
@@ -224,7 +224,7 @@ static int emu_loop(void *ptr) {
 	while (SDL_AtomicGet(&running)) {
 		struct vxt_step res;
 		SYNC(
-			res = vxt_system_step(vxt, MIN_CLOCKS_PER_STEP); //(frequency > 0.0) ? 0 : MIN_CLOCKS_PER_STEP);
+			res = vxt_system_step(vxt, MIN_CLOCKS_PER_STEP);
 			if (res.err != VXT_NO_ERROR) {
 				if (res.err == VXT_USER_TERMINATION)
 					SDL_AtomicSet(&running, 0);
@@ -232,10 +232,10 @@ static int emu_loop(void *ptr) {
 					printf("step error: %s", vxt_error_str(res.err));
 			}
 			num_cycles += res.cycles;
-			//frequency = vxtp_ppi_turbo_enabled(ppi) ? 0.0 : cpu_frequency;
+			//frequency = vxtp_ppi_turbo_enabled(ppi) ? (cpu_frequency * 3.0) : cpu_frequency;
 		);
 
-		while (frequency > 0.0) {
+		for (;;) {
 			const Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)(frequency * 1000000.0);
 			if (!f) {
 				penalty = 0;
@@ -474,11 +474,9 @@ int ENTRY(int argc, char *argv[]) {
 	if (args.debug)
 		printf("Internal debugger enabled!\n");
 
-	cpu_frequency = strtod(args.frequency, NULL);
-	if (cpu_frequency <= 0.0)
-		printf("No CPU frequency lock!\n");
-	else
-		printf("CPU frequency: %.2f MHz\n", cpu_frequency);
+	if (args.frequency)
+		cpu_frequency = strtod(args.frequency, NULL);
+	printf("CPU frequency: %.2f MHz\n", cpu_frequency);
 
 	#if !defined(_WIN32) && !defined(__APPLE__)
 		SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
@@ -640,7 +638,7 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i++] = dbg;
 	devices[i] = NULL;
 
-	vxt_system *vxt = vxt_system_create(&realloc, devices);
+	vxt_system *vxt = vxt_system_create(&realloc, (int)(cpu_frequency * 1000000.0), devices);
 
 	if (args.trace) {
 		if (!(trace_op_output = fopen(args.trace, "wb"))) {
