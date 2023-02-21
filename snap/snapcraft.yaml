@@ -37,6 +37,7 @@ parts:
       - usr
     organize:
       pcxtbios.bin: usr/share/virtualxt/bios/pcxtbios.bin
+      pcxtbios_640.bin: usr/share/virtualxt/bios/pcxtbios_640.bin
       glabios.bin: usr/share/virtualxt/bios/glabios.bin
       vxtx.bin: usr/share/virtualxt/bios/vxtx.bin
 

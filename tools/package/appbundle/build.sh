@@ -8,6 +8,7 @@ mkdir -p $APP_DIR/Contents/MacOS $APP_DIR/Contents/Resources/bios $APP_DIR/Conte
 
 cp build/bin/virtualxt $APP_DIR/Contents/MacOS/
 cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
+cp bios/pcxtbios_640.bin $APP_DIR/Contents/Resources/bios/
 cp bios/glabios.bin $APP_DIR/Contents/Resources/bios/
 cp bios/vxtx.bin $APP_DIR/Contents/Resources/bios/
 cp boot/freedos_hd.img $APP_DIR/Contents/Resources/boot/

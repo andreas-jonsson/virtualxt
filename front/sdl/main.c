@@ -454,7 +454,7 @@ int ENTRY(int argc, char *argv[]) {
 	if (!args.bios) {
 		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
 		if (!args.bios)
-			args.bios = "bios/pcxtbios.bin";
+			args.bios = args.vga ? "bios/pcxtbios_640.bin" : "bios/pcxtbios.bin";
 	}
 
 	if (!args.extension) {
