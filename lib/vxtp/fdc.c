@@ -491,7 +491,7 @@ vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, void *fp) {
 
     struct diskette *d = &c->floppy[num];
     if (d->fp)
-        vxtp_disk_unmount(p, num);
+        vxtu_disk_unmount(p, num);
 
     d->tracks = 80;
     d->sectors = 18;

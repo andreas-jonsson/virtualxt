@@ -64,23 +64,23 @@ static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 	return size;
 }
 
-static int seek_file(vxt_system *s, void *fp, int offset, enum vxtp_disk_seek whence) {
+static int seek_file(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence) {
 	(void)s; (void)fp;
 
 	int disk_sz = (int)get_disk_size();
 	int pos = -1;
 
 	switch (whence) {
-		case VXTP_SEEK_START:
+		case VXTU_SEEK_START:
 			if ((pos = offset) > disk_sz)
 				return -1;
 			break;
-		case VXTP_SEEK_CURRENT:
+		case VXTU_SEEK_CURRENT:
 			pos = disk_head + offset;
 			if ((pos < 0) || (pos > disk_sz))
 				return -1;
 			break;
-		case VXTP_SEEK_END:
+		case VXTU_SEEK_END:
 			pos = disk_sz - offset;
 			if ((pos < 0) || (pos > disk_sz))
 				return -1;
@@ -183,17 +183,17 @@ int ENTRY(int argc, char *argv[]) {
 	disk_data = (vxt_byte*)ALLOCATOR(NULL, get_disk_size());
 	memcpy(disk_data, get_disk_data(), get_disk_size());
 
-	struct vxtp_disk_interface interface = {
+	struct vxtu_disk_interface interface = {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
 	
-	struct vxt_pirepheral *disk = vxtp_disk_create(&ALLOCATOR, &interface);
-	struct vxt_pirepheral *pit = vxtp_pit_create(&ALLOCATOR, &ustimer);
+	struct vxt_pirepheral *disk = vxtu_disk_create(&ALLOCATOR, &interface);
+	struct vxt_pirepheral *pit = vxtu_pit_create(&ALLOCATOR, &ustimer);
 	
-	struct vxt_pirepheral *ppi = vxtp_ppi_create(&ALLOCATOR, pit);
-	//vxtp_ppi_set_speaker_callback(ppi, &speaker_callback, NULL);
+	struct vxt_pirepheral *ppi = vxtu_ppi_create(&ALLOCATOR, pit);
+	//vxtu_ppi_set_speaker_callback(ppi, &speaker_callback, NULL);
 
-    struct vxt_pirepheral *cga = vxtp_cga_create(&ALLOCATOR, &ustimer);
+    struct vxt_pirepheral *cga = vxtu_cga_create(&ALLOCATOR, &ustimer);
 
 	struct vxtu_debugger_interface dbgif = {NULL, &mgetline, &printf};
 	struct vxt_pirepheral *dbg = vxtu_debugger_create(&ALLOCATOR, &dbgif);
@@ -202,8 +202,8 @@ int ENTRY(int argc, char *argv[]) {
 		vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false),
         load_bios(get_pcxtbios_data(), (int)get_pcxtbios_size(), 0xFE000),
         load_bios(get_vxtx_data(), (int)get_vxtx_size(), 0xE0000),
-        vxtp_pic_create(&ALLOCATOR),
-	    vxtp_dma_create(&ALLOCATOR),
+        vxtu_pic_create(&ALLOCATOR),
+	    vxtu_dma_create(&ALLOCATOR),
 		//vxtp_ctrl_create(&ALLOCATOR, &emu_control, NULL),
         pit,
         ppi,
@@ -226,11 +226,11 @@ int ENTRY(int argc, char *argv[]) {
 	int drive_num = (get_disk_size() > 1474560) ? 128 : 0;
 	LOG("Disk num: %d", drive_num);
 
-	vxt_error err = vxtp_disk_mount(disk, drive_num, (void*)1);
+	vxt_error err = vxtu_disk_mount(disk, drive_num, (void*)1);
 	if (err != VXT_NO_ERROR)
 		LOG("%s (0x%X)", vxt_error_str(err), err);
 
-	vxtp_disk_set_boot_drive(disk, drive_num);
+	vxtu_disk_set_boot_drive(disk, drive_num);
 	vxt_system_reset(sys);
 
 	//struct vxt_registers *reg = vxt_system_registers(sys);
@@ -242,11 +242,11 @@ int ENTRY(int argc, char *argv[]) {
 		if (s.err != VXT_NO_ERROR)
 			LOG(vxt_error_str(s.err));
 		
-		vxtp_cga_snapshot(cga);
-		//vxt_dword color = vxtp_cga_border_color(cga);
+		vxtu_cga_snapshot(cga);
+		//vxt_dword color = vxtu_cga_border_color(cga);
 		//if (color != cga_border)
 		//	js_set_border_color((cga_border = color));
-		vxtp_cga_render(cga, &render_callback, NULL);
+		vxtu_cga_render(cga, &render_callback, NULL);
 	}
 	return 0;
 }

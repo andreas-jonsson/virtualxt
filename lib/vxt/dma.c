@@ -20,7 +20,7 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
+#include <vxt/vxtu.h>
 
 VXT_PIREPHERAL(dma, {
     bool flip;
@@ -204,7 +204,7 @@ static void dma_write(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte data) {
     update_count(c, ch);
 }
 
-struct vxt_pirepheral *vxtp_dma_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, dma, {
+struct vxt_pirepheral *vxtu_dma_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, dma, {
     PIREPHERAL->install = &install;
     PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;

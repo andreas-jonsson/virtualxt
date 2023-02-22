@@ -20,7 +20,7 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
+#include <vxt/vxtu.h>
 #include "cga_font.h"
 
 #define MEMORY_SIZE 0x10000
@@ -267,7 +267,7 @@ static bool blink_tick(struct vxt_pirepheral *p) {
 }
 
 static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
-    #ifdef VXTP_CGA_BYTESWAP
+    #ifdef VXTU_CGA_BYTESWAP
         pixels[offset++] = (vxt_byte)((color & 0xFF0000) >> 16);
         pixels[offset++] = (vxt_byte)((color & 0x00FF00) >> 8);
         pixels[offset++] = (vxt_byte)(color & 0x0000FF);
@@ -313,7 +313,7 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 	}
 }
 
-struct vxt_pirepheral *vxtp_cga_create(vxt_allocator *alloc, INT64 (*ustics)(void)) VXT_PIREPHERAL_CREATE(alloc, cga_video, {
+struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc, INT64 (*ustics)(void)) VXT_PIREPHERAL_CREATE(alloc, cga_video, {
     DEVICE->ustics = ustics;
     DEVICE->application_start = ustics();
 
@@ -329,11 +329,11 @@ struct vxt_pirepheral *vxtp_cga_create(vxt_allocator *alloc, INT64 (*ustics)(voi
     PIREPHERAL->io.out = &out;
 })
 
-vxt_dword vxtp_cga_border_color(struct vxt_pirepheral *p) {
+vxt_dword vxtu_cga_border_color(struct vxt_pirepheral *p) {
     return cga_palette[(VXT_GET_DEVICE(cga_video, p))->color_ctrl_reg & 0xF];
 }
 
-bool vxtp_cga_snapshot(struct vxt_pirepheral *p) {
+bool vxtu_cga_snapshot(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, cga_video, p);
     if (!c->is_dirty)
         return false;
@@ -352,7 +352,7 @@ bool vxtp_cga_snapshot(struct vxt_pirepheral *p) {
     return true;
 }
 
-int vxtp_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
+int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
     struct snapshot *snap = &(VXT_GET_DEVICE(cga_video, p))->snap;
 
     if (snap->hgc_mode) {

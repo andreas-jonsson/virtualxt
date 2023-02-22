@@ -20,10 +20,7 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
-
-#include <assert.h>
-#include <string.h>
+#include <vxt/vxtu.h>
 
 #define BUFFER_SIZE 128
 
@@ -48,7 +45,6 @@ static bool push_data(struct vxt_pirepheral *p, vxt_byte data) {
 
 static vxt_byte pop_data(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(m, serial_mouse, p);
-    assert(m->buffer_len > 0);
     vxt_byte data = *m->buffer;
     memmove(m->buffer, &m->buffer[1], --m->buffer_len);
     return data;
@@ -111,7 +107,7 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Microsoft Serial Mouse";
 }
 
-struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq) VXT_PIREPHERAL_CREATE(alloc, serial_mouse, {
+struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq) VXT_PIREPHERAL_CREATE(alloc, serial_mouse, {
     DEVICE->base_port = base_port;
     DEVICE->irq = irq;
 
@@ -123,7 +119,7 @@ struct vxt_pirepheral *vxtp_mouse_create(vxt_allocator *alloc, vxt_word base_por
     PIREPHERAL->io.out = &out;
 })
 
-bool vxtp_mouse_push_event(struct vxt_pirepheral *p, const struct vxtp_mouse_event *ev) {
+bool vxtu_mouse_push_event(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev) {
     vxt_byte upper = 0;
     if (ev->xrel < 0)
         upper = 0x3;

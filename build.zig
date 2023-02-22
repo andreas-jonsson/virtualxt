@@ -112,7 +112,9 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         create_test_files() catch unreachable;
     } else {
         lib.setBuildMode(mode);
-        if (!target.toTarget().isWasm()) {
+        if (target.toTarget().isWasm()) {
+            lib.defineCMacroRaw("VXTU_CGA_BYTESWAP");
+        } else {
             lib.setOutputDir("build/lib");
             lib.install();
         }
@@ -133,6 +135,14 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         "lib/vxt/memory.c",
         "lib/vxt/cpu.c",
         "lib/vxt/debugger.c",
+        "lib/vxt/disk.c",
+        "lib/vxt/pic.c",
+        "lib/vxt/ppi.c",
+        "lib/vxt/pit.c",
+        "lib/vxt/dma.c",
+        "lib/vxt/mda.c",
+        "lib/vxt/cga.c",
+        "lib/vxt/mouse.c",
     };
 
     for (files) |file| {
@@ -208,16 +218,8 @@ pub fn build(b: *Builder) void {
         }
 
         const opt = c_options ++ &[_][]const u8{"-std=c11", "-pedantic"};
-        pirepheral.addCSourceFile("lib/vxtp/disk.c", opt);
-        pirepheral.addCSourceFile("lib/vxtp/pic.c", opt);
-        pirepheral.addCSourceFile("lib/vxtp/ppi.c", opt);
-        pirepheral.addCSourceFile("lib/vxtp/pit.c", opt);
-        pirepheral.addCSourceFile("lib/vxtp/dma.c", opt);
-        pirepheral.addCSourceFile("lib/vxtp/mda.c", opt);
-        pirepheral.addCSourceFile("lib/vxtp/cga.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/vga.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/rifs.c", opt);
-        pirepheral.addCSourceFile("lib/vxtp/mouse.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/serial_dbg.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/joystick.c", opt);
         pirepheral.addCSourceFile("lib/vxtp/rtc.c", opt);
@@ -362,12 +364,6 @@ pub fn build(b: *Builder) void {
 
         // Add the vxt pirepherals directly.
         baremetal.addIncludePath("lib/vxtp");
-        baremetal.addCSourceFile("lib/vxtp/disk.c", bm_opt);
-        baremetal.addCSourceFile("lib/vxtp/pic.c", bm_opt);
-        baremetal.addCSourceFile("lib/vxtp/ppi.c", bm_opt);
-        baremetal.addCSourceFile("lib/vxtp/pit.c", bm_opt);
-        baremetal.addCSourceFile("lib/vxtp/cga.c", bm_opt);
-        baremetal.addCSourceFile("lib/vxtp/dma.c", bm_opt);
         baremetal.addCSourceFile("lib/vxtp/ctrl.c", bm_opt);
         baremetal.addCSourceFile("lib/vxtp/serial_dbg.c", bm_opt);
 
@@ -406,15 +402,6 @@ pub fn build(b: *Builder) void {
 
         // Add the vxt pirepherals directly.
         wasm.addIncludePath("lib/vxtp");
-        wasm.defineCMacroRaw("VXTP_CGA_BYTESWAP");
-        
-        wasm.addCSourceFile("lib/vxtp/disk.c", wasm_opt);
-        wasm.addCSourceFile("lib/vxtp/pic.c", wasm_opt);
-        wasm.addCSourceFile("lib/vxtp/ppi.c", wasm_opt);
-        wasm.addCSourceFile("lib/vxtp/pit.c", wasm_opt);
-        wasm.addCSourceFile("lib/vxtp/cga.c", wasm_opt);
-        wasm.addCSourceFile("lib/vxtp/dma.c", wasm_opt);
-        wasm.addCSourceFile("lib/vxtp/mouse.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/ctrl.c", wasm_opt);
         wasm.addCSourceFile("lib/vxtp/serial_dbg.c", wasm_opt);
 
@@ -484,7 +471,7 @@ pub fn build(b: *Builder) void {
         // -------- check --------
 
         {
-            const check = b.addSystemCommand(&[_][]const u8{"cppcheck", "--enable=style", "lib/vxt"});
+            const check = b.addSystemCommand(&[_][]const u8{"cppcheck", "--enable=style", "-I", "lib/vxt/include", "lib/vxt"});
             check.step.dependOn(&tests.step);
             b.step("check", "Run CppCheck on libvxt").dependOn(&check.step);
         }

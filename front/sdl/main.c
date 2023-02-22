@@ -232,7 +232,7 @@ static int emu_loop(void *ptr) {
 					printf("step error: %s", vxt_error_str(res.err));
 			}
 			num_cycles += res.cycles;
-			//frequency = vxtp_ppi_turbo_enabled(ppi) ? (cpu_frequency * 3.0) : cpu_frequency;
+			//frequency = vxtu_ppi_turbo_enabled(ppi) ? (cpu_frequency * 3.0) : cpu_frequency;
 		);
 
 		for (;;) {
@@ -302,7 +302,7 @@ static void audio_callback(void *udata, uint8_t *stream, int len) {
 	
 	SYNC(
 		for (int i = 0; i < len; i++) {
-			vxt_word sample = vxtp_ppi_generate_sample(audio_sources[0], audio_spec.freq);
+			vxt_word sample = vxtu_ppi_generate_sample(audio_sources[0], audio_spec.freq);
 			if (audio_sources[1])
 				sample += vxtp_adlib_generate_sample(audio_sources[1], audio_spec.freq);
 
@@ -332,12 +332,12 @@ static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 	return (int)fwrite(buffer, 1, (size_t)size, (FILE*)fp);
 }
 
-static int seek_file(vxt_system *s, void *fp, int offset, enum vxtp_disk_seek whence) {
+static int seek_file(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence) {
 	(void)s;
 	switch (whence) {
-		case VXTP_SEEK_START: return (int)fseek((FILE*)fp, (long)offset, SEEK_SET);
-		case VXTP_SEEK_CURRENT: return (int)fseek((FILE*)fp, (long)offset, SEEK_CUR);
-		case VXTP_SEEK_END: return (int)fseek((FILE*)fp, (long)offset, SEEK_END);
+		case VXTU_SEEK_START: return (int)fseek((FILE*)fp, (long)offset, SEEK_SET);
+		case VXTU_SEEK_CURRENT: return (int)fseek((FILE*)fp, (long)offset, SEEK_CUR);
+		case VXTU_SEEK_END: return (int)fseek((FILE*)fp, (long)offset, SEEK_END);
 		default: return -1;
 	}
 }
@@ -553,15 +553,15 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *rom_ext = load_bios(args.extension, 0xE0000);
 	if (!rom_ext) return -1;
 
-	struct vxtp_disk_interface interface = {
+	struct vxtu_disk_interface interface = {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
 
-	struct vxt_pirepheral *disk = vxtp_disk_create(&realloc, &interface);
+	struct vxt_pirepheral *disk = vxtu_disk_create(&realloc, &interface);
 	struct vxt_pirepheral *fdc = vxtp_fdc_create(&realloc, &ustimer, 0x3F0, 6);
-	struct vxt_pirepheral *pit = vxtp_pit_create(&realloc, &ustimer);
-	struct vxt_pirepheral *ppi = vxtp_ppi_create(&realloc, pit);
-	struct vxt_pirepheral *mouse = vxtp_mouse_create(&realloc, 0x3F8, 4); // COM1
+	struct vxt_pirepheral *pit = vxtu_pit_create(&realloc, &ustimer);
+	struct vxt_pirepheral *ppi = vxtu_ppi_create(&realloc, pit);
+	struct vxt_pirepheral *mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
 	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&realloc);
 	struct vxt_pirepheral *joystick = NULL;
 
@@ -575,16 +575,16 @@ int ENTRY(int argc, char *argv[]) {
 		video.snapshot = &vxtp_vga_snapshot;
 		video.render = &vxtp_vga_render;
 
-		vxtp_ppi_set_xt_switches(ppi, 0);
+		vxtu_ppi_set_xt_switches(ppi, 0);
 		struct vxt_pirepheral *rom = load_bios(args.vga, 0xC0000); // Tested with ET4000 VGA BIOS.
 		if (!rom) return -1;
 
 		devices[i++] = rom;
 	} else {
-		video.device = vxtp_cga_create(&realloc, &ustimer);
-		video.border_color = &vxtp_cga_border_color;
-		video.snapshot = &vxtp_cga_snapshot;
-		video.render = &vxtp_cga_render;
+		video.device = vxtu_cga_create(&realloc, &ustimer);
+		video.border_color = &vxtu_cga_border_color;
+		video.snapshot = &vxtu_cga_snapshot;
+		video.render = &vxtu_cga_render;
 	}
 
 	if (num_sticks)
@@ -606,8 +606,8 @@ int ENTRY(int argc, char *argv[]) {
 		devices[i++] = vxtp_rifs_create(&realloc, 0x178, root, ro);
 	}
 
-	devices[i++] = vxtp_pic_create(&realloc);
-	devices[i++] = vxtp_dma_create(&realloc);
+	devices[i++] = vxtu_pic_create(&realloc);
+	devices[i++] = vxtu_dma_create(&realloc);
 	devices[i++] = vxtp_rtc_create(&realloc);
 	devices[i++] = vxtp_ctrl_create(&realloc, &emu_control, NULL);
 	devices[i++] = pit;
@@ -675,17 +675,17 @@ int ENTRY(int argc, char *argv[]) {
 		strncpy(floppy_image_path, args.floppy, sizeof(floppy_image_path));
 
 		FILE *fp = fopen(floppy_image_path, "rb+");
-		vxt_error (*mnt)(struct vxt_pirepheral*,int,void*) = args.fdc ? vxtp_fdc_mount : vxtp_disk_mount;
+		vxt_error (*mnt)(struct vxt_pirepheral*,int,void*) = args.fdc ? vxtp_fdc_mount : vxtu_disk_mount;
 		if (fp && (mnt(args.fdc ? fdc : disk, 0, fp) == VXT_NO_ERROR))
 			printf("Floppy image: %s\n", floppy_image_path);
 	}
 
 	if (args.harddrive && !args.fdc) {
 		FILE *fp = fopen(args.harddrive, "rb+");
-		if (fp && (vxtp_disk_mount(disk, 128, fp) == VXT_NO_ERROR)) {
+		if (fp && (vxtu_disk_mount(disk, 128, fp) == VXT_NO_ERROR)) {
 			printf("Harddrive image: %s\n", args.harddrive);
 			if (args.hdboot || !args.floppy)
-				vxtp_disk_set_boot_drive(disk, 128);
+				vxtu_disk_set_boot_drive(disk, 128);
 		}
 	}
 
@@ -753,12 +753,12 @@ int ENTRY(int argc, char *argv[]) {
 				case SDL_MOUSEMOTION:
 					if (mouse && SDL_GetRelativeMouseMode() && !has_open_windows) {
 						Uint32 state = SDL_GetMouseState(NULL, NULL);
-						struct vxtp_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
+						struct vxtu_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
 						if (state & SDL_BUTTON_LMASK)
-							ev.buttons |= VXTP_MOUSE_LEFT;
+							ev.buttons |= VXTU_MOUSE_LEFT;
 						if (state & SDL_BUTTON_RMASK)
-							ev.buttons |= VXTP_MOUSE_RIGHT;
-						SYNC(vxtp_mouse_push_event(mouse, &ev));
+							ev.buttons |= VXTU_MOUSE_RIGHT;
+						SYNC(vxtu_mouse_push_event(mouse, &ev));
 					}
 					break;
 				case SDL_MOUSEBUTTONDOWN:
@@ -769,12 +769,12 @@ int ENTRY(int argc, char *argv[]) {
 						}
 						SDL_SetRelativeMouseMode(true);
 
-						struct vxtp_mouse_event ev = {0};
+						struct vxtu_mouse_event ev = {0};
 						if (e.button.button == SDL_BUTTON_LEFT)
-							ev.buttons |= VXTP_MOUSE_LEFT;
+							ev.buttons |= VXTU_MOUSE_LEFT;
 						if (e.button.button == SDL_BUTTON_RIGHT)
-							ev.buttons |= VXTP_MOUSE_RIGHT;
-						SYNC(vxtp_mouse_push_event(mouse, &ev));
+							ev.buttons |= VXTU_MOUSE_RIGHT;
+						SYNC(vxtu_mouse_push_event(mouse, &ev));
 					}
 					break;
 				case SDL_DROPFILE:
@@ -800,7 +800,7 @@ int ENTRY(int argc, char *argv[]) {
 				}
 				case SDL_KEYDOWN:
 					if (!has_open_windows && (e.key.keysym.sym != SDLK_F11) && (e.key.keysym.sym != SDLK_F12))
-						SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
+						SYNC(vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
 					if (e.key.keysym.sym == SDLK_F11) {
@@ -826,7 +826,7 @@ int ENTRY(int argc, char *argv[]) {
 					}
 
 					if (!has_open_windows)
-						SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, false));
+						SYNC(vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTU_KEY_UP_MASK, false));
 					break;
 			}
 		}
@@ -860,7 +860,7 @@ int ENTRY(int argc, char *argv[]) {
 			error_window(ctx);
 
 			if (eject_window(ctx, (*floppy_image_path != 0) ? floppy_image_path: NULL)) {
-				SYNC(vxtp_disk_unmount(disk, 0));
+				SYNC(vxtu_disk_unmount(disk, 0));
 				*floppy_image_path = 0;
 			}
 
@@ -870,7 +870,7 @@ int ENTRY(int argc, char *argv[]) {
 					open_error_window(ctx, "Could not open floppy image file!");
 				} else {
 					vxt_error err = VXT_NO_ERROR;
-					SYNC(err = vxtp_disk_mount(disk, 0, fp));
+					SYNC(err = vxtu_disk_mount(disk, 0, fp));
 					if (err != VXT_NO_ERROR) {
 						open_error_window(ctx, "Could not mount floppy image file!");
 						fclose(fp);

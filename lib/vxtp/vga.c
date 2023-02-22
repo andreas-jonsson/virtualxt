@@ -62,7 +62,24 @@
         case 3: (value) ^= (latch); break;          \
 	}                                               \
 
-extern vxt_dword cga_palette[]; // From cga.c
+vxt_dword cga_palette[] = {
+	0x000000,
+	0x0000AA,
+	0x00AA00,
+	0x00AAAA,
+	0xAA0000,
+	0xAA00AA,
+	0xAA5500,
+	0xAAAAAA,
+	0x555555,
+	0x5555FF,
+	0x55FF55,
+	0x55FFFF,
+	0xFF5555,
+	0xFF55FF,
+	0xFFFF55,
+	0xFFFFFF,
+};
 
 struct snapshot {
     vxt_byte mem[MEMORY_SIZE];

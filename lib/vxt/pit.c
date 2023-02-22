@@ -20,11 +20,11 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
+#include <vxt/vxtu.h>
 
 // Single step the counter for maximum BIOS compatibility.
-#ifndef VXTP_PIT_COUNTER_STEP
-    #define VXTP_PIT_COUNTER_STEP 1
+#ifndef VXTU_PIT_COUNTER_STEP
+    #define VXTU_PIT_COUNTER_STEP 1
 #endif
 
 #define TOGGLE_HIGH(ch) ( ((ch)->mode == MODE_TOGGLE) && (ch)->toggle )
@@ -144,7 +144,7 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
 		}
 	}
 
-	const INT64 step = VXTP_PIT_COUNTER_STEP;
+	const INT64 step = VXTU_PIT_COUNTER_STEP;
 	const INT64 next = 1000000ll / (1193182ll / step);
 
 	if (ticks >= (c->device_ticks + next)) {
@@ -163,7 +163,7 @@ static const char *name(struct vxt_pirepheral *p) {
     return "PIT (Intel 8253)";
 }
 
-struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, INT64 (*ustics)(void)) VXT_PIREPHERAL_CREATE(alloc, pit, {
+struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc, INT64 (*ustics)(void)) VXT_PIREPHERAL_CREATE(alloc, pit, {
     DEVICE->get_ticks = ustics;
 
     PIREPHERAL->install = &install;
@@ -175,7 +175,7 @@ struct vxt_pirepheral *vxtp_pit_create(vxt_allocator *alloc, INT64 (*ustics)(voi
     PIREPHERAL->io.out = &out;
 })
 
-double vxtp_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
+double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
     if ((channel > 2) || (channel < 0))
         return 0.0;
     return (VXT_GET_DEVICE(pit, p))->channels[channel].frequency;

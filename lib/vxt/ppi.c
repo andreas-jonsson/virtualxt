@@ -20,10 +20,10 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
+#include <vxt/vxtu.h>
 
-#ifndef VXTP_PPI_TONE_VOLUME
-    #define VXTP_PPI_TONE_VOLUME 8192
+#ifndef VXTU_PPI_TONE_VOLUME
+    #define VXTU_PPI_TONE_VOLUME 8192
 #endif
 
 #define MAX_EVENTS 16
@@ -49,7 +49,7 @@ VXT_PIREPHERAL(ppi, {
     bool turbo_enabled;
 
     int queue_size;
-    enum vxtp_scancode queue[MAX_EVENTS];
+    enum vxtu_scancode queue[MAX_EVENTS];
 
     INT64 spk_sample_index;
 	bool spk_enabled;    
@@ -88,7 +88,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             c->spk_sample_index = 0;
 
             if (c->speaker_callback)
-                c->speaker_callback(p, spk_enable ? vxtp_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
+                c->speaker_callback(p, spk_enable ? vxtu_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
         }
 
         bool turbo_enabled = (data & 4) != 0;
@@ -163,7 +163,7 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "PPI (Intel 8255)";
 }
 
-struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit) VXT_PIREPHERAL_CREATE(alloc, ppi, {
+struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit) VXT_PIREPHERAL_CREATE(alloc, ppi, {
     // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
     //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
     DEVICE->xt_switches = 0x2; // CGA video bits.
@@ -179,7 +179,7 @@ struct vxt_pirepheral *vxtp_ppi_create(vxt_allocator *alloc, struct vxt_pirepher
     PIREPHERAL->io.out = &out;
 })
 
-bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool force) {
+bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force) {
     VXT_DEC_DEVICE(c, ppi, p);
     if (c->queue_size < MAX_EVENTS) {
         c->queue[c->queue_size++] = key;
@@ -190,20 +190,20 @@ bool vxtp_ppi_key_event(struct vxt_pirepheral *p, enum vxtp_scancode key, bool f
     return false;
 }
 
-bool vxtp_ppi_turbo_enabled(struct vxt_pirepheral *p) {
+bool vxtu_ppi_turbo_enabled(struct vxt_pirepheral *p) {
     return (VXT_GET_DEVICE(ppi, p))->turbo_enabled;
 }
 
-void vxtp_ppi_set_speaker_callback(struct vxt_pirepheral *p, void (*f)(struct vxt_pirepheral*,double,void*), void *userdata) {
+void vxtu_ppi_set_speaker_callback(struct vxt_pirepheral *p, void (*f)(struct vxt_pirepheral*,double,void*), void *userdata) {
     VXT_DEC_DEVICE(c, ppi, p);
     c->speaker_callback = f;
     c->speaker_callback_data = userdata;
 }
 
-vxt_int16 vxtp_ppi_generate_sample(struct vxt_pirepheral *p, int freq) {
+vxt_int16 vxtu_ppi_generate_sample(struct vxt_pirepheral *p, int freq) {
     VXT_DEC_DEVICE(c, ppi, p);
 
-    double tone_hz = vxtp_pit_get_frequency(c->pit, 2);
+    double tone_hz = vxtu_pit_get_frequency(c->pit, 2);
     if (!c->spk_enabled || (tone_hz <= 0.0))
         return 0;
 
@@ -212,9 +212,9 @@ vxt_int16 vxtp_ppi_generate_sample(struct vxt_pirepheral *p, int freq) {
 
     if (!half_square_wave_period)
         return 0;
-    return ((++c->spk_sample_index / half_square_wave_period) % 2) ? VXTP_PPI_TONE_VOLUME : -VXTP_PPI_TONE_VOLUME;
+    return ((++c->spk_sample_index / half_square_wave_period) % 2) ? VXTU_PPI_TONE_VOLUME : -VXTU_PPI_TONE_VOLUME;
 }
 
-void vxtp_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data) {
+void vxtu_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data) {
     (VXT_GET_DEVICE(ppi, p))->xt_switches = data;
 }
