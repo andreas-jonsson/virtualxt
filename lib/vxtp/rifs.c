@@ -260,7 +260,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
                 break;
             }
 
-            assert((ln + 2) <= (BUFFER_SIZE - sizeof(struct rifs_packet)));
+            assert((ln + 2) <= (vxt_word)(BUFFER_SIZE - sizeof(struct rifs_packet)));
             size_t res = fread(pk->data + 2, 1, (size_t)ln, fp);
             if ((res != (size_t)ln) && !feof(fp)) {
                 pk->cmd = 0x1E; // Read fault

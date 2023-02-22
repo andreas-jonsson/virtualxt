@@ -32,13 +32,21 @@ jobs:
           sudo apt-get install kcov cppcheck libpcap-dev
           curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
           curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
+          curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
           echo "${GITHUB_WORKSPACE}/zig-linux-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/premake" >> $GITHUB_PATH
 
           curl -L -o sdl.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-${SDL2_VERSION}.tar.gz && tar -xf sdl.tar.gz
           cd SDL2-${SDL2_VERSION}
           ./configure --prefix="${GITHUB_WORKSPACE}/sdl_bin"
           make && make install
+
+      - name: Premake
+        run: |
+          premake5 gmake
+          make && make clean
+          rm -r premake
 
       - name: Test & Check
         run: zig build check
