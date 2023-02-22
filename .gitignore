@@ -57,6 +57,7 @@ zig-cache
 zig-out
 kcov-out
 build
+premake
 docs
 gh-pages
 test
