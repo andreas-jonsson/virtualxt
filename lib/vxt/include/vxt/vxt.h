@@ -147,9 +147,9 @@ enum {
 #define VXT_DEFAULT_FREQUENCY 4772726
 
 #define VXT_PIREPHERAL_SIZE(type) sizeof(struct _ ## type)
-#define VXT_GET_DEVICE_DATA(type, pir) ((struct _ ## type*)(pir))->d
-#define VXT_GET_SYSTEM(type, pir) ((struct _ ## type*)(pir))->p.s
-#define VXT_GET_DEVICE(type, pir) &((struct _ ## type*)(pir))->u
+#define VXT_GET_DEVICE_DATA(type, pir) ((struct _ ## type*)(void*)(pir))->d
+#define VXT_GET_SYSTEM(type, pir) ((struct _ ## type*)(void*)(pir))->p.s
+#define VXT_GET_DEVICE(type, pir) &((struct _ ## type*)(void*)(pir))->u
 #define VXT_DEC_DEVICE(var, type, pir) struct type* const var = VXT_GET_DEVICE(type, pir)
 
 #define VXT_PIREPHERAL_CREATE(alloc, type, body) {              \
