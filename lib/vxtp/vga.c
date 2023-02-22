@@ -62,7 +62,7 @@
         case 3: (value) ^= (latch); break;          \
 	}                                               \
 
-vxt_dword cga_palette[] = {
+static const vxt_dword cga_palette[] = {
 	0x000000,
 	0x0000AA,
 	0x00AA00,

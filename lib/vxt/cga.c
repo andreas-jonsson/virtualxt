@@ -31,7 +31,7 @@
 #define INT64 long long
 #define MEMORY(p, i) ((p)[(i) & (MEMORY_SIZE - 1)])
 
-vxt_dword cga_palette[] = {
+static const vxt_dword cga_palette[] = {
 	0x000000,
 	0x0000AA,
 	0x00AA00,
