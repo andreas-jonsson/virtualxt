@@ -44,7 +44,7 @@ jobs:
 
       - name: Premake
         run: |
-          premake5 gmake
+          premake5 --sdl-path="${GITHUB_WORKSPACE}/sdl_bin" gmake
           make && make clean
           rm -r premake
 

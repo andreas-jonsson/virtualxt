@@ -1,3 +1,9 @@
+newoption {
+    trigger = "sdl-path",
+    value = "PATH",
+    description = "Path to SDL2 headers and libs"
+}
+
 workspace "virtualxt"
     configurations { "Release", "Debug" }
     location "premake"
@@ -32,7 +38,7 @@ workspace "virtualxt"
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
         includedirs { "lib/vxt/include" }
 
-        filter { "action:gmake" }
+        filter "action:gmake"
             buildoptions { "-nostdinc", "-Wno-unused-function", "-Wno-unused-variable" }
 
         filter "configurations:Debug"
@@ -49,7 +55,7 @@ workspace "virtualxt"
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
         includedirs { "ib/vxtp", "lib/vxt/include", "lib/nuked-opl3"  }
 
-        filter { "action:gmake" }
+        filter "action:gmake"
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
 
         filter "configurations:Debug"
@@ -67,10 +73,11 @@ workspace "virtualxt"
 
         files { "front/sdl/*.h", "front/sdl/*.c" }
 
-        links { "SDL2" }
-
-        links { "libvxt", "libvxtp", "inih", "microui", "nuked-opl3" }
+        links { "SDL2", "libvxt", "libvxtp", "inih", "microui", "nuked-opl3" }
         includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src" }
+
+        filter "options:sdl-path"
+            libdirs { _OPTIONS["sdl-path"] }
 
         filter "configurations:Debug"
             defines "DEBUG"
@@ -80,5 +87,5 @@ workspace "virtualxt"
             defines "NDEBUG"
             optimize "On"
 
-        filter { "action:gmake" }
+        filter "action:gmake"
             buildoptions { "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-maybe-uninitialized", "-Wno-stringop-truncation" }
