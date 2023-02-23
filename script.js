@@ -20,7 +20,7 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-const defaultTargetFreq = 4.77;
+const defaultTargetFreq = 4.772726;
 const defaultBin = "virtualxt.wasm";
 const defaultDiskImage = "freedos_web_hd.img";
 const defaultCanvas = "virtualxt-canvas";
@@ -556,8 +556,7 @@ function startEmulator(binary) {
                     cycles = cycleCap;
                 }
 
-                C.wasm_step_emulation(cycles);
-                stepper.c += cycles;
+                stepper.c += C.wasm_step_emulation(cycles);
                 stepper.t = t;
             }, 1);
 

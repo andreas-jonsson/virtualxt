@@ -14,5 +14,6 @@ var structvxt__pirepheral =
     [ "read", "structvxt__pirepheral.html#a981d2198ed239422ee969bd67a6f9c4d", null ],
     [ "reset", "structvxt__pirepheral.html#a52f27f6b29b5f9d5ca9d9d42149df550", null ],
     [ "step", "structvxt__pirepheral.html#ab4911de901ec92ab353f1acc294c7d8d", null ],
+    [ "timer", "structvxt__pirepheral.html#ace98d6613827ff1471168db336ef7cb2", null ],
     [ "write", "structvxt__pirepheral.html#ab73bc582e8913748e469a8b8605d8a02", null ]
 ];

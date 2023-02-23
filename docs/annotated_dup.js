@@ -4,5 +4,7 @@ var annotated_dup =
     [ "vxt_registers", "structvxt__registers.html", "structvxt__registers" ],
     [ "vxt_step", "structvxt__step.html", "structvxt__step" ],
     [ "vxt_validator", "structvxt__validator.html", "structvxt__validator" ],
-    [ "vxtu_debugger_interface", "structvxtu__debugger__interface.html", "structvxtu__debugger__interface" ]
+    [ "vxtu_debugger_interface", "structvxtu__debugger__interface.html", "structvxtu__debugger__interface" ],
+    [ "vxtu_disk_interface", "structvxtu__disk__interface.html", "structvxtu__disk__interface" ],
+    [ "vxtu_mouse_event", "structvxtu__mouse__event.html", "structvxtu__mouse__event" ]
 ];
