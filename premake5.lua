@@ -26,6 +26,22 @@ newoption {
     }
 }
 
+newaction {
+    trigger = "check",
+    description = "Run CppCheck on libvxt",
+    execute = function ()
+        return os.execute("cppcheck --enable=style -I lib/vxt/include lib/vxt")
+    end
+}
+
+newaction {
+    trigger = "doc",
+    description = "Generate libvxt API documentation",
+    execute = function ()
+        return os.execute("cd lib/vxt/include && doxygen .doxygen")
+    end
+}
+
 workspace "virtualxt"
     configurations { "release", "debug" }
     location "premake"
