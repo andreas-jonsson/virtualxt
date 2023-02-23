@@ -39,8 +39,7 @@ Browser version is avalible [here](https://app.virtualxt.org).
 
 ## Build
 
-The emulator is written in C11 and should be compiled with the [Zig](https://ziglang.org/) toolchain.
-You also need to have [SDL2](https://www.libsdl.org/) installed on your system or pass `-Dsdl_path=<path to lib>` to the compiler.
+The emulator is written in C11 and should be compiled with the [Zig](https://ziglang.org/) 0.10.x toolchain. Alternativly you can generate makefiles with the included [Premake](https://premake.github.io/) script for use with your systems C compiler. You also need to have [SDL2](https://www.libsdl.org/) installed on your system or pass `-Dsdl_path=<path to lib>` to the compiler.
 
 ```
 git clone https://github.com/andreas-jonsson/virtualxt.git
