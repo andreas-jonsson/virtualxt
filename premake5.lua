@@ -77,7 +77,8 @@ workspace "virtualxt"
         includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src" }
 
         filter "options:sdl-path"
-            libdirs { _OPTIONS["sdl-path"] }
+            includedirs { _OPTIONS["sdl-path"] .. "/include" }
+            libdirs { _OPTIONS["sdl-path"] .. "/lib" }
 
         filter "configurations:Debug"
             defines "DEBUG"
