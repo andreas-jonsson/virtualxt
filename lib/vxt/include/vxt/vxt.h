@@ -69,8 +69,8 @@ extern "C" {
 
     #ifndef bool
         typedef _Bool bool;
-        static const bool true = 1;
-        static const bool false = 0;
+        #define true ((bool)1)
+        #define false ((bool)0)
     #endif
 
     #ifndef size_t
