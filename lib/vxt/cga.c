@@ -48,6 +48,24 @@ static const vxt_dword cga_palette[] = {
 	0xFF55FF,
 	0xFFFF55,
 	0xFFFFFF,
+
+    // This is the CGA (black/cyan/red/white) palette.
+    0x000000,
+    0x000000,
+    0x00AAAA,
+    0x000000,
+    0xAA0000,
+    0x000000,
+    0xAAAAAA,
+    0x000000,
+    0x000000,
+    0x000000,
+    0x00FFFF,
+    0x000000,
+    0xFF0000,
+    0x000000,
+    0xFFFFFF,
+    0x000000
 };
 
 struct snapshot {
@@ -384,9 +402,10 @@ int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             }
             return f(640, 200, snap->rgba_surface, userdata);
         } else {
-            int color_index = (snap->color_ctrl_reg >> 5) & 1;
-            int bg_color_index = snap->color_ctrl_reg & 0xF;
             int intensity = ((snap->color_ctrl_reg >> 4) & 1) << 3;
+            int pal5 = snap->mode_ctrl_reg & 4;
+            int color_index = pal5 ? 16 : ((snap->color_ctrl_reg >> 5) & 1);
+            int bg_color_index = snap->color_ctrl_reg & 0xF;
 
             for (int y = 0; y < 200; y++) {
                 for (int x = 0; x < 320; x++) {
