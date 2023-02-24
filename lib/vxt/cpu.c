@@ -32,7 +32,21 @@
    #include "i8088.inl"
 #endif
 
-static void cpu_exec(CONSTSP(cpu) p) {
+static void prefetch(CONSTSP(cpu) p, int num) {
+   int i = 0;
+   for (; i < num; i++) {
+      if (p->inst_queue_count >= 6)
+         return;
+
+      vxt_pointer ptr = VXT_POINTER(p->regs.cs, p->regs.ip + p->inst_queue_count);
+      p->inst_queue_debug[p->inst_queue_count] = ptr;
+      p->inst_queue[p->inst_queue_count++] = vxt_system_read_byte(p->s, ptr);
+   }
+   //if (i > 0)
+   //   VXT_LOG("Prefetch %d bytes... %d", i, num);
+}
+
+static void do_exec(CONSTSP(cpu) p) {
    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
    ENSURE(inst->opcode == p->opcode);
 
@@ -52,6 +66,14 @@ static void cpu_exec(CONSTSP(cpu) p) {
       read_modregrm(p);
    inst->func(p, inst);
    p->cycles += p->ea_cycles;
+
+   if (p->inst_queue_dirty) {
+      p->inst_queue_count = 0;
+   } else {
+      #ifndef VXT_NO_PREFETCH
+         prefetch(p, (p->cycles / 2) - p->bus_transfers); // TODO: Round up or down?
+      #endif
+   }
 }
 
 int cpu_step(CONSTSP(cpu) p) {
@@ -59,7 +81,7 @@ int cpu_step(CONSTSP(cpu) p) {
    prep_exec(p);
    if (!p->halt) {
       read_opcode(p);
-      cpu_exec(p);
+      do_exec(p);
    } else {
       p->cycles++;
    }
@@ -82,7 +104,30 @@ void cpu_reset(CONSTSP(cpu) p) {
    #endif
    p->regs.cs = 0xFFFF;
    p->regs.debug = false;
+   p->inst_queue_count = 0;
    cpu_reset_cycle_count(p);
+}
+
+vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr) {
+    vxt_byte data = vxt_system_read_byte(p->s, addr);
+    p->bus_transfers++;
+    VALIDATOR_READ(p, addr, data);
+    return data;
+}
+
+void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data) {
+    vxt_system_write_byte(p->s, addr, data);
+    p->bus_transfers++;
+    VALIDATOR_WRITE(p, addr, data);
+}
+
+vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr) {
+    return WORD(cpu_read_byte(p, addr + 1), cpu_read_byte(p, addr));
+}
+
+void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data) {
+    vxt_system_write_byte(p->s, addr, LBYTE(data));
+    vxt_system_write_byte(p->s, addr + 1, HBYTE(data));
 }
 
 TEST(register_layout,

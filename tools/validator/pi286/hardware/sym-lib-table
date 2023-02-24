@@ -1,3 +1,0 @@
-(sym_lib_table
-  (lib (name "80C286")(type "KiCad")(uri "${KIPRJMOD}/80C286.kicad_sym")(options "")(descr ""))
-)

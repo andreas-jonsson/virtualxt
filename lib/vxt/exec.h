@@ -52,8 +52,26 @@ static vxt_word signe_extend16(vxt_byte v) {
 }
 
 static vxt_byte read_opcode8(CONSTSP(cpu) p) {
+   vxt_byte data;
    vxt_word ip = p->regs.ip;
-   vxt_byte data = vxt_system_read_byte(p->s, VXT_POINTER(p->regs.cs, p->regs.ip++));
+   vxt_pointer ptr = VXT_POINTER(p->regs.cs, ip);
+
+   if (p->inst_queue_count > 0) {
+      data = *p->inst_queue;
+      memmove(p->inst_queue, &p->inst_queue[1], --p->inst_queue_count);
+
+      #if defined(VXT_DEBUG_PREFETCH) && !defined(VXT_NO_PREFETCH)
+         if (*p->inst_queue_debug != ptr) {
+            VXT_LOG("FATAL: Broken prefetch queue detected! Expected 0x%X but got 0x%X.", *p->inst_queue_debug, ptr);
+            p->regs.debug = true;
+         }
+         memmove(p->inst_queue_debug, &p->inst_queue_debug[1], p->inst_queue_count * sizeof(vxt_pointer));
+      #endif
+   } else {
+      data = cpu_read_byte(p, ptr);
+   }
+   p->regs.ip++;
+
    TRACE(p, ip, data);
    return data;
 }
@@ -279,6 +297,7 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
          return;
 		case 1:
          r->cs = data;
+         p->inst_queue_dirty = true;
          return;
 		case 2:
 			r->ss = data;
@@ -295,7 +314,7 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
    static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                  \
       if (p->mode.mod < 3) {                                         \
          vxt_pointer ea = get_effective_address(p);                  \
-         return vxt_system_read_ ## a (p->s, ea);                    \
+         return cpu_read_ ## a (p, ea);                              \
       } else {                                                       \
          return reg_read ## b (&p->regs, p->mode.rm);                \
       }                                                              \
@@ -304,7 +323,7 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
    static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {      \
       if (p->mode.mod < 3) {                                         \
          vxt_pointer ea = get_effective_address(p);                  \
-         vxt_system_write_ ## a (p->s, ea, data);                    \
+         cpu_write_ ## a (p, ea, data);                              \
       } else {                                                       \
          reg_write ## b (&p->regs, p->mode.rm, data);                \
       }                                                              \
@@ -322,11 +341,11 @@ WIDE(RM_FUNC)
 
 static void push(CONSTSP(cpu) p, vxt_word data) {
    p->regs.sp -= 2;
-   vxt_system_write_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp), data);
+   cpu_write_word(p, VXT_POINTER(p->regs.ss, p->regs.sp), data);
 }
 
 static vxt_word pop(CONSTSP(cpu) p) {
-   vxt_word data = vxt_system_read_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp));
+   vxt_word data = cpu_read_word(p, VXT_POINTER(p->regs.ss, p->regs.sp));
    p->regs.sp += 2;
    return data;
 }
@@ -396,9 +415,10 @@ static void call_int(CONSTSP(cpu) p, int n) {
    push(p, r->cs);
    push(p, r->ip);
 
-   r->ip = vxt_system_read_word(p->s, (vxt_pointer)n * 4);
-   r->cs = vxt_system_read_word(p->s, (vxt_pointer)n * 4 + 2);
+   r->ip = cpu_read_word(p, (vxt_pointer)n * 4);
+   r->cs = cpu_read_word(p, (vxt_pointer)n * 4 + 2);
    r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
+   p->inst_queue_dirty = true;
 }
 
 static void divZero(CONSTSP(cpu) p) {
@@ -407,6 +427,9 @@ static void divZero(CONSTSP(cpu) p) {
 }
 
 static void prep_exec(CONSTSP(cpu) p) {
+   p->inst_queue_dirty = false;
+   p->bus_transfers = 0;
+
    if (p->trap)
       call_int(p, 1);
 
@@ -417,6 +440,12 @@ static void prep_exec(CONSTSP(cpu) p) {
          p->halt = false;
          call_int(p, n);
       }
+   }
+   
+   // We need to do a direct reset in case we do interrupt.
+   if (p->inst_queue_dirty) {
+      p->inst_queue_count = 0;
+      p->inst_queue_dirty = false;
    }
 
    p->seg = p->regs.ds;

@@ -297,16 +297,13 @@ void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vx
 vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
-    vxt_byte data = dev->io.read(dev, addr);
-    VALIDATOR_READ(&s->cpu, addr, data);
-    return data;
+    return dev->io.read(dev, addr);
 }
 
 void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
     dev->io.write(dev, addr, data);
-    VALIDATOR_WRITE(&s->cpu, addr, data);
 }
 
 vxt_word vxt_system_read_word(CONSTP(vxt_system) s, vxt_pointer addr) {
@@ -320,12 +317,14 @@ void vxt_system_write_word(CONSTP(vxt_system) s, vxt_pointer addr, vxt_word data
 
 vxt_byte system_in(CONSTP(vxt_system) s, vxt_word port) {
     CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
+    s->cpu.bus_transfers++;
     VALIDATOR_DISCARD(&s->cpu);
     return dev->io.in(dev, port);
 }
 
 void system_out(CONSTP(vxt_system) s, vxt_word port, vxt_byte data) {
     CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
+    s->cpu.bus_transfers++;
     VALIDATOR_DISCARD(&s->cpu);
     dev->io.out(dev, port, data);
 }
