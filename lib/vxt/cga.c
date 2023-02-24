@@ -389,13 +389,15 @@ int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
 
         return f(720, 350, snap->rgba_surface, userdata);
     } else if (snap->mode_ctrl_reg & 2) { // In CGA graphics mode?
+        int border_color = snap->color_ctrl_reg & 0xF;
+
         // In high-resolution mode?
         if (snap->mode_ctrl_reg & 0x10) {
             for (int y = 0; y < 200; y++) {
                 for (int x = 0; x < 640; x++) {
                     int addr = (y >> 1) * 80 + (y & 1) * 8192 + (x >> 3);
                     vxt_byte pixel = (MEMORY(snap->mem, CGA_BASE + addr) >> (7 - (x & 7))) & 1;
-                    vxt_dword color = cga_palette[pixel * 15];
+                    vxt_dword color = cga_palette[pixel * border_color];
                     int offset = (y * 640 + x) * 4;
                     blit32(snap->rgba_surface, offset, color);
                 }
@@ -405,7 +407,6 @@ int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             int intensity = ((snap->color_ctrl_reg >> 4) & 1) << 3;
             int pal5 = snap->mode_ctrl_reg & 4;
             int color_index = pal5 ? 16 : ((snap->color_ctrl_reg >> 5) & 1);
-            int bg_color_index = snap->color_ctrl_reg & 0xF;
 
             for (int y = 0; y < 200; y++) {
                 for (int x = 0; x < 320; x++) {
@@ -427,7 +428,7 @@ int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
                             break;
                     }
 
-                    vxt_dword color = cga_palette[pixel ? (pixel * 2 + color_index + intensity) : bg_color_index];
+                    vxt_dword color = cga_palette[pixel ? (pixel * 2 + color_index + intensity) : border_color];
                     blit32(snap->rgba_surface, (y * 320 + x) * 4, color);
                 }
             }
