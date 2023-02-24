@@ -60,9 +60,9 @@ static const vxt_dword cga_palette[] = {
     0x000000,
     0x000000,
     0x000000,
-    0x00FFFF,
+    0x55FFFF,
     0x000000,
-    0xFF0000,
+    0xFF5555,
     0x000000,
     0xFFFFFF,
     0x000000
