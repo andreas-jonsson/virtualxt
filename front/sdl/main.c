@@ -49,7 +49,7 @@
 #include "keys.h"
 #include "docopt.h"
 
-#define MIN_CLOCKS_PER_STEP 100
+#define MIN_CLOCKS_PER_STEP 1
 #define MAX_PENALTY_USEC 1000
 
 struct video_adapter {
