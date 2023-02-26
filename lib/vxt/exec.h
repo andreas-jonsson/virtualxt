@@ -31,6 +31,8 @@
 #define TRACE(p, ip, data) { if ((p)->tracer) (p)->tracer((p)->s, VXT_POINTER((p)->regs.cs, (ip)), (data)); }
 #define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq((p)->pic, (n)); }
 #define INST(n) const struct instruction * const n
+#define MOD_TARGET_MEM(mode) ((mode).mod < 3)
+#define ADD_CYCLE_MOD_MEM(p, n) { if (MOD_TARGET_MEM((p->mode))) (p)->cycles += (n); }
 
 struct instruction {
    vxt_byte opcode;
@@ -312,7 +314,7 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
 
 #define RM_FUNC(a, b)                                                \
    static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                  \
-      if (p->mode.mod < 3) {                                         \
+      if (MOD_TARGET_MEM(p->mode)) {                                 \
          vxt_pointer ea = get_effective_address(p);                  \
          return cpu_read_ ## a (p, ea);                              \
       } else {                                                       \
@@ -321,7 +323,7 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
    }                                                                 \
                                                                      \
    static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {      \
-      if (p->mode.mod < 3) {                                         \
+      if (MOD_TARGET_MEM(p->mode)) {                                 \
          vxt_pointer ea = get_effective_address(p);                  \
          cpu_write_ ## a (p, ea, data);                              \
       } else {                                                       \

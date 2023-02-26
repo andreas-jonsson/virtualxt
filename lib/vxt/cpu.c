@@ -65,7 +65,11 @@ static void do_exec(CONSTSP(cpu) p) {
    if (inst->modregrm)
       read_modregrm(p);
    inst->func(p, inst);
-   p->cycles += p->ea_cycles;
+   
+   p->cycles += inst->cycles;
+   #if !defined(VXT_CPU_V20) && !defined(VXT_CPU_286)
+      p->cycles += p->ea_cycles;
+   #endif
 
    if (p->inst_queue_dirty) {
       p->inst_queue_count = 0;
@@ -78,6 +82,7 @@ static void do_exec(CONSTSP(cpu) p) {
 
 int cpu_step(CONSTSP(cpu) p) {
    VALIDATOR_BEGIN(p, &p->regs);
+
    prep_exec(p);
    if (!p->halt) {
       read_opcode(p);
@@ -85,8 +90,11 @@ int cpu_step(CONSTSP(cpu) p) {
    } else {
       p->cycles++;
    }
+
    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
    VALIDATOR_END(p, inst->name, p->opcode, inst->modregrm, p->cycles, &p->regs);
+   
+   ENSURE(p->cycles > 0);
    return p->cycles;
 }
 

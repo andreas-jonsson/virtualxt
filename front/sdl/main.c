@@ -833,14 +833,14 @@ int ENTRY(int argc, char *argv[]) {
 
 		// Update titlebar.
 		Uint32 ticks = SDL_GetTicks();
-		if ((ticks - last_title_update) > 1000) {
+		if ((ticks - last_title_update) > 500) {
 			last_title_update = ticks;
 
 			char buffer[100];
 			double mhz;
 
 			SYNC(
-				mhz = (double)num_cycles / 1000000.0;
+				mhz = (double)num_cycles / 500000.0;
 				num_cycles = 0;
 			);
 

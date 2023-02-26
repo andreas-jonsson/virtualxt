@@ -23,7 +23,7 @@
 #include "common.h"
 #include "exec.h"
 
-#define REPEAT(name, op)                                       \
+#define REPEAT(name, cycle, op)                                \
    static void name (CONSTSP(cpu) p, INST(inst)) {             \
       UNUSED(inst);                                            \
       if (!p->repeat) {                                        \
@@ -33,37 +33,37 @@
       while (p->regs.cx) {                                     \
          op                                                    \
          p->regs.cx--;                                         \
-         p->cycles++;                                          \
+         p->cycles += cycle;                                   \
       }                                                        \
    }                                                           \
 
-REPEAT(movsb_A4, {
+REPEAT(movsb_A4, 17, {
    cpu_write_byte(p, VXT_POINTER(p->regs.es, p->regs.di), cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.si)));
    update_di_si(p, 1);
 })
-REPEAT(movsw_A5, {
+REPEAT(movsw_A5, 25, {
    cpu_write_word(p, VXT_POINTER(p->regs.es, p->regs.di), cpu_read_word(p, VXT_POINTER(p->seg, p->regs.si)));
    update_di_si(p, 2);
 })
-REPEAT(stosb_AA, {
+REPEAT(stosb_AA, 10, {
    cpu_write_byte(p, VXT_POINTER(p->regs.es, p->regs.di), p->regs.al);
    update_di(p, 1);
 })
-REPEAT(stosw_AB, {
+REPEAT(stosw_AB, 14, {
    cpu_write_word(p, VXT_POINTER(p->regs.es, p->regs.di), p->regs.ax);
    update_di(p, 2);
 })
-REPEAT(lodsb_AC, {
+REPEAT(lodsb_AC, 16, {
    p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.si));
    update_si(p, 1);
 })
-REPEAT(lodsw_AD, {
+REPEAT(lodsw_AD, 16, {
    p->regs.ax = cpu_read_word(p, VXT_POINTER(p->seg, p->regs.si));
    update_si(p, 2);
 })
 #undef REPEAT
 
-#define REPEAT(name, op)                                                         \
+#define REPEAT(name, cycle, op)                                                  \
    static void name (CONSTSP(cpu) p, INST(inst)) {                               \
       UNUSED(inst);                                                              \
       if (!p->repeat) {                                                          \
@@ -76,31 +76,31 @@ REPEAT(lodsw_AD, {
          if (((p->repeat == 0xF3) && !(p->regs.flags & VXT_ZERO)) ||             \
             ((p->repeat == 0xF2) && (p->regs.flags & VXT_ZERO)))                 \
          {                                                                       \
-            p->cycles += (p->repeat == 0xF2) ? 5 : 6;                            \
+            p->cycles += (p->repeat == 0xF2) ? 5 : 6; /* Is this correct? */     \
             break;                                                               \
          }                                                                       \
-         p->cycles++;                                                            \
+         p->cycles += cycle;                                                     \
       }                                                                          \
    }                                                                             \
 
-REPEAT(cmpsb_A6, {
+REPEAT(cmpsb_A6, 30, {
    vxt_byte a = cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.si));
    vxt_byte b = cpu_read_byte(p, VXT_POINTER(p->regs.es, p->regs.di));
    update_di_si(p, 1);
    flag_sub_sbb8(&p->regs, a, b, 0);
 })
-REPEAT(cmpsw_A7, {
+REPEAT(cmpsw_A7, 30, {
    vxt_word a = cpu_read_word(p, VXT_POINTER(p->seg, p->regs.si));
    vxt_word b = cpu_read_word(p, VXT_POINTER(p->regs.es, p->regs.di));
    update_di_si(p, 2);
    flag_sub_sbb16(&p->regs, a, b, 0);
 })
-REPEAT(scasb_AE, {
+REPEAT(scasb_AE, 15, {
    vxt_byte v = cpu_read_byte(p, VXT_POINTER(p->regs.es, p->regs.di));
    update_di(p, 1);
    flag_sub_sbb8(&p->regs, p->regs.al, v, 0);
 })
-REPEAT(scasw_AF, {
+REPEAT(scasw_AF, 19, {
    vxt_word v = cpu_read_word(p, VXT_POINTER(p->regs.es, p->regs.di));
    update_di(p, 2);
    flag_sub_sbb16(&p->regs, p->regs.ax, v, 0);
