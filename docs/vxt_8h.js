@@ -47,6 +47,10 @@ var vxt_8h =
     [ "vxt_system", "vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802", null ],
     [ "vxt_timer_id", "vxt_8h.html#a05691a5b6a191969b75e371ad5d5fd0d", null ],
     [ "vxt_word", "vxt_8h.html#a39274d1d2fc1ebd712fc567046f81d54", null ],
+    [ "vxt_cpu_type", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951", [
+      [ "VXT_CPU_8088", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951a517058a91eed3a471ef1d7b988f83814", null ],
+      [ "VXT_CPU_V20", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951aa3c356fdfd749ea2ef4b110bebbfb804", null ]
+    ] ],
     [ "vxt_error", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047", [
       [ "VXT_NO_ERROR", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a303639ce6216d5df97fd907ec6be0bef", null ],
       [ "VXT_INVALID_VERSION", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ae0b9ce2aef425ed0ed1e06daf943d9c2", null ],
@@ -70,7 +74,6 @@ var vxt_8h =
     [ "memcpy", "vxt_8h.html#a0a3e682eff8f0c6e8adc371f54cc9f3f", null ],
     [ "memmove", "vxt_8h.html#a04322b22ff8bcfdcdcbfe87690683545", null ],
     [ "memset", "vxt_8h.html#a68d2b40ef2213b9227a1ce3b81997ae5", null ],
-    [ "vxt_cpu_name", "vxt_8h.html#aa1f7499ed253653038c40e0aa4677d1a", null ],
     [ "vxt_error_str", "vxt_8h.html#af5e6ede3891397e3db35ec36e4f34bbc", null ],
     [ "vxt_lib_version", "vxt_8h.html#ab6abc8b12479c782ba3175b833671a4f", null ],
     [ "vxt_lib_version_major", "vxt_8h.html#a2807a497060414ebdb62af8018c69d0e", null ],
@@ -83,7 +86,7 @@ var vxt_8h =
     [ "vxt_set_breakpoint", "vxt_8h.html#a1adea5f870acb5ad4a0721229db066ce", null ],
     [ "vxt_set_logger", "vxt_8h.html#afc92432fb861f2208ef8a5bcfd18987f", null ],
     [ "vxt_system_allocator", "vxt_8h.html#a58cead00ea3b88fe95753cd6f002f6f4", null ],
-    [ "vxt_system_create", "vxt_8h.html#a285fb8242c2e8b32784672fc98cac61f", null ],
+    [ "vxt_system_create", "vxt_8h.html#a4bcc01d952ab4b8b71e819373c42711e", null ],
     [ "vxt_system_destroy", "vxt_8h.html#a28cb435dac218f9aab23c829fde46887", null ],
     [ "vxt_system_frequency", "vxt_8h.html#a0470a50f9b795cbd8c41ed03d85cc662", null ],
     [ "vxt_system_install_io", "vxt_8h.html#a31e6745f01c1e1cfa20247c76adfe734", null ],
