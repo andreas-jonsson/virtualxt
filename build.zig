@@ -444,7 +444,7 @@ pub fn build(b: *Builder) void {
         tests.defineCMacroRaw("VXT_CPU_286");
         tests.addIncludePath("test");
 
-        const lib_vxt = build_libvxt(b, mode, target, cpu286, true);
+        const lib_vxt = build_libvxt(b, mode, target, true, true);
         if (validator) {
             lib_vxt.linkSystemLibrary("gpiod");
             lib_vxt.defineCMacroRaw("PI8088");

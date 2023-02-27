@@ -50,7 +50,7 @@
         NULL                                                                                            \
     };                                                                                                  \
                                                                                                         \
-    CONSTP(vxt_system) s = vxt_system_create(TALLOC, VXT_DEFAULT_FREQUENCY, devices);                   \
+    CONSTP(vxt_system) s = vxt_system_create(TALLOC, VXT_CPU_V20, VXT_DEFAULT_FREQUENCY, devices);      \
     VALIDATOR;                                                                                          \
     TENSURE_NO_ERR(vxt_system_initialize(s));                                                           \
     vxt_system_reset(s);                                                                                \
