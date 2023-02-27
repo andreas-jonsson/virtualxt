@@ -36,9 +36,8 @@ static vxt_byte bitshift_8(CONSTSP(cpu) p, vxt_byte v, vxt_byte c) {
 	if (c == 0)
 		return v;
 
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+   if (p->cpu_type != VXT_CPU_8088)
 	   c &= 0x1F;
-   #endif
 
    vxt_byte o = v;
    vxt_byte s;
@@ -120,9 +119,8 @@ static vxt_word bitshift_16(CONSTSP(cpu) p, vxt_word v, vxt_byte c) {
 	if (c == 0)
 		return v;
 
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+   if (p->cpu_type != VXT_CPU_8088)
 	   c &= 0x1F;
-   #endif
 
    vxt_word o = v;
    vxt_word s;

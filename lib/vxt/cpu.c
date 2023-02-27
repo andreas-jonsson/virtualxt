@@ -24,13 +24,8 @@
 #include "cpu.h"
 #include "testing.h"
 
-#if defined(VXT_CPU_286)
-   #include "i286.inl"
-#elif defined(VXT_CPU_V20)
-   #include "v20.inl"
-#else
-   #include "i8088.inl"
-#endif
+// Chain v20.inl, i8088.inl, exec.inl for better editor support.
+#include "v20.inl"
 
 static void prefetch(CONSTSP(cpu) p, int num) {
    int i = 0;
@@ -47,7 +42,7 @@ static void prefetch(CONSTSP(cpu) p, int num) {
 }
 
 static void do_exec(CONSTSP(cpu) p) {
-   const CONSTSP(instruction) inst = &opcode_table[p->opcode];
+   const CONSTSP(instruction) inst = &p->opcode_table[p->opcode];
    ENSURE(inst->opcode == p->opcode);
 
    // TODO: Remove this debug code.
@@ -67,9 +62,8 @@ static void do_exec(CONSTSP(cpu) p) {
    inst->func(p, inst);
    
    p->cycles += inst->cycles;
-   #if !defined(VXT_CPU_V20) && !defined(VXT_CPU_286)
+   if (p->cpu_type == VXT_CPU_8088)
       p->cycles += p->ea_cycles;
-   #endif
 
    if (p->inst_queue_dirty) {
       p->inst_queue_count = 0;
@@ -78,6 +72,12 @@ static void do_exec(CONSTSP(cpu) p) {
          prefetch(p, (p->cycles / 2) - p->bus_transfers); // TODO: Round up or down?
       #endif
    }
+}
+
+void cpu_init(CONSTSP(cpu) p, vxt_system *s, enum vxt_cpu_type ty) {
+   p->s = s;
+   p->cpu_type = ty;
+   p->opcode_table = (ty == VXT_CPU_V20) ? opcode_table_v20 : opcode_table_8088;
 }
 
 int cpu_step(CONSTSP(cpu) p) {
@@ -91,7 +91,7 @@ int cpu_step(CONSTSP(cpu) p) {
       p->cycles++;
    }
 
-   const CONSTSP(instruction) inst = &opcode_table[p->opcode];
+   const CONSTSP(instruction) inst = &p->opcode_table[p->opcode];
    VALIDATOR_END(p, inst->name, p->opcode, inst->modregrm, p->cycles, &p->regs);
    
    ENSURE(p->cycles > 0);

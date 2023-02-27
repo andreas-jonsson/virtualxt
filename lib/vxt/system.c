@@ -67,16 +67,6 @@ const char *vxt_error_str(vxt_error err) {
     return "user error";
 }
 
-const char *vxt_cpu_name(void) {
-    #if defined(VXT_CPU_V20)
-        return "V20";
-    #elif defined(VXT_CPU_286)
-        return "i80286";
-    #else
-        return "i8088";
-    #endif
-}
-
 const char *vxt_lib_version(void) { return VXT_VERSION; }
 int vxt_lib_version_major(void) { return VXT_VERSION_MAJOR; }
 int vxt_lib_version_minor(void) { return VXT_VERSION_MINOR; }
@@ -90,13 +80,13 @@ void vxt_set_breakpoint(void (*f)(void)) {
     breakpoint = f;
 }
 
-vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struct vxt_pirepheral * const devs[]) {
+vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]) {
     vxt_system *s = (vxt_system*)alloc(NULL, sizeof(struct system));
     vxt_memclear(s, sizeof(struct system));
     s->alloc = alloc;
     s->frequency = frequency;
-    s->cpu.s = s;
-
+    cpu_init(&s->cpu, s, ty);
+    
     int i = 1;
     for (; devs && devs[i-1]; i++) {
         s->devices[i] = devs[i-1];

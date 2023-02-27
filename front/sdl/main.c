@@ -99,6 +99,7 @@ static const char key_map[256] = {
 Uint32 last_title_update = 0;
 int num_cycles = 0;
 double cpu_frequency = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
+enum vxt_cpu_type cpu_type = VXT_CPU_8088;
 
 SDL_atomic_t running = {1};
 SDL_mutex *emu_mutex = NULL;
@@ -474,6 +475,17 @@ int ENTRY(int argc, char *argv[]) {
 	if (args.debug)
 		printf("Internal debugger enabled!\n");
 
+	if (args.v20) {
+		cpu_type = VXT_CPU_V20;
+		#ifdef VXT_CPU_286
+			printf("CPU type: 286\n");
+		#else
+			printf("CPU type: V20\n");
+		#endif
+	} else {
+		printf("CPU type: 8088\n");
+	}
+
 	if (args.frequency)
 		cpu_frequency = strtod(args.frequency, NULL);
 	printf("CPU frequency: %.2f MHz\n", cpu_frequency);
@@ -638,7 +650,7 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i++] = dbg;
 	devices[i] = NULL;
 
-	vxt_system *vxt = vxt_system_create(&realloc, (int)(cpu_frequency * 1000000.0), devices);
+	vxt_system *vxt = vxt_system_create(&realloc, cpu_type, (int)(cpu_frequency * 1000000.0), devices);
 
 	if (args.trace) {
 		if (!(trace_op_output = fopen(args.trace, "wb"))) {
@@ -844,8 +856,17 @@ int ENTRY(int argc, char *argv[]) {
 				num_cycles = 0;
 			);
 
+			const char *name = "8088";
+			if (cpu_type == VXT_CPU_V20) {
+				#ifdef VXT_CPU_286
+					name = "286";
+				#else
+					name = "V20";
+				#endif
+			}
+			
 			if (ticks > 10000) {
-				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz", vxt_cpu_name(), mhz);
+				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz", name, mhz);
 			} else {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
 			}

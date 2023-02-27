@@ -129,6 +129,11 @@ typedef struct system vxt_system;
 
 typedef void *vxt_allocator(void*, size_t);
 
+enum vxt_cpu_type {
+    VXT_CPU_8088,
+    VXT_CPU_V20
+};
+
 enum {
     VXT_CARRY     = 0x001,
     VXT_PARITY    = 0x004,
@@ -292,12 +297,11 @@ extern void vxt_set_breakpoint(void (*f)(void));
 extern int vxt_lib_version_major(void);
 extern int vxt_lib_version_minor(void);
 extern int vxt_lib_version_patch(void);
-const char *vxt_cpu_name(void);
 
 extern const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
 extern enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
 
-extern vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struct vxt_pirepheral * const devs[]);
+extern vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]);
 extern vxt_error vxt_system_destroy(vxt_system *s);
 extern struct vxt_step vxt_system_step(vxt_system *s, int cycles);
 extern void vxt_system_reset(vxt_system *s);

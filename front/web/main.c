@@ -225,7 +225,7 @@ void initialize_emulator(void) {
 		NULL
 	};
 
-	sys = vxt_system_create(&ALLOCATOR, VXT_DEFAULT_FREQUENCY, devices);
+	sys = vxt_system_create(&ALLOCATOR, VXT_CPU_8088, VXT_DEFAULT_FREQUENCY, devices);
 	vxt_system_initialize(sys);
 	
 	LOG("Installed pirepherals:\n");

@@ -92,7 +92,7 @@ fn parse_file(name: []const u8) anyerror!void {
     }
 }
 
-fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, cpu286: bool, cpuV20: bool, testing: bool) *std.build.LibExeObjStep {
+fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, cpu286: bool, testing: bool) *std.build.LibExeObjStep {
     const libname = b.fmt("vxt.{s}.{s}", .{@tagName(target.getOsTag()), @tagName(target.getCpuArch())});
     const lib = b.addStaticLibrary(libname, null);
 
@@ -101,8 +101,6 @@ fn build_libvxt(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
 
     if (cpu286 or testing) {
         lib.defineCMacroRaw("VXT_CPU_286");
-    } else if (cpuV20) {
-        lib.defineCMacroRaw("VXT_CPU_V20");
     }
 
     if (testing) {
@@ -164,14 +162,13 @@ pub fn build(b: *Builder) void {
     const network = b.option(bool, "pcap", "Link with libpcap") orelse false;
     const sdl_path = b.option([]const u8, "sdl-path", "Path to SDL2 headers and libs") orelse null;
     const cpu286 = b.option(bool, "i286", "Enable some Intel 286 behaviour") orelse false;
-    const cpuV20 = b.option(bool, "v20", "Enable NEC V20 CPU support") orelse false;
 
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
     // -------- libvxt --------
 
-    const libvxt = build_libvxt(b, mode, target, cpu286, cpuV20, false);
+    const libvxt = build_libvxt(b, mode, target, cpu286, false);
     b.step("lib", "Build libvxt").dependOn(&libvxt.step);
 
     // -------- ini --------
@@ -213,8 +210,6 @@ pub fn build(b: *Builder) void {
         
         if (cpu286) {
             pirepheral.defineCMacroRaw("VXT_CPU_286");
-        } else if (cpuV20) {
-            pirepheral.defineCMacroRaw("VXT_CPU_V20");
         }
 
         const opt = c_options ++ &[_][]const u8{"-std=c11", "-pedantic"};
@@ -294,8 +289,6 @@ pub fn build(b: *Builder) void {
 
     if (cpu286) {
         exe_sdl.defineCMacroRaw("VXT_CPU_286");
-    } else if (cpuV20) {
-        exe_sdl.defineCMacroRaw("VXT_CPU_V20");
     }
 
     if (validator) {
@@ -318,7 +311,7 @@ pub fn build(b: *Builder) void {
         libretro.setOutputDir("build/lib");
         libretro.setMainPkgPath("."); // Needed for embedded files.
 
-        libretro.linkLibrary(build_libvxt(b, mode, target, cpu286, cpuV20, false));
+        libretro.linkLibrary(build_libvxt(b, mode, target, cpu286, false));
         libretro.addIncludePath("lib/vxt/include");
 
         libretro.linkLibrary(pirepheral);
@@ -349,7 +342,7 @@ pub fn build(b: *Builder) void {
         baremetal.setLinkerScriptPath(.{.path = "front/baremetal/link.ld"});
         baremetal.setMainPkgPath(".");
 
-        baremetal.linkLibrary(build_libvxt(b, mode, bm_target, cpu286, cpuV20, false));
+        baremetal.linkLibrary(build_libvxt(b, mode, bm_target, cpu286, false));
         baremetal.addIncludePath("lib/vxt/include");
 
         const bm_opt = c_options ++ &[_][]const u8{"-std=c11", "-pedantic"};
@@ -385,11 +378,7 @@ pub fn build(b: *Builder) void {
         wasm.setOutputDir("build/web");
         wasm.setMainPkgPath("."); // Needed for embedded files.
 
-        if (cpuV20) {
-            wasm.defineCMacroRaw("VXT_CPU_V20");
-        }
-
-        wasm.linkLibrary(build_libvxt(b, mode, wasm_target, false, cpuV20, false));
+        wasm.linkLibrary(build_libvxt(b, mode, wasm_target, false, false));
         wasm.addIncludePath("lib/vxt/include");
         
         const wasm_opt = opt;// ++ &[_][]const u8{"-fno-builtin"};
@@ -433,7 +422,7 @@ pub fn build(b: *Builder) void {
         scrambler.linkSystemLibrary("gpiod");
         scrambler.defineCMacroRaw("PI8088");
 
-        scrambler.linkLibrary(build_libvxt(b, mode, target, false, false, false));
+        scrambler.linkLibrary(build_libvxt(b, mode, target, false, false));
         scrambler.addIncludePath("lib/vxt/include");
         scrambler.addIncludePath("lib/vxt");
 
@@ -455,7 +444,7 @@ pub fn build(b: *Builder) void {
         tests.defineCMacroRaw("VXT_CPU_286");
         tests.addIncludePath("test");
 
-        const lib_vxt = build_libvxt(b, mode, target, cpu286, cpuV20, true);
+        const lib_vxt = build_libvxt(b, mode, target, cpu286, true);
         if (validator) {
             lib_vxt.linkSystemLibrary("gpiod");
             lib_vxt.defineCMacroRaw("PI8088");

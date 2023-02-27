@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 24; j++)
+            for (j = 0; j < 25; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -251,6 +251,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->mute = option->value;
         } else if (strcmp(option->olong, "--no-adlib") == 0) {
             args->no_adlib = option->value;
+        } else if (strcmp(option->olong, "--v20") == 0) {
+            args->v20 = option->value;
         } else if (strcmp(option->olong, "--version") == 0) {
             args->version = option->value;
         } else if (strcmp(option->olong, "--bios") == 0) {
@@ -319,7 +321,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
         "4.772726", NULL, NULL, NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
@@ -334,6 +336,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --no-adlib              Disable AdLib emulation.",
               "  --list                  List network devices and IDs.",
               "  --fdc                   Enable experimental floppy disk controller.",
+              "  --v20                   Enable NEC V20 CPU support.",
               "  --network=ID            Select network adapter.",
               "  --joystick              Enable joystick support.",
               "  --rifs=PATH             Enable experimental RIFS support. (Shared folders)",
@@ -361,6 +364,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--list", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
         {NULL, "--no-adlib", 0, 0, NULL},
+        {NULL, "--v20", 0, 0, NULL},
         {"-v", "--version", 0, 0, NULL},
         {NULL, "--bios", 1, 0, NULL},
         {NULL, "--config", 1, 0, NULL},
@@ -379,7 +383,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 21;
+    elements.n_options = 22;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;

@@ -10,6 +10,7 @@ Options:
   --no-adlib              Disable AdLib emulation.
   --list                  List network devices and IDs.
   --fdc                   Enable experimental floppy disk controller.
+  --v20                   Enable NEC V20 CPU support.
   --network=ID            Select network adapter.
   --joystick              Enable joystick support.
   --rifs=PATH             Enable experimental RIFS support. (Shared folders)

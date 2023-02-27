@@ -141,14 +141,13 @@ static void or_D(CONSTSP(cpu) p, INST(inst)) {
 
 static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
    VALIDATOR_DISCARD(p);
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
-      UNUSED(inst);
+   if (p->cpu_type != VXT_CPU_8088) {
       p->regs.ip = p->inst_start;
       call_int(p, 6);
-   #else
+   } else {
       PRINT("invalid opcode: 0x%X", inst->opcode);
       p->regs.debug = true;
-   #endif
+   }
 }
 
 static void invalid_prefix(CONSTSP(cpu) p, INST(inst)) {
@@ -688,21 +687,25 @@ static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
 
 static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
-      push(p, (p->regs.flags & ALL_FLAGS) | 0x2);
-   #else
-      push(p, (p->regs.flags & ALL_FLAGS) | 0xF002);
+   #if defined(VXT_CPU_286)
+      if (p->cpu_type == VXT_CPU_V20) {
+         push(p, (p->regs.flags & ALL_FLAGS) | 0x2);
+         return;
+      }
    #endif
+   push(p, (p->regs.flags & ALL_FLAGS) | 0xF002);
 }
 
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.flags = pop(p) & ALL_FLAGS;
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
-      p->regs.flags |= 0x2;
-   #else
-      p->regs.flags |= 0xF002;
+   #if defined(VXT_CPU_286)
+      if (p->cpu_type == VXT_CPU_V20) {
+         p->regs.flags |= 0x2;
+         return;
+      }
    #endif
+   p->regs.flags |= 0xF002;
 }
 
 static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
@@ -908,9 +911,9 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
 static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word imm = (vxt_word)read_opcode8(p);
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+   if (p->cpu_type == VXT_CPU_V20)
       imm = 10;
-   #endif
+
    p->regs.ax = ((vxt_word)p->regs.ah * imm + (vxt_word)p->regs.al) & 0xFF;
    flag_szp8(&p->regs, p->regs.al);
    SET_FLAG(p->regs.flags, VXT_ZERO, 0);
@@ -922,12 +925,10 @@ static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
 }
 
 static void salc_D6(CONSTSP(cpu) p, INST(inst)) {
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+   if (p->cpu_type == VXT_CPU_V20)
       xlat_D7(p, inst);
-   #else
-      UNUSED(inst);
+   else
       p->regs.al = (p->regs.flags & VXT_CARRY) ? 0xFF : 0x0;
-   #endif
 }
 
 static void fpu_dummy(CONSTSP(cpu) p, INST(inst)) {
@@ -1046,9 +1047,8 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = ((vxt_word)v) * ((vxt_word)p->regs.al);
          flag_szp8(&p->regs, p->regs.al);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
-         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
+         if (p->cpu_type == VXT_CPU_8088)
             p->regs.flags &= ~VXT_ZERO;
-         #endif
          break;
       }
       case 5: // IMUL
@@ -1060,9 +1060,8 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
 
          p->regs.ax = res;
          flag_szp8(&p->regs, res8);
-         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
+         if (p->cpu_type == VXT_CPU_8088)
             p->regs.flags &= ~VXT_ZERO;
-         #endif
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int8)res));
          break;
       }
@@ -1143,9 +1142,8 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          flag_szp16(&p->regs, p->regs.ax);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.dx);
-         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
+         if (p->cpu_type == VXT_CPU_8088)
             p->regs.flags &= ~VXT_ZERO;
-         #endif
          break;
       }
       case 5: // IMUL
@@ -1158,9 +1156,8 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.dx = (vxt_word)(res >> 16);
 
          flag_szp16(&p->regs, p->regs.ax);
-         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
+         if (p->cpu_type == VXT_CPU_8088)
             p->regs.flags &= ~VXT_ZERO;
-         #endif
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int16)res));
          break;
       }

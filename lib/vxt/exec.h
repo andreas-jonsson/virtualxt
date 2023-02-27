@@ -456,15 +456,13 @@ static void prep_exec(CONSTSP(cpu) p) {
    p->inst_start = p->regs.ip;
 }
 
-static bool valid_repeat(vxt_byte opcode) {
+static bool valid_repeat(CONSTSP(cpu) p, vxt_byte opcode) {
    if ((opcode >= 0xA4) && (opcode <= 0xA7))
       return true;
    if ((opcode >= 0xAA) && (opcode <= 0xAF))
       return true;
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
-      if ((opcode >= 0x6C) && (opcode <= 0x6F))
-         return true;
-   #endif
+   if ((p->cpu_type != VXT_CPU_8088) && (opcode >= 0x6C) && (opcode <= 0x6F))
+      return true;
    return false;
 }
 
@@ -497,7 +495,7 @@ static void read_opcode(CONSTSP(cpu) p) {
             p->cycles += 2;
             break;
          default:
-            if (p->repeat && !valid_repeat(p->opcode))
+            if (p->repeat && !valid_repeat(p, p->opcode))
                p->repeat = 0;
             return;
       }

@@ -213,7 +213,7 @@ int ENTRY(int argc, char *argv[]) {
 		NULL
 	};
 
-	vxt_system *sys = vxt_system_create(&ALLOCATOR, VXT_DEFAULT_FREQUENCY, devices);
+	vxt_system *sys = vxt_system_create(&ALLOCATOR, VXT_CPU_8088, VXT_DEFAULT_FREQUENCY, devices);
 	vxt_system_initialize(sys);
 	
 	LOG("Installed pirepherals:");

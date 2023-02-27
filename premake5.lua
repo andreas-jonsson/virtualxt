@@ -16,14 +16,8 @@ newoption {
 }
 
 newoption {
-    trigger = "cpu",
-    description = "Select CPU support",
-    default = "8088",
-    allowed = {
-        {"8088", "Intel 8088"},
-        {"V20",  "NEC V20"},
-        {"286",  "Intel 80286"}
-    }
+    trigger = "i286",
+    description = "Select some 286 support when running with a V20"
 }
 
 newaction {
@@ -56,10 +50,7 @@ workspace "virtualxt"
         defines "NDEBUG"
         optimize "On"
 
-    filter "options:cpu=V20"
-        defines "VXT_CPU_V20"
-
-    filter "options:cpu=286"
+    filter "options:i286"
         defines "VXT_CPU_286"
 
     filter "options:validator"

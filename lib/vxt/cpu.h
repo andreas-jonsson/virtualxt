@@ -42,6 +42,8 @@ struct cpu {
    int cycles, ea_cycles;
    vxt_word inst_start;
 
+   enum vxt_cpu_type cpu_type;
+   const struct instruction *opcode_table;
    int opcode_zero_count;
 
    vxt_byte opcode, repeat;
@@ -63,6 +65,7 @@ struct cpu {
    vxt_system *s;
 };
 
+void cpu_init(CONSTSP(cpu) p, vxt_system *s, enum vxt_cpu_type ty);
 vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr);
 void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data);
 vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr);

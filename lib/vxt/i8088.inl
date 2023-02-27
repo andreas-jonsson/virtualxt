@@ -20,8 +20,6 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "common.h"
-
 #include "exec.inl"
 
 static void pop_cs(CONSTSP(cpu) p, INST(inst)) {
@@ -37,7 +35,7 @@ static void pop_cs(CONSTSP(cpu) p, INST(inst)) {
 //             https://www.felixcloutier.com/x86/index.html
 //             http://aturing.umcs.maine.edu/~meadow/courses/cos335/80x86-Integer-Instruction-Set-Clocks.pdf
 
-static struct instruction const opcode_table[0x100] = {
+static struct instruction const opcode_table_8088[0x100] = {
    {0x0, "ADD Eb Gb", true, 3, &add_0_10},
    {0x1, "ADD Ev Gv", true, 3, &add_1_11},
    {0x2, "ADD Gb Eb", true, 3, &add_2_12},

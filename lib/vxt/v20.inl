@@ -20,26 +20,77 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "common.h"
-
-#include "exec.inl"
+#include "i8088.inl"
 
 static void ext_F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    VALIDATOR_DISCARD(p);
 
    vxt_byte ext_op = read_opcode8(p);
-   switch (ext_op) {
-      default:
-         p->regs.ip = p->inst_start;
-         call_int(p, 6);
-   }
+   #ifdef VXT_CPU_286
+      switch (ext_op) {
+         case 0:
+            read_modregrm(p);
+            switch (p->mode.reg) {
+               case 0: // SLDT - Store Local Descriptor Table Register
+                  return;
+               case 1: // STR - Store Task Register
+                  return;
+               case 2: // LDTR - Load Local Descriptor Table Register
+                  return;
+               case 3: // LTR - Load Task Register
+                  return;
+               case 4: // VERR - Verify a Segment for Reading
+                  return;
+               case 5: // VERW - Verify a Segment for Writing
+                  return;
+            }
+            return;
+         case 1:
+            read_modregrm(p);
+            switch (p->mode.reg) {
+               case 0: // SGDT - Store Global Descriptor Table Register
+                  return;
+               case 1: // SIDT - Store Interrupt Descriptor Table Register
+                  return;
+               case 2: // LGDT - Load Global Descriptor Table Register
+                  return;
+               case 3: // LIDT - Load Interrupt Descriptor Table Register
+                  return;
+               case 4: // SMSW - Store Machine Status Word
+                  return;
+               case 6: // LMSW - Load Machine Status Word
+                  return;
+            }
+            return;
+         case 2: // LAR - Load Access Rights Byte
+            read_modregrm(p);
+            return;
+         case 3: // LSL - Load Segment Limit
+            read_modregrm(p);
+            return;
+         case 5: // LOADALL - Load All of the CPU Registers
+            return;
+         case 6: // CLTS - Clear Task-Switched Flag in CR0
+            return;
+      }
+      p->regs.ip = p->inst_start;
+      call_int(p, 6); 
+   #else
+      
+      // TODO
+      UNUSED(ext_op);
+
+   #endif
+
+   p->regs.ip = p->inst_start;
+   call_int(p, 6); 
 }
 
 #define X 1
 #define INVALID "INVALID", false, X, &invalid_op
 
-static struct instruction const opcode_table[0x100] = {
+static struct instruction const opcode_table_v20[0x100] = {
    {0x0, "ADD Eb Gb", true, X, &add_0_10},
    {0x1, "ADD Ev Gv", true, X, &add_1_11},
    {0x2, "ADD Gb Eb", true, X, &add_2_12},

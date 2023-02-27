@@ -36,7 +36,7 @@ jobs:
         run: zig build test
 
       - name: Build
-        run: zig build web -Drelease-fast -Dv20
+        run: zig build web -Drelease-fast
 
       - name: Package
         run: |

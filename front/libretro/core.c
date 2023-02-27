@@ -111,7 +111,7 @@ void retro_init(void) {
 	};
 
 	assert(!sys);
-	sys = vxt_system_create(&realloc, VXT_DEFAULT_FREQUENCY, devices);
+	sys = vxt_system_create(&realloc, VXT_CPU_8088, VXT_DEFAULT_FREQUENCY, devices);
 	vxt_system_initialize(sys);
 
 	LOG("Installed pirepherals:\n");
