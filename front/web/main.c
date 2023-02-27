@@ -194,7 +194,7 @@ int step_emulation(int cycles) {
 	return s.cycles;
 }
 
-void initialize_emulator(void) {
+void initialize_emulator(int v20) {
 	vxt_set_logger(&log_wrapper);
 
 	struct vxtu_disk_interface interface = {
@@ -225,7 +225,7 @@ void initialize_emulator(void) {
 		NULL
 	};
 
-	sys = vxt_system_create(&ALLOCATOR, VXT_CPU_8088, VXT_DEFAULT_FREQUENCY, devices);
+	sys = vxt_system_create(&ALLOCATOR, v20 ? VXT_CPU_V20 : VXT_CPU_8088, VXT_DEFAULT_FREQUENCY, devices);
 	vxt_system_initialize(sys);
 	
 	LOG("Installed pirepherals:\n");

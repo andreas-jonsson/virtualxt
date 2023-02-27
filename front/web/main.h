@@ -29,7 +29,7 @@ extern const unsigned char *get_vxtx_data(void);
 extern unsigned int get_vxtx_size(void);
 
 extern int step_emulation(int);
-extern void initialize_emulator(void);
+extern void initialize_emulator(int);
 extern const void *video_rgba_memory_pointer(void);
 extern int video_width(void);
 extern int video_height(void);

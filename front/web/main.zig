@@ -47,8 +47,8 @@ export fn wasm_step_emulation(cycles: i32) i32 {
     return c.step_emulation(@as(c_int, cycles));
 }
 
-export fn wasm_initialize_emulator() void {
-    c.initialize_emulator();
+export fn wasm_initialize_emulator(v20: i32) void {
+    c.initialize_emulator(v20);
 }
 
 // -------- Embedded files --------
