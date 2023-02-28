@@ -124,10 +124,6 @@ static void trigger_breakpoint(void) {
 	SDL_TriggerBreakpoint();
 }
 
-static long long ustimer(void) {
-	return SDL_GetPerformanceCounter() / (SDL_GetPerformanceFrequency() / 1000000);
-}
-
 static int text_width(mu_Font font, const char *text, int len) {
 	(void)font;
 	if (len == -1)
@@ -599,7 +595,7 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	if (num_sticks)
-		devices[i++] = joystick = vxtp_joystick_create(&realloc, ustimer, sticks[0], sticks[1]);
+		devices[i++] = joystick = vxtp_joystick_create(&realloc, sticks[0], sticks[1]);
 
 	if (!args.no_adlib)
 		devices[i++] = adlib;

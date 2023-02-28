@@ -58,7 +58,7 @@ extern struct vxt_pirepheral *vxtp_serial_dbg_create(vxt_allocator *alloc, vxt_w
 
 extern struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root, bool ro);
 
-extern struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, long long (*ustics)(void), void *stick_a, void *stick_b);
+extern struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, void *stick_a, void *stick_b);
 extern bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp_joystick_event *ev);
 
 extern struct vxt_pirepheral *vxtp_ctrl_create(vxt_allocator *alloc, vxt_byte (*f)(enum vxtp_ctrl_command,void*), void *userdata);
