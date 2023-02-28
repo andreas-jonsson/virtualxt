@@ -92,9 +92,8 @@ void retro_init(void) {
 	vxt_set_logger(&log_wrapper);
 	
 	//struct vxt_pirepheral *disk = vxtu_disk_create(&realloc, NULL);
-	struct vxt_pirepheral *pit = vxtu_pit_create(&realloc, &ustimer);
 
-	ppi = vxtu_ppi_create(&realloc, pit);
+	ppi = vxtu_ppi_create(&realloc);
     cga = vxtu_cga_create(&realloc, &ustimer);
 
 	struct vxt_pirepheral *devices[] = {
@@ -103,7 +102,7 @@ void retro_init(void) {
         load_bios(get_vxtx_data(), (int)get_vxtx_size(), 0xE0000),
         vxtu_pic_create(&realloc),
 	    vxtu_dma_create(&realloc),
-        pit,
+        vxtu_pit_create(&realloc),
         ppi,
 		cga,
         //disk,

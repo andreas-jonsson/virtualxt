@@ -110,17 +110,27 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+    VXT_DEC_DEVICE(c, ppi, p);
     vxt_system_install_io(s, p, 0x60, 0x62);
     vxt_system_install_io_at(s, p, 0x64);
-    return VXT_NO_ERROR;
+    vxt_system_install_timer(s, p, 1000);
+
+    for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
+        struct vxt_pirepheral *ip = vxt_system_pirepheral(s, (vxt_byte)i);
+        if (vxt_pirepheral_class(ip) == VXT_PCLASS_PIT) {
+            c->pit = ip;
+            break;
+        }
+    }
+    return c->pit ? VXT_NO_ERROR : VXT_USER_ERROR(0);
 }
 
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
     (void)p; return VXT_PCLASS_PPI;
 }
 
-static vxt_error step(struct vxt_pirepheral *p, int cycles) {
-    (void)cycles;
+static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+    (void)id; (void)cycles;
     VXT_DEC_DEVICE(c, ppi, p);
     c->command_port |= COMMAND_READY;
     if (c->keyboard_enable) {
@@ -163,16 +173,15 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "PPI (Intel 8255)";
 }
 
-struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit) VXT_PIREPHERAL_CREATE(alloc, ppi, {
+struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, ppi, {
     // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
     //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
     DEVICE->xt_switches = 0x2; // CGA video bits.
-    DEVICE->pit = pit;
 
     PIREPHERAL->install = &install;
     PIREPHERAL->destroy = &destroy;
     PIREPHERAL->reset = &reset;
-    PIREPHERAL->step = &step;
+    PIREPHERAL->timer = &timer;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;
     PIREPHERAL->io.in = &in;

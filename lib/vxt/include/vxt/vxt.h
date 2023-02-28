@@ -210,7 +210,8 @@ enum vxt_pclass {
     VXT_PCLASS_PIC      = 0x04,
     VXT_PCLASS_DMA      = 0x08,
     VXT_PCLASS_PPI      = 0x10,
-    VXT_PCLASS_VIDEO    = 0x20
+    VXT_PCLASS_PIT      = 0x20,
+    VXT_PCLASS_VIDEO    = 0x40
 };
 
 struct vxt_pirepheral;

@@ -188,9 +188,9 @@ int ENTRY(int argc, char *argv[]) {
 	};
 	
 	struct vxt_pirepheral *disk = vxtu_disk_create(&ALLOCATOR, &interface);
-	struct vxt_pirepheral *pit = vxtu_pit_create(&ALLOCATOR, &ustimer);
+	struct vxt_pirepheral *pit = vxtu_pit_create(&ALLOCATOR);
 	
-	struct vxt_pirepheral *ppi = vxtu_ppi_create(&ALLOCATOR, pit);
+	struct vxt_pirepheral *ppi = vxtu_ppi_create(&ALLOCATOR);
 	//vxtu_ppi_set_speaker_callback(ppi, &speaker_callback, NULL);
 
     struct vxt_pirepheral *cga = vxtu_cga_create(&ALLOCATOR, &ustimer);

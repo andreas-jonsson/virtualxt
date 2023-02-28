@@ -200,11 +200,9 @@ void initialize_emulator(int v20) {
 	struct vxtu_disk_interface interface = {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
-	
 	struct vxt_pirepheral *disk = vxtu_disk_create(&ALLOCATOR, &interface);
-	struct vxt_pirepheral *pit = vxtu_pit_create(&ALLOCATOR, &ustimer);
 	
-	ppi = vxtu_ppi_create(&ALLOCATOR, pit);
+	ppi = vxtu_ppi_create(&ALLOCATOR);
 	vxtu_ppi_set_speaker_callback(ppi, &speaker_callback, NULL);
 
     cga = vxtu_cga_create(&ALLOCATOR, &ustimer);
@@ -216,8 +214,8 @@ void initialize_emulator(int v20) {
         load_bios(get_vxtx_data(), (int)get_vxtx_size(), 0xE0000),
         vxtu_pic_create(&ALLOCATOR),
 	    vxtu_dma_create(&ALLOCATOR),
+		vxtu_pit_create(&ALLOCATOR),
 		vxtp_ctrl_create(&ALLOCATOR, &emu_control, NULL),
-        pit,
         ppi,
 		cga,
         disk,

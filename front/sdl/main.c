@@ -571,8 +571,7 @@ int ENTRY(int argc, char *argv[]) {
 
 	struct vxt_pirepheral *disk = vxtu_disk_create(&realloc, &interface);
 	struct vxt_pirepheral *fdc = vxtp_fdc_create(&realloc, &ustimer, 0x3F0, 6);
-	struct vxt_pirepheral *pit = vxtu_pit_create(&realloc, &ustimer);
-	struct vxt_pirepheral *ppi = vxtu_ppi_create(&realloc, pit);
+	struct vxt_pirepheral *ppi = vxtu_ppi_create(&realloc);
 	struct vxt_pirepheral *mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
 	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&realloc);
 	struct vxt_pirepheral *joystick = NULL;
@@ -621,8 +620,8 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i++] = vxtu_pic_create(&realloc);
 	devices[i++] = vxtu_dma_create(&realloc);
 	devices[i++] = vxtp_rtc_create(&realloc);
+	devices[i++] = vxtu_pit_create(&realloc);
 	devices[i++] = vxtp_ctrl_create(&realloc, &emu_control, NULL);
-	devices[i++] = pit;
 	devices[i++] = mouse;
 	devices[i++] = ppi;
 	devices[i++] = video.device;

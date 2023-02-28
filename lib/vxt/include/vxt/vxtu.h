@@ -221,10 +221,10 @@ extern struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc);
 
 extern struct vxt_pirepheral *vxtu_dma_create(vxt_allocator *alloc);
 
-extern struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc, long long (*ustics)(void));
+extern struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc);
 extern double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel);
 
-extern struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc, struct vxt_pirepheral *pit);
+extern struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc);
 extern bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force);
 extern bool vxtu_ppi_turbo_enabled(struct vxt_pirepheral *p);
 extern vxt_int16 vxtu_ppi_generate_sample(struct vxt_pirepheral *p, int freq);
