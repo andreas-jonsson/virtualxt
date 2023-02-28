@@ -237,7 +237,6 @@ var importObject = {
         js_disk_read: diskReadData,
         js_disk_write: diskWriteData,
         js_disk_size: () => { return diskData.length; },
-        js_ustimer: () => { return performance.now() * 1000; },
         js_speaker_callback: (freq) => { oscillator.frequency.setValueAtTime(freq, null); },
         js_set_border_color: (color) => { document.body.style.background = "#" + ("00000" + (color | 0).toString(16)).substr(-6); }
     }

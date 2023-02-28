@@ -66,6 +66,7 @@ var vxt_8h =
       [ "VXT_PCLASS_PIC", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7a25ef6a9a14043c39d60f324b2c3f0632", null ],
       [ "VXT_PCLASS_DMA", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7aec097525072986716f858b0c3a4a04b2", null ],
       [ "VXT_PCLASS_PPI", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7a73bc18b6ac516b20b33686cc7c728338", null ],
+      [ "VXT_PCLASS_PIT", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7abc87bb9d43faabd8f4ab28653d449f0b", null ],
       [ "VXT_PCLASS_VIDEO", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7ae2b7291f521041de9150c12e52638dfc", null ]
     ] ],
     [ "_Static_assert", "vxt_8h.html#a389056f9f5366799961b078d3b6ec13d", null ],
