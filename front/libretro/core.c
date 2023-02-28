@@ -94,7 +94,7 @@ void retro_init(void) {
 	//struct vxt_pirepheral *disk = vxtu_disk_create(&realloc, NULL);
 
 	ppi = vxtu_ppi_create(&realloc);
-    cga = vxtu_cga_create(&realloc, &ustimer);
+    cga = vxtu_cga_create(&realloc);
 
 	struct vxt_pirepheral *devices[] = {
 		vxtu_memory_create(&realloc, 0x0, 0x100000, false),

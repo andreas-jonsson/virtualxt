@@ -302,11 +302,12 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     vxt_system_install_io_at(s, p, 0xE9);
     vxt_system_install_io_at(s, p, 0x500);
     vxt_system_install_mem(s, p, 0, 0xFFFFF);
+    vxt_system_install_timer(s, p, 0);
     return VXT_NO_ERROR;
 }
 
-static vxt_error step(struct vxt_pirepheral *p, int cycles) {
-    VXT_DEC_DEVICE(dbg, debugger, p); UNUSED(cycles);
+static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+    VXT_DEC_DEVICE(dbg, debugger, p); UNUSED(id); UNUSED(cycles);
     vxt_system *s = vxt_pirepheral_system(p);
     CONSTSP(vxt_registers) regs = vxt_system_registers(s);
 
@@ -353,7 +354,7 @@ struct vxt_pirepheral *vxtu_debugger_create(vxt_allocator *alloc, const struct v
 
     PIREPHERAL->install = &install;
     PIREPHERAL->destroy = &destroy;
-    PIREPHERAL->step = &step;
+    PIREPHERAL->timer = &timer;
     PIREPHERAL->pclass = &pclass;
     PIREPHERAL->name = &name;
     PIREPHERAL->io.read = &read;

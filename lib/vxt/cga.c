@@ -26,9 +26,9 @@
 #define MEMORY_SIZE 0x10000
 #define MEMORY_START 0xB0000
 #define CGA_BASE 0x8000
-#define SCANLINE_TIMING 31469
+#define SCANLINE_TIMING 16
+#define CURSOR_TIMING 333333
 
-#define INT64 long long
 #define MEMORY(p, i) ((p)[(i) & (MEMORY_SIZE - 1)])
 
 static const vxt_dword cga_palette[] = {
@@ -72,6 +72,7 @@ struct snapshot {
     vxt_byte mem[MEMORY_SIZE];
     vxt_byte rgba_surface[720 * 350 * 4];
 
+    bool cursor_blink;
     bool cursor_visible;
     int cursor_offset;
 
@@ -91,14 +92,13 @@ VXT_PIREPHERAL(cga_video, {
     int hgc_base;
     vxt_byte hgc_enable;
 
+    bool cursor_blink;
     bool cursor_visible;
     int cursor_offset;
 
-    INT64 last_scanline;
-	int current_scanline;
-
-    INT64 (*ustics)(void);
-    INT64 application_start;
+    vxt_timer_id scanline_timer;
+    int scanline;
+    int retrace;
 
     vxt_byte mode_ctrl_reg;
     vxt_byte color_ctrl_reg;
@@ -119,7 +119,6 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     VXT_DEC_DEVICE(c, cga_video, p);
-
     switch (port) {
         case 0x3B0:
         case 0x3B2:
@@ -144,20 +143,11 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
         case 0x3D9:
 		    return c->color_ctrl_reg;
         case 0x3BA:
-            if (!c->hgc_mode)
-                return 0xFF;
-            break;
         case 0x3DA:
-            if (c->hgc_mode)
-                return 0xFF;
-            break;
+            return c->hgc_mode ? 0xFF : c->status_reg;
         default:
             return 0;
     }
-    
-    vxt_byte status = c->status_reg;
-    c->status_reg &= 0xFE;
-    return status;
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
@@ -217,9 +207,12 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+    VXT_DEC_DEVICE(c, cga_video, p);
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + MEMORY_SIZE) - 1);
     vxt_system_install_io(s, p, 0x3B0, 0x3BF);
     vxt_system_install_io(s, p, 0x3D0, 0x3DF);
+    vxt_system_install_timer(s, p, CURSOR_TIMING);
+    c->scanline_timer = vxt_system_install_timer(s, p, SCANLINE_TIMING);
     return VXT_NO_ERROR;
 }
 
@@ -230,9 +223,6 @@ static vxt_error destroy(struct vxt_pirepheral *p) {
 
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, cga_video, p);
-
-    c->last_scanline = c->ustics() * 1000ll;
-    c->current_scanline = 0;
 
     c->cursor_visible = true;
     c->cursor_offset = 0;
@@ -258,30 +248,26 @@ static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
     (void)p; return VXT_PCLASS_VIDEO;
 }
 
-static vxt_error step(struct vxt_pirepheral *p, int cycles) {
-    (void)cycles;
+static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+    (void)id; (void)cycles;
     VXT_DEC_DEVICE(c, cga_video, p);
 
-	INT64 t = c->ustics() * 1000ll;
-	INT64 d = t - c->last_scanline;
-	INT64 scanlines = d / SCANLINE_TIMING;
-
-	if (scanlines > 0) {
-		INT64 offset = d % SCANLINE_TIMING;
-		c->last_scanline = t - offset;
-        c->current_scanline = (c->current_scanline + (int)scanlines) % 525;
-		if (c->current_scanline > 479)
-			c->status_reg = 88;
-		else
-			c->status_reg = 0;
-		c->status_reg |= 1;
-	}
+    if (c->scanline_timer == id) {
+        c->status_reg = 6;
+        c->status_reg |= (c->retrace == 3) ? 1 : 0;
+        c->status_reg |= (c->scanline >= 224) ? 8 : 0;
+        
+        if (++c->retrace == 4) {
+            c->retrace = 0;
+            c->scanline++;
+        }
+        if (c->scanline == 256)
+            c->scanline = 0;
+    } else {
+        c->cursor_blink = !c->cursor_blink;
+        c->is_dirty = true;
+    }
     return VXT_NO_ERROR;
-}
-
-static bool blink_tick(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, cga_video, p);
-    return (((c->ustics() - c->application_start) / 500000) % 2) == 0;
 }
 
 static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
@@ -307,7 +293,7 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 
 	if (attr & 0x80) {
 		if (snap->mode_ctrl_reg & 0x20) {
-			if (blink_tick(p))
+			if (snap->cursor_blink)
 				fg_color_index = bg_color_index;
 		} else {
 			// High intensity!
@@ -331,16 +317,13 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 	}
 }
 
-struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc, INT64 (*ustics)(void)) VXT_PIREPHERAL_CREATE(alloc, cga_video, {
-    DEVICE->ustics = ustics;
-    DEVICE->application_start = ustics();
-
+struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, cga_video, {
     PIREPHERAL->install = &install;
     PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;
     PIREPHERAL->reset = &reset;
-    PIREPHERAL->step = &step;
+    PIREPHERAL->timer = &timer;
     PIREPHERAL->io.read = &read;
     PIREPHERAL->io.write = &write;
     PIREPHERAL->io.in = &in;
@@ -360,6 +343,7 @@ bool vxtu_cga_snapshot(struct vxt_pirepheral *p) {
 
     c->snap.hgc_mode = c->hgc_mode;
     c->snap.hgc_base = c->hgc_base;
+    c->snap.cursor_blink = c->cursor_blink;
     c->snap.cursor_visible = c->cursor_visible;
     c->snap.cursor_offset = c->cursor_offset;
     c->snap.mode_ctrl_reg = c->mode_ctrl_reg;
@@ -446,7 +430,7 @@ int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             blit_char(p, ch, attr, (idx % num_col) * 8, (idx / num_col) * 8);
         }
 
-        if (blink_tick(p) && snap->cursor_visible) {
+        if (snap->cursor_blink && snap->cursor_visible) {
             int x = snap->cursor_offset % num_col;
             int y = snap->cursor_offset / num_col;
             if (x < num_col && y < 25) {

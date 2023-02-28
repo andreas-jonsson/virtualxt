@@ -138,10 +138,6 @@ static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
 	return 0;
 }
 
-static long long ustimer(void) {
-    return (long long)js_ustimer();
-}
-
 static void speaker_callback(struct vxt_pirepheral *p, double freq, void *userdata) {
 	(void)p; (void)userdata;
 	js_speaker_callback(freq);
@@ -205,7 +201,7 @@ void initialize_emulator(int v20) {
 	ppi = vxtu_ppi_create(&ALLOCATOR);
 	vxtu_ppi_set_speaker_callback(ppi, &speaker_callback, NULL);
 
-    cga = vxtu_cga_create(&ALLOCATOR, &ustimer);
+    cga = vxtu_cga_create(&ALLOCATOR);
 	mouse = vxtu_mouse_create(&ALLOCATOR, 0x3F8, 4); // COM1
 
 	struct vxt_pirepheral *devices[] = {

@@ -30,8 +30,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define INT64 long long
-
 #define FIFO_SIZE 16
 #define SECTOR_SIZE 512
 
@@ -139,10 +137,6 @@ VXT_PIREPHERAL(fdc, {
     vxt_system *s;
     vxt_word base;
     int irq;
-    INT64 (*ustics)(void);
-
-    INT64 last_seek;
-    INT64 last_transfer;
 
     bool use_dma;
     struct vxt_pirepheral *dma_controller;
@@ -396,18 +390,18 @@ static void update_transfer(struct fdc *c) {
 	}
 }
 
-static vxt_error step(struct vxt_pirepheral *p, int cycles) {
-    (void)cycles;
+static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+    (void)id; (void)cycles;
     VXT_DEC_DEVICE(c, fdc, p);
     
-    INT64 t = c->ustics();
+    //INT64 t = c->ustics();
     //if ((t - c->last_seek) > 20000) {
-        c->last_seek = t;
+    //    c->last_seek = t;
         update_seek(c);
     //}
 
     //if ((t - c->last_transfer) > 16) {
-        c->last_transfer = t;
+    //    c->last_transfer = t;
         update_transfer(c);
     //}
     return VXT_NO_ERROR;
@@ -418,6 +412,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     c->s = s;
     vxt_system_install_io(s, p, c->base, c->base + 5);
     vxt_system_install_io_at(s, p, c->base + 7);
+    vxt_system_install_timer(s, p, 0);
 
     c->dor_reg = DOR_MASK_RESET;
 
@@ -441,15 +436,14 @@ static const char *name(struct vxt_pirepheral *p) {
     return "FDC (NEC 765)";
 }
 
-struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, INT64 (*ustics)(void), vxt_word base, int irq) VXT_PIREPHERAL_CREATE(alloc, fdc, {
-    DEVICE->ustics = ustics;
+struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word base, int irq) VXT_PIREPHERAL_CREATE(alloc, fdc, {
     DEVICE->base = base;
     DEVICE->irq = irq;
 
     PIREPHERAL->install = &install;
     PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;
-    PIREPHERAL->step = &step;
+    PIREPHERAL->timer = &timer;
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;
 })

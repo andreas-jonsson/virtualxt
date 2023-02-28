@@ -570,7 +570,7 @@ int ENTRY(int argc, char *argv[]) {
 	};
 
 	struct vxt_pirepheral *disk = vxtu_disk_create(&realloc, &interface);
-	struct vxt_pirepheral *fdc = vxtp_fdc_create(&realloc, &ustimer, 0x3F0, 6);
+	struct vxt_pirepheral *fdc = vxtp_fdc_create(&realloc, 0x3F0, 6);
 	struct vxt_pirepheral *ppi = vxtu_ppi_create(&realloc);
 	struct vxt_pirepheral *mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
 	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&realloc);
@@ -581,7 +581,7 @@ int ENTRY(int argc, char *argv[]) {
 
 	struct video_adapter video = {0};
 	if (args.vga) {
-		video.device = vxtp_vga_create(&realloc, &ustimer);
+		video.device = vxtp_vga_create(&realloc);
 		video.border_color = &vxtp_vga_border_color;
 		video.snapshot = &vxtp_vga_snapshot;
 		video.render = &vxtp_vga_render;
@@ -592,7 +592,7 @@ int ENTRY(int argc, char *argv[]) {
 
 		devices[i++] = rom;
 	} else {
-		video.device = vxtu_cga_create(&realloc, &ustimer);
+		video.device = vxtu_cga_create(&realloc);
 		video.border_color = &vxtu_cga_border_color;
 		video.snapshot = &vxtu_cga_snapshot;
 		video.render = &vxtu_cga_render;

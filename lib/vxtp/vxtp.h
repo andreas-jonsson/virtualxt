@@ -45,12 +45,12 @@ enum vxtp_ctrl_command {
 	VXTP_CTRL_SHUTDOWN = 0x1
 };
 
-extern struct vxt_pirepheral *vxtp_vga_create(vxt_allocator *alloc, long long (*ustics)(void));
+extern struct vxt_pirepheral *vxtp_vga_create(vxt_allocator *alloc);
 extern vxt_dword vxtp_vga_border_color(struct vxt_pirepheral *p);
 extern bool vxtp_vga_snapshot(struct vxt_pirepheral *p);
 extern int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 
-extern struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, long long (*ustics)(void), vxt_word base, int irq);
+extern struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word base, int irq);
 extern vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, void *fp);
 extern bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num);
 

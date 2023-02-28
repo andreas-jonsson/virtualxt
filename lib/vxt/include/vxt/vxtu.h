@@ -235,7 +235,7 @@ extern struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc);
 extern void vxtu_mda_invalidate(struct vxt_pirepheral *p);
 extern int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata);
 
-extern struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc, long long (*ustics)(void));
+extern struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc);
 extern vxt_dword vxtu_cga_border_color(struct vxt_pirepheral *p);
 extern bool vxtu_cga_snapshot(struct vxt_pirepheral *p);
 

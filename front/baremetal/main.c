@@ -193,7 +193,7 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *ppi = vxtu_ppi_create(&ALLOCATOR);
 	//vxtu_ppi_set_speaker_callback(ppi, &speaker_callback, NULL);
 
-    struct vxt_pirepheral *cga = vxtu_cga_create(&ALLOCATOR, &ustimer);
+    struct vxt_pirepheral *cga = vxtu_cga_create(&ALLOCATOR);
 
 	struct vxtu_debugger_interface dbgif = {NULL, &mgetline, &printf};
 	struct vxt_pirepheral *dbg = vxtu_debugger_create(&ALLOCATOR, &dbgif);

@@ -37,7 +37,6 @@ extern void send_key(int);
 extern void send_mouse(int, int, unsigned int);
 
 extern void js_puts(const char*, int);
-extern unsigned int js_ustimer(void);
 extern void js_speaker_callback(double);
 extern void js_set_border_color(unsigned int);
 extern void js_disk_read(void*, unsigned int, unsigned int);

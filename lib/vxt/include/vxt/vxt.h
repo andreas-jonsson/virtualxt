@@ -225,9 +225,6 @@ struct vxt_pirepheral {
     const char* (*name)(struct vxt_pirepheral*);
     enum vxt_pclass (*pclass)(struct vxt_pirepheral*);
 
-    // step, is deprecated. Use timer callback with interval of 0 instead.
-    vxt_error (*step)(struct vxt_pirepheral*,int);
-
     struct {
         vxt_byte (*in)(struct vxt_pirepheral*,vxt_word);
         void (*out)(struct vxt_pirepheral*,vxt_word,vxt_byte);
