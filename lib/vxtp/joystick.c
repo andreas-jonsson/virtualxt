@@ -84,7 +84,8 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
     (void)id;
     VXT_DEC_DEVICE(g, gameport, p);
-    g->ticker += (double)cycles / ((double)vxt_system_frequency(VXT_GET_SYSTEM(gameport, p)) / 1000000.0);
+    if (g->ticker < 1000000.0)
+        g->ticker += (double)cycles / ((double)vxt_system_frequency(VXT_GET_SYSTEM(gameport, p)) / 1000000.0);
     return VXT_NO_ERROR;
 }
 
