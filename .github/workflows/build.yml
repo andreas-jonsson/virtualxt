@@ -102,7 +102,9 @@ jobs:
         run: zig build -Drelease-fast -Dsdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}"
 
       - name: Package
-        run: ./tools/package/itch/package.bat
+        run: |
+          ./tools/package/itch/package.bat
+          cp "${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/bin/SDL2.dll" "${GITHUB_WORKSPACE}/package/virtualxt"
         
       - name: Deploy
         env:
