@@ -21,13 +21,15 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include <stdarg.h>
-#include <string.h>
 
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 #include <vxtp.h>
 
 #include <printf.h>
+
+#include "../../bios/pcxtbios.h"
+#include "../../bios/vxtx.h"
 
 #include "main.h"
 
@@ -150,15 +152,15 @@ static int render_callback(int width, int height, const vxt_byte *rgba, void *us
     return 0;
 }
 
-int video_width(void) {
+int wasm_video_width(void) {
 	return cga_width;
 }
 
-int video_height(void) {
+int wasm_video_height(void) {
 	return cga_height;
 }
 
-const void *video_rgba_memory_pointer(void) {
+const void *wasm_video_rgba_memory_pointer(void) {
 	vxtu_cga_snapshot(cga);
 
 	vxt_dword color = vxtu_cga_border_color(cga);
@@ -170,11 +172,11 @@ const void *video_rgba_memory_pointer(void) {
 	return (void*)video_mem_buffer;
 }
 
-void send_key(int scan) {
+void wasm_send_key(int scan) {
 	vxtu_ppi_key_event(ppi, (enum vxtu_scancode)scan, false);
 }
 
-void send_mouse(int xrel, int yrel, unsigned int buttons) {
+void wasm_send_mouse(int xrel, int yrel, unsigned int buttons) {
 	struct vxtu_mouse_event ev = {0, xrel, yrel};
 	if (buttons & 1)
 		ev.buttons |= VXTU_MOUSE_LEFT;
@@ -183,14 +185,14 @@ void send_mouse(int xrel, int yrel, unsigned int buttons) {
 	vxtu_mouse_push_event(mouse, &ev);
 }
 
-int step_emulation(int cycles) {
+int wasm_step_emulation(int cycles) {
 	struct vxt_step s = vxt_system_step(sys, cycles);
 	if (s.err != VXT_NO_ERROR)
 		LOG(vxt_error_str(s.err));
 	return s.cycles;
 }
 
-void initialize_emulator(int v20) {
+void wasm_initialize_emulator(int v20) {
 	vxt_set_logger(&log_wrapper);
 
 	struct vxtu_disk_interface interface = {
@@ -206,8 +208,8 @@ void initialize_emulator(int v20) {
 
 	struct vxt_pirepheral *devices[] = {
 		vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false),
-        load_bios(get_pcxtbios_data(), (int)get_pcxtbios_size(), 0xFE000),
-        load_bios(get_vxtx_data(), (int)get_vxtx_size(), 0xE0000),
+        load_bios(pcxtbios_bin, (int)pcxtbios_bin_len, 0xFE000),
+        load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000),
         vxtu_pic_create(&ALLOCATOR),
 	    vxtu_dma_create(&ALLOCATOR),
 		vxtu_pit_create(&ALLOCATOR),
@@ -238,4 +240,8 @@ void initialize_emulator(int v20) {
 
 	vxtu_disk_set_boot_drive(disk, drive_num);
 	vxt_system_reset(sys);
+}
+
+void _putchar(char ch) {
+    (void)ch;
 }

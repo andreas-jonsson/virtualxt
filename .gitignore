@@ -57,11 +57,13 @@ zig-cache
 zig-out
 kcov-out
 build
-premake
 docs
 gh-pages
 test
 *.trace
+
+/Makefile
+/*.make
 
 tools/vxtdrv/vxtdrv.com
 tools/shutdown/shutdown.com

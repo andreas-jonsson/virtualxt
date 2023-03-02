@@ -23,19 +23,6 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
-extern const unsigned char *get_pcxtbios_data(void);
-extern unsigned int get_pcxtbios_size(void);
-extern const unsigned char *get_vxtx_data(void);
-extern unsigned int get_vxtx_size(void);
-
-extern int step_emulation(int);
-extern void initialize_emulator(int);
-extern const void *video_rgba_memory_pointer(void);
-extern int video_width(void);
-extern int video_height(void);
-extern void send_key(int);
-extern void send_mouse(int, int, unsigned int);
-
 extern void js_puts(const char*, int);
 extern void js_speaker_callback(double);
 extern void js_set_border_color(unsigned int);

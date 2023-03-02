@@ -6,6 +6,11 @@ newoption {
 }
 
 newoption {
+    trigger = "test",
+    description = "Include libvxt tests."
+}
+
+newoption {
     trigger = "pcap",
     description = "Enable network support by linking with pcap"
 }
@@ -38,7 +43,7 @@ newaction {
 
 workspace "virtualxt"
     configurations { "release", "debug" }
-    location "premake"
+    platforms { "native", "web" }
     language "C"
     cdialect "C11"
 
@@ -76,25 +81,17 @@ workspace "virtualxt"
         kind "StaticLib"
         files { "lib/nuked-opl3/opl3.h", "lib/nuked-opl3/opl3.c" }
 
-    project "libvxt"
+    project "vxt"
         kind "StaticLib"
 
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
+        includedirs "lib/vxt/include"
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
-        includedirs { "lib/vxt/include" }
-
+        
         filter "action:gmake"
             buildoptions { "-nostdinc", "-Wno-unused-function", "-Wno-unused-variable" }
 
-        filter "configurations:Debug"
-            defines "DEBUG"
-            symbols "On"
-
-        filter "configurations:Release"
-            defines "NDEBUG"
-            optimize "On"
-
-    project "libvxtp"
+    project "vxtp"
         kind "StaticLib"
 
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
@@ -106,6 +103,39 @@ workspace "virtualxt"
         filter "action:gmake"
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
 
+    project "web-frontend"
+        kind "ConsoleApp"
+        toolset "clang"
+        targetname "virtualxt"
+        targetprefix ""
+        targetextension ".wasm"
+        targetdir "build/web"
+
+        defines "VXTU_CGA_BYTESWAP"
+
+        includedirs { "lib/vxt/include", "lib/vxtp", "lib/printf" }
+        files { "front/web/*.h", "front/web/*.c" }
+
+        files { "lib/vxt/**.h", "lib/vxt/*.c" }
+        removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
+
+        files { "lib/vxtp/ctrl.c", "lib/vxtp/serial_dbg.c" }
+
+        files { "lib/printf/printf.h", "lib/printf/printf.c" }
+
+        buildoptions { "--target=wasm32", "-mbulk-memory" }
+        linkoptions { "--target=wasm32", "-nostdlib", "-Wl,--allow-undefined", "-Wl,--no-entry", "-Wl,--export-all", "-Wl,--import-memory", "-Wl,--initial-memory=22937600", "-Wl,--max-memory=22937600", "-Wl,--global-base=6560" }
+
+        postbuildcommands {
+            "cp -t build/web/ front/web/index.html front/web/script.js front/web/favicon.ico boot/freedos_web_hd.img",
+            "cp -r lib/simple-keyboard/build/ build/web/kb/"
+        }
+
+        cleancommands {
+            "rm -r build/web",
+            "make clean %{cfg.buildcfg}"
+        }
+
     project "sdl2-frontend"
         kind "ConsoleApp"
         targetname "virtualxt"
@@ -113,7 +143,7 @@ workspace "virtualxt"
 
         files { "front/sdl/*.h", "front/sdl/*.c" }
 
-        links { "libvxt", "libvxtp", "inih", "microui", "nuked-opl3" }
+        links { "vxt", "vxtp", "inih", "microui", "nuked-opl3" }
         includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src" }
 
         filter "options:validator"
@@ -128,3 +158,44 @@ workspace "virtualxt"
 
         filter "action:gmake"
             buildoptions { "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-maybe-uninitialized", "-Wno-stringop-truncation" }
+
+        cleancommands {
+            "rm -r build/bin",
+            "make clean %{cfg.buildcfg}"
+        }
+
+if _OPTIONS["test"] then
+    project "test"
+        kind "ConsoleApp"
+        links "vxt"
+        targetdir "test/bin"
+        includedirs "lib/vxt/include"
+        defines { "TESTING", "VXT_CPU_286" }
+        files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
+        postbuildcommands "./test/bin/test"
+        cleancommands "rm -r test"
+
+        filter "action:gmake"
+            buildoptions { "-Wno-unused-function", "-Wno-unused-variable" }
+
+    io.writefile("test/test.c", (function()
+        local test_names = {}
+        for _,file in pairs(os.matchfiles("lib/vxt/*.c")) do
+            for line in io.lines(file) do
+                if string.startswith(line, "TEST(") then
+                    table.insert(test_names, string.sub(line, 6, -2))
+                end
+            end
+        end
+
+        local head = '#include <stdio.h>\n#include "lib/vxt/testing.h"\n\n'
+        head = head .. '#define RUN_TEST(t) { ok += run_test(t) ? 1 : 0; num++; }\n\n'
+        local body = "\t(void)argc; (void)argv;\n\tint ok = 0, num = 0;\n\n"
+        for _,name in ipairs(test_names) do
+            head = string.format("%sextern int test_%s(struct Test T);\n", head, name)
+            body = string.format("%s\tRUN_TEST(test_%s);\n", body, name)
+        end
+        body = string.format('%s\n\tprintf("%%d/%%d tests passed!\\n", ok, num);\n\treturn (num - ok) ? -1 : 0;\n', body)
+        return string.format("%s\nint main(int argc, char *argv[]) {\n%s}\n", head, body)
+    end)())
+end
