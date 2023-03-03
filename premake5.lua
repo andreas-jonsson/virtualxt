@@ -180,9 +180,8 @@ workspace "virtualxt"
         filter "options:sdl-path=PATH"
             links "SDL2"
 
-        filter { "toolset:clang or gcc" }
+        filter { "toolset:clang or gcc", "not system:macosx" }
             buildoptions { "-Wno-unused-parameter", "-Wno-maybe-uninitialized" }
-
 
 if _OPTIONS["test"] then
     project "test"
