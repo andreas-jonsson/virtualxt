@@ -100,7 +100,7 @@ workspace "virtualxt"
         filter "not options:pcap"
             removefiles "lib/vxtp/network.c"
 
-        filter { "toolset:clang or gcc" }
+        filter { "toolset:clang or gcc", "not toolset:macosx" }
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
 
     project "libretro-frontend"

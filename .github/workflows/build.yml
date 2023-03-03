@@ -130,9 +130,9 @@ jobs:
       - name: Test
         run: |
           premake5 --test gmake
-          make CC=clang clean test
+          make clean test
 
       - name: Build
         run: |
           premake5 --pcap --sdl-path="${GITHUB_WORKSPACE}/sdl_bin" gmake
-          make CC=clang clean sdl2-frontend
+          make clean sdl2-frontend
