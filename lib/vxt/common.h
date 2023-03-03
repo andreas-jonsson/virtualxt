@@ -47,8 +47,7 @@ extern void (*breakpoint)(void);
 
    #define ABORT() { breakpoint(); abort(); }
 #else
-   static volatile int *_just_null = NULL;
-   #define ABORT() { breakpoint(); *_just_null = 0; for(;;); }
+   #define ABORT() { breakpoint(); static volatile int *_null = NULL; *_null = 0; for(;;); }
 #endif
 
 // Host to 8088 endian conversion.

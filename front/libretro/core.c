@@ -33,10 +33,8 @@
 #include <vxt/vxtu.h>
 #include <vxtp.h>
 
-extern const vxt_byte *get_pcxtbios_data(void);
-extern vxt_dword get_pcxtbios_size(void);
-extern const vxt_byte *get_vxtx_data(void);
-extern vxt_dword get_vxtx_size(void);
+#include "../../bios/pcxtbios.h"
+#include "../../bios/vxtx.h"
 
 #define LOG(...) log_cb(RETRO_LOG_INFO, __VA_ARGS__)
 
@@ -73,10 +71,10 @@ static int log_wrapper(const char *fmt, ...) {
 	return n;
 }
 
-static long long ustimer(void) {
-    return (long long)(((double)clock() / CLOCKS_PER_SEC) * 1000000.0);
+//static long long ustimer(void) {
+//    return (long long)(((double)clock() / CLOCKS_PER_SEC) * 1000000.0);
     //return (long long)time_usec_cb();
-}
+//}
 
 static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
 	struct vxt_pirepheral *rom = vxtu_memory_create(&realloc, base, size, true);
@@ -98,8 +96,8 @@ void retro_init(void) {
 
 	struct vxt_pirepheral *devices[] = {
 		vxtu_memory_create(&realloc, 0x0, 0x100000, false),
-        load_bios(get_pcxtbios_data(), (int)get_pcxtbios_size(), 0xFE000),
-        load_bios(get_vxtx_data(), (int)get_vxtx_size(), 0xE0000),
+        load_bios(pcxtbios_bin, (int)pcxtbios_bin_len, 0xFE000),
+        load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000),
         vxtu_pic_create(&realloc),
 	    vxtu_dma_create(&realloc),
         vxtu_pit_create(&realloc),
@@ -241,7 +239,7 @@ void retro_keyboard_event(bool down, unsigned keycode, uint32_t character, uint1
 
 bool retro_load_game(const struct retro_game_info *info) {
 
-    LOG("Load game! Size: %d\n", info ? info->size : -1);
+    LOG("Load game! Size: %d\n", info ? (int)info->size : -1);
 
      /*
     struct retro_input_descriptor desc[] = {

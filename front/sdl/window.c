@@ -43,7 +43,7 @@ mu_Container *open_window(mu_Context *ctx, const char *name) {
 
 void open_error_window(mu_Context *ctx, const char *msg) {
 	if (open_window(ctx, "Error"))
-		strncpy(window_error_message, msg, sizeof(window_error_message));
+		strncpy(window_error_message, msg, sizeof(window_error_message) - 1);
 }
 
 void help_window(mu_Context *ctx) {
@@ -113,7 +113,7 @@ int eject_window(mu_Context *ctx, const char *path) {
 	
 		mu_label(ctx, "A:");
 		
-		strncpy(buf, path ? path : "EMPTY", sizeof(buf));
+		strncpy(buf, path ? path : "EMPTY", sizeof(buf) - 1);
 		mu_textbox_ex(ctx, buf, sizeof(buf), MU_OPT_NOINTERACT);
 
 		if ((eject = mu_button_ex(ctx, "Eject", 0, MU_OPT_ALIGNCENTER | (path ? 0 : MU_OPT_NOINTERACT))))

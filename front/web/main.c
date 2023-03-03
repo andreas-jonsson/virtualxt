@@ -31,7 +31,7 @@
 #include "../../bios/pcxtbios.h"
 #include "../../bios/vxtx.h"
 
-#include "main.h"
+#include "js.h"
 
 #define ALLOCATOR_SIZE (20 * 1024 * 1024)
 vxtu_static_allocator(ALLOCATOR, ALLOCATOR_SIZE)

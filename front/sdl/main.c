@@ -679,7 +679,7 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	if (args.floppy) {
-		strncpy(floppy_image_path, args.floppy, sizeof(floppy_image_path));
+		strncpy(floppy_image_path, args.floppy, sizeof(floppy_image_path) - 1);
 
 		FILE *fp = fopen(floppy_image_path, "rb+");
 		vxt_error (*mnt)(struct vxt_pirepheral*,int,void*) = args.fdc ? vxtp_fdc_mount : vxtu_disk_mount;
@@ -785,7 +785,7 @@ int ENTRY(int argc, char *argv[]) {
 					}
 					break;
 				case SDL_DROPFILE:
-					strncpy(new_floppy_image_path, e.drop.file, sizeof(new_floppy_image_path));
+					strncpy(new_floppy_image_path, e.drop.file, sizeof(new_floppy_image_path) - 1);
 					open_window(ctx, "Mount");
 					break;
 				case SDL_JOYAXISMOTION:

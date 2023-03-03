@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ "develop", "edge", "release" ]
+    branches: [ "develop", "edge", "release", "premake" ]
   pull_request:
     branches: [ "develop" ]
 
@@ -31,9 +31,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install kcov cppcheck libpcap-dev
           curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
-          curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
           curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
-          echo "${GITHUB_WORKSPACE}/zig-linux-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
 
@@ -42,26 +40,23 @@ jobs:
           ./configure --prefix="${GITHUB_WORKSPACE}/sdl_bin"
           make && make install
 
-      - name: Premake
-        run: |
-          premake5 --sdl-path="${GITHUB_WORKSPACE}/sdl_bin" gmake
-          cd premake
-          make
-          make clean
-          cd "${GITHUB_WORKSPACE}" && rm -r premake
-
       - name: Test & Check
-        run: zig build check
+        run: |
+          premake5 check
+          premake5 --test --sdl-path="${GITHUB_WORKSPACE}/sdl_bin" gmake
+          make clean test
 
       - name: Report
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
-          kcov kcov-out zig-cache/o/*/test .
+          kcov kcov-out test/test .
           bash <(curl -s https://codecov.io/bash) -s kcov-out
         
       - name: Build
-        run: zig build -Dpcap -Drelease-fast -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
+        run: |
+          premake5 --pcap --sdl-path="${GITHUB_WORKSPACE}/sdl_bin" gmake
+          make clean sdl2-frontend
 
       - name: Package
         run: ./tools/package/itch/package.linux.sh

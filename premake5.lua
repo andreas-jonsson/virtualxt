@@ -66,7 +66,7 @@ workspace "virtualxt"
         defines "VXTP_NETWORK"
         links "pcap"
 
-    filter { "action:gmake" }
+    filter { "toolset:clang or gcc" }
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
 
     project "inih"
@@ -88,8 +88,8 @@ workspace "virtualxt"
         includedirs "lib/vxt/include"
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
         
-        filter "action:gmake"
-            buildoptions { "-nostdinc", "-Wno-unused-function", "-Wno-unused-variable" }
+        filter { "toolset:clang or gcc" }
+            buildoptions { "-nostdinc" }
 
     project "vxtp"
         kind "StaticLib"
@@ -100,8 +100,27 @@ workspace "virtualxt"
         filter "not options:pcap"
             removefiles "lib/vxtp/network.c"
 
-        filter "action:gmake"
+        filter { "toolset:clang or gcc" }
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
+
+    project "libretro-frontend"
+        kind "SharedLib"
+        targetname "virtualxt"
+        targetdir "build/lib"
+        pic "On"
+
+        defines "VXTU_CGA_BYTESWAP"
+
+        includedirs { "lib/vxt/include", "lib/vxtp", "lib/libretro" }
+        files { "front/libretro/*.h", "front/libretro/*.c" }
+        
+        files { "lib/vxt/**.h", "lib/vxt/*.c" }
+        removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
+
+        cleancommands {
+            "rm -r build/lib",
+            "make clean %{cfg.buildcfg}"
+        }
 
     project "web-frontend"
         kind "ConsoleApp"
@@ -146,6 +165,11 @@ workspace "virtualxt"
         links { "vxt", "vxtp", "inih", "microui", "nuked-opl3" }
         includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src" }
 
+        cleancommands {
+            "rm -r build/bin",
+            "make clean %{cfg.buildcfg}"
+        }
+
         filter "options:validator"
             files "tools/validator/pi8088/pi8088.c"
 
@@ -156,27 +180,25 @@ workspace "virtualxt"
         filter "options:sdl-path=PATH"
             links "SDL2"
 
-        filter "action:gmake"
-            buildoptions { "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-maybe-uninitialized", "-Wno-stringop-truncation" }
+        filter { "toolset:clang or gcc" }
+            buildoptions { "-Wno-unused-parameter", "-Wno-maybe-uninitialized" }
 
-        cleancommands {
-            "rm -r build/bin",
-            "make clean %{cfg.buildcfg}"
-        }
 
 if _OPTIONS["test"] then
     project "test"
         kind "ConsoleApp"
-        links "vxt"
         targetdir "test/bin"
         includedirs "lib/vxt/include"
         defines { "TESTING", "VXT_CPU_286" }
         files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
+        optimize "Off"
+
         postbuildcommands "./test/bin/test"
         cleancommands "rm -r test"
 
-        filter "action:gmake"
-            buildoptions { "-Wno-unused-function", "-Wno-unused-variable" }
+        filter { "toolset:clang or gcc" }
+            buildoptions { "-Wno-unused-function", "-Wno-unused-variable", "--coverage" }
+            linkoptions "-fprofile-arcs"
 
     io.writefile("test/test.c", (function()
         local test_names = {}
@@ -188,7 +210,7 @@ if _OPTIONS["test"] then
             end
         end
 
-        local head = '#include <stdio.h>\n#include "lib/vxt/testing.h"\n\n'
+        local head = '#include <stdio.h>\n#include "../lib/vxt/testing.h"\n\n'
         head = head .. '#define RUN_TEST(t) { ok += run_test(t) ? 1 : 0; num++; }\n\n'
         local body = "\t(void)argc; (void)argv;\n\tint ok = 0, num = 0;\n\n"
         for _,name in ipairs(test_names) do

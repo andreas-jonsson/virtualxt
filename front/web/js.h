@@ -20,13 +20,15 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-const std = @import("std");
-const c = @cImport(@cInclude("main.h"));
+#ifndef _JS_H_
+#define _JS_H_
 
-pub fn main() void {
-    const ret = c.c_main(
-        @intCast(c_int, std.os.argv.len),
-        @ptrCast([*c][*c]u8, std.os.argv)
-    );
-    std.os.exit(@intCast(u8, ret));
-}
+extern void js_puts(const char*, int);
+extern void js_speaker_callback(double);
+extern void js_set_border_color(unsigned int);
+extern void js_disk_read(void*, unsigned int, unsigned int);
+extern void js_disk_write(void*, unsigned int, unsigned int);
+extern unsigned int js_disk_size(void);
+extern void js_shutdown(void);
+
+#endif
