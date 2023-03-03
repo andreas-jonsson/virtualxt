@@ -85,7 +85,7 @@ jobs:
         run: |
           curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
           curl -L -o sdl.zip https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-devel-${SDL2_VERSION}-VC.zip && unzip sdl.zip
-          curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-macosx.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
+          curl -L -o premake5.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-windows.zip && mkdir premake5 && unzip premake5.zip -d premake5
           echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
 
