@@ -10,7 +10,6 @@ on:
 
 env:
   VXT_VERSION: 0.8.0
-  ZIG_VERSION: 0.10.0
   SDL2_VERSION: 2.24.1
 
 jobs:
@@ -120,8 +119,8 @@ jobs:
 
       - name: Setup
         run: |
-          curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-macos-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
-          echo "${GITHUB_WORKSPACE}/zig-macos-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
+          curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-macosx.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
+          echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
 
           curl -L -o sdl.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-${SDL2_VERSION}.tar.gz && tar -xf sdl.tar.gz
           cd SDL2-${SDL2_VERSION}
@@ -129,7 +128,11 @@ jobs:
           make && make install
 
       - name: Test
-        run: zig build test
-        
+        run: |
+          premake5 --test gmake
+          make clean test
+
       - name: Build
-        run: zig build -Dsdl-path="${GITHUB_WORKSPACE}/sdl_bin"
+        run: |
+          premake5 --pcap --sdl-path="${GITHUB_WORKSPACE}/sdl_bin" gmake
+          make clean sdl2-frontend

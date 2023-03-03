@@ -33,7 +33,6 @@ jobs:
 
       - name: Test
         run: |
-          premake5 check
           premake5 --test gmake
           make clean test
 
