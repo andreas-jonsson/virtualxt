@@ -53,8 +53,6 @@ dkms.conf
 
 __pycache__
 
-zig-cache
-zig-out
 kcov-out
 build
 docs
