@@ -198,7 +198,7 @@ if _OPTIONS["test"] then
 
         filter { "toolset:clang or gcc" }
             buildoptions { "-Wno-unused-function", "-Wno-unused-variable", "--coverage" }
-            linkoptions "-fprofile-arcs"
+            linkoptions "--coverage"
 
     io.writefile("test/test.c", (function()
         local test_names = {}
