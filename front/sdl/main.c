@@ -55,7 +55,7 @@
 struct video_adapter {
 	struct vxt_pirepheral *device;
 	vxt_dword (*border_color)(struct vxt_pirepheral *p);
-	bool (*snapshot)(struct vxt_pirepheral *p);
+	_Bool (*snapshot)(struct vxt_pirepheral *p); // TODO: Add vxt_bool type.
 	int (*render)(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 };
 
