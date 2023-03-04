@@ -25,6 +25,7 @@
 
 #ifdef _WIN32
     #include <windows.h>
+    #include <direct.h>
     #include <io.h>
 
     #ifndef F_OK
@@ -42,14 +43,13 @@
     #ifndef access
         #define access _access
     #endif
-    #ifndef dirname
-        #define dirname _dirname
-    #endif
 #else
     #include <alloca.h>
     #include <strings.h>
     #include <libgen.h>
     #include <unistd.h>
 #endif
+
+#include <dirent.h>
 
 #endif

@@ -23,7 +23,6 @@
 #include "vxtp.h"
 #include "rifs.h"
 
-#include <dirent.h>
 #include <ctype.h>
 #include <errno.h>
 #include <sys/stat.h>
