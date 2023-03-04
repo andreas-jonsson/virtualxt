@@ -21,6 +21,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "mu_renderer.h"
 #include "mu_atlas.inl"
