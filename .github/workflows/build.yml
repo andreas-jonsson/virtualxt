@@ -94,9 +94,10 @@ jobs:
           premake5 --test --cc=clang gmake
           make clean test
         
+      # TODO: Fix pcap for Windows.
       - name: Build
         run: |
-          premake5 --pcap --cc=clang --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
+          premake5 --cc=clang --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
           make clean sdl2-frontend
 
       - name: Package
