@@ -66,6 +66,9 @@ workspace "virtualxt"
         defines "VXTP_NETWORK"
         links "pcap"
 
+    filter "system:windows"
+        defines "_CRT_SECURE_NO_WARNINGS"
+
     filter { "toolset:clang or gcc" }
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
 
@@ -182,6 +185,9 @@ workspace "virtualxt"
 
         filter "toolset:clang or gcc"
             buildoptions "-Wno-unused-parameter"
+
+        filter "system:macosx"
+            buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
 
         filter { "toolset:clang or gcc", "not system:macosx" }
             buildoptions "-Wno-maybe-uninitialized"
