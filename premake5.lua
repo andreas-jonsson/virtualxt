@@ -200,7 +200,7 @@ workspace "virtualxt"
 
         filter "not options:sdl-path=PATH"
             includedirs { _OPTIONS["sdl-path"] .. "/include" }
-            links { _OPTIONS["sdl-path"] .. "/lib/SDL2" }
+            links { _OPTIONS["sdl-path"] .. ((os.target() == "windows") and "/lib/x64/SDL2" or "/lib/SDL2") }
         
         filter "options:sdl-path=PATH"
             links "SDL2"
