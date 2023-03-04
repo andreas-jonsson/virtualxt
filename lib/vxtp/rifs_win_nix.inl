@@ -26,9 +26,9 @@
     #include <windows.h>
 #else
     #include <alloca.h>
+    #include <dirent.h>
 #endif
 
-#include <dirent.h>
 #include <strings.h>
 #include <ctype.h>
 #include <errno.h>
