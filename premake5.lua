@@ -109,6 +109,24 @@ workspace "virtualxt"
         filter "toolset:gcc"
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
 
+    project "scrambler"
+        kind "ConsoleApp"
+        targetname "scrambler"
+        targetdir "build/bin"
+        links "gpiod"
+        defines { "PI8088", "VXT_CPU_286" }
+
+        files { "tools/validator/pi8088/scrambler.c", "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
+        
+        includedirs "lib/vxt/include"
+        files { "lib/vxt/**.h", "lib/vxt/*.c" }
+        removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
+
+        cleancommands {
+            "rm -r build/bin",
+            "make clean %{cfg.buildcfg}"
+        }
+
     project "libretro-frontend"
         kind "SharedLib"
         targetname "virtualxt"
@@ -177,7 +195,7 @@ workspace "virtualxt"
         }
 
         filter "options:validator"
-            files "tools/validator/pi8088/pi8088.c"
+            files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
 
         filter "not options:sdl-path=PATH"
             includedirs { _OPTIONS["sdl-path"] .. "/include" }

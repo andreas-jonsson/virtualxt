@@ -25,6 +25,7 @@
 
 #ifdef _WIN32
     #include <windows.h>
+    #include <io.h>
 
     #ifndef F_OK
         #define F_OK 0
