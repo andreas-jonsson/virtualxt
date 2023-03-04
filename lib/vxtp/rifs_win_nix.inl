@@ -114,7 +114,7 @@ static bool rifs_exists(const char *path) {
 
 static char *dirnamex(char *path) {
     #ifdef _WIN32
-        PathRemoveFileSpec(path);
+        PathRemoveFileSpecA(path);
         return path;
     #else
         return dirname(path);
