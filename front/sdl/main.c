@@ -165,7 +165,7 @@ static const char *mgetline(void) {
 	return str;
 }
 
-static bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) {
+static _Bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) { // TODO: Change to vxt_bool type.
 	#ifdef __APPLE__
 		int fh;
 		char name[128] = {0};
