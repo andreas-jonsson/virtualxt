@@ -100,6 +100,9 @@ workspace "virtualxt"
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
         includedirs { "ib/vxtp", "lib/vxt/include", "lib/nuked-opl3"  }
 
+        filter "system:windows"
+            includedirs "lib/win-dirent/include"
+
         filter "not options:pcap"
             removefiles "lib/vxtp/network.c"
 

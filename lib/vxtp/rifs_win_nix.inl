@@ -26,12 +26,12 @@
     #include <windows.h>
 #else
     #include <alloca.h>
-    #include <dirent.h>
     #include <strings.h>
     #include <libgen.h>
     #include <unistd.h>
 #endif
 
+#include <dirent.h>
 #include <ctype.h>
 #include <errno.h>
 #include <sys/stat.h>
