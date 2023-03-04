@@ -27,13 +27,13 @@
 #else
     #include <alloca.h>
     #include <dirent.h>
+    #include <strings.h>
+    #include <libgen.h>
 #endif
 
-#include <strings.h>
 #include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
-#include <libgen.h>
 #include <sys/stat.h>
 
 #define CLOSE_DIR(p) { if ((p)->dir_it) closedir((DIR*)(p)->dir_it); (p)->dir_it = NULL; }
