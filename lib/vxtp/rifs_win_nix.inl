@@ -25,8 +25,8 @@
 #ifdef _WIN32
     #include <windows.h>
 
-    #ifndef strncasecmp
-        #define strncasecmp _strnicmp
+    #ifndef strcasecmp
+        #define strcasecmp _stricmp
     #endif
 #else
     #include <alloca.h>
