@@ -28,6 +28,18 @@
     #ifndef strcasecmp
         #define strcasecmp _stricmp
     #endif
+    #ifndef mkdir
+        #define mkdir _mkdir
+    #endif
+    #ifndef rmdir
+        #define rmdir _rmdir
+    #endif
+    #ifndef access
+        #define access _access
+    #endif
+    #ifndef dirname
+        #define dirname _dirname
+    #endif
 #else
     #include <alloca.h>
     #include <strings.h>
