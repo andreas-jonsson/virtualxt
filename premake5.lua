@@ -69,7 +69,7 @@ workspace "virtualxt"
     filter "system:windows"
         defines "_CRT_SECURE_NO_WARNINGS"
 
-    filter { "toolset:clang or gcc" }
+    filter "toolset:clang or gcc"
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
 
     project "inih"
@@ -91,7 +91,7 @@ workspace "virtualxt"
         includedirs "lib/vxt/include"
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
         
-        filter { "toolset:clang or gcc" }
+        filter "toolset:clang or gcc"
             buildoptions { "-nostdinc" }
 
     project "vxtp"
@@ -103,7 +103,7 @@ workspace "virtualxt"
         filter "not options:pcap"
             removefiles "lib/vxtp/network.c"
 
-        filter { "toolset:clang or gcc", "not system:macosx" }
+        filter "toolset:gcc"
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
 
     project "libretro-frontend"
@@ -186,10 +186,10 @@ workspace "virtualxt"
         filter "toolset:clang or gcc"
             buildoptions "-Wno-unused-parameter"
 
-        filter "system:macosx"
+        filter "toolset:clang"
             buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
 
-        filter { "toolset:clang or gcc", "not system:macosx" }
+        filter "toolset:gcc"
             buildoptions "-Wno-maybe-uninitialized"
 
 if _OPTIONS["test"] then

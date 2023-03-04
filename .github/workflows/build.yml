@@ -91,13 +91,13 @@ jobs:
 
       - name: Test
         run: |
-          premake5 --test gmake
-          make CC=clang clean test
+          premake5 --test --cc=clang gmake
+          make clean test
         
       - name: Build
         run: |
-          premake5 --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
-          make CC=clang clean sdl2-frontend
+          premake5 --pcap --cc=clang --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
+          make clean sdl2-frontend
 
       - name: Package
         run: |
