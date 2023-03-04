@@ -27,6 +27,7 @@
     #include <windows.h>
     #include <direct.h>
     #include <io.h>
+    #include <shlwapi.h>
 
     #ifndef F_OK
         #define F_OK 0
