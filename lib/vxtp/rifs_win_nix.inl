@@ -29,11 +29,11 @@
     #include <dirent.h>
     #include <strings.h>
     #include <libgen.h>
+    #include <unistd.h>
 #endif
 
 #include <ctype.h>
 #include <errno.h>
-#include <unistd.h>
 #include <sys/stat.h>
 
 #define CLOSE_DIR(p) { if ((p)->dir_it) closedir((DIR*)(p)->dir_it); (p)->dir_it = NULL; }
