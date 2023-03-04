@@ -102,6 +102,7 @@ workspace "virtualxt"
 
         filter "system:windows"
             includedirs "lib/win-dirent/include"
+            buildoptions "-Wno-unused-function"
 
         filter "not options:pcap"
             removefiles "lib/vxtp/network.c"
