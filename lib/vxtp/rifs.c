@@ -22,6 +22,7 @@
 
 #include "vxtp.h"
 #include "crc32.h"
+#include "rifs.h"
 
 #include <assert.h>
 #include <string.h>

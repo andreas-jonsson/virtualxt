@@ -21,31 +21,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include "vxtp.h"
-
-#ifdef _WIN32
-    #include <windows.h>
-
-    #ifndef strcasecmp
-        #define strcasecmp _stricmp
-    #endif
-    #ifndef mkdir
-        #define mkdir _mkdir
-    #endif
-    #ifndef rmdir
-        #define rmdir _rmdir
-    #endif
-    #ifndef access
-        #define access _access
-    #endif
-    #ifndef dirname
-        #define dirname _dirname
-    #endif
-#else
-    #include <alloca.h>
-    #include <strings.h>
-    #include <libgen.h>
-    #include <unistd.h>
-#endif
+#include "rifs.h"
 
 #include <dirent.h>
 #include <ctype.h>
