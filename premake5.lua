@@ -97,6 +97,8 @@ workspace "virtualxt"
     project "vxtp"
         kind "StaticLib"
 
+        defines "VXTP_NUKED_OPL3"
+
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
         includedirs { "ib/vxtp", "lib/vxt/include", "lib/nuked-opl3"  }
 
@@ -167,8 +169,17 @@ workspace "virtualxt"
 
         files { "lib/printf/printf.h", "lib/printf/printf.c" }
 
+        -- Perhaps move this to options?
+        local page_size = 0x10000
+        local memory = {
+            initial = 350 * page_size,   -- Initial size of the linear memory (1 page = 64kB)
+            max = 350 * page_size,       -- Maximum size of the linear memory
+            base = 6560                  -- Offset in linear memory to place global data
+        }
+
         buildoptions { "--target=wasm32", "-mbulk-memory" }
-        linkoptions { "--target=wasm32", "-nostdlib", "-Wl,--allow-undefined", "-Wl,--no-entry", "-Wl,--export-all", "-Wl,--import-memory", "-Wl,--initial-memory=22937600", "-Wl,--max-memory=22937600", "-Wl,--global-base=6560" }
+        linkoptions { "--target=wasm32", "-nostdlib", "-Wl,--allow-undefined", "-Wl,--no-entry", "-Wl,--export-all", "-Wl,--import-memory" }
+        linkoptions { "-Wl,--initial-memory=" .. tostring(memory.initial), "-Wl,--max-memory=" .. tostring(memory.max), "-Wl,--global-base=" .. tostring(memory.base) }
 
         postbuildcommands {
             "cp -t build/web/ front/web/index.html front/web/script.js front/web/favicon.ico boot/freedos_web_hd.img",
@@ -185,10 +196,12 @@ workspace "virtualxt"
         targetname "virtualxt"
         targetdir "build/bin"
 
+        defines "VXTP_NUKED_OPL3"
+
         files { "front/sdl/*.h", "front/sdl/*.c" }
 
         links { "vxt", "vxtp", "inih", "microui", "nuked-opl3" }
-        includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src" }
+        includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "lib/nuked-opl3" }
 
         cleancommands {
             "rm -r build/bin",
@@ -200,9 +213,17 @@ workspace "virtualxt"
 
         filter "not options:sdl-path=PATH"
             includedirs { _OPTIONS["sdl-path"] .. "/include" }
-            links { _OPTIONS["sdl-path"] .. ((os.target() == "windows") and "/lib/x64/SDL2" or "/lib/SDL2") }
+            if os.target() == "windows" then
+                links { _OPTIONS["sdl-path"] ..  "/lib/x64/SDL2main" }
+                links { _OPTIONS["sdl-path"] ..  "/lib/x64/SDL2" }
+            else
+                links { _OPTIONS["sdl-path"] ..  "/lib/SDL2" }
+            end
         
         filter "options:sdl-path=PATH"
+            if os.target() == "windows" then
+                links "SDL2main"
+            end
             links "SDL2"
 
         filter "toolset:clang or gcc"
