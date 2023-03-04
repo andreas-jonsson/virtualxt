@@ -24,6 +24,10 @@
 
 #ifdef _WIN32
     #include <windows.h>
+
+    #ifndef strncasecmp
+        #define strncasecmp _strnicmp
+    #endif
 #else
     #include <alloca.h>
     #include <strings.h>
