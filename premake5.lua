@@ -258,15 +258,15 @@ if _OPTIONS["test"] then
 
     io.writefile("test/codecov.yml", [[
         ignore:
-            - "../lib/vxt/cga_font.h"
-            - "../lib/vxt/cga.c"
-            - "../lib/vxt/disk.c"
-            - "../lib/vxt/dma.c"
-            - "../lib/vxt/mda.c"
-            - "../lib/vxt/mouse.c"
-            - "../lib/vxt/pic.c"
-            - "../lib/vxt/pit.c"
-            - "../lib/vxt/ppi.c"
+            - "lib/vxt/cga_font.h"
+            - "lib/vxt/cga.c"
+            - "lib/vxt/disk.c"
+            - "lib/vxt/dma.c"
+            - "lib/vxt/mda.c"
+            - "lib/vxt/mouse.c"
+            - "lib/vxt/pic.c"
+            - "lib/vxt/pit.c"
+            - "lib/vxt/ppi.c"
     ]])
     
     io.writefile("test/test.c", (function()
