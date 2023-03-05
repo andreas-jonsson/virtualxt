@@ -37,6 +37,7 @@
 
 #ifdef _WIN32
 	#include <SDL.h>
+	#include <SDL_main.h>
 #else
 	#include <SDL2/SDL.h>
 #endif
