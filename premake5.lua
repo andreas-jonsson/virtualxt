@@ -178,8 +178,8 @@ workspace "virtualxt"
         }
 
         buildoptions { "--target=wasm32", "-mbulk-memory" }
-        linkoptions { "--target=wasm32", "-nostdlib", "-Wl,--allow-undefined", "-Wl,--no-entry", "-Wl,--export-all", "-Wl,--import-memory" }
-        linkoptions { "-Wl,--initial-memory=" .. tostring(memory.initial), "-Wl,--max-memory=" .. tostring(memory.max), "-Wl,--global-base=" .. tostring(memory.base) }
+        linkoptions { "--target=wasm32", "-nostdlib", "-Wl,--allow-undefined", ",--no-entry", ",--export-all", ",--import-memory" }
+        linkoptions { "-Wl,--initial-memory=" .. tostring(memory.initial), ",--max-memory=" .. tostring(memory.max), ",--global-base=" .. tostring(memory.base) }
 
         postbuildcommands {
             "cp -t build/web/ front/web/index.html front/web/script.js front/web/favicon.ico boot/freedos_web_hd.img",
@@ -225,6 +225,9 @@ workspace "virtualxt"
                 links "SDL2main"
             end
             links "SDL2"
+
+        filter "system:windows"
+            linkoptions "-Xlinker /subsystem:windows"
 
         filter "toolset:clang or gcc"
             buildoptions "-Wno-unused-parameter"
