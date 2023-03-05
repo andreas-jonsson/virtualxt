@@ -247,6 +247,7 @@ if _OPTIONS["test"] then
         defines { "TESTING", "VXT_CPU_286" }
         files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
         optimize "Off"
+        symbols "On"
 
         postbuildcommands "./build/test/test"
         cleancommands "rm -r test build/test"
