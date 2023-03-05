@@ -49,7 +49,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
-          kcov kcov-out test/bin/test .
+          kcov kcov-out build/test/test .
           bash <(curl -s https://codecov.io/bash) -s kcov-out
         
       - name: Build
