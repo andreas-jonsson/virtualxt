@@ -403,11 +403,7 @@ static int load_config(void *user, const char *section, const char *name, const 
 	return 0;
 }
 
-#ifndef ENTRY
-    #define ENTRY main
-#endif
-
-int ENTRY(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 	// This is a hack because there seems to be a bug in DocOpt
 	// that prevents us from adding trailing parameters.
 	char *rifs_path = NULL;
