@@ -242,20 +242,33 @@ workspace "virtualxt"
 if _OPTIONS["test"] then
     project "test"
         kind "ConsoleApp"
-        targetdir "build/test"
+        targetdir "test"
         includedirs "lib/vxt/include"
         defines { "TESTING", "VXT_CPU_286" }
         files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
         optimize "Off"
         symbols "On"
 
-        postbuildcommands "./build/test/test"
-        cleancommands "rm -r test build/test"
+        postbuildcommands "./test/test"
+        cleancommands "rm -r test"
 
         filter { "toolset:clang or gcc" }
             buildoptions { "-Wno-unused-function", "-Wno-unused-variable", "--coverage" }
             linkoptions "--coverage"
 
+    io.writefile("test/codecov.yml", [[
+        ignore:
+            - "../lib/vxt/cga_font.h"
+            - "../lib/vxt/cga.c"
+            - "../lib/vxt/disk.c"
+            - "../lib/vxt/dma.c"
+            - "../lib/vxt/mda.c"
+            - "../lib/vxt/mouse.c"
+            - "../lib/vxt/pic.c"
+            - "../lib/vxt/pit.c"
+            - "../lib/vxt/ppi.c"
+    ]])
+    
     io.writefile("test/test.c", (function()
         local test_names = {}
         for _,file in pairs(os.matchfiles("lib/vxt/*.c")) do
