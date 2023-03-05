@@ -242,14 +242,14 @@ workspace "virtualxt"
 if _OPTIONS["test"] then
     project "test"
         kind "ConsoleApp"
-        targetdir "test/bin"
+        targetdir "build/test"
         includedirs "lib/vxt/include"
         defines { "TESTING", "VXT_CPU_286" }
         files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
         optimize "Off"
 
-        postbuildcommands "./test/bin/test"
-        cleancommands "rm -r test"
+        postbuildcommands "./build/test/test"
+        cleancommands "rm -r test build/test"
 
         filter { "toolset:clang or gcc" }
             buildoptions { "-Wno-unused-function", "-Wno-unused-variable", "--coverage" }
