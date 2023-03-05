@@ -63,7 +63,7 @@ jobs:
       - name: Deploy
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release|premake)$ ]]; then ./tools/package/itch/push.sh; fi
 
   windows-build:
     name: Build (Windows AMD64)
@@ -108,7 +108,7 @@ jobs:
       - name: Deploy
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release|premake)$ ]]; then ./tools/package/itch/push.sh; fi
 
   macos-build:
     name: Build (MacOS AMD64)
