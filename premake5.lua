@@ -228,6 +228,7 @@ workspace "virtualxt"
 
         filter "system:windows"
             linkoptions "-Xlinker /subsystem:windows"
+            links { "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"
             buildoptions "-Wno-unused-parameter"
