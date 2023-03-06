@@ -7,7 +7,12 @@ newoption {
 
 newoption {
     trigger = "test",
-    description = "Include libvxt tests."
+    description = "Generate make files for libvxt tests"
+}
+
+newoption {
+    trigger = "scrambler",
+    description = "Generate make files for scrambler"
 }
 
 newoption {
@@ -22,7 +27,7 @@ newoption {
 
 newoption {
     trigger = "i286",
-    description = "Select some 286 support when running with a V20"
+    description = "Provide some 286 support when running with a V20"
 }
 
 newaction {
@@ -111,24 +116,6 @@ workspace "virtualxt"
 
         filter "toolset:gcc"
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
-
-    project "scrambler"
-        kind "ConsoleApp"
-        targetname "scrambler"
-        targetdir "build/bin"
-        links "gpiod"
-        defines { "PI8088", "VXT_CPU_286" }
-
-        files { "tools/validator/pi8088/scrambler.c", "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
-        
-        includedirs "lib/vxt/include"
-        files { "lib/vxt/**.h", "lib/vxt/*.c" }
-        removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
-
-        cleancommands {
-            "rm -r build/bin",
-            "make clean %{cfg.buildcfg}"
-        }
 
     project "libretro-frontend"
         kind "SharedLib"
@@ -238,6 +225,26 @@ workspace "virtualxt"
 
         filter "toolset:gcc"
             buildoptions "-Wno-maybe-uninitialized"
+
+if _OPTIONS["scrambler"] then
+    project "scrambler"
+        kind "ConsoleApp"
+        targetname "scrambler"
+        targetdir "build/bin"
+        links "gpiod"
+        defines { "PI8088", "VXT_CPU_286" }
+
+        files { "tools/validator/pi8088/scrambler.c", "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
+        
+        includedirs "lib/vxt/include"
+        files { "lib/vxt/**.h", "lib/vxt/*.c" }
+        removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
+
+        cleancommands {
+            "rm -r build/bin",
+            "make clean %{cfg.buildcfg}"
+        }
+end
 
 if _OPTIONS["test"] then
     project "test"
