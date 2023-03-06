@@ -137,7 +137,7 @@ workspace "virtualxt"
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
         cleancommands {
-            "rm -r build/lib",
+            "{RMDIR} build/lib",
             "make clean %{cfg.buildcfg}"
         }
 
@@ -174,12 +174,15 @@ workspace "virtualxt"
         linkoptions { "-Wl,--initial-memory=" .. tostring(memory.initial), ",--max-memory=" .. tostring(memory.max), ",--global-base=" .. tostring(memory.base) }
 
         postbuildcommands {
-            "cp -t build/web/ front/web/index.html front/web/script.js front/web/favicon.ico boot/freedos_web_hd.img",
-            "cp -r lib/simple-keyboard/build/ build/web/kb/"
+            "{COPYFILE} front/web/index.html build/web/",
+            "{COPYFILE} front/web/script.js build/web/",
+            "{COPYFILE} front/web/favicon.ico build/web/",
+            "{COPYFILE} boot/freedos_web_hd.img build/web/",
+            "{COPYDIR} lib/simple-keyboard/build/ build/web/kb/"
         }
 
         cleancommands {
-            "rm -r build/web",
+            "{RMDIR} build/web",
             "make clean %{cfg.buildcfg}"
         }
 
@@ -196,7 +199,7 @@ workspace "virtualxt"
         includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "lib/nuked-opl3" }
 
         cleancommands {
-            "rm -r build/bin",
+            "{RMDIR} build/bin",
             "make clean %{cfg.buildcfg}"
         }
 
@@ -249,7 +252,7 @@ if _OPTIONS["scrambler"] then
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
         cleancommands {
-            "rm -r build/bin",
+            "{RMDIR} build/bin",
             "make clean %{cfg.buildcfg}"
         }
 end
@@ -265,7 +268,7 @@ if _OPTIONS["test"] then
         symbols "On"
 
         postbuildcommands "./test/test"
-        cleancommands "rm -r test"
+        cleancommands "{RMDIR} test"
 
         filter { "toolset:clang or gcc" }
             buildoptions { "-Wno-unused-function", "-Wno-unused-variable", "--coverage" }
