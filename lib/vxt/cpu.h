@@ -25,6 +25,15 @@
 
 #include "common.h"
 
+// TODO: This need some more work.
+#if !defined(VXT_NO_PREFETCH) && defined(PI8088)
+   #define VXT_NO_PREFETCH
+#endif
+
+#ifndef VXT_NO_PREFETCH
+   //#define VXT_DEBUG_PREFETCH
+#endif
+
 #define VALIDATOR_BEGIN(p, regs) { if ((p)->validator) (p)->validator->begin((regs), (p)->validator->userdata); }
 #define VALIDATOR_END(p, name, op, mod, cycles, regs) { if ((p)->validator) (p)->validator->end((name), (op), (mod), (cycles), (regs), (p)->validator->userdata); }
 #define VALIDATOR_READ(p, addr, data) { if ((p)->validator) (p)->validator->read((addr), (data), (p)->validator->userdata); }

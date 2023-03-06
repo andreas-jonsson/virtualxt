@@ -25,10 +25,6 @@
 
 #include <vxt/vxt.h>
 
-#ifndef VXT_NO_PREFETCH
-   //#define VXT_DEBUG_PREFETCH
-#endif
-
 #ifdef _MSC_VER
    #define LIKELY(x) (x)
    #define UNLIKELY(x) (x)

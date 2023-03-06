@@ -27,19 +27,20 @@
 // Chain v20.inl, i8088.inl, exec.inl for better editor support.
 #include "v20.inl"
 
-static void prefetch(CONSTSP(cpu) p, int num) {
-   int i = 0;
-   for (; i < num; i++) {
-      if (p->inst_queue_count >= 6)
-         return;
+#ifndef VXT_NO_PREFETCH
+   static void prefetch(CONSTSP(cpu) p, int num) {
+      int i = 0;
+      for (; i < num; i++) {
+         if (p->inst_queue_count >= 6)
+            return;
 
-      vxt_pointer ptr = VXT_POINTER(p->regs.cs, p->regs.ip + p->inst_queue_count);
-      p->inst_queue_debug[p->inst_queue_count] = ptr;
-      p->inst_queue[p->inst_queue_count++] = vxt_system_read_byte(p->s, ptr);
+         vxt_pointer ptr = VXT_POINTER(p->regs.cs, p->regs.ip + p->inst_queue_count);
+         p->inst_queue_debug[p->inst_queue_count] = ptr;
+         p->inst_queue[p->inst_queue_count++] = vxt_system_read_byte(p->s, ptr);
+      }
+      //if (i > 0) VXT_LOG("Prefetch %d bytes... %d", i, num);
    }
-   //if (i > 0)
-   //   VXT_LOG("Prefetch %d bytes... %d", i, num);
-}
+#endif
 
 static void do_exec(CONSTSP(cpu) p) {
    const CONSTSP(instruction) inst = &p->opcode_table[p->opcode];
@@ -134,8 +135,8 @@ vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr) {
 }
 
 void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data) {
-    vxt_system_write_byte(p->s, addr, LBYTE(data));
-    vxt_system_write_byte(p->s, addr + 1, HBYTE(data));
+    cpu_write_byte(p, addr, LBYTE(data));
+    cpu_write_byte(p, addr + 1, HBYTE(data));
 }
 
 TEST(register_layout,

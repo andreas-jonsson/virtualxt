@@ -53,7 +53,6 @@ workspace "virtualxt"
     cdialect "C11"
 
     filter "configurations:debug"
-        defines "DEBUG"
         symbols "On"
 
     filter "configurations:release"

@@ -389,7 +389,7 @@ int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             return f(640, 200, snap->rgba_surface, userdata);
         } else {
             int intensity = ((snap->color_ctrl_reg >> 4) & 1) << 3;
-            int pal5 = 0;//snap->mode_ctrl_reg & 4;
+            int pal5 = snap->mode_ctrl_reg & 4;
             int color_index = pal5 ? 16 : ((snap->color_ctrl_reg >> 5) & 1);
 
             for (int y = 0; y < 200; y++) {
