@@ -218,6 +218,9 @@ workspace "virtualxt"
             end
             links "SDL2"
 
+        filter { "system:windows", "options:pcap" }
+            targetname "virtualxt-net"
+
         filter "system:windows"
             linkoptions "-Xlinker /subsystem:windows"
             links { "Shlwapi", "Shell32" }
