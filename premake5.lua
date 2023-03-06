@@ -72,7 +72,7 @@ workspace "virtualxt"
         links "pcap"
 
     filter { "options:pcap", "system:windows" }
-        defines "VXTP_NETWORK"
+        defines { "VXTP_NETWORK", "_WINSOCK_DEPRECATED_NO_WARNINGS" }
         includedirs "tools/npcap/sdk/Include"
         links "tools/npcap/sdk/Lib/x64/wpcap"
 
