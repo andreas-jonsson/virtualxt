@@ -67,9 +67,13 @@ workspace "virtualxt"
         defines "PI8088"
         links "gpiod"
 
-    filter "options:pcap"
+    filter { "options:pcap", "not system:windows" }
         defines "VXTP_NETWORK"
         links "pcap"
+
+    filter { "options:pcap", "system:windows" }
+        defines "VXTP_NETWORK"
+        links "tools/npcap/sdk/Lib/x64/wpcap"
 
     filter "system:windows"
         defines "_CRT_SECURE_NO_WARNINGS"
