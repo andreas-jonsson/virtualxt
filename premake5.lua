@@ -262,19 +262,6 @@ if _OPTIONS["test"] then
         filter { "toolset:clang or gcc" }
             buildoptions { "-Wno-unused-function", "-Wno-unused-variable", "--coverage" }
             linkoptions "--coverage"
-
-    io.writefile("test/codecov.yml", [[
-        ignore:
-            - "lib/vxt/cga_font.h"
-            - "lib/vxt/cga.c"
-            - "lib/vxt/disk.c"
-            - "lib/vxt/dma.c"
-            - "lib/vxt/mda.c"
-            - "lib/vxt/mouse.c"
-            - "lib/vxt/pic.c"
-            - "lib/vxt/pit.c"
-            - "lib/vxt/ppi.c"
-    ]])
     
     io.writefile("test/test.c", (function()
         local test_names = {}
