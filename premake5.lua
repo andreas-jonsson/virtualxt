@@ -177,8 +177,8 @@ workspace "virtualxt"
             base = 6560                  -- Offset in linear memory to place global data
         }
 
-        buildoptions { "--target=wasm32", "-mbulk-memory" }
-        linkoptions { "--target=wasm32", "-nostdlib", "-Wl,--allow-undefined", ",--no-entry", ",--export-all", ",--import-memory" }
+        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }
+        linkoptions { "--target=wasm32", "-nostdlib", "-Wl,--allow-undefined", "--lto-O3", ",--no-entry", ",--export-all", ",--import-memory" }
         linkoptions { "-Wl,--initial-memory=" .. tostring(memory.initial), ",--max-memory=" .. tostring(memory.max), ",--global-base=" .. tostring(memory.base) }
 
         postbuildcommands {
