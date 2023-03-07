@@ -12,8 +12,8 @@ SRC="/usr/lib/x86_64-linux-gnu"
 
 cp -a "$GITHUB_WORKSPACE/sdl_bin/lib/libSDL2"*.so* $APP_DIR/usr/lib/
 
-cp $SRC/libc.so* $APP_DIR/lib64/
-cp $SRC/libm.so* $APP_DIR/lib64/
+#cp $SRC/libc.so* $APP_DIR/lib64/
+#cp $SRC/libm.so* $APP_DIR/lib64/
 cp /lib64/ld-linux-x86-64.so* $APP_DIR/lib64/
 
 # Required for network support.
