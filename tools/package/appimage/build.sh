@@ -10,11 +10,11 @@ mkdir -p $APP_DIR/usr/lib/x86_64-linux-gnu $APP_DIR/lib64 $APP_DIR/bios $APP_DIR
 DST="$APP_DIR/usr/lib/x86_64-linux-gnu"
 SRC="/usr/lib/x86_64-linux-gnu"
 
-cp -a "$GITHUB_WORKSPACE/sdl_bin/lib/libSDL2"*.so* $APP_DIR/usr/lib
+cp -a "$GITHUB_WORKSPACE/sdl_bin/lib/libSDL2"*.so* $APP_DIR/usr/lib/
 
-#cp -a $SRC/libc.so* $DST
-#cp -a $SRC/libm.so* $DST
-#cp -a /lib64/ld-linux-x86-64.so* $APP_DIR/lib64/
+cp -a $SRC/libc.so* $APP_DIR/lib64/
+cp -a $SRC/libm.so* $APP_DIR/lib64/
+cp -a /lib64/ld-linux-x86-64.so* $APP_DIR/lib64/
 
 # Required for network support.
 cp -a $SRC/libpcap.so* $DST
