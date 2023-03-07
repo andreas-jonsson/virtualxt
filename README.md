@@ -39,20 +39,16 @@ Browser version is avalible [here](https://app.virtualxt.org).
 
 ## Build
 
-The emulator is written in C11 and should be compiled with the [Zig](https://ziglang.org/) 0.10.x toolchain. Alternativly you can generate makefiles with the included [Premake](https://premake.github.io/) script for use with your systems C compiler. You also need to have [SDL2](https://www.libsdl.org/) installed on your system or pass `-Dsdl_path=<path to lib>` to the compiler.
+The emulator is written in C11 and can be compiled with most modern C compilers. In order to generate a Makefile you need to install [Premake](https://premake.github.io/). You also need to have [SDL2](https://www.libsdl.org/) installed on your system or pass `--sdl-path=<path to lib>` to the premake script.
 
 ```
 git clone https://github.com/andreas-jonsson/virtualxt.git
 cd virtualxt
-zig build run -Drelease-fast
+premake5 gmake
+make sdl2-frontend
 ```
 
-You can download pre-built binaries from [itch.io](https://phix.itch.io/virtualxt/purchase). OSX and Linux users can also download VirtualXT using [Homebrew](https://brew.sh).
-
-```
-brew tap andreas-jonsson/virtualxt
-brew install virtualxt
-```
+You can download pre-built binaries from [itch.io](https://phix.itch.io/virtualxt/purchase).
 
 If you want to embed the emulator or create a custom frontend you can find libvxt API documentation [here](https://andreas-jonsson.github.io/virtualxt/docs).
 
