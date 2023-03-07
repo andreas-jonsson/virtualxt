@@ -12,20 +12,20 @@ SRC="/usr/lib/x86_64-linux-gnu"
 
 cp -a "$GITHUB_WORKSPACE/sdl_bin/lib/libSDL2"*.so* $APP_DIR/usr/lib/
 
-cp -a $SRC/libc.so* $APP_DIR/lib64/
-cp -a $SRC/libm.so* $APP_DIR/lib64/
-cp -a /lib64/ld-linux-x86-64.so* $APP_DIR/lib64/
+cp $SRC/libc.so* $APP_DIR/lib64/
+cp $SRC/libm.so* $APP_DIR/lib64/
+cp /lib64/ld-linux-x86-64.so* $APP_DIR/lib64/
 
 # Required for network support.
-cp -a $SRC/libpcap.so* $DST
-cp -a $SRC/libdbus-1.so* $DST
-cp -a $SRC/libsystemd.so* $DST
-cp -a $SRC/liblzma.so* $DST
-cp -a $SRC/libzstd.so* $DST
-cp -a $SRC/liblz4.so* $DST
-cp -a $SRC/libcap.so* $DST
-cp -a $SRC/libgcrypt.so* $DST
-cp -a $SRC/libgpg-error.so* $DST
+cp $SRC/libpcap.so* $DST
+cp $SRC/libdbus-1.so* $DST
+cp $SRC/libsystemd.so* $DST
+cp $SRC/liblzma.so* $DST
+cp $SRC/libzstd.so* $DST
+cp $SRC/liblz4.so* $DST
+cp $SRC/libcap.so* $DST
+cp $SRC/libgcrypt.so* $DST
+cp $SRC/libgpg-error.so* $DST
 
 cp build/bin/virtualxt $APP_DIR/
 cp bios/pcxtbios.bin $APP_DIR/bios/
