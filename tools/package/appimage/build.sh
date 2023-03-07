@@ -10,6 +10,8 @@ mkdir -p $APP_DIR/usr/lib/x86_64-linux-gnu $APP_DIR/lib64 $APP_DIR/bios $APP_DIR
 DST="$APP_DIR/usr/lib/x86_64-linux-gnu"
 SRC="/usr/lib/x86_64-linux-gnu"
 
+ls -al "$GITHUB_WORKSPACE/sdl_bin/lib/"
+
 cp -a "$GITHUB_WORKSPACE/sdl_bin/lib/libSDL2*.so*" $APP_DIR/usr/lib
 
 #cp -a $SRC/libc.so* $DST
