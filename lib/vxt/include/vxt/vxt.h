@@ -43,55 +43,39 @@ extern "C" {
     #error libvxt require C11 support
 #endif
 
-#ifdef VXT_LIBC
-    #include <stdint.h>
-    #include <stdbool.h>
-    #include <string.h>
-    #include <stdlib.h>
+typedef char vxt_int8;
+typedef short vxt_int16;
+typedef int vxt_int32;
 
-    typedef int8_t vxt_int8;
-    typedef int16_t vxt_int16;
-    typedef int32_t vxt_int32;
+typedef unsigned char vxt_byte;
+typedef unsigned short vxt_word;
+typedef unsigned int vxt_dword;
+typedef unsigned int vxt_pointer;
 
-    typedef uint8_t vxt_byte;
-    typedef uint16_t vxt_word;
-    typedef uint32_t vxt_dword;
-    typedef uint32_t vxt_pointer;
-#else
-    typedef char vxt_int8;
-    typedef short vxt_int16;
-    typedef int vxt_int32;
+#ifndef bool
+    typedef _Bool bool;
+    #define true ((bool)1)
+    #define false ((bool)0)
+#endif
 
-    typedef unsigned char vxt_byte;
-    typedef unsigned short vxt_word;
-    typedef unsigned int vxt_dword;
-    typedef unsigned int vxt_pointer;
+#ifndef size_t
+    typedef __SIZE_TYPE__ size_t;
+#endif
 
-    #ifndef bool
-        typedef _Bool bool;
-        #define true ((bool)1)
-        #define false ((bool)0)
-    #endif
+#ifndef NULL
+    #define NULL ((void*)0)
+#endif
 
-    #ifndef size_t
-        typedef __SIZE_TYPE__ size_t;
-    #endif
+#ifndef memmove
+    void *memmove(void*, const void*, size_t);
+#endif
 
-    #ifndef NULL
-        #define NULL ((void*)0)
-    #endif
+#ifndef memcpy
+    void *memcpy(void*, const void*, size_t);
+#endif
 
-    #ifndef memmove
-        void *memmove(void*, const void*, size_t);
-    #endif
-
-    #ifndef memcpy
-        void *memcpy(void*, const void*, size_t);
-    #endif
-
-    #ifndef memset
-        void *memset(void*, int, size_t);
-    #endif
+#ifndef memset
+    void *memset(void*, int, size_t);
 #endif
 
 #define vxt_memclear(p, s) ( memset((p), 0, (int)(s)) )
@@ -336,6 +320,9 @@ _Static_assert(sizeof(vxt_pointer) == 4 && sizeof(vxt_int32) == 4, "invalid inte
 
 /// @private
 _Static_assert(sizeof(long long) == 8, "invalid size of 'long long'");
+
+/// @private
+_Static_assert(sizeof(vxt_word) == 2, "invalid size of 'short'");
 
 #ifdef __cplusplus
 }

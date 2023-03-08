@@ -36,11 +36,7 @@
 extern void (*breakpoint)(void);
 
 #ifdef VXT_LIBC
-   #include <string.h>
-   #include <stdio.h>
-   #include <stdlib.h>
-   #include <stddef.h>
-
+   void abort(void);
    #define ABORT() { breakpoint(); abort(); }
 #else
    #define ABORT() { breakpoint(); static volatile int *_null = NULL; *_null = 0; for(;;); }
