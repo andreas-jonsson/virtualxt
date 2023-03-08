@@ -100,10 +100,10 @@ jobs:
       - name: Build
         run: |
           premake5 --cc=clang --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
-          make CC="zig cc" clean sdl2-frontend
+          make clean sdl2-frontend
           mv build/bin/virtualxt-net.exe .
           premake5 --cc=clang --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
-          make CC="zig cc" clean sdl2-frontend
+          make clean sdl2-frontend
           mv virtualxt-net.exe build/bin
 
       - name: Package
