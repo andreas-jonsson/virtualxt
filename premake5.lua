@@ -77,7 +77,6 @@ workspace "virtualxt"
 
     filter "system:windows"
         defines "_CRT_SECURE_NO_WARNINGS"
-        architecture "x86_64"
 
     filter "toolset:clang or gcc"
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
@@ -112,9 +111,9 @@ workspace "virtualxt"
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
         includedirs { "ib/vxtp", "lib/vxt/include", "lib/nuked-opl3"  }
 
-        --filter "system:windows"
-        --    includedirs "lib/dirent/include"
-        --    buildoptions "-Wno-unused-function"
+        filter "system:windows"
+            includedirs "lib/dirent/include"
+            buildoptions "-Wno-unused-function"
 
         filter "not options:pcap"
             removefiles "lib/vxtp/network.c"
