@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ "develop", "edge", "release" ]
+    branches: [ "develop", "edge", "release", "premake" ]
   pull_request:
     branches: [ "develop" ]
 
@@ -11,6 +11,7 @@ on:
 env:
   VXT_VERSION: 0.8.0
   SDL2_VERSION: 2.24.1
+  ZIG_VERSION: 0.10.1
 
 jobs:
   linux-build:
@@ -86,21 +87,23 @@ jobs:
           curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
           curl -L -o sdl.zip https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-devel-${SDL2_VERSION}-VC.zip && unzip sdl.zip
           curl -L -o premake5.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-windows.zip && mkdir premake5 && unzip premake5.zip -d premake5
+          curl -L -o zig.zip https://ziglang.org/download/${ZIG_VERSION}/zig-windows-x86_64-${ZIG_VERSION}.zip && unzip -q zig.zip
+          echo "${GITHUB_WORKSPACE}/zig-windows-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
 
       - name: Test
         run: |
           premake5 --test --cc=clang gmake
-          make clean test
+          make CC="zig cc" clean test
       
       - name: Build
         run: |
           premake5 --cc=clang --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
-          make clean sdl2-frontend
+          make CC="zig cc" clean sdl2-frontend
           mv build/bin/virtualxt-net.exe .
           premake5 --cc=clang --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
-          make clean sdl2-frontend
+          make CC="zig cc" clean sdl2-frontend
           mv virtualxt-net.exe build/bin
 
       - name: Package
