@@ -77,6 +77,7 @@ workspace "virtualxt"
 
     filter "system:windows"
         defines "_CRT_SECURE_NO_WARNINGS"
+        architecture "x86_64"
 
     filter "toolset:clang or gcc"
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
@@ -223,9 +224,9 @@ workspace "virtualxt"
         filter { "system:windows", "options:pcap" }
             targetname "virtualxt-net"
 
-        --filter "system:windows"
-        --    linkoptions "-Xlinker /subsystem:windows"
-        --    links { "Shlwapi", "Shell32" }
+        filter "system:windows"
+            linkoptions "-Xlinker /subsystem:windows"
+            links { "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"
             buildoptions "-Wno-unused-parameter"
