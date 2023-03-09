@@ -95,7 +95,7 @@ jobs:
       - name: Test
         run: |
           premake5 --test --cc=clang gmake
-          make CC="zig cc" clean test
+          make clean test
       
       - name: Build
         run: |
