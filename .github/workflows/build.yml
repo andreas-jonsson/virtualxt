@@ -94,16 +94,16 @@ jobs:
 
       - name: Test
         run: |
-          premake5 --test --cc=gcc gmake
-          make clean test
+          premake5 --test --cc=clang gmake
+          make CC="zig cc" clean test
       
       - name: Build
         run: |
-          premake5 --cc=gcc --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
-          make clean sdl2-frontend
+          premake5 --cc=clang --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
+          make CC="zig cc" clean sdl2-frontend
           mv build/bin/virtualxt-net.exe .
-          premake5 --cc=gcc --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
-          make clean sdl2-frontend
+          premake5 --cc=clang --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
+          make CC="zig cc" clean sdl2-frontend
           mv virtualxt-net.exe build/bin
 
       - name: Package
