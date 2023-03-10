@@ -84,7 +84,10 @@ jobs:
 
       - name: MSYS2
         uses: msys2/setup-msys2@v2
-
+        with:
+          update: true
+          install: base-devel
+      
       - name: Setup
         run: |
           curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
