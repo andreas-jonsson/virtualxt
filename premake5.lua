@@ -213,17 +213,17 @@ workspace "virtualxt"
                 if string.contains(sdl, "mingw") then
                     ty = "/lib"
                 end
-                links { sdl .. ty .. "/SDL2main" }
                 links { sdl .. ty .. "/SDL2" }
+                links { sdl .. ty .. "/SDL2main" }
             else
                 links { sdl ..  "/lib/SDL2" }
             end
         
         filter "options:sdl-path=PATH"
+            links "SDL2"
             if os.target() == "windows" then
                 links "SDL2main"
             end
-            links "SDL2"
 
         filter { "system:windows", "options:pcap" }
             targetname "virtualxt-net"
