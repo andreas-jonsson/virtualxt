@@ -82,11 +82,11 @@ jobs:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v3.x
 
-      - name: MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: base-devel
+      #- name: MSYS2
+      #  uses: msys2/setup-msys2@v2
+      #  with:
+      #    update: true
+      #    install: base-devel
       
       - name: Setup
         run: |
@@ -97,20 +97,21 @@ jobs:
           echo "${GITHUB_WORKSPACE}/zig-windows-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          echo "C:/msys64/bin" >> $GITHUB_PATH
 
       - name: Test
-        shell: msys2 {0}
+        #shell: msys2 {0}
+        #export PATH=$PATH:"${GITHUB_WORKSPACE}/premake5"
         run: |
-          export PATH=$PATH:"${GITHUB_WORKSPACE}/premake5"
           premake5 --test --cc=gcc gmake
           make clean test
       
       - name: Build
         run: |
-          premake5 --cc=clang --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
+          premake5 --cc=gcc --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
           make clean sdl2-frontend
           mv build/bin/virtualxt-net.exe .
-          premake5 --cc=clang --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
+          premake5 --cc=gcc --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
           make clean sdl2-frontend
           mv virtualxt-net.exe build/bin
 
