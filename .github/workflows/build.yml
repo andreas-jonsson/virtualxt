@@ -98,7 +98,7 @@ jobs:
       - name: Test
         shell: msys2 {0}
         run: |
-          export PATH=$PATH:$GITHUB_PATH
+          export PATH=$PATH:"${GITHUB_WORKSPACE}/premake5"
           premake5 --test --cc=gcc gmake
           make clean test
       
