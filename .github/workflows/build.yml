@@ -106,17 +106,17 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH=$PATH:"${GITHUB_WORKSPACE}/premake5"
-          premake5 --cc=gcc --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
+          premake5 --cc=gcc --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32" gmake
           make clean sdl2-frontend
           mv build/bin/virtualxt-net.exe .
-          premake5 --cc=gcc --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
+          premake5 --cc=gcc --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32" gmake
           make clean sdl2-frontend
           mv virtualxt-net.exe build/bin
 
       - name: Package
         run: |
           ./tools/package/itch/package.bat
-          cp "${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/bin/SDL2.dll" "${GITHUB_WORKSPACE}/package/virtualxt"
+          cp "${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32/bin/SDL2.dll" "${GITHUB_WORKSPACE}/package/virtualxt"
         
       - name: Deploy
         env:
