@@ -197,6 +197,9 @@ workspace "virtualxt"
         links { "vxt", "vxtp", "inih", "microui", "nuked-opl3" }
         includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "lib/nuked-opl3" }
 
+        buildoptions "`sdl2-config --cflags`"
+        linkoptions "`sdl2-config --libs`"
+
         if os.target() == "windows" then
             --defines "main=SDL_main"
             --links { "mingw32", "SDL2main" }
@@ -220,8 +223,6 @@ workspace "virtualxt"
                     lib = lib .. "/x64"
                 end
             end
-            buildoptions { "`" .. sdl .. "/bin/sdl2-config --cflags`" }
-            linkoptions { "`" .. sdl .. "/bin/sdl2-config --libs`" }
             --includedirs { sdl .. "/include" }
             --libdirs { sdl .. lib }
 

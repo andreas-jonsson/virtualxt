@@ -98,14 +98,14 @@ jobs:
       - name: Test
         shell: msys2 {0}
         run: |
-          export PATH=$PATH:"${GITHUB_WORKSPACE}/premake5"
+          export PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
           premake5 --test --cc=gcc gmake
           make clean test
       
       - name: Build
         shell: msys2 {0}
         run: |
-          export PATH=$PATH:"${GITHUB_WORKSPACE}/premake5"
+          export PATH="${GITHUB_WORKSPACE}/premake5":"${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32/bin":"$PATH"
           premake5 --cc=gcc --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32" gmake
           make clean sdl2-frontend
           mv build/bin/virtualxt-net.exe .
