@@ -108,11 +108,7 @@ workspace "virtualxt"
         defines "VXTP_NUKED_OPL3"
 
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
-        includedirs { "lib/vxtp", "lib/vxt/include", "lib/nuked-opl3"  }
-
-        filter "system:windows"
-            --includedirs "lib/dirent/include"
-            buildoptions "-Wno-unused-function"
+        includedirs { "lib/vxtp", "lib/vxt/include", "lib/nuked-opl3" }
 
         filter "not options:pcap"
             removefiles "lib/vxtp/network.c"
