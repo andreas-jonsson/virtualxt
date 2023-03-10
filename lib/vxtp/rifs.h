@@ -23,7 +23,7 @@
 #ifndef _RIFS_H_
 #define _RIFS_H_
 
-#ifdef _WIN32
+#if 0
     #include <windows.h>
     #include <direct.h>
     #include <io.h>

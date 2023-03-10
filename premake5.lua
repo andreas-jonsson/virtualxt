@@ -111,7 +111,7 @@ workspace "virtualxt"
         includedirs { "lib/vxtp", "lib/vxt/include", "lib/nuked-opl3"  }
 
         filter "system:windows"
-            includedirs "lib/dirent/include"
+            --includedirs "lib/dirent/include"
             buildoptions "-Wno-unused-function"
 
         filter "not options:pcap"
