@@ -108,7 +108,7 @@ jobs:
           export PATH="${GITHUB_WORKSPACE}/premake5":"${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32/bin":"$PATH"
           premake5 --cc=gcc --pcap gmake
           make clean sdl2-frontend
-          mv build/bin/virtualxt-net.exe .
+          mv build/bin/virtualxt.exe virtualxt-net.exe
           premake5 --cc=gcc gmake
           make clean sdl2-frontend
           mv virtualxt-net.exe build/bin

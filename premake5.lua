@@ -208,9 +208,6 @@ workspace "virtualxt"
         filter "options:validator"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
 
-        filter { "system:windows", "options:pcap" }
-            targetname "virtualxt-net"
-
         filter "system:windows"
             links { "Shlwapi", "Shell32" }
 
