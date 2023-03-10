@@ -97,14 +97,14 @@ jobs:
           echo "${GITHUB_WORKSPACE}/zig-windows-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
-          echo "C:/msys64/bin" >> $GITHUB_PATH
+          echo "c:/msys64/bin" >> $GITHUB_PATH
 
       - name: Test
         #shell: msys2 {0}
         #export PATH=$PATH:"${GITHUB_WORKSPACE}/premake5"
         run: |
           premake5 --test --cc=gcc gmake
-          make clean test
+          make CC="c:/msys64/bin/gcc" clean test
       
       - name: Build
         run: |
