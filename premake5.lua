@@ -213,7 +213,7 @@ workspace "virtualxt"
                 if string.contains(sdl, "mingw") then
                     ty = "/lib"
                 end
-                links { sdl .. ty .. "/SDL2main" }
+                --links { sdl .. ty .. "/SDL2main" }
                 links { sdl .. ty .. "/SDL2" }
             else
                 links { sdl ..  "/lib/SDL2" }
@@ -221,7 +221,7 @@ workspace "virtualxt"
         
         filter "options:sdl-path=PATH"
             if os.target() == "windows" then
-                links "SDL2main"
+                --links "SDL2main"
             end
             links "SDL2"
 
@@ -229,7 +229,7 @@ workspace "virtualxt"
             targetname "virtualxt-net"
 
         filter "system:windows"
-            linkoptions "-Wl,--subsystem,windows"
+            --linkoptions "-Wl,--subsystem,windows"
             links { "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"
