@@ -45,7 +45,8 @@
         #define access _access
     #endif
 #else
-    #include <alloca.h>
+    //#include <alloca.h>
+    #include <stdlib.h>
     #include <strings.h>
     #include <libgen.h>
     #include <unistd.h>
