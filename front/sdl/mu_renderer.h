@@ -23,12 +23,7 @@
 #ifndef _MU_RENDERER_H_
 #define _MU_RENDERER_H_
 
-#ifdef _WIN32
-	#include <SDL.h>
-#else
-	#include <SDL2/SDL.h>
-#endif
-
+#include <SDL.h>
 #include <microui.h>
 
 typedef struct renderer mr_renderer;

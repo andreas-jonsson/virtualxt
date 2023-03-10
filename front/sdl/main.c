@@ -33,14 +33,8 @@
 #include <vxt/vxtu.h>
 #include <vxtp.h>
 
+#include <SDL.h>
 #include <ini.h>
-
-#ifdef _WIN32
-	#include <SDL.h>
-#else
-	#include <SDL2/SDL.h>
-#endif
-
 #include <microui.h>
 
 #include "mu_renderer.h"

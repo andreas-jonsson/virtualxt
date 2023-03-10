@@ -23,12 +23,7 @@
 #ifndef _KEYS_H_
 #define _KEYS_H_
 
-#ifdef _WIN32
-	#include <SDL.h>
-#else
-	#include <SDL2/SDL.h>
-#endif
-
+#include <SDL.h>
 #include <vxt/vxtu.h>
 
 static enum vxtu_scancode sdl_to_xt_scan(SDL_Scancode scan) {

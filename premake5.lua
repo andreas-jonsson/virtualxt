@@ -1,8 +1,7 @@
 newoption {
-    trigger = "sdl-path",
+    trigger = "sdl-config",
     value = "PATH",
-    default = "PATH",
-    description = "Path to SDL2 headers and libs"
+    description = "Path to sdl2-config script"
 }
 
 newoption {
@@ -197,14 +196,9 @@ workspace "virtualxt"
         links { "vxt", "vxtp", "inih", "microui", "nuked-opl3" }
         includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "lib/nuked-opl3" }
 
-        buildoptions "`sdl2-config --cflags`"
-        linkoptions "`sdl2-config --libs`"
-
-        if os.target() == "windows" then
-            --defines "main=SDL_main"
-            --links { "mingw32", "SDL2main" }
-        end
-        --links "SDL2"
+        local sdl_cfg = path.join(_OPTIONS["sdl-config"], "sdl2-config")
+        buildoptions { string.format("`%s --cflags`", sdl_cfg) }
+        linkoptions { string.format("`%s --libs`", sdl_cfg) }
 
         cleancommands {
             "{RMDIR} build/bin",
@@ -214,23 +208,10 @@ workspace "virtualxt"
         filter "options:validator"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
 
-        filter "not options:sdl-path=PATH"
-            local sdl = _OPTIONS["sdl-path"]
-            local lib = "/lib"
-            if os.target() == "windows" then
-                --includedirs { sdl .. "/include/SDL2" }
-                if not string.contains(sdl, "mingw") then
-                    lib = lib .. "/x64"
-                end
-            end
-            --includedirs { sdl .. "/include" }
-            --libdirs { sdl .. lib }
-
         filter { "system:windows", "options:pcap" }
             targetname "virtualxt-net"
 
         filter "system:windows"
-            --linkoptions "-Wl,--subsystem,windows"
             links { "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"
