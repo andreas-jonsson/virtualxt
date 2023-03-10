@@ -206,16 +206,17 @@ workspace "virtualxt"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
 
         filter "not options:sdl-path=PATH"
-            includedirs { _OPTIONS["sdl-path"] .. "/include" }
+            local sdl = _OPTIONS["sdl-path"]
+            includedirs { sdl .. "/include", sdl .. "/include/SDL2" }
             if os.target() == "windows" then
                 local ty = "/lib/x64"
-                if string.contains(_OPTIONS["sdl-path"], "mingw") then
+                if string.contains(sdl, "mingw") then
                     ty = "/lib"
                 end
-                links { _OPTIONS["sdl-path"] .. ty .. "/SDL2main" }
-                links { _OPTIONS["sdl-path"] .. ty .. "/SDL2" }
+                links { sdl .. ty .. "/SDL2main" }
+                links { sdl .. ty .. "/SDL2" }
             else
-                links { _OPTIONS["sdl-path"] ..  "/lib/SDL2" }
+                links { sdl ..  "/lib/SDL2" }
             end
         
         filter "options:sdl-path=PATH"
