@@ -197,6 +197,11 @@ workspace "virtualxt"
         links { "vxt", "vxtp", "inih", "microui", "nuked-opl3" }
         includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "lib/nuked-opl3" }
 
+        links "SDL2"
+        if os.target() == "windows" then
+            links "SDL2main"
+        end
+
         cleancommands {
             "{RMDIR} build/bin",
             "make clean %{cfg.buildcfg}"
@@ -207,30 +212,24 @@ workspace "virtualxt"
 
         filter "not options:sdl-path=PATH"
             local sdl = _OPTIONS["sdl-path"]
+            local lib = "/lib"
+            if os.target() == "windows" and not string.contains(sdl, "mingw") then
+                lib = lib .. "/x64"
+            end
             includedirs { sdl .. "/include", sdl .. "/include/SDL2" }
-            if os.target() == "windows" then
-                local ty = "/lib/x64"
-                if string.contains(sdl, "mingw") then
-                    ty = "/lib"
-                end
-                links { sdl .. ty .. "/SDL2", sdl .. ty .. "/SDL2main" }
-            else
-                links { sdl ..  "/lib/SDL2" }
-            end
+            libdirs { sdl .. lib }
         
-        filter "options:sdl-path=PATH"
-            links "SDL2"
-            if os.target() == "windows" then
-                links "SDL2main"
-            end
+        --filter "options:sdl-path=PATH"
+        --    links "SDL2"
+        --    if os.target() == "windows" then
+        --        links "SDL2main"
+        --    end
 
         filter { "system:windows", "options:pcap" }
             targetname "virtualxt-net"
 
         filter "system:windows"
-            --linkoptions "-Wl,--subsystem,windows"
-            buildoptions "-mwindows"
-            linkoptions "-mwindows"
+            linkoptions "-Wl,--subsystem,windows"
             links { "mingw32", "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"
