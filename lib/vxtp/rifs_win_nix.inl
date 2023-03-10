@@ -258,7 +258,7 @@ static vxt_word rifs_rmdir(const char *path) {
 static vxt_word rifs_mkdir(const char *path) {
     char *new_path = alloca(strlen(path) + 2);
     if (case_path(path, new_path)) {
-        #if 0
+        #ifdef _WIN32
             if (!mkdir(new_path))
         #else
             if (!mkdir(new_path, S_IRWXU))
