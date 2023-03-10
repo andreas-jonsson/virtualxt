@@ -21,10 +21,19 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include "vxtp.h"
-#include "rifs.h"
 
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <alloca.h>
+#endif
+
+#include <dirent.h>
+#include <strings.h>
 #include <ctype.h>
 #include <errno.h>
+#include <unistd.h>
+#include <libgen.h>
 #include <sys/stat.h>
 
 #define CLOSE_DIR(p) { if ((p)->dir_it) closedir((DIR*)(p)->dir_it); (p)->dir_it = NULL; }
@@ -112,15 +121,6 @@ static bool rifs_exists(const char *path) {
     return false;
 }
 
-static char *dirnamex(char *path) {
-    #if 0
-        PathRemoveFileSpec(path);
-        return path;
-    #else
-        return dirname(path);
-    #endif
-}
-
 static const char *rifs_copy_root(char *dest, const char *path) {
     struct stat s;
     if (!stat(path, &s)) {
@@ -198,7 +198,7 @@ static vxt_word rifs_findfirst(struct dos_proc *proc, vxt_word attrib, const cha
 
     if (case_path(path, new_path)) {
         const char *pattern = strrchr(path, '/'); // Use path because dirname may modify new_path.
-        const char *dir_path = dirnamex(new_path);
+        const char *dir_path = dirname(new_path);
         
         if ((proc->dir_it = opendir(dir_path))) {
             proc->is_root = root;
