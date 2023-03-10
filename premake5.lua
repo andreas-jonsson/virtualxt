@@ -229,7 +229,7 @@ workspace "virtualxt"
             targetname "virtualxt-net"
 
         filter "system:windows"
-            --linkoptions "-Xlinker /subsystem:windows"
+            linkoptions "-Wl,--subsystem,windows"
             links { "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"
