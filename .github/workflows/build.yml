@@ -82,6 +82,9 @@ jobs:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v3.x
 
+      - name: MSYS2
+        uses: msys2/setup-msys2@v2
+
       - name: Setup
         run: |
           curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
@@ -93,8 +96,9 @@ jobs:
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
 
       - name: Test
+        shell: msys2 {0}
         run: |
-          premake5 --test --cc=clang gmake
+          premake5 --test --cc=gcc gmake
           make clean test
       
       - name: Build
