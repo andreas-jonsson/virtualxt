@@ -208,8 +208,12 @@ workspace "virtualxt"
         filter "not options:sdl-path=PATH"
             includedirs { _OPTIONS["sdl-path"] .. "/include" }
             if os.target() == "windows" then
-                links { _OPTIONS["sdl-path"] ..  "/lib/x64/SDL2main" }
-                links { _OPTIONS["sdl-path"] ..  "/lib/x64/SDL2" }
+                local ty = "/lib/x64"
+                if string.contains(_OPTIONS["sdl-path"], "mingw") then
+                    ty = "/lib"
+                end
+                links { _OPTIONS["sdl-path"] .. ty .. "/SDL2main" }
+                links { _OPTIONS["sdl-path"] .. ty .. "/SDL2" }
             else
                 links { _OPTIONS["sdl-path"] ..  "/lib/SDL2" }
             end
@@ -224,7 +228,7 @@ workspace "virtualxt"
             targetname "virtualxt-net"
 
         filter "system:windows"
-            --linkoptions "-Xlinker /subsystem:windows"
+            linkoptions "-Xlinker /subsystem:windows"
             links { "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"

@@ -11,7 +11,6 @@ on:
 env:
   VXT_VERSION: 0.8.0
   SDL2_VERSION: 2.24.1
-  ZIG_VERSION: 0.10.1
 
 jobs:
   linux-build:
@@ -86,16 +85,13 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           update: true
-          #location: $GITHUB_WORKSPACE
           install: base-devel mingw-w64-x86_64-toolchain
       
       - name: Setup
         run: |
           curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
-          curl -L -o sdl.zip https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-devel-${SDL2_VERSION}-VC.zip && unzip sdl.zip
+          curl -L -o sdl.zip https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-devel-${SDL2_VERSION}-mingw.zip && unzip sdl.zip
           curl -L -o premake5.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-windows.zip && mkdir premake5 && unzip premake5.zip -d premake5
-          curl -L -o zig.zip https://ziglang.org/download/${ZIG_VERSION}/zig-windows-x86_64-${ZIG_VERSION}.zip && unzip -q zig.zip
-          echo "${GITHUB_WORKSPACE}/zig-windows-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
 
@@ -107,6 +103,7 @@ jobs:
           make clean test
       
       - name: Build
+        shell: msys2 {0}
         run: |
           export PATH=$PATH:"${GITHUB_WORKSPACE}/premake5"
           premake5 --cc=gcc --pcap --sdl-path="${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}" gmake
