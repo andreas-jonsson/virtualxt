@@ -31,15 +31,11 @@
 #define VXT_LIBC
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
-#include <vxtp.h>
 
 #include "../../bios/pcxtbios.h"
 #include "../../bios/vxtx.h"
 
 #define LOG(...) log_cb(RETRO_LOG_INFO, __VA_ARGS__)
-
-#define VIDEO_WIDTH 640
-#define VIDEO_HEIGHT 200
 
 retro_perf_get_time_usec_t time_usec_cb = NULL;
 retro_log_printf_t log_cb = NULL;
@@ -49,6 +45,8 @@ retro_audio_sample_batch_t audio_batch_cb = NULL;
 retro_input_poll_t input_poll_cb = NULL;
 retro_input_state_t input_state_cb = NULL;
 retro_environment_t environ_cb = NULL;
+
+FILE *booter = NULL; 
 
 vxt_system *sys = NULL;
 struct vxt_pirepheral *disk = NULL;
@@ -71,6 +69,31 @@ static int log_wrapper(const char *fmt, ...) {
 	return n;
 }
 
+static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+	(void)s;
+	return (int)fread(buffer, 1, (size_t)size, (FILE*)fp);
+}
+
+static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+	(void)s;
+	return (int)fwrite(buffer, 1, (size_t)size, (FILE*)fp);
+}
+
+static int seek_file(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence) {
+	(void)s;
+	switch (whence) {
+		case VXTU_SEEK_START: return (int)fseek((FILE*)fp, (long)offset, SEEK_SET);
+		case VXTU_SEEK_CURRENT: return (int)fseek((FILE*)fp, (long)offset, SEEK_CUR);
+		case VXTU_SEEK_END: return (int)fseek((FILE*)fp, (long)offset, SEEK_END);
+		default: return -1;
+	}
+}
+
+static int tell_file(vxt_system *s, void *fp) {
+	(void)s;
+	return (int)ftell((FILE*)fp);
+}
+
 //static long long ustimer(void) {
 //    return (long long)(((double)clock() / CLOCKS_PER_SEC) * 1000000.0);
     //return (long long)time_usec_cb();
@@ -88,9 +111,12 @@ static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_poin
 
 void retro_init(void) {
 	vxt_set_logger(&log_wrapper);
-	
-	//struct vxt_pirepheral *disk = vxtu_disk_create(&realloc, NULL);
 
+    struct vxtu_disk_interface interface = {
+		&read_file, &write_file, &seek_file, &tell_file
+	};
+	
+	disk = vxtu_disk_create(&realloc, &interface);
 	ppi = vxtu_ppi_create(&realloc);
     cga = vxtu_cga_create(&realloc);
 
@@ -103,7 +129,7 @@ void retro_init(void) {
         vxtu_pit_create(&realloc),
         ppi,
 		cga,
-        //disk,
+        disk,
 		NULL
 	};
 
@@ -145,10 +171,10 @@ void retro_get_system_info(struct retro_system_info *info) {
 }
 
 void retro_get_system_av_info(struct retro_system_av_info *info) {
-    info->geometry.base_width    = VIDEO_WIDTH;
-    info->geometry.base_height  = VIDEO_HEIGHT;
-    info->geometry.max_width     = VIDEO_WIDTH;
-    info->geometry.max_height    = VIDEO_HEIGHT;
+    info->geometry.base_width = 640;
+    info->geometry.base_height = 200;
+    info->geometry.max_width = 640;
+    info->geometry.max_height = 200;
     info->geometry.aspect_ratio = 4.0f / 3.0f;
 }
 
@@ -173,9 +199,6 @@ void retro_set_environment(retro_environment_t cb) {
     };
 
     cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
-
-    bool no_rom = true;
-    cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &no_rom);
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb) {
@@ -238,8 +261,21 @@ void retro_keyboard_event(bool down, unsigned keycode, uint32_t character, uint1
 }
 
 bool retro_load_game(const struct retro_game_info *info) {
+    booter = fopen(info->path, "rb+");
+    if (!booter) {
+        LOG("Could not open: %s\n", info->path);
+        return false;
+    }
 
-    LOG("Load game! Size: %d\n", info ? (int)info->size : -1);
+    if (vxtu_disk_mount(disk, 0, (void*)booter) != VXT_NO_ERROR) {
+        LOG("Could not mount floppy image: %s\n", info->path);
+        fclose(booter);
+        booter = NULL;
+        return false;
+    }
+
+    vxtu_disk_set_boot_drive(disk, 0);
+
 
      /*
     struct retro_input_descriptor desc[] = {
@@ -269,6 +305,11 @@ bool retro_load_game(const struct retro_game_info *info) {
 }
 
 void retro_unload_game(void) {
+    if (booter) {
+        vxtu_disk_unmount(disk, 0);
+        fclose(booter);
+        booter = NULL;
+    }
 }
 
 unsigned retro_get_region(void) {

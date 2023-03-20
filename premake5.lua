@@ -118,13 +118,14 @@ workspace "virtualxt"
 
     project "libretro-frontend"
         kind "SharedLib"
-        targetname "virtualxt"
+        targetname "virtualxt_libretro"
         targetdir "build/lib"
         pic "On"
 
+        defines "VXTU_CGA_NO_HGC"
         defines { "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
 
-        includedirs { "lib/vxt/include", "lib/vxtp", "lib/libretro" }
+        includedirs { "lib/vxt/include", "lib/libretro" }
         files { "front/libretro/*.h", "front/libretro/*.c" }
         
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
