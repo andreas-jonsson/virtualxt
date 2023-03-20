@@ -122,7 +122,7 @@ workspace "virtualxt"
         targetdir "build/lib"
         pic "On"
 
-        defines "VXTU_CGA_BYTESWAP"
+        defines { "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
 
         includedirs { "lib/vxt/include", "lib/vxtp", "lib/libretro" }
         files { "front/libretro/*.h", "front/libretro/*.c" }
@@ -142,8 +142,6 @@ workspace "virtualxt"
         targetprefix ""
         targetextension ".wasm"
         targetdir "build/web"
-
-        defines "VXTU_CGA_BYTESWAP"
 
         includedirs { "lib/vxt/include", "lib/vxtp", "lib/printf" }
         files { "front/web/*.h", "front/web/*.c" }

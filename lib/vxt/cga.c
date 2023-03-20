@@ -271,17 +271,10 @@ static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
 }
 
 static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
-    #ifdef VXTU_CGA_BYTESWAP
-        pixels[offset++] = (vxt_byte)((color & 0xFF0000) >> 16);
-        pixels[offset++] = (vxt_byte)((color & 0x00FF00) >> 8);
-        pixels[offset++] = (vxt_byte)(color & 0x0000FF);
-        pixels[offset] = 0xFF;
-    #else
-        pixels[offset++] = 0xFF;
-        pixels[offset++] = (vxt_byte)(color & 0x0000FF);
-        pixels[offset++] = (vxt_byte)((color & 0x00FF00) >> 8);
-        pixels[offset] = (vxt_byte)((color & 0xFF0000) >> 16);
-    #endif
+    pixels[offset + VXTU_CGA_RED] = (vxt_byte)((color & 0xFF0000) >> 16);
+    pixels[offset + VXTU_CGA_GREEN] = (vxt_byte)((color & 0x00FF00) >> 8);
+    pixels[offset + VXTU_CGA_BLUE] = (vxt_byte)(color & 0x0000FF);
+    pixels[offset + VXTU_CGA_ALPHA] = VXTU_CGA_ALPHA_FILL;
 }
 
 static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int x, int y) {

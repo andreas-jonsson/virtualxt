@@ -265,7 +265,7 @@ static SDL_Rect *target_rect(SDL_Window *window, SDL_Rect *rect) {
 static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
 	if ((framebuffer_size.x != width) || (framebuffer_size.y != height)) {
 		SDL_DestroyTexture(framebuffer);
-		framebuffer = SDL_CreateTexture(userdata, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+		framebuffer = SDL_CreateTexture(userdata, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, width, height);
 		if (!framebuffer) {
 			printf("SDL_CreateTexture() failed with error %s\n", SDL_GetError());
 			return -1;

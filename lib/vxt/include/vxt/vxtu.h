@@ -29,6 +29,22 @@ extern "C" {
 
 #include "vxt.h"
 
+#ifndef VXTU_CGA_RED
+	#define VXTU_CGA_RED 0
+#endif
+#ifndef VXTU_CGA_GREEN
+	#define VXTU_CGA_GREEN 1
+#endif
+#ifndef VXTU_CGA_BLUE
+	#define VXTU_CGA_BLUE 2
+#endif
+#ifndef VXTU_CGA_ALPHA
+	#define VXTU_CGA_ALPHA 3
+#endif
+#ifndef VXTU_CGA_ALPHA_FILL
+	#define VXTU_CGA_ALPHA_FILL 0xFF
+#endif
+
 #define vxtu_static_allocator(name, size)                               \
     static vxt_byte name ## allocator_data[(size)];                     \
     static vxt_byte * name ## allocator_ptr = name ## allocator_data;   \
