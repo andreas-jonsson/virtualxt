@@ -492,7 +492,7 @@ function startEmulator(binary) {
         };
 
         const initialize = () => {
-            C.wasm_initialize_emulator((urlParams.get("v20") == 1) ? 1 : 0);
+            C.wasm_initialize_emulator((urlParams.get("v20") == 1) ? 1 : 0, targetFreq * 1000000);
 
             if (urlParams.has("storage") && (urlParams.get("storage") != "0")) {
                 initLocalStorage();
