@@ -154,3 +154,11 @@ jobs:
         run: |
           premake5 --pcap --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
           make clean sdl2-frontend
+
+      - name: Package
+        run: ./tools/package/itch/package.osx.sh
+
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
