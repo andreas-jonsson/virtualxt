@@ -71,6 +71,7 @@ var vxt_8h =
     ] ],
     [ "_Static_assert", "vxt_8h.html#a389056f9f5366799961b078d3b6ec13d", null ],
     [ "_Static_assert", "vxt_8h.html#a2ca34a316adc42e471aa8ff05871cfa4", null ],
+    [ "_Static_assert", "vxt_8h.html#a1ff9d4410ad40f77daded8a4610fef7b", null ],
     [ "_vxt_system_initialize", "vxt_8h.html#a0e15d5362763f916f337d2e95f64024e", null ],
     [ "memcpy", "vxt_8h.html#a0a3e682eff8f0c6e8adc371f54cc9f3f", null ],
     [ "memmove", "vxt_8h.html#a04322b22ff8bcfdcdcbfe87690683545", null ],
