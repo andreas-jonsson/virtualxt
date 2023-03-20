@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=VirtualXT
-Comment=VirtualXT is an IBM PC/XT emulator that runs on modern hardware and operating systems.
-Icon=/usr/share/icons/hicolor/128x128/apps/virtualxt.png
-Terminal=false
-Categories=Utility;
-Exec=virtualxt.freedos
