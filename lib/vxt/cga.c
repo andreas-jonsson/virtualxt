@@ -243,7 +243,11 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 
 static const char *name(struct vxt_pirepheral *p) {
     (void)p;
-    return "CGA/HGC Compatible Device";
+    return "CGA"
+        #ifndef VXTU_CGA_NO_HGC
+            "/HGC"
+        #endif
+        " Compatible Device";
 }
 
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {

@@ -26,18 +26,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <time.h>
 
 #define VXT_LIBC
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
+
+#include "keys.h"
 
 #include "../../bios/pcxtbios.h"
 #include "../../bios/vxtx.h"
 
 #define LOG(...) log_cb(RETRO_LOG_INFO, __VA_ARGS__)
 
-retro_perf_get_time_usec_t time_usec_cb = NULL;
+retro_perf_get_time_usec_t get_time_usec = NULL;
 retro_log_printf_t log_cb = NULL;
 retro_video_refresh_t video_cb = NULL;
 retro_audio_sample_t audio_cb = NULL;
@@ -46,6 +47,9 @@ retro_input_poll_t input_poll_cb = NULL;
 retro_input_state_t input_state_cb = NULL;
 retro_environment_t environ_cb = NULL;
 
+long long last_update = 0;
+
+vxt_byte disk_idx = 0;
 FILE *booter = NULL; 
 
 vxt_system *sys = NULL;
@@ -67,6 +71,14 @@ static int log_wrapper(const char *fmt, ...) {
 
 	va_end(args);
 	return n;
+}
+
+static int get_disk_size(FILE *fp) {
+    long pos = ftell(fp);
+    fseek(fp, 0, SEEK_END);
+    int sz = (int)ftell(fp);
+    fseek(fp, pos, SEEK_SET);
+    return sz;
 }
 
 static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
@@ -94,15 +106,41 @@ static int tell_file(vxt_system *s, void *fp) {
 	return (int)ftell((FILE*)fp);
 }
 
-//static long long ustimer(void) {
-//    return (long long)(((double)clock() / CLOCKS_PER_SEC) * 1000000.0);
-    //return (long long)time_usec_cb();
-//}
+static long long ustimer(void) {
+    assert(get_time_usec);
+    return (long long)get_time_usec();
+}
+
+/*
+static void audio_callback(void) {
+    audio_cb();
+}
+
+static void audio_set_state(bool enable) {
+  (void)enable;
+}
+*/
+
+static void keyboard_event(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers) {
+    (void)character; (void)key_modifiers;
+    assert(ppi);
+    if (keycode != RETROK_UNKNOWN)
+        vxtu_ppi_key_event(ppi, retro_to_xt_scan(keycode) | (down ? 0 : VXTU_KEY_UP_MASK), false);
+}
+
+static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
+    (void)userdata;
+    video_cb(rgba, width, height, width * 4);
+    return 0;
+}
+
+static void check_variables(void) {
+}
 
 static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
 	struct vxt_pirepheral *rom = vxtu_memory_create(&realloc, base, size, true);
 	if (!vxtu_memory_device_fill(rom, data, size)) {
-		printf("vxtu_memory_device_fill() failed!\n");
+		log_cb(RETRO_LOG_ERROR, "vxtu_memory_device_fill() failed!\n");
 		return NULL;
 	}
 	LOG("Loaded BIOS @ 0x%X-0x%X\n", base, base + size - 1);
@@ -143,7 +181,6 @@ void retro_init(void) {
 		if (device)
 			LOG("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
-
 	vxt_system_reset(sys);
 }
 
@@ -173,8 +210,8 @@ void retro_get_system_info(struct retro_system_info *info) {
 void retro_get_system_av_info(struct retro_system_av_info *info) {
     info->geometry.base_width = 640;
     info->geometry.base_height = 200;
-    info->geometry.max_width = 640;
-    info->geometry.max_height = 200;
+    info->geometry.max_width = 720;
+    info->geometry.max_height = 350;
     info->geometry.aspect_ratio = 4.0f / 3.0f;
 }
 
@@ -187,7 +224,8 @@ void retro_set_environment(retro_environment_t cb) {
     struct retro_perf_callback perf;
     if (!cb(RETRO_ENVIRONMENT_GET_PERF_INTERFACE, &perf) || !perf.get_time_usec)
         log_cb(RETRO_LOG_ERROR, "Need perf timers!\n");
-    time_usec_cb = perf.get_time_usec;
+    else
+        get_time_usec = perf.get_time_usec;
 
     static const struct retro_controller_description controllers[] = {
         { "Gamepad", RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 0) },
@@ -222,65 +260,56 @@ void retro_set_video_refresh(retro_video_refresh_t cb) {
 }
 
 void retro_reset(void) {
-}
-
-/*
-static void audio_callback(void) {
-    audio_cb();
-}
-
-static void audio_set_state(bool enable) {
-  (void)enable;
-}
-*/
-
-static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
-    (void)userdata;
-    video_cb(rgba, width, height, width * 4);
-    return 0;
-}
-
-static void check_variables(void) {
+    vxt_system_reset(sys);
 }
 
 void retro_run(void) {
-    bool updated = false;
-    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated) {
-        check_variables();
-    }
+    long long now = ustimer();
+    double delta = (double)(now - last_update);
+    last_update = now;
 
-    // TODO: Fix timing.
-	vxt_system_step(sys, VXT_DEFAULT_FREQUENCY / 60);
+    bool updated = false;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
+        check_variables();
+
+    const double freq = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
+    int clocks = (int)(freq * delta);
+    if (clocks > VXT_DEFAULT_FREQUENCY)
+        clocks = VXT_DEFAULT_FREQUENCY;
+
+	struct vxt_step s = vxt_system_step(sys, clocks);
+	if (s.err != VXT_NO_ERROR)
+		log_cb(RETRO_LOG_ERROR, vxt_error_str(s.err));
+    last_update -= (s.cycles - clocks) * freq;
 
     vxtu_cga_snapshot(cga);
     vxtu_cga_render(cga, &render_callback, NULL);
 }
 
-void retro_keyboard_event(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers) {
-    (void)down; (void)keycode; (void)character; (void)key_modifiers;
-}
-
 bool retro_load_game(const struct retro_game_info *info) {
     booter = fopen(info->path, "rb+");
     if (!booter) {
-        LOG("Could not open: %s\n", info->path);
-        return false;
+        // Try open as read-only.
+        booter = fopen(info->path, "rb");
+        if (!booter) {
+            log_cb(RETRO_LOG_ERROR, "Could not open: %s\n", info->path);
+            return false;
+        }
     }
 
-    if (vxtu_disk_mount(disk, 0, (void*)booter) != VXT_NO_ERROR) {
-        LOG("Could not mount floppy image: %s\n", info->path);
+    disk_idx = (get_disk_size(booter) > 1474560) ? 128 : 0;
+    if (vxtu_disk_mount(disk, disk_idx, (void*)booter) != VXT_NO_ERROR) {
+        log_cb(RETRO_LOG_ERROR, "Could not mount floppy image: %s\n", info->path);
         fclose(booter);
         booter = NULL;
         return false;
     }
-
-    vxtu_disk_set_boot_drive(disk, 0);
-
+    vxtu_disk_set_boot_drive(disk, disk_idx);
 
      /*
     struct retro_input_descriptor desc[] = {
         { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
-        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Up" },
+        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
         { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,  "Down" },
         { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "Right" },
         { 0 },
@@ -288,7 +317,7 @@ bool retro_load_game(const struct retro_game_info *info) {
     environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
     */
 
-    struct retro_keyboard_callback kbdesk = {&retro_keyboard_event};
+    struct retro_keyboard_callback kbdesk = {&keyboard_event};
     environ_cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &kbdesk);
 
     enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
@@ -301,12 +330,13 @@ bool retro_load_game(const struct retro_game_info *info) {
     //use_audio_cb = environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &audio_cb);
 
     check_variables();
+    last_update = ustimer();
     return true;
 }
 
 void retro_unload_game(void) {
     if (booter) {
-        vxtu_disk_unmount(disk, 0);
+        vxtu_disk_unmount(disk, disk_idx);
         fclose(booter);
         booter = NULL;
     }
