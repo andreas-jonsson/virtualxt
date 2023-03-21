@@ -75,9 +75,9 @@ static int log_wrapper(const char *fmt, ...) {
 
 static int get_disk_size(FILE *fp) {
     long pos = ftell(fp);
-    fseek(fp, 0, SEEK_END);
+    if (fseek(fp, 0, SEEK_END) != 0) return -1;
     int sz = (int)ftell(fp);
-    fseek(fp, pos, SEEK_SET);
+    if (fseek(fp, pos, SEEK_SET)) return -1;
     return sz;
 }
 
@@ -235,7 +235,6 @@ void retro_set_environment(retro_environment_t cb) {
         { controllers, 1 },
         { NULL, 0 },
     };
-
     cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
 }
 
