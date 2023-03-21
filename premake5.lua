@@ -119,6 +119,7 @@ workspace "virtualxt"
     project "libretro-frontend"
         kind "SharedLib"
         targetname "virtualxt_libretro"
+        targetprefix ""
         targetdir "build/lib"
         pic "On"
 

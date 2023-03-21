@@ -36,13 +36,14 @@
 #include "../../bios/pcxtbios.h"
 #include "../../bios/vxtx.h"
 
+#define AUDIO_FREQUENCY 16000
+
 #define LOG(...) log_cb(RETRO_LOG_INFO, __VA_ARGS__)
 
 retro_perf_get_time_usec_t get_time_usec = NULL;
 retro_log_printf_t log_cb = NULL;
 retro_video_refresh_t video_cb = NULL;
 retro_audio_sample_t audio_cb = NULL;
-retro_audio_sample_batch_t audio_batch_cb = NULL;
 retro_input_poll_t input_poll_cb = NULL;
 retro_input_state_t input_state_cb = NULL;
 retro_environment_t environ_cb = NULL;
@@ -111,15 +112,10 @@ static long long ustimer(void) {
     return (long long)get_time_usec();
 }
 
-/*
 static void audio_callback(void) {
-    audio_cb();
+    vxt_int16 sample = vxtu_ppi_generate_sample(ppi, AUDIO_FREQUENCY);
+    audio_cb(sample, sample);
 }
-
-static void audio_set_state(bool enable) {
-  (void)enable;
-}
-*/
 
 static void keyboard_event(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers) {
     (void)character; (void)key_modifiers;
@@ -185,10 +181,9 @@ void retro_init(void) {
 }
 
 void retro_deinit(void) {
-	if (sys) {
-		vxt_system_destroy(sys);
-		sys = NULL;
-	}
+	assert(sys);
+	vxt_system_destroy(sys);
+	sys = NULL;
 }
 
 unsigned retro_api_version(void) {
@@ -202,7 +197,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {
 void retro_get_system_info(struct retro_system_info *info) {
     vxt_memclear(info, sizeof(struct retro_system_info));
     info->library_name = "VirtualXT";
-    info->library_version = "0.8.0";
+    info->library_version = vxt_lib_version();
     info->valid_extensions = "img";
     info->need_fullpath = true;
 }
@@ -213,6 +208,8 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
     info->geometry.max_width = 720;
     info->geometry.max_height = 350;
     info->geometry.aspect_ratio = 4.0f / 3.0f;
+    info->timing.sample_rate = (double)AUDIO_FREQUENCY;
+    info->timing.fps = 60.0;
 }
 
 void retro_set_environment(retro_environment_t cb) {
@@ -243,7 +240,7 @@ void retro_set_audio_sample(retro_audio_sample_t cb) {
 }
 
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) {
-    audio_batch_cb = cb;
+    (void)cb;
 }
 
 void retro_set_input_poll(retro_input_poll_t cb) {
@@ -259,6 +256,7 @@ void retro_set_video_refresh(retro_video_refresh_t cb) {
 }
 
 void retro_reset(void) {
+    assert(sys);
     vxt_system_reset(sys);
 }
 
@@ -273,8 +271,9 @@ void retro_run(void) {
 
     const double freq = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
     int clocks = (int)(freq * delta);
-    if (clocks > VXT_DEFAULT_FREQUENCY)
+    if (clocks > VXT_DEFAULT_FREQUENCY) {
         clocks = VXT_DEFAULT_FREQUENCY;
+    }
 
 	struct vxt_step s = vxt_system_step(sys, clocks);
 	if (s.err != VXT_NO_ERROR)
@@ -316,7 +315,7 @@ bool retro_load_game(const struct retro_game_info *info) {
     environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
     */
 
-    struct retro_keyboard_callback kbdesk = {&keyboard_event};
+    struct retro_keyboard_callback kbdesk = { &keyboard_event };
     environ_cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &kbdesk);
 
     enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
@@ -325,8 +324,8 @@ bool retro_load_game(const struct retro_game_info *info) {
         return false;
     }
 
-    //struct retro_audio_callback audio_cb = { audio_callback, audio_set_state };
-    //use_audio_cb = environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &audio_cb);
+    struct retro_audio_callback audio_cb = { &audio_callback, NULL };
+    environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &audio_cb);
 
     check_variables();
     last_update = ustimer();
