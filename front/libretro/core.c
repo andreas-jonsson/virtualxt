@@ -46,7 +46,7 @@
 
 #define SYNC(...) {								   	                \
     static atomic_bool sys_lock = false;                            \
-    const bool f = false;                                           \
+    bool f = false;                                                 \
     while (!atomic_compare_exchange_weak(&sys_lock, &f, true)) {}   \
 	{ __VA_ARGS__ ; }                                               \
     atomic_store(&sys_lock, false);                                 \
