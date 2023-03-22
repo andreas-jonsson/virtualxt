@@ -132,11 +132,9 @@ workspace "virtualxt"
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
         includedirs "lib/vxtp"
-        files { "lib/vxtp/**.h", "lib/vxtp/joystick.c", "lib/vxtp/adlib.c" }
+        files { "lib/vxtp/**.h", "lib/vxtp/joystick.c" }
 
-        defines "VXTP_NUKED_OPL3"
-        includedirs "lib/nuked-opl3"
-        files { "lib/nuked-opl3/opl3.h", "lib/nuked-opl3/opl3.c" }
+        postbuildcommands "{COPYFILE} front/libretro/virtualxt_libretro.info build/lib/"
 
         cleancommands {
             "{RMDIR} build/lib",
