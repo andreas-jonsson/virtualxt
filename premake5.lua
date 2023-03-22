@@ -123,13 +123,20 @@ workspace "virtualxt"
         targetdir "build/lib"
         pic "On"
 
-        defines { "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
-
-        includedirs { "lib/vxt/include", "lib/libretro" }
+        includedirs "lib/libretro"
         files { "front/libretro/*.h", "front/libretro/*.c" }
         
+        defines { "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
+        includedirs "lib/vxt/include"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
+
+        includedirs "lib/vxtp"
+        files { "lib/vxtp/**.h", "lib/vxtp/joystick.c", "lib/vxtp/adlib.c" }
+
+        defines "VXTP_NUKED_OPL3"
+        includedirs "lib/nuked-opl3"
+        files { "lib/nuked-opl3/opl3.h", "lib/nuked-opl3/opl3.c" }
 
         cleancommands {
             "{RMDIR} build/lib",

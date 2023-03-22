@@ -107,7 +107,7 @@ char new_floppy_image_path[FILENAME_MAX] = {0};
 int str_buffer_len = 0;
 char *str_buffer = NULL;
 
-#define AUDIO_FREQUENCY 48000
+#define AUDIO_FREQUENCY 44100
 #define AUDIO_LATENCY 10
 
 SDL_AudioDeviceID audio_device = 0;
