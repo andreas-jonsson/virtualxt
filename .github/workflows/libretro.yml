@@ -49,22 +49,11 @@ jobs:
           ./tools/package/itch/libretro-helper.sh x86_64-linux-gnu
           ./tools/package/itch/libretro-helper.sh i386-linux-gnu
           ./tools/package/itch/libretro-helper.sh aarch64-linux-gnu
-          ./tools/package/itch/libretro-helper.sh arm-linux-gnu
-
-          ./tools/package/itch/libretro-helper.sh x86_64-darwin-gnu
-          ./tools/package/itch/libretro-helper.sh aarch64-darwin-gnu
-
-          ./tools/package/itch/libretro-helper.sh x86_64-freebsd-gnu
-          ./tools/package/itch/libretro-helper.sh i386-freebsd-gnu
-          ./tools/package/itch/libretro-helper.sh aarch64-freebsd-gnu
-          ./tools/package/itch/libretro-helper.sh arm-freebsd-gnu
-
-          ./tools/package/itch/libretro-helper.sh x86_64-openbsd-gnu
-
-          ./tools/package/itch/libretro-helper.sh x86_64-netbsd-gnu
-          ./tools/package/itch/libretro-helper.sh i386-netbsd-gnu
-          ./tools/package/itch/libretro-helper.sh aarch64-netbsd-gnu
-          ./tools/package/itch/libretro-helper.sh arm-netbsd-gnu
+          ./tools/package/itch/libretro-helper.sh arm-linux-gnueabi
+          ./tools/package/itch/libretro-helper.sh riscv64-linux-gnu
+          ./tools/package/itch/libretro-helper.sh riscv32-linux-gnu
+          ./tools/package/itch/libretro-helper.sh x86_64-macos-none
+          ./tools/package/itch/libretro-helper.sh aarch64-macos-none
 
       - name: Package
         run: |
