@@ -1,7 +1,6 @@
 x86_64-linux-gnu
 i386-linux-gnu
 aarch64-linux-gnu
-aarch64-linux-android
 arm-linux-gnueabi
 x86_64-macos-none
 aarch64-macos-none
