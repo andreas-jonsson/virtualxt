@@ -50,8 +50,6 @@ jobs:
           ./tools/package/itch/libretro-helper.sh i386-linux-gnu
           ./tools/package/itch/libretro-helper.sh aarch64-linux-gnu
           ./tools/package/itch/libretro-helper.sh arm-linux-gnueabi
-          ./tools/package/itch/libretro-helper.sh riscv64-linux-gnu
-          ./tools/package/itch/libretro-helper.sh riscv32-linux-gnu
           ./tools/package/itch/libretro-helper.sh x86_64-macos-none
           ./tools/package/itch/libretro-helper.sh aarch64-macos-none
 
