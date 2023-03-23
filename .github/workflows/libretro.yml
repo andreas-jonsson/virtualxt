@@ -46,12 +46,13 @@ jobs:
 
       - name: Build
         run: |
-          ./tools/package/itch/libretro-helper.sh x86_64-linux-gnu
-          ./tools/package/itch/libretro-helper.sh i386-linux-gnu
-          ./tools/package/itch/libretro-helper.sh aarch64-linux-gnu
-          ./tools/package/itch/libretro-helper.sh arm-linux-gnueabi
-          ./tools/package/itch/libretro-helper.sh x86_64-macos-none
-          ./tools/package/itch/libretro-helper.sh aarch64-macos-none
+          while read line; do
+            echo Building ${line}...
+            rm -rf build/lib
+            make CC="zig cc -target ${line}" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
+            mkdir package/virtualxt/${line}
+            cp build/lib/* package/virtualxt/${line}
+          done < front/libretro/targets.txt
 
       - name: Package
         run: |
