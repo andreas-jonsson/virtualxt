@@ -46,8 +46,8 @@
 #define LOG(...) log_cb(RETRO_LOG_INFO, __VA_ARGS__)
 
 #define SYNC(...) {								   	                \
-    alignas(sizeof(void*)) atomic_bool sys_lock = false;                        \
-    bool f = false;                                                 \
+    atomic_bool sys_lock = false;                                   \
+    alignas(sizeof(void*)) bool f = false;                          \
     while (!atomic_compare_exchange_weak(&sys_lock, &f, true)) {}   \
 	{ __VA_ARGS__ ; }                                               \
     atomic_store(&sys_lock, false);                                 \
