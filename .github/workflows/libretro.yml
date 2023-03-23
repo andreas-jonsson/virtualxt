@@ -116,7 +116,8 @@ jobs:
         run: |
           make clean libretro-frontend
           mkdir -p package/virtualxt
-          cp build/lib/* package/virtualxt
+          cp build/lib/*.dll package/virtualxt
+          cp front/libretro/*.info package/virtualxt
 
       - name: Package & Deploy
         env:
