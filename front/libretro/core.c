@@ -29,6 +29,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdatomic.h>
+#include <stdalign.h>
 
 #define VXT_LIBC
 #include <vxt/vxt.h>
@@ -45,7 +46,7 @@
 #define LOG(...) log_cb(RETRO_LOG_INFO, __VA_ARGS__)
 
 #define SYNC(...) {								   	                \
-    static atomic_bool sys_lock = false;                            \
+    alignas(sizeof(void*)) atomic_bool sys_lock = false;                        \
     bool f = false;                                                 \
     while (!atomic_compare_exchange_weak(&sys_lock, &f, true)) {}   \
 	{ __VA_ARGS__ ; }                                               \
