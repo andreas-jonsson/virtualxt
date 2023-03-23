@@ -3,6 +3,11 @@ var vxtu_8h =
     [ "vxtu_mouse_event", "structvxtu__mouse__event.html", "structvxtu__mouse__event" ],
     [ "vxtu_disk_interface", "structvxtu__disk__interface.html", "structvxtu__disk__interface" ],
     [ "vxtu_debugger_interface", "structvxtu__debugger__interface.html", "structvxtu__debugger__interface" ],
+    [ "VXTU_CGA_ALPHA", "vxtu_8h.html#a6618054f81fdb665cc4a6850777d43a8", null ],
+    [ "VXTU_CGA_ALPHA_FILL", "vxtu_8h.html#a2eaaf0d5dbab6593312e5e2c43cb43c0", null ],
+    [ "VXTU_CGA_BLUE", "vxtu_8h.html#a79c379d5ca73232728cd37d3eb44c388", null ],
+    [ "VXTU_CGA_GREEN", "vxtu_8h.html#a943591b62a69bbaa4633a4ed01254b41", null ],
+    [ "VXTU_CGA_RED", "vxtu_8h.html#ac30882bf81f7510540a902919464ce05", null ],
     [ "vxtu_static_allocator", "vxtu_8h.html#a9e056a6f11b996dcd8f34ba2dbbb2387", null ],
     [ "vxtu_disk_seek", "vxtu_8h.html#a51e30675ddfde71aab800a8e7f6f8b8c", [
       [ "VXTU_SEEK_START", "vxtu_8h.html#a51e30675ddfde71aab800a8e7f6f8b8ca0e755a930aea014eab41036043e0a483", null ],
