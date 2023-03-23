@@ -134,12 +134,14 @@ workspace "virtualxt"
         includedirs "lib/vxtp"
         files { "lib/vxtp/**.h", "lib/vxtp/joystick.c" }
 
-        postbuildcommands "{COPYFILE} front/libretro/virtualxt_libretro.info build/lib/"
-
         cleancommands {
             "{RMDIR} build/lib",
             "make clean %{cfg.buildcfg}"
         }
+
+        -- TODO: Remove this filter! This is here to fix an issue with the GitHub builder.
+        filter "not system:windows"
+            postbuildcommands "{COPYFILE} front/libretro/virtualxt_libretro.info build/lib/"
 
     project "web-frontend"
         kind "ConsoleApp"
