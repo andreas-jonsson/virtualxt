@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  linux-pages:
+  pages-build:
     name: Pages
     runs-on: ubuntu-latest
 

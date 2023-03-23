@@ -13,7 +13,7 @@ env:
 
 jobs:
   web-build:
-    name: Web (Linux AMD64)
+    name: Web
     runs-on: ubuntu-latest
 
     steps:
