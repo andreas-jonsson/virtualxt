@@ -14,7 +14,7 @@ env:
 
 jobs:
   libretro-build:
-    name: Libretro
+    name: Libretro (Unix)
     runs-on: ubuntu-latest
 
     steps:
@@ -58,13 +58,65 @@ jobs:
           mkdir package/virtualxt/aarch64-linux-gnu
           cp build/lib/* package/virtualxt/aarch64-linux-gnu
 
-      - name: Premake & Build (x86_64-pc-windows-gnu)
+      - name: Package
         run: |
-          premake5 --cc=clang --os=windows gmake
-          rm -rf build/lib
-          make CC="zig cc -target x86_64-pc-windows-gnu" AR="zig ar" clean libretro-frontend
-          mkdir package/virtualxt/x86_64-pc-windows-gnu
-          cp build/lib/* package/virtualxt/x86_64-pc-windows-gnu
+          cd package
+          zip -r ../virtualxt.zip .
+          cd ..
+
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release|libretro-package)$ ]]; then ./tools/package/itch/push-libretro.sh; fi
+
+  windows-build:
+    name: Libretro (Windows)
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: base-devel mingw-w64-x86_64-toolchain
+      
+      - name: Setup
+        run: |
+          curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o premake5.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-windows.zip && mkdir premake5 && unzip premake5.zip -d premake5
+          echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+
+      - name: Test
+        shell: msys2 {0}
+        run: |
+          export PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
+          premake5 --test --cc=gcc gmake
+          make clean test
+      
+      - name: Premake
+        shell: msys2 {0}
+        run: |
+          export PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
+          premake5 --cc=gcc gmake
+      
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          make clean libretro-frontend
+          mkdir -p package/virtualxt
+          cp build/lib/* package/virtualxt
 
       - name: Package
         run: |
