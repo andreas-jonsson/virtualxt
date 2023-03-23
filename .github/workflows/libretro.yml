@@ -46,21 +46,25 @@ jobs:
 
       - name: Build (x86_64-linux-gnu)
         run: |
+          rm -r build/lib
           make CC="zig cc -target x86_64-linux-gnu" AR="zig ar" clean libretro-frontend
           mkdir package/virtualxt/x86_64-linux-gnu
           cp build/lib/* package/virtualxt/x86_64-linux-gnu
 
-      - name: Build (x86_64-windows-gnu)
-        run: |
-          make CC="zig cc -target x86_64-windows-gnu" AR="zig ar" clean libretro-frontend
-          mkdir package/virtualxt/x86_64-windows-gnu
-          cp build/lib/* package/virtualxt/x86_64-windows-gnu
-
       - name: Build (aarch64-linux-gnu)
         run: |
+          rm -r build/lib
           make CC="zig cc -target aarch64-linux-gnu" AR="zig ar" clean libretro-frontend
           mkdir package/virtualxt/aarch64-linux-gnu
           cp build/lib/* package/virtualxt/aarch64-linux-gnu
+
+      - name: Premake & Build (x86_64-pc-windows-gnu)
+        run: |
+          premake5 --cc=clang --os=windows gmake
+          rm -r build/lib
+          make CC="zig cc -target x86_64-pc-windows-gnu" AR="zig ar" clean libretro-frontend
+          mkdir package/virtualxt/x86_64-pc-windows-gnu
+          cp build/lib/* package/virtualxt/x86_64-pc-windows-gnu
 
       - name: Package
         run: |
