@@ -47,7 +47,7 @@ jobs:
       - name: Build
         run: |
           ./tools/package/itch/libretro-helper.sh x86_64-linux-gnu
-          ./tools/package/itch/libretro-helper.sh x86-linux-gnu
+          ./tools/package/itch/libretro-helper.sh i386-linux-gnu
           ./tools/package/itch/libretro-helper.sh aarch64-linux-gnu
           ./tools/package/itch/libretro-helper.sh arm-linux-gnu
 
@@ -55,14 +55,14 @@ jobs:
           ./tools/package/itch/libretro-helper.sh aarch64-darwin-gnu
 
           ./tools/package/itch/libretro-helper.sh x86_64-freebsd-gnu
-          ./tools/package/itch/libretro-helper.sh x86-freebsd-gnu
+          ./tools/package/itch/libretro-helper.sh i386-freebsd-gnu
           ./tools/package/itch/libretro-helper.sh aarch64-freebsd-gnu
           ./tools/package/itch/libretro-helper.sh arm-freebsd-gnu
 
           ./tools/package/itch/libretro-helper.sh x86_64-openbsd-gnu
 
           ./tools/package/itch/libretro-helper.sh x86_64-netbsd-gnu
-          ./tools/package/itch/libretro-helper.sh x86-netbsd-gnu
+          ./tools/package/itch/libretro-helper.sh i386-netbsd-gnu
           ./tools/package/itch/libretro-helper.sh aarch64-netbsd-gnu
           ./tools/package/itch/libretro-helper.sh arm-netbsd-gnu
 
