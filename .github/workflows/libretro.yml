@@ -118,13 +118,7 @@ jobs:
           mkdir -p package/virtualxt
           cp build/lib/* package/virtualxt
 
-      - name: Package
-        run: |
-          cd package
-          zip -r ../virtualxt.zip .
-          cd ..
-
-      - name: Deploy
+      - name: Package & Deploy
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: if [[ $GITHUB_REF_NAME =~ ^(edge|release|libretro-package)$ ]]; then ./tools/package/itch/push-libretro.sh; fi
