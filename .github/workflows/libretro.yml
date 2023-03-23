@@ -44,19 +44,27 @@ jobs:
           premake5 --cc=clang gmake
           mkdir -p package/virtualxt
 
-      - name: Build (x86_64-linux-gnu)
+      - name: Build
         run: |
-          rm -rf build/lib
-          make CC="zig cc -target x86_64-linux-gnu" AR="zig ar" clean libretro-frontend
-          mkdir package/virtualxt/x86_64-linux-gnu
-          cp build/lib/* package/virtualxt/x86_64-linux-gnu
+          ./tools/package/itch/libretro-helper.sh x86_64-linux-gnu
+          ./tools/package/itch/libretro-helper.sh x86-linux-gnu
+          ./tools/package/itch/libretro-helper.sh aarch64-linux-gnu
+          ./tools/package/itch/libretro-helper.sh arm-linux-gnu
 
-      - name: Build (aarch64-linux-gnu)
-        run: |
-          rm -rf build/lib
-          make CC="zig cc -target aarch64-linux-gnu" AR="zig ar" clean libretro-frontend
-          mkdir package/virtualxt/aarch64-linux-gnu
-          cp build/lib/* package/virtualxt/aarch64-linux-gnu
+          ./tools/package/itch/libretro-helper.sh x86_64-darwin-gnu
+          ./tools/package/itch/libretro-helper.sh aarch64-darwin-gnu
+
+          ./tools/package/itch/libretro-helper.sh x86_64-freebsd-gnu
+          ./tools/package/itch/libretro-helper.sh x86-freebsd-gnu
+          ./tools/package/itch/libretro-helper.sh aarch64-freebsd-gnu
+          ./tools/package/itch/libretro-helper.sh arm-freebsd-gnu
+
+          ./tools/package/itch/libretro-helper.sh x86_64-openbsd-gnu
+
+          ./tools/package/itch/libretro-helper.sh x86_64-netbsd-gnu
+          ./tools/package/itch/libretro-helper.sh x86-netbsd-gnu
+          ./tools/package/itch/libretro-helper.sh aarch64-netbsd-gnu
+          ./tools/package/itch/libretro-helper.sh arm-netbsd-gnu
 
       - name: Package
         run: |
