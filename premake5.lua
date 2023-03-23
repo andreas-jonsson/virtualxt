@@ -139,6 +139,9 @@ workspace "virtualxt"
             "make clean %{cfg.buildcfg}"
         }
 
+        filter "toolset:clang or gcc"
+            buildoptions "-Wno-atomic-alignment"
+
         -- TODO: Remove this filter! This is here to fix an issue with the GitHub builder.
         filter "not system:windows"
             postbuildcommands "{COPYFILE} front/libretro/virtualxt_libretro.info build/lib/"
