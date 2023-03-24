@@ -60,13 +60,16 @@ retro_input_poll_t input_poll_cb = NULL;
 retro_input_state_t input_state_cb = NULL;
 retro_environment_t environ_cb = NULL;
 
+struct retro_vfs_interface *vfs = NULL;
+
 enum vxtu_mouse_button mouse_state = 0;
 long long last_update = 0;
 
-int dos_disk_index = -1;
+bool floppy_ejected = false;
 int num_disk_images = 0;
 int current_disk_image = 0;
-FILE *disk_image_files[256] = {NULL};
+struct retro_vfs_file_handle *disk_image_files[256] = {NULL};
+struct retro_vfs_file_handle *hd_image = NULL;
 
 int cpu_frequency = VXT_DEFAULT_FREQUENCY;
 enum vxt_cpu_type cpu_type = VXT_CPU_8088;
@@ -95,37 +98,29 @@ static int log_wrapper(const char *fmt, ...) {
 	return n;
 }
 
-static int get_disk_size(FILE *fp) {
-    long pos = ftell(fp);
-    if (fseek(fp, 0, SEEK_END) != 0) return -1;
-    int sz = (int)ftell(fp);
-    if (fseek(fp, pos, SEEK_SET)) return -1;
-    return sz;
-}
-
 static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 	(void)s;
-	return (int)fread(buffer, 1, (size_t)size, (FILE*)fp);
+    return (int)vfs->read((struct retro_vfs_file_handle*)fp, buffer, size);
 }
 
 static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 	(void)s;
-	return (int)fwrite(buffer, 1, (size_t)size, (FILE*)fp);
+    return (int)vfs->write((struct retro_vfs_file_handle*)fp, buffer, size);
 }
 
 static int seek_file(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence) {
 	(void)s;
 	switch (whence) {
-		case VXTU_SEEK_START: return (int)fseek((FILE*)fp, (long)offset, SEEK_SET);
-		case VXTU_SEEK_CURRENT: return (int)fseek((FILE*)fp, (long)offset, SEEK_CUR);
-		case VXTU_SEEK_END: return (int)fseek((FILE*)fp, (long)offset, SEEK_END);
+		case VXTU_SEEK_START: return (int)vfs->seek((struct retro_vfs_file_handle*)fp, offset, RETRO_VFS_SEEK_POSITION_START);
+		case VXTU_SEEK_CURRENT: return (int)vfs->seek((struct retro_vfs_file_handle*)fp, offset, RETRO_VFS_SEEK_POSITION_CURRENT);
+		case VXTU_SEEK_END: return (int)vfs->seek((struct retro_vfs_file_handle*)fp, offset, RETRO_VFS_SEEK_POSITION_END);
 		default: return -1;
 	}
 }
 
 static int tell_file(vxt_system *s, void *fp) {
 	(void)s;
-	return (int)ftell((FILE*)fp);
+	return (int)vfs->tell((struct retro_vfs_file_handle*)fp);
 }
 
 static long long ustimer(void) {
@@ -180,11 +175,11 @@ static int render_callback(int width, int height, const vxt_byte *rgba, void *us
     return 0;
 }
 
-static FILE *load_disk_image(const char *path) {
-    FILE *fp = fopen(path, "rb+");
+static struct retro_vfs_file_handle *load_disk_image(const char *path) {
+    struct retro_vfs_file_handle *fp = vfs->open(path, RETRO_VFS_FILE_ACCESS_READ_WRITE | RETRO_VFS_FILE_ACCESS_UPDATE_EXISTING, RETRO_VFS_FILE_ACCESS_HINT_FREQUENT_ACCESS);
     if (!fp) {
         // Try open as read-only.
-        fp = fopen(path, "rb");
+        fp = vfs->open(path, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_FREQUENT_ACCESS);
         if (!fp) {
             log_cb(RETRO_LOG_ERROR, "Could not open: %s\n", path);
             return NULL;
@@ -194,27 +189,27 @@ static FILE *load_disk_image(const char *path) {
 }
 
 static bool set_eject_state(bool ejected) {
-    if (dos_disk_index >= 128)
-        return false;
+    if (ejected == floppy_ejected)
+        return true;
 
     if (ejected) {
-        if (dos_disk_index >= 0) {
-            vxtu_disk_unmount(disk, dos_disk_index);
-            dos_disk_index = -1;
-        }
+        vxtu_disk_unmount(disk, 0);
+        floppy_ejected = true;
     } else {
-        FILE *fp = disk_image_files[current_disk_image];
-        dos_disk_index = (get_disk_size(fp) > 1474560) ? 128 : 0;
-        if (vxtu_disk_mount(disk, dos_disk_index, (void*)fp) != VXT_NO_ERROR) {
+        if (!num_disk_images)
+            return false;
+        struct retro_vfs_file_handle *fp = disk_image_files[current_disk_image];
+        if (vxtu_disk_mount(disk, 0, (void*)fp) != VXT_NO_ERROR) {
             log_cb(RETRO_LOG_ERROR, "Could not mount disk image at index: %d\n", current_disk_image);
             return false;
         }
+        floppy_ejected = false;
     }
     return true;
 }
 
 static bool get_eject_state(void) {
-    return dos_disk_index < 0;
+    return floppy_ejected;
 }
 
 static unsigned get_image_index(void) {
@@ -322,9 +317,14 @@ void retro_deinit(void) {
 	SYNC(vxt_system_destroy(sys));
     sys = NULL;
 
+    if (hd_image) {
+        vfs->close(hd_image);
+        hd_image = NULL;
+    }
+
     while (num_disk_images)
-        fclose(disk_image_files[--num_disk_images]);
-    vxt_memclear(disk_image_files, sizeof(FILE*) * 256);
+        vfs->close(disk_image_files[--num_disk_images]);
+    vxt_memclear(disk_image_files, sizeof(void*) * 256);
 }
 
 unsigned retro_api_version(void) {
@@ -383,6 +383,12 @@ void retro_set_environment(retro_environment_t cb) {
         log_cb(RETRO_LOG_ERROR, "Need perf timers!\n");
     else
         get_time_usec = perf.get_time_usec;
+
+    static struct retro_vfs_interface_info vfs_info = {0};
+    if (!cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, (void*)&vfs_info) || !vfs_info.iface)
+        log_cb(RETRO_LOG_ERROR, "No file system interface!\n");
+    else
+        vfs = vfs_info.iface;
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb) {
@@ -450,16 +456,24 @@ void retro_run(void) {
 
 bool retro_load_game(const struct retro_game_info *info) SYNC(
     assert(sys);
-    FILE *fp = load_disk_image(info->path);
-    dos_disk_index = (get_disk_size(fp) > 1474560) ? 128 : 0;
-    if (vxtu_disk_mount(disk, dos_disk_index, (void*)fp) != VXT_NO_ERROR) {
+
+    struct retro_vfs_file_handle *fp = load_disk_image(info->path);
+    int dos_idx = ((int)vfs->size(fp) > 1474560) ? 128 : 0;
+    if (vxtu_disk_mount(disk, dos_idx, (void*)fp) != VXT_NO_ERROR) {
         log_cb(RETRO_LOG_ERROR, "Could not mount disk image: %s\n", info->path);
-        dos_disk_index = -1;
-        fclose(fp);
+        vfs->close(fp);
         return false;
     }
-    vxtu_disk_set_boot_drive(disk, dos_disk_index);
-    disk_image_files[num_disk_images++] = fp;
+
+    vxtu_disk_set_boot_drive(disk, dos_idx);
+    if (dos_idx < 128) {
+        LOG("Floppy image mounted!\n");
+        disk_image_files[num_disk_images++] = fp;
+    } else {
+        LOG("Harddrive image mounted!\n");
+        hd_image = fp;
+        floppy_ejected = true;
+    }
 
     struct retro_input_descriptor desc[] = {
         { 0, RETRO_DEVICE_ANALOG, 0, RETRO_DEVICE_ID_ANALOG_X,     "X Axis" },
