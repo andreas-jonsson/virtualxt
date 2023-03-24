@@ -21,6 +21,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 const defaultTargetFreq = 4.772726;
+const defaultAudioLatency = 0.1;
 const defaultBin = "virtualxt.wasm";
 const defaultDiskImage = "freedos_web_hd.img";
 const defaultCanvas = "virtualxt-canvas";
@@ -237,7 +238,6 @@ var importObject = {
         js_disk_read: diskReadData,
         js_disk_write: diskWriteData,
         js_disk_size: () => { return diskData.length; },
-        js_speaker_callback: (freq) => { oscillator.frequency.setValueAtTime(freq, null); },
         js_set_border_color: (color) => { document.body.style.background = "#" + ("00000" + (color | 0).toString(16)).substr(-6); }
     }
 };
@@ -425,18 +425,33 @@ function getCanvas() {
     return document.getElementById(urlParams.get("canvas") || defaultCanvas);
 }
 
+function genAudioSamples(samples, delta) {
+    const num = delta * samples.freq;
+    const max = Math.min(samples.len + num, samples.data.length);
+    for (var i = samples.len; i < max; i++)
+        samples.data[samples.len++] = samples.func(samples.freq);
+}
+
+function nextAudioBuffer(ctx, buffer, samples) {
+    for (var i = samples.len; i < samples.data.length; i++)
+        samples.data[i] = samples.func(samples.freq);
+
+    buffer.copyToChannel(samples.data, 0);
+    samples.len = 0;
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.onended = () => {
+        nextAudioBuffer(ctx, buffer, samples);
+    }
+    source.start();
+}
+
 function startEmulator(binary) {
     WebAssembly.instantiateStreaming(binary, importObject).then((result) => {
         const C = result.instance.exports;
         const wasmMemoryArray = new Uint8Array(memory.buffer);
-
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
-
-        oscillator = audioCtx.createOscillator();
-        oscillator.type = "square";
-        oscillator.frequency = 1;
-        oscillator.connect(audioCtx.destination);
-        oscillator.start();
 
         document.body.style.padding = 0;
         document.body.style.margin = 4;
@@ -543,6 +558,21 @@ function startEmulator(binary) {
 
             window.requestAnimationFrame(renderFrame);
 
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
+            const audioSamples = {
+                data: new Float32Array(audioCtx.sampleRate * defaultAudioLatency),
+                len: 0,
+                freq: audioCtx.sampleRate,
+                func: C.wasm_generate_sample
+            };
+            const audioBuffer = audioCtx.createBuffer(
+                1,
+                audioSamples.data.length,
+                audioCtx.sampleRate
+            );
+
+            nextAudioBuffer(audioCtx, audioBuffer, audioSamples);
+
             const cycleCap = targetFreq * 15000;
             var stepper = { t: performance.now(), c: 0 };
 
@@ -554,6 +584,8 @@ function startEmulator(binary) {
                 if (cycles > cycleCap) {
                     cycles = cycleCap;
                 }
+
+                genAudioSamples(audioSamples, delta / 1000);
 
                 stepper.c += C.wasm_step_emulation(cycles);
                 stepper.t = t;

@@ -140,11 +140,6 @@ static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
 	return 0;
 }
 
-static void speaker_callback(struct vxt_pirepheral *p, double freq, void *userdata) {
-	(void)p; (void)userdata;
-	js_speaker_callback(freq);
-}
-
 static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
     cga_width = width;
 	cga_height = height;
@@ -192,6 +187,10 @@ int wasm_step_emulation(int cycles) {
 	return s.cycles;
 }
 
+double wasm_generate_sample(int freq) {
+	return (double)vxtu_ppi_generate_sample(ppi, freq) / 32767.0;
+}
+
 void wasm_initialize_emulator(int v20, int freq) {
 	vxt_set_logger(&log_wrapper);
 
@@ -201,8 +200,6 @@ void wasm_initialize_emulator(int v20, int freq) {
 	struct vxt_pirepheral *disk = vxtu_disk_create(&ALLOCATOR, &interface);
 	
 	ppi = vxtu_ppi_create(&ALLOCATOR);
-	vxtu_ppi_set_speaker_callback(ppi, &speaker_callback, NULL);
-
     cga = vxtu_cga_create(&ALLOCATOR);
 	mouse = vxtu_mouse_create(&ALLOCATOR, 0x3F8, 4); // COM1
 
