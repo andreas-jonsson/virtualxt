@@ -63,8 +63,10 @@ retro_environment_t environ_cb = NULL;
 enum vxtu_mouse_button mouse_state = 0;
 long long last_update = 0;
 
-vxt_byte disk_idx = 0;
-FILE *booter = NULL;
+int dos_disk_index = -1;
+int num_disk_images = 0;
+int current_disk_image = 0;
+FILE *disk_image_files[256] = {NULL};
 
 int cpu_frequency = VXT_DEFAULT_FREQUENCY;
 enum vxt_cpu_type cpu_type = VXT_CPU_8088;
@@ -178,6 +180,71 @@ static int render_callback(int width, int height, const vxt_byte *rgba, void *us
     return 0;
 }
 
+static FILE *load_disk_image(const char *path) {
+    FILE *fp = fopen(path, "rb+");
+    if (!fp) {
+        // Try open as read-only.
+        fp = fopen(path, "rb");
+        if (!fp) {
+            log_cb(RETRO_LOG_ERROR, "Could not open: %s\n", path);
+            return NULL;
+        }
+    }
+    return fp;
+}
+
+static bool set_eject_state(bool ejected) {
+    if (dos_disk_index >= 128)
+        return false;
+
+    if (ejected) {
+        if (dos_disk_index >= 0) {
+            vxtu_disk_unmount(disk, dos_disk_index);
+            dos_disk_index = -1;
+        }
+    } else {
+        FILE *fp = disk_image_files[current_disk_image];
+        dos_disk_index = (get_disk_size(fp) > 1474560) ? 128 : 0;
+        if (vxtu_disk_mount(disk, dos_disk_index, (void*)fp) != VXT_NO_ERROR) {
+            log_cb(RETRO_LOG_ERROR, "Could not mount disk image at index: %d\n", current_disk_image);
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool get_eject_state(void) {
+    return dos_disk_index < 0;
+}
+
+static unsigned get_image_index(void) {
+    return current_disk_image;
+}
+
+static bool set_image_index(unsigned index) {
+    current_disk_image = index;
+    return true;
+}
+
+static unsigned get_num_images(void) {
+    return num_disk_images;
+}
+
+static bool replace_image_index(unsigned index, const struct retro_game_info *info) {
+    if (!info)
+        return false;
+    assert(!disk_image_files[index]);
+    disk_image_files[index] = load_disk_image(info->path);
+    return disk_image_files[index] != NULL;
+}
+
+static bool add_image_index(void) {
+    if (num_disk_images == 256)
+        return false;
+    num_disk_images++;
+    return true;
+}
+
 static void check_variables(void) {
     struct retro_variable var = { .key = "virtualxt_cpu_frequency" };
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
@@ -254,6 +321,10 @@ void retro_deinit(void) {
 	assert(sys);
 	SYNC(vxt_system_destroy(sys));
     sys = NULL;
+
+    while (num_disk_images)
+        fclose(disk_image_files[--num_disk_images]);
+    vxt_memclear(disk_image_files, sizeof(FILE*) * 256);
 }
 
 unsigned retro_api_version(void) {
@@ -295,6 +366,17 @@ void retro_set_environment(retro_environment_t cb) {
         { NULL, NULL }
     };
     cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars);
+
+    static struct retro_disk_control_callback disk_control = {
+        &set_eject_state,
+        &get_eject_state,
+        &get_image_index,
+        &set_image_index,
+        &get_num_images,
+        &replace_image_index,
+        &add_image_index
+    };
+    cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, (void*)&disk_control);
 
     struct retro_perf_callback perf;
     if (!cb(RETRO_ENVIRONMENT_GET_PERF_INTERFACE, (void*)&perf) || !perf.get_time_usec)
@@ -368,24 +450,16 @@ void retro_run(void) {
 
 bool retro_load_game(const struct retro_game_info *info) SYNC(
     assert(sys);
-    booter = fopen(info->path, "rb+");
-    if (!booter) {
-        // Try open as read-only.
-        booter = fopen(info->path, "rb");
-        if (!booter) {
-            log_cb(RETRO_LOG_ERROR, "Could not open: %s\n", info->path);
-            return false;
-        }
-    }
-
-    disk_idx = (get_disk_size(booter) > 1474560) ? 128 : 0;
-    if (vxtu_disk_mount(disk, disk_idx, (void*)booter) != VXT_NO_ERROR) {
-        log_cb(RETRO_LOG_ERROR, "Could not mount floppy image: %s\n", info->path);
-        fclose(booter);
-        booter = NULL;
+    FILE *fp = load_disk_image(info->path);
+    dos_disk_index = (get_disk_size(fp) > 1474560) ? 128 : 0;
+    if (vxtu_disk_mount(disk, dos_disk_index, (void*)fp) != VXT_NO_ERROR) {
+        log_cb(RETRO_LOG_ERROR, "Could not mount disk image: %s\n", info->path);
+        dos_disk_index = -1;
+        fclose(fp);
         return false;
     }
-    vxtu_disk_set_boot_drive(disk, disk_idx);
+    vxtu_disk_set_boot_drive(disk, dos_disk_index);
+    disk_image_files[num_disk_images++] = fp;
 
     struct retro_input_descriptor desc[] = {
         { 0, RETRO_DEVICE_ANALOG, 0, RETRO_DEVICE_ID_ANALOG_X,     "X Axis" },
@@ -418,11 +492,6 @@ bool retro_load_game(const struct retro_game_info *info) SYNC(
 
 void retro_unload_game(void) {
     assert(sys);
-    if (booter) {
-        SYNC(vxtu_disk_unmount(disk, disk_idx));
-        fclose(booter);
-        booter = NULL;
-    }
 }
 
 unsigned retro_get_region(void) {
