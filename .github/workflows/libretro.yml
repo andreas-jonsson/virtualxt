@@ -58,6 +58,7 @@ jobs:
 
           rm -rf build/lib
           make CC="${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin/clang -target aarch64-linux-android" LDFLAGS="-nostdlib" clean libretro-frontend
+          mkdir package/virtualxt/aarch64-linux-android
           cp build/lib/* package/virtualxt/aarch64-linux-android
 
       - name: Package
