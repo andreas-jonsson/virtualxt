@@ -1,0 +1,7 @@
+include_dir=e14f19ff-199d-4fc9-b334-aed07b29a113/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
+sys_include_dir=e14f19ff-199d-4fc9-b334-aed07b29a113/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
+static_crt_dir=e14f19ff-199d-4fc9-b334-aed07b29a113/toolchains/llvm/prebuilt/linux-x86_64/lib/gcc/aarch64-linux-android/4.9.x/
+crt_dir=e14f19ff-199d-4fc9-b334-aed07b29a113/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/21
+
+msvc_lib_dir=
+kernel32_lib_dir=
