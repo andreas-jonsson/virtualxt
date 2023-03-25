@@ -61,7 +61,7 @@ jobs:
           rm -rf build/lib
           cp front/libretro/android_libc.txt "${GITHUB_WORKSPACE}/libc.txt"
           rpl e14f19ff-199d-4fc9-b334-aed07b29a113 "${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}-linux-x86_64" "${GITHUB_WORKSPACE}/libc.txt"
-          make CC="zig cc -target aarch64-linux-android --libc libc.txt" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
+          make CC="zig cc -target aarch64-linux-android -libc libc.txt" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
           cp build/lib/* package/virtualxt/aarch64-linux-android
 
       - name: Package
