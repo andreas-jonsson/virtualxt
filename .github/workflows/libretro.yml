@@ -57,7 +57,7 @@ jobs:
           done < front/libretro/targets.txt
 
           rm -rf build/lib
-          make CC="zig cc -target aarch64-linux-android" AR="zig ar" RANLIB="zig ranlib" CFLAGS="-nostdinc -I${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}-linux-x86_64/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include" LDFLAGS="-nostdlib" clean libretro-frontend
+          make CC="${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}-linux-x86_64/toolchains/llvm/prebuilt/linux-x86_64/bin/clang -target aarch64-linux-android" LDFLAGS="-nostdlib" clean libretro-frontend
           cp build/lib/* package/virtualxt/aarch64-linux-android
 
       - name: Package
