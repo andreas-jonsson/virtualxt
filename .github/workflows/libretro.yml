@@ -28,8 +28,6 @@ jobs:
 
       - name: Setup
         run: |
-          sudo apt-get update
-          sudo apt-get install rpl
           curl -L -o ndk.zip https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip && unzip ndk.zip
           curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
           curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
@@ -59,9 +57,7 @@ jobs:
           done < front/libretro/targets.txt
 
           rm -rf build/lib
-          cp front/libretro/android_libc2.txt "${GITHUB_WORKSPACE}/libc.txt"
-          echo rpl e14f19ff-199d-4fc9-b334-aed07b29a113 "${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}-linux-x86_64" "${GITHUB_WORKSPACE}/libc.txt"
-          make CC="zig cc -target aarch64-linux-android -libc libc.txt" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
+          make CC="zig cc -target aarch64-linux-android" AR="zig ar" RANLIB="zig ranlib" CFLAGS="-nostdinc -I${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}-linux-x86_64/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include" LDFLAGS="-nostdlib" clean libretro-frontend
           cp build/lib/* package/virtualxt/aarch64-linux-android
 
       - name: Package
