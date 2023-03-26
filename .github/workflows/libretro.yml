@@ -57,7 +57,8 @@ jobs:
           done < front/libretro/targets.txt
 
           rm -rf build/lib
-          make CC="${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin/clang -target aarch64-linux-android" LDFLAGS="-nostdlib" clean libretro-frontend
+          ANDROID_CLANG_PATH="${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          make CC="${ANDROID_CLANG_PATH}/aarch64-linux-android21-clang" LD="${ANDROID_CLANG_PATH}/aarch64-linux-android-ld" AR="${ANDROID_CLANG_PATH}/aarch64-linux-android-ar" clean libretro-frontend
           mkdir package/virtualxt/aarch64-linux-android
           cp build/lib/* package/virtualxt/aarch64-linux-android
 
