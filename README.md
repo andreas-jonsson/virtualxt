@@ -1,6 +1,6 @@
 # virtualxt
 
-[![Build](https://github.com/andreas-jonsson/virtualxt/actions/workflows/build.yml/badge.svg)](https://github.com/andreas-jonsson/virtualxt/actions/workflows/build.yml)
+[![Build](https://github.com/andreas-jonsson/virtualxt/actions/workflows/sdl2.yml/badge.svg)](https://github.com/andreas-jonsson/virtualxt/actions/workflows/sdl2.yml)
 [![codecov](https://codecov.io/gh/andreas-jonsson/virtualxt/branch/develop/graph/badge.svg?token=HD9I58ZGG5)](https://codecov.io/gh/andreas-jonsson/virtualxt)
 [![Chat](https://img.shields.io/matrix/virtualxt:matrix.org)](https://matrix.to/#/#virtualxt:matrix.org)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)

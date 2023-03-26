@@ -1,4 +1,4 @@
-name: SDL2
+name: Build
 
 on:
   push:
