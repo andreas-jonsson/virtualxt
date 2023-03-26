@@ -69,9 +69,8 @@ jobs:
           cp build/lib/*.dll package/virtualxt/x86_64-windows-gnu
 
       - name: Build (Android)
-        env:
-          CLANG_PATH: "${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/windows-x86_64/bin"
         run: |
+          CLANG_PATH="${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/windows-x86_64/bin"
           premake5 --cc=clang gmake
           for arch in ${NDK_ARCHS}; do
             echo Building ${arch}...
