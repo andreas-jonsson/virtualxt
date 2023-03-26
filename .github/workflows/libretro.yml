@@ -73,7 +73,7 @@ jobs:
           CLANG_PATH: "${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/windows-x86_64/bin"
         run: |
           premake5 --cc=clang gmake
-          for arch in `cat ${NDK_ARCHS}`; do
+          for arch in ${NDK_ARCHS}; do
             echo Building ${arch}...
             rm -rf build/lib
             make CC="${CLANG_PATH}/${arch}21-clang" LD="${CLANG_PATH}/${arch}-ld" AR="${CLANG_PATH}/${arch}-ar" clean libretro-frontend
@@ -84,7 +84,7 @@ jobs:
       - name: Build (Unix)
         run: |
           premake5 --cc=clang gmake
-          for arch in `cat ${ZIG_ARCHS}`; do
+          for arch in ${ZIG_ARCHS}; do
             echo Building ${arch}...
             rm -rf build/lib
             make CC="zig cc -target ${arch}" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
