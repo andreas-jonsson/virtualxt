@@ -11,7 +11,9 @@ on:
 env:
   VXT_VERSION: 0.8.0
   ZIG_VERSION: 0.10.1
+  ZIG_ARCHS: "x86_64-linux-gnu i386-linux-gnu aarch64-linux-gnu arm-linux-gnueabi x86_64-macos-none aarch64-macos-none"
   NDK_VERSION: r20
+  NDK_ARCHS: "aarch64-linux-android armv7a-linux-androideabi x86_64-linux-android i686-linux-android"
 
 jobs:
   libretro-build:
@@ -45,22 +47,27 @@ jobs:
         run: |
           premake5 --cc=clang gmake
           mkdir -p package/virtualxt
+          cp front/libretro/*.info package/virtualxt
 
       - name: Build
+        env:
+          CLANG_PATH: "${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin"
         run: |
-          while read line; do
-            echo Building ${line}...
+          for arch in `cat ${ZIG_ARCHS}`; do
+            echo Building ${arch}...
             rm -rf build/lib
-            make CC="zig cc -target ${line}" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
-            mkdir package/virtualxt/${line}
-            cp build/lib/* package/virtualxt/${line}
-          done < front/libretro/targets.txt
+            make CC="zig cc -target ${arch}" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
+            mkdir package/virtualxt/${arch}
+            cp build/lib/*.so package/virtualxt/${arch}
+          done
 
-          rm -rf build/lib
-          ANDROID_CLANG_PATH="${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin"
-          make CC="${ANDROID_CLANG_PATH}/aarch64-linux-android21-clang" LD="${ANDROID_CLANG_PATH}/aarch64-linux-android-ld" AR="${ANDROID_CLANG_PATH}/aarch64-linux-android-ar" clean libretro-frontend
-          mkdir package/virtualxt/aarch64-linux-android
-          cp build/lib/* package/virtualxt/aarch64-linux-android
+          for arch in `cat ${NDK_ARCHS}`; do
+            echo Building ${arch}...
+            rm -rf build/lib
+            make CC="${CLANG_PATH}/${arch}21-clang" LD="${CLANG_PATH}/${arch}-ld" AR="${CLANG_PATH}/${arch}-ar" clean libretro-frontend
+            mkdir package/virtualxt/${arch}
+            cp build/lib/*.so package/virtualxt/${arch}
+          done
 
       - name: Package
         run: |
