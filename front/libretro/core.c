@@ -160,7 +160,7 @@ static void mouse_event(void) {
     int y = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_Y);
     int l = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT);
     int r = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT);
-    
+
     enum vxtu_mouse_button btn = (enum vxtu_mouse_button)((l << 1) | r);
     if ((btn != mouse_state) || x || y) {
         mouse_state = btn;
@@ -289,8 +289,8 @@ void retro_init(void) {
         disk = vxtu_disk_create(&realloc, &interface);
         ppi = vxtu_ppi_create(&realloc);
         cga = vxtu_cga_create(&realloc);
-        //mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
-        //joystick = vxtp_joystick_create(&realloc, (void*)0, (void*)1);
+        mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
+        joystick = vxtp_joystick_create(&realloc, (void*)0, (void*)1);
 
         struct vxt_pirepheral *devices[] = {
             vxtu_memory_create(&realloc, 0x0, 0x100000, false),
@@ -302,8 +302,8 @@ void retro_init(void) {
             ppi,
             cga,
             disk,
-            //mouse,
-            //joystick,
+            mouse,
+            joystick,
             NULL
         };
 
@@ -488,12 +488,12 @@ bool retro_load_game(const struct retro_game_info *info) SYNC(
     struct retro_input_descriptor desc[] = {
         { 0, RETRO_DEVICE_ANALOG, 0, RETRO_DEVICE_ID_ANALOG_X,     "X Axis" },
         { 0, RETRO_DEVICE_ANALOG, 0, RETRO_DEVICE_ID_ANALOG_Y,     "Y Axis" },
-        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,     "1" },
-        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "2" },
+        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,     "Button 1" },
+        { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "Button 2" },
         { 1, RETRO_DEVICE_ANALOG, 0, RETRO_DEVICE_ID_ANALOG_X,     "X Axis" },
         { 1, RETRO_DEVICE_ANALOG, 0, RETRO_DEVICE_ID_ANALOG_Y,     "Y Axis" },
-        { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,     "1" },
-        { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "2" },
+        { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,     "Button 1" },
+        { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "Button 2" },
         { 0 }
     };
     environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
