@@ -55,22 +55,21 @@ jobs:
       - name: Test
         shell: msys2 {0}
         run: |
-          PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
           premake5 --test --cc=gcc gmake
           make clean test
       
       - name: Build (Windows)
         shell: msys2 {0}
         run: |
-          PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
           premake5 --cc=gcc gmake
           make clean libretro-frontend
           mkdir package/virtualxt/x86_64-windows-gnu
           cp build/lib/*.dll package/virtualxt/x86_64-windows-gnu
 
       - name: Build (Android)
+        env:
+          CLANG_PATH: "./android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/windows-x86_64/bin"
         run: |
-          CLANG_PATH="${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/windows-x86_64/bin"
           premake5 --cc=clang gmake
           for arch in ${NDK_ARCHS}; do
             echo Building ${arch}...
