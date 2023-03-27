@@ -137,6 +137,9 @@ jobs:
 
       - name: Setup
         run: |
+          brew update
+          brew install rpl
+          
           curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip -d butler
           curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-macosx.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
