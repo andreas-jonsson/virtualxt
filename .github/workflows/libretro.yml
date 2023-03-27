@@ -83,7 +83,7 @@ jobs:
 
       - name: Build (Unix)
         run: |
-          premake5 --cc=clang gmake
+          premake5 --cc=clang --os=linux gmake
           for arch in ${ZIG_ARCHS}; do
             echo Building ${arch}...
             rm -rf build/lib
