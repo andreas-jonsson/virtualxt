@@ -55,12 +55,14 @@ jobs:
       - name: Test
         shell: msys2 {0}
         run: |
+          PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
           premake5 --test --cc=gcc gmake
           make clean test
       
       - name: Build (Windows)
         shell: msys2 {0}
         run: |
+          PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
           premake5 --cc=gcc gmake
           make clean libretro-frontend
           mkdir package/virtualxt/x86_64-windows-gnu
