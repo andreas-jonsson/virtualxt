@@ -6,9 +6,6 @@ rm -rf $APP_DIR
 cp -r "$GITHUB_WORKSPACE/tools/package/appbundle/virtualxt-appbundle" $APP_DIR
 mkdir -p $APP_DIR/Contents/MacOS $APP_DIR/Contents/Resources/bios $APP_DIR/Contents/Resources/boot
 
-ls -al "$GITHUB_WORKSPACE/sdl_bin/lib/"
-cp -a "$GITHUB_WORKSPACE/sdl_bin/lib/libSDL2"*.dylib $APP_DIR/Contents/MacOS/
-
 cp build/bin/virtualxt $APP_DIR/Contents/MacOS/
 cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
 cp bios/pcxtbios_640.bin $APP_DIR/Contents/Resources/bios/
