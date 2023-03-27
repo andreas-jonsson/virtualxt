@@ -72,7 +72,7 @@ jobs:
         env:
           CLANG_PATH: "./android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/windows-x86_64/bin"
         run: |
-          premake5 --cc=clang gmake
+          premake5 --cc=clang --os=android gmake
           for arch in ${NDK_ARCHS}; do
             echo Building ${arch}...
             rm -rf build/lib
