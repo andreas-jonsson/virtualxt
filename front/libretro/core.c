@@ -228,9 +228,19 @@ static unsigned get_num_images(void) {
 static bool replace_image_index(unsigned index, const struct retro_game_info *info) {
     if (!info)
         return false;
+
     assert(!disk_image_files[index]);
-    disk_image_files[index] = load_disk_image(info->path);
-    return disk_image_files[index] != NULL;
+    struct retro_vfs_file_handle *fp = disk_image_files[index] = load_disk_image(info->path);
+    if (!fp)
+        return false;
+
+    if ((int)vfs->size(fp) > 1474560) {
+        disk_image_files[index] = NULL;
+        vfs->close(fp);
+        log_cb(RETRO_LOG_ERROR, "Can not mount harddrive images at runtime!\n");
+        return false;
+    }
+    return true;
 }
 
 static bool add_image_index(void) {
