@@ -25,6 +25,11 @@ newoption {
 }
 
 newoption {
+    trigger = "isa-passthrough",
+    description = "Enable CH36x ISA passthrough"
+}
+
+newoption {
     trigger = "i286",
     description = "Provide some 286 support when running with a V20"
 }
@@ -91,6 +96,10 @@ workspace "virtualxt"
     project "nuked-opl3"
         kind "StaticLib"
         files { "lib/nuked-opl3/opl3.h", "lib/nuked-opl3/opl3.c" }
+
+    project "ch36x"
+        kind "StaticLib"
+        files { "lib/ch36x/ch36x_lib.h", "lib/ch36x/ch36x_lib.c" }
 
     project "vxt"
         kind "StaticLib"
@@ -212,6 +221,10 @@ workspace "virtualxt"
 
         filter "options:validator"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
+
+        filter "options:isa-passthrough"
+            links "ch36x"
+            includedirs "lib/ch36x"
 
         filter "system:windows"
             links { "Shlwapi", "Shell32" }
