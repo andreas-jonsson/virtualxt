@@ -574,7 +574,7 @@ int ch36x_disable_isr(int fd)
  * @isr_handler: handler to call when interrupt occurs
  *
  */
-void ch36x_set_int_routine(int fd, void *isr_handler)
+void ch36x_set_int_routine(int fd, void (*isr_handler)(int))
 {
     if (isr_handler != NULL) {
         signal(SIGIO, isr_handler);

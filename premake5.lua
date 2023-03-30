@@ -99,7 +99,9 @@ workspace "virtualxt"
 
     project "ch36x"
         kind "StaticLib"
+        defines { "_POSIX_C_SOURCE=200809L", "FASYNC=O_ASYNC" }
         files { "lib/ch36x/ch36x_lib.h", "lib/ch36x/ch36x_lib.c" }
+        buildoptions { "-Wno-unused-parameter", "-Wno-unused-variable", "-Wno-type-limits" }
 
     project "vxt"
         kind "StaticLib"
