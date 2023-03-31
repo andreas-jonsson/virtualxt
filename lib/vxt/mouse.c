@@ -91,11 +91,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(serial_mouse, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(m, serial_mouse, p);
     vxt_memclear(m->registers, sizeof(m->registers));
@@ -112,7 +107,6 @@ struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_por
     DEVICE->irq = irq;
 
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;
     PIREPHERAL->reset = &reset;
     PIREPHERAL->io.in = &in;

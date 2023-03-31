@@ -157,11 +157,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(dma, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static const char *name(struct vxt_pirepheral *p) {
     (void)p;
     return "DMA Controller (Intel 8237)";
@@ -206,7 +201,6 @@ static void dma_write(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte data) {
 
 struct vxt_pirepheral *vxtu_dma_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, dma, {
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;
     PIREPHERAL->reset = &reset;

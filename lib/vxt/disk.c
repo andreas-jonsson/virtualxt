@@ -271,11 +271,6 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(disk, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "Disk Controller";
 }
@@ -284,7 +279,6 @@ struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_
     DEVICE->interface = *interface;
 
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->reset = &reset;
     PIREPHERAL->name = &name;
     PIREPHERAL->io.in = &in;

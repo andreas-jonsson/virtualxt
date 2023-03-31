@@ -116,11 +116,6 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(pic, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
     (void)p; return VXT_PCLASS_PIC;
 }
@@ -131,7 +126,6 @@ static const char *name(struct vxt_pirepheral *p) {
 
 struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pic, {
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->reset = &reset;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;

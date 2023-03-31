@@ -66,11 +66,6 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(adlib, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "AdLib Music Synthesizer";
 }
@@ -79,7 +74,6 @@ struct vxt_pirepheral *vxtp_adlib_create(vxt_allocator *alloc) VXT_PIREPHERAL_CR
     DEVICE->freq = 48000;
 
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->reset = &reset;
     PIREPHERAL->name = &name;
     PIREPHERAL->io.in = &in;

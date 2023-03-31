@@ -95,11 +95,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(gameport, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static const char *name(struct vxt_pirepheral *p) {
     (void)p;
     return "Gameport Joystick(s)";
@@ -110,7 +105,6 @@ struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, void *stick_a,
     DEVICE->joysticks[1].id = stick_b;
 
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;
     PIREPHERAL->timer = &timer;
     PIREPHERAL->io.in = &in;
