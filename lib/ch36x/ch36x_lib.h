@@ -1,6 +1,7 @@
 #ifndef _CH36X_LIB_H
 #define _CH36X_LIB_H
 
+#include <stdint.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 

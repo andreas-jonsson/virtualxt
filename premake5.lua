@@ -119,7 +119,7 @@ workspace "virtualxt"
         defines "VXTP_NUKED_OPL3"
 
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
-        includedirs { "lib/vxtp", "lib/vxt/include", "lib/nuked-opl3" }
+        includedirs { "lib/vxtp", "lib/vxt/include", "lib/nuked-opl3", "lib/ch36x" }
 
         filter "not options:pcap"
             removefiles "lib/vxtp/network.c"
@@ -226,7 +226,6 @@ workspace "virtualxt"
 
         filter "options:isa-passthrough"
             links "ch36x"
-            includedirs "lib/ch36x"
 
         filter "system:windows"
             links { "Shlwapi", "Shell32" }
