@@ -50,11 +50,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(memory, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static const char *name(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(m, memory, p);
     return m->read_only ? "ROM" : "RAM";
@@ -71,7 +66,6 @@ struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base
     m->size = amount;
 
     p->install = &install;
-    p->destroy = &destroy;
     p->name = &name;
     p->io.read = &read;
     p->io.write = &write;

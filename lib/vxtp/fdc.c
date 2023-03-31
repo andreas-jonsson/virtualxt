@@ -426,11 +426,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return c->dma_controller ? VXT_NO_ERROR : VXT_USER_ERROR(0);
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(fdc, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static const char *name(struct vxt_pirepheral *p) {
     (void)p;
     return "FDC (NEC 765)";
@@ -441,7 +436,6 @@ struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word base, int 
     DEVICE->irq = irq;
 
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;
     PIREPHERAL->timer = &timer;
     PIREPHERAL->io.in = &in;

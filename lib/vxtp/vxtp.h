@@ -29,6 +29,8 @@ extern "C" {
 
 #include <vxt/vxtu.h>
 
+#define VXTP_ISA_DEFAULT_DEVICE "/dev/ch36xpci0"
+
 enum vxtp_joystick_button {
     VXTP_JOYSTICK_A	= 0x1,
 	VXTP_JOYSTICK_B = 0x2
@@ -67,6 +69,8 @@ extern struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc);
 
 extern struct vxt_pirepheral *vxtp_adlib_create(vxt_allocator *alloc);
 extern vxt_int16 vxtp_adlib_generate_sample(struct vxt_pirepheral *p, int freq);
+
+extern struct vxt_pirepheral *vxtp_isa_create(vxt_allocator *alloc, const char *device, vxt_word io_start, vxt_word io_end, vxt_pointer mem_start, vxt_pointer mem_end);
 
 #ifdef VXTP_NETWORK
 	extern struct vxt_pirepheral *vxtp_network_create(vxt_allocator *alloc, int device);

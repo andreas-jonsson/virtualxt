@@ -97,11 +97,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(mda_video, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(m, mda_video, p);
 
@@ -126,7 +121,6 @@ static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
 
 struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, mda_video, {
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;
     PIREPHERAL->reset = &reset;

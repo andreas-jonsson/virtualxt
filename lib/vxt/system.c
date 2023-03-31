@@ -141,11 +141,13 @@ vxt_error vxt_system_destroy(CONSTP(vxt_system) s) {
     }
 
     for (int i = 0; i < s->num_devices; i++) {
-        CONSTSP(vxt_pirepheral) d = s->devices[i];
+        struct vxt_pirepheral *d = s->devices[i];
         if (d->destroy) {
             vxt_error (*destroy)(struct vxt_pirepheral*) = d->destroy;
             vxt_error err = destroy(d);
             if (err) return err;
+        } else {
+            s->alloc(d, 0);
         }
     }
     s->alloc(s, 0);

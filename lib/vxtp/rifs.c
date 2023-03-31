@@ -480,11 +480,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(rifs, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(fs, rifs, p);
     for (int i = 0; i < MAX_DOS_PROC; i++) {
@@ -517,7 +512,6 @@ struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port
     rifs_copy_root(DEVICE->root_path, root);
 
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;
     PIREPHERAL->reset = &reset;
     PIREPHERAL->io.in = &in;

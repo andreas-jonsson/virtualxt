@@ -113,11 +113,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(rtc, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, rtc, p);
     c->addr = 0xD;
@@ -139,7 +134,6 @@ static const char *name(struct vxt_pirepheral *p) {
 
 struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, rtc, {
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;
     PIREPHERAL->reset = &reset;
     //PIREPHERAL->step = &step;

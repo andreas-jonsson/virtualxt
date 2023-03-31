@@ -327,11 +327,6 @@ static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
     return err;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(vxt_pirepheral_system(p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
     UNUSED(p); return VXT_PCLASS_DEBUGGER;
 }
@@ -353,7 +348,6 @@ struct vxt_pirepheral *vxtu_debugger_create(vxt_allocator *alloc, const struct v
     DEVICE->breakpoint = DEVICE->until = DEVICE->watch = -1;
 
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->timer = &timer;
     PIREPHERAL->pclass = &pclass;
     PIREPHERAL->name = &name;

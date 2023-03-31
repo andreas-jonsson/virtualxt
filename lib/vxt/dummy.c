@@ -45,6 +45,13 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     VXT_PRINT("writing unmapped memory: %X\n", addr);
 }
 
+static vxt_error destroy(struct vxt_pirepheral *p) {
+    (void)p;
+    // Prevent the use of freeing memory with default
+    // allocator, by setting up a empty destroy function.
+    return VXT_NO_ERROR;
+}
+
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     vxt_system_install_io(s, p, 0x0, 0xFFFF);
     vxt_system_install_mem(s, p, 0x0, 0xFFFFF);
@@ -57,6 +64,7 @@ void init_dummy_device(vxt_system *s) {
 
     struct vxt_pirepheral *d = &dummy->p;
     d->install = &install;
+    d->destroy = &destroy;
     d->io.in = &in;
     d->io.out = &out;
     d->io.read = &read;

@@ -427,11 +427,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(vga_video, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(v, vga_video, p);
 
@@ -518,7 +513,6 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 
 struct vxt_pirepheral *vxtp_vga_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, vga_video, {
     PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;
     PIREPHERAL->reset = &reset;
