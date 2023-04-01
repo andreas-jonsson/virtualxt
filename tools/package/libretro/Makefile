@@ -75,7 +75,7 @@ else ifeq ($(platform), linux-portable)
    SHARED := -shared
 	LIBM :=
 else ifneq (,$(findstring android,$(platform)))
-   TARGET := $(TARGET_NAME)_libretro.$(EXT)
+   TARGET := $(TARGET_NAME)_libretro_android.so
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined
 else ifneq (,$(findstring osx,$(platform)))
