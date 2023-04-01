@@ -90,11 +90,11 @@ endif
 	DEFINES := -DIOS
 	CC = cc -arch armv7 -isysroot $(IOSSDK)
 ifeq ($(platform),ios9)
-CC     += -miphoneos-version-min=8.0
-CXXFLAGS += -miphoneos-version-min=8.0
+   CC     += -miphoneos-version-min=8.0
+   CXXFLAGS += -miphoneos-version-min=8.0
 else
-CC     += -miphoneos-version-min=5.0
-CXXFLAGS += -miphoneos-version-min=5.0
+   CC     += -miphoneos-version-min=5.0
+   CXXFLAGS += -miphoneos-version-min=5.0
 endif
 else ifneq (,$(findstring qnx,$(platform)))
 	TARGET := $(TARGET_NAME)_libretro_qnx.so
@@ -119,11 +119,11 @@ endif
 LDFLAGS += $(LIBM)
 
 ifeq ($(DEBUG), 1)
-   CFLAGS += -O0 -g -DDEBUG
-   CXXFLAGS += -O0 -g -DDEBUG
+   CFLAGS += -O0 -g
+   CXXFLAGS += -O0 -g
 else
-   CFLAGS += -O3
-   CXXFLAGS += -O3
+   CFLAGS += -O3 -DNDEBUG
+   CXXFLAGS += -O3 -DNDEBUG
 endif
 
 include Makefile.common
