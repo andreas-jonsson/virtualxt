@@ -74,6 +74,10 @@ else ifeq ($(platform), linux-portable)
    fpic := -fPIC -nostdlib
    SHARED := -shared
 	LIBM :=
+else ifneq (,$(findstring android,$(platform)))
+   TARGET := $(TARGET_NAME)_libretro.$(EXT)
+   fpic := -fPIC
+   SHARED := -shared -Wl,--no-undefined
 else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC
