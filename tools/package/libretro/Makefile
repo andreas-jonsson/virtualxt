@@ -32,8 +32,8 @@ ifeq ($(shell uname -a),)
 else ifneq ($(findstring Darwin,$(shell uname -a)),)
 	system_platform = osx
 	arch = intel
-ifeq ($(shell uname -p),powerpc)
-	arch = ppc
+ifeq ($(shell uname -p),arm)
+	arch = arm
 endif
 else ifneq ($(findstring MINGW,$(shell uname -a)),)
 	system_platform = win
@@ -43,13 +43,12 @@ CORE_DIR    += ../../../
 VXT_DIR		:= $(CORE_DIR)/lib/vxt
 VXTP_DIR	:= $(CORE_DIR)/lib/vxtp
 TARGET_NAME := virtualxt
+TARGET_DIR  := $(CORE_DIR)
 LIBM		    = -lm
 
 ifeq ($(ARCHFLAGS),)
-ifeq ($(archs),ppc)
-   ARCHFLAGS = -arch ppc -arch ppc64
-else ifeq ($(archs),arm)
-   ARCHFLAGS = -arch arm -arch arm64
+ifeq ($(archs),arm)
+   ARCHFLAGS = -arch arm64
 else
    ARCHFLAGS = -arch i386 -arch x86_64
 endif
@@ -148,6 +147,7 @@ else
 	@$(if $(Q), $(shell echo echo LD $@),)
 	$(Q)$(CXX) $(fpic) $(SHARED) $(INCLUDES) -o $@ $(OBJECTS) $(LDFLAGS)
 endif
+mv $(TARGET) $(TARGET_DIR)
 
 %.o: %.c
 	@$(if $(Q), $(shell echo echo CC $<),)
@@ -158,7 +158,7 @@ endif
 	$(Q)$(CXX) $(CXXFLAGS) $(fpic) -c -o $@ $<
 
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET_DIR)/$(TARGET)
 
 .PHONY: clean
 
