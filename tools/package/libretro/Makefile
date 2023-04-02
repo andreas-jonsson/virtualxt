@@ -43,7 +43,6 @@ CORE_DIR    += ../../../
 VXT_DIR		:= $(CORE_DIR)/lib/vxt
 VXTP_DIR	:= $(CORE_DIR)/lib/vxtp
 TARGET_NAME := virtualxt
-TARGET_DIR  := $(CORE_DIR)
 LIBM		    = -lm
 
 ifeq ($(ARCHFLAGS),)
@@ -148,7 +147,6 @@ else
 	@$(if $(Q), $(shell echo echo LD $@),)
 	$(Q)$(CXX) $(fpic) $(SHARED) $(INCLUDES) -o $@ $(OBJECTS) $(LDFLAGS)
 endif
-cp $(TARGET) $(TARGET_DIR)
 
 %.o: %.c
 	@$(if $(Q), $(shell echo echo CC $<),)
@@ -159,7 +157,7 @@ cp $(TARGET) $(TARGET_DIR)
 	$(Q)$(CXX) $(CXXFLAGS) $(fpic) -c -o $@ $<
 
 clean:
-	rm -f $(OBJECTS) $(TARGET) $(TARGET_DIR)/$(TARGET)
+	rm -f $(OBJECTS) $(TARGET)
 
 .PHONY: clean
 
