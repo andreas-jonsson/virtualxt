@@ -46,7 +46,7 @@ TARGET_NAME := virtualxt
 LIBM		    = -lm
 
 ifeq ($(ARCHFLAGS),)
-ifeq ($(archs),arm)
+ifeq ($(arch),arm)
    ARCHFLAGS = -arch arm64
 else
    ARCHFLAGS = -arch i386 -arch x86_64
