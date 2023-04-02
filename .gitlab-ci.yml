@@ -9,6 +9,7 @@
   variables:
     MAKEFILE_PATH: tools/package/libretro
     CORENAME: virtualxt
+    STRIP_CORE_LIB: 0 # Turn this off since there seems to be an issue with the Android template.
 
 # Inclusion templates, required for the build to work
 include:
@@ -109,10 +110,10 @@ libretro-build-osx-arm64:
 
 ################################### CELLULAR #################################
 # Android ARMv7a
-#android-armeabi-v7a:
-#  extends:
-#    - .libretro-android-make-armeabi-v7a
-#    - .core-defs
+android-armeabi-v7a:
+  extends:
+    - .libretro-android-make-armeabi-v7a
+    - .core-defs
 
 # Android ARMv8a
 android-arm64-v8a:
@@ -121,16 +122,16 @@ android-arm64-v8a:
     - .core-defs
 
 # Android 64-bit x86
-#android-x86_64:
-#  extends:
-#    - .libretro-android-make-x86_64
-#    - .core-defs
+android-x86_64:
+  extends:
+    - .libretro-android-make-x86_64
+    - .core-defs
     
 # Android 32-bit x86
-#android-x86:
-#  extends:
-#    - .libretro-android-make-x86
-#    - .core-defs
+android-x86:
+  extends:
+    - .libretro-android-make-x86
+    - .core-defs
 
 # iOS
 libretro-build-ios-arm64:
