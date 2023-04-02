@@ -148,7 +148,7 @@ else
 	@$(if $(Q), $(shell echo echo LD $@),)
 	$(Q)$(CXX) $(fpic) $(SHARED) $(INCLUDES) -o $@ $(OBJECTS) $(LDFLAGS)
 endif
-mv $(TARGET) $(TARGET_DIR)
+cp $(TARGET) $(TARGET_DIR)
 
 %.o: %.c
 	@$(if $(Q), $(shell echo echo CC $<),)
@@ -159,7 +159,7 @@ mv $(TARGET) $(TARGET_DIR)
 	$(Q)$(CXX) $(CXXFLAGS) $(fpic) -c -o $@ $<
 
 clean:
-	rm -f $(OBJECTS) $(TARGET_DIR)/$(TARGET)
+	rm -f $(OBJECTS) $(TARGET) $(TARGET_DIR)/$(TARGET)
 
 .PHONY: clean
 
