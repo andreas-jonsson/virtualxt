@@ -45,20 +45,20 @@ VXTP_DIR	:= $(CORE_DIR)/lib/vxtp
 TARGET_NAME := virtualxt
 LIBM		    = -lm
 
-ifeq ($(ARCHFLAGS),)
-ifeq ($(arch),arm)
-   ARCHFLAGS = -arch arm64
-else
-   ARCHFLAGS = -arch i386 -arch x86_64
-endif
-endif
+#ifeq ($(ARCHFLAGS),)
+#ifeq ($(arch),arm)
+#   ARCHFLAGS = -arch arm64
+#else
+#   ARCHFLAGS = -arch i386 -arch x86_64
+#endif
+#endif
 
-ifeq ($(platform), osx)
-ifndef ($(NOUNIVERSAL))
-   CXXFLAGS += $(ARCHFLAGS)
-   LFLAGS += $(ARCHFLAGS)
-endif
-endif
+#ifeq ($(platform), osx)
+#ifndef ($(NOUNIVERSAL))
+#   CXXFLAGS += $(ARCHFLAGS)
+#   LFLAGS += $(ARCHFLAGS)
+#endif
+#endif
 
 ifeq ($(STATIC_LINKING), 1)
 EXT := a
@@ -82,6 +82,14 @@ else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC
    SHARED := -dynamiclib
+
+   ifeq ($(CROSS_COMPILE),1)
+		TARGET_RULE   = -target $(LIBRETRO_APPLE_PLATFORM) -isysroot $(LIBRETRO_APPLE_ISYSROOT)
+		CFLAGS   += $(TARGET_RULE)
+		CPPFLAGS += $(TARGET_RULE)
+		CXXFLAGS += $(TARGET_RULE)
+		LDFLAGS  += $(TARGET_RULE)
+   endif
 else ifneq (,$(findstring ios,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_ios.dylib
 	fpic := -fPIC
