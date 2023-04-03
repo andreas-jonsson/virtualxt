@@ -13,13 +13,13 @@ endif
 
 ifeq ($(platform),)
 platform = unix
-ifeq ($(shell uname -a),)
+ifeq ($(shell uname -s),)
    platform = win
-else ifneq ($(findstring MINGW,$(shell uname -a)),)
+else ifneq ($(findstring MINGW,$(shell uname -s)),)
    platform = win
-else ifneq ($(findstring Darwin,$(shell uname -a)),)
+else ifneq ($(findstring Darwin,$(shell uname -s)),)
    platform = osx
-else ifneq ($(findstring win,$(shell uname -a)),)
+else ifneq ($(findstring win,$(shell uname -s)),)
    platform = win
 endif
 endif
@@ -86,7 +86,7 @@ else ifneq (,$(findstring ios,$(platform)))
       IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
    endif
    ifeq ($(platform),ios-arm64)
-   CC = cc -arch arm64 -isysroot $(IOSSDK)
+      CC = cc -arch arm64 -isysroot $(IOSSDK)
    else
       CC = cc -arch armv7 -isysroot $(IOSSDK)
    endif
