@@ -9,7 +9,6 @@
   variables:
     MAKEFILE_PATH: tools/package/libretro
     CORENAME: virtualxt
-    STRIP_CORE_LIB: 0 # Turn this off since there seems to be an issue with the Android template.
 
 # Inclusion templates, required for the build to work
 include:
@@ -51,11 +50,6 @@ include:
   - project: 'libretro-infrastructure/ci-templates'
     file: '/ios9.yml'
 
-  ################################## CONSOLES ################################
-  # Nintendo Switch
-  #- project: 'libretro-infrastructure/ci-templates'
-  #  file: '/libnx-static.yml'
-    
   #################################### MISC ##################################
   # Emscripten
   - project: 'libretro-infrastructure/ci-templates'
@@ -144,13 +138,6 @@ libretro-build-ios9:
   extends:
     - .libretro-ios9-make-default
     - .core-defs
-
-################################### CONSOLES #################################
-# Nintendo Switch
-#libretro-build-libnx-aarch64:
-#  extends:
-#    - .libretro-libnx-static-retroarch-master
-#    - .core-defs
 
 #################################### MISC ##################################
 # Emscripten
