@@ -81,24 +81,21 @@ else ifneq (,$(findstring ios,$(platform)))
    fpic := -fPIC
    SHARED := -dynamiclib
    DEFINES := -DIOS
+   MIN_VERSION := -miphoneos-version-min=5.0
 
+   ifeq ($(platform),$(filter $(platform),ios9 ios-arm64))
+      MIN_VERSION = -miphoneos-version-min=8.0
+   endif
    ifeq ($(IOSSDK),)
       IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
    endif
-   ifeq ($(platform),ios-arm64)
-      SHARED += -arch arm64 -isysroot $(IOSSDK)
-      CC = cc -arch arm64 -isysroot $(IOSSDK)
-   else
-      SHARED += -arch armv7 -isysroot $(IOSSDK)
-      CC = cc -arch armv7 -isysroot $(IOSSDK)
-   endif
 
-   ifeq ($(platform),$(filter $(platform),ios9 ios-arm64))
-      SHARED += -miphoneos-version-min=8.0
-      CFLAGS += -miphoneos-version-min=8.0
+   ifeq ($(platform),ios-arm64)
+      SHARED += -arch arm64 $(MIN_VERSION) -isysroot $(IOSSDK)
+      CC = cc -arch arm64 $(MIN_VERSION) -isysroot $(IOSSDK)
    else
-      SHARED += -miphoneos-version-min=5.0
-      CFLAGS += -miphoneos-version-min=5.0
+      SHARED += -arch armv7 $(MIN_VERSION) -isysroot $(IOSSDK)
+      CC = cc -arch armv7 $(MIN_VERSION) -isysroot $(IOSSDK)
    endif
 else ifneq (,$(findstring qnx,$(platform)))
 	TARGET := $(TARGET_NAME)_libretro_qnx.so
