@@ -45,21 +45,6 @@ VXTP_DIR	:= $(CORE_DIR)/lib/vxtp
 TARGET_NAME := virtualxt
 LIBM		    = -lm
 
-#ifeq ($(ARCHFLAGS),)
-#ifeq ($(arch),arm)
-#   ARCHFLAGS = -arch arm64
-#else
-#   ARCHFLAGS = -arch i386 -arch x86_64
-#endif
-#endif
-
-#ifeq ($(platform), osx)
-#ifndef ($(NOUNIVERSAL))
-#   CXXFLAGS += $(ARCHFLAGS)
-#   LFLAGS += $(ARCHFLAGS)
-#endif
-#endif
-
 ifeq ($(STATIC_LINKING), 1)
 EXT := a
 endif
@@ -91,23 +76,28 @@ else ifneq (,$(findstring osx,$(platform)))
 		LDFLAGS  += $(TARGET_RULE)
    endif
 else ifneq (,$(findstring ios,$(platform)))
-   TARGET := $(TARGET_NAME)_libretro_ios.dylib
-	fpic := -fPIC
-	SHARED := -dynamiclib
+	EXT ?= dylib
+   TARGET := $(TARGET_NAME)_libretro_ios.$(EXT)
+   fpic := -fPIC
+   SHARED := -dynamiclib
+   DEFINES := -DIOS
 
-ifeq ($(IOSSDK),)
-   IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
-endif
+   ifeq ($(IOSSDK),)
+      IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
+   endif
+   ifeq ($(platform),ios-arm64)
+   CC = cc -arch arm64 -isysroot $(IOSSDK)
+   else
+      CC = cc -arch armv7 -isysroot $(IOSSDK)
+   endif
 
-	DEFINES := -DIOS
-	CC = cc -arch armv7 -isysroot $(IOSSDK)
-ifeq ($(platform),ios9)
-   CC     += -miphoneos-version-min=8.0
-   CXXFLAGS += -miphoneos-version-min=8.0
-else
-   CC     += -miphoneos-version-min=5.0
-   CXXFLAGS += -miphoneos-version-min=5.0
-endif
+   ifeq ($(platform),$(filter $(platform),ios9 ios-arm64))
+      SHARED += -miphoneos-version-min=8.0
+      CC +=  -miphoneos-version-min=8.0
+   else
+      SHARED += -miphoneos-version-min=5.0
+      CC +=  -miphoneos-version-min=5.0
+   endif
 else ifneq (,$(findstring qnx,$(platform)))
 	TARGET := $(TARGET_NAME)_libretro_qnx.so
    fpic := -fPIC
