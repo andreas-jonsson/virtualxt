@@ -87,10 +87,10 @@ else ifneq (,$(findstring ios,$(platform)))
    endif
    ifeq ($(platform),ios-arm64)
       SHARED += -arch arm64 -isysroot $(IOSSDK)
-      CFLAGS += -arch arm64 -isysroot $(IOSSDK)
+      CC = cc -arch arm64 -isysroot $(IOSSDK)
    else
       SHARED += -arch armv7 -isysroot $(IOSSDK)
-      CFLAGS += -arch armv7 -isysroot $(IOSSDK)
+      CC = cc -arch armv7 -isysroot $(IOSSDK)
    endif
 
    ifeq ($(platform),$(filter $(platform),ios9 ios-arm64))
