@@ -327,7 +327,7 @@ void open_file(const FAT16* fat, FFILE* file, const uint16_t dir_cluster, const 
 	fat->dev->seek(addr);
 	fat->dev->load(file, 12); // name, ext, attribs
 	fat->dev->rseek(14); // skip 14 bytes
-	fat->dev->load(((void*)file) + 12, 6); // read remaining bytes
+	fat->dev->load((void*)(((char*)file) + 12), 6); // read remaining bytes
 
 	file->clu = dir_cluster;
 	file->num = num;
@@ -562,7 +562,7 @@ uint16_t ff_read(FFILE* file, void* target, uint16_t len)
 		file->cur_ofs += chunk;
 
 		// move target pointer
-		target += chunk;
+		target = (void*)((char*)target + chunk);
 
 		// reached end of cluster?
 		if (file->cur_ofs >= fat->bs.bytes_per_cluster)
@@ -676,7 +676,7 @@ bool ff_write(FFILE* file, const void* source, uint32_t len)
 			file->cur_ofs += chunk;
 
 			// Pointer arith!
-			source += chunk; // advance the source pointer
+			source = (void*)((char*)source + chunk); // advance the source pointer
 		}
 
 		// detect cluster overflow

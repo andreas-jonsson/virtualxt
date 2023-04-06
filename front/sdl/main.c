@@ -42,6 +42,8 @@
 #include "keys.h"
 #include "docopt.h"
 
+#include <zip2img.h>
+
 #define MIN_CLOCKS_PER_STEP 1
 #define MAX_PENALTY_USEC 1000
 
@@ -440,6 +442,13 @@ int main(int argc, char *argv[]) {
 			return -1;
 		}
 	}
+
+
+
+	if (!zip2img("boot/test.zip", "boot/test.img"))
+		return -1;
+
+
 
 	if (!args.bios) {
 		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");

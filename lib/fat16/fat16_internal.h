@@ -3,12 +3,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef _MSC_VER
+   #define PACK_STRUCT(x, n) __pragma(pack(push, 1)) typedef struct x n ; __pragma(pack(pop))
+#else
+   #define PACK_STRUCT(x, n) typedef struct __attribute__((__packed__)) x n ;
+#endif
+
 // Internal types and stuff that is needed in the header for declarations,
 // but is not a part of the public API.
 
 /** Boot Sector structure */
-typedef struct __attribute__((packed))
-{
+PACK_STRUCT({
 	// Fields loaded directly from disk:
 
 	// 13 bytes skipped
@@ -27,13 +32,11 @@ typedef struct __attribute__((packed))
 
 	uint32_t bytes_per_cluster;
 
-}
-Fat16BootSector;
+}, Fat16BootSector)
 
 
 /** FAT filesystem handle */
-typedef struct __attribute__((packed))
-{
+PACK_STRUCT({
 	// Backing block device
 	const BLOCKDEV* dev;
 
@@ -48,8 +51,7 @@ typedef struct __attribute__((packed))
 
 	// Boot sector data struct
 	Fat16BootSector bs;
-}
-FAT16;
+}, FAT16)
 
 
 /**
