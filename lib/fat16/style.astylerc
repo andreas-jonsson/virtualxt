@@ -1,0 +1,13 @@
+style=allman
+indent=tab
+max-instatement-indent=60
+
+convert-tabs
+
+indent-switches
+
+pad-oper
+unpad-paren
+pad-header
+
+verbose
