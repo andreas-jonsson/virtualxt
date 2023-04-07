@@ -40,6 +40,13 @@
 #include "../../bios/pcxtbios.h"
 #include "../../bios/vxtx.h"
 
+// Just hardcode it for now.
+#define ZIP2IMG
+
+#ifdef ZIP2IMG
+    #include "../../tools/vxtimg/zip2img.h"
+#endif
+
 #define AUDIO_FREQUENCY 44100
 
 #define LOG(...) log_cb(RETRO_LOG_INFO, __VA_ARGS__)
@@ -68,6 +75,7 @@ long long last_update = 0;
 bool floppy_ejected = false;
 int num_disk_images = 0;
 int current_disk_image = 0;
+char temp_file_name[L_tmpnam] = {0};
 struct retro_vfs_file_handle *disk_image_files[256] = {NULL};
 struct retro_vfs_file_handle *hd_image = NULL;
 
@@ -250,6 +258,25 @@ static bool add_image_index(void) {
     return true;
 }
 
+static const char *process_zip(const char *path) {
+    #ifdef ZIP2IMG
+        const char *ext = strrchr(path, '.');    
+        if (ext && !strcmp(ext, ".zip")) {
+            if (!temp_file_name[0]) {
+                tmpnam(temp_file_name);
+                LOG("Tempfile generated: %s\n", temp_file_name);
+            }
+            
+            if (!zip2img_tmpl(path, temp_file_name, ZIP2IMG_TMPL_FREEDOS_MINIMAL_40M))
+                return false;
+            if (!zip2img_create_autoexec(temp_file_name, "@echo off\r\necho.\r\ndir\r\n"))
+                return false;
+            path = temp_file_name;
+        }
+    #endif
+    return path;
+}
+
 static void check_variables(void) {
     struct retro_variable var = { .key = "virtualxt_cpu_frequency" };
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
@@ -335,6 +362,11 @@ void retro_deinit(void) {
     while (num_disk_images)
         vfs->close(disk_image_files[--num_disk_images]);
     vxt_memclear(disk_image_files, sizeof(void*) * 256);
+
+    if (*temp_file_name) {
+        remove(temp_file_name);
+        *temp_file_name = 0;
+    }
 }
 
 unsigned retro_api_version(void) {
@@ -349,8 +381,13 @@ void retro_get_system_info(struct retro_system_info *info) {
     vxt_memclear(info, sizeof(struct retro_system_info));
     info->library_name = "VirtualXT";
     info->library_version = vxt_lib_version();
-    info->valid_extensions = "img";
     info->need_fullpath = true;
+    info->block_extract = true;
+    info->valid_extensions = "img"
+        #ifdef ZIP2IMG
+            "|zip"
+        #endif
+        ;
 }
 
 void retro_get_system_av_info(struct retro_system_av_info *info) {
@@ -467,10 +504,12 @@ void retro_run(void) {
 bool retro_load_game(const struct retro_game_info *info) SYNC(
     assert(sys);
 
-    struct retro_vfs_file_handle *fp = load_disk_image(info->path);
+    const char *img_path = process_zip(info->path);
+    struct retro_vfs_file_handle *fp = load_disk_image(img_path);
     int dos_idx = ((int)vfs->size(fp) > 1474560) ? 128 : 0;
+
     if (vxtu_disk_mount(disk, dos_idx, (void*)fp) != VXT_NO_ERROR) {
-        log_cb(RETRO_LOG_ERROR, "Could not mount disk image: %s\n", info->path);
+        log_cb(RETRO_LOG_ERROR, "Could not mount disk image: %s\n", img_path);
         vfs->close(fp);
         return false;
     }

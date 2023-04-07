@@ -95,10 +95,12 @@ workspace "virtualxt"
 
     project "miniz"
         kind "StaticLib"
+        pic "On"
         files { "lib/miniz/miniz.h", "lib/miniz/miniz.c" }
 
     project "fat16"
         kind "StaticLib"
+        pic "On"
         files {
             "lib/fat16/fat16.h",
             "lib/fat16/blockdev.h",
@@ -157,6 +159,9 @@ workspace "virtualxt"
 
         includedirs "lib/vxtp"
         files { "lib/vxtp/**.h", "lib/vxtp/joystick.c" }
+
+        links { "miniz", "fat16" }
+        includedirs { "lib/miniz", "lib/fat16" }
 
         cleancommands {
             "{RMDIR} build/lib",
@@ -220,13 +225,10 @@ workspace "virtualxt"
 
         defines "VXTP_NUKED_OPL3"
 
-        files { "front/common/*.h", "front/sdl/*.h", "front/sdl/*.c" }
+        files { "front/sdl/*.h", "front/sdl/*.c" }
 
         links { "vxt", "vxtp", "inih", "microui", "nuked-opl3" }
-        includedirs { "front/common", "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "lib/nuked-opl3" }
-
-        links { "miniz", "fat16" }
-        includedirs { "lib/miniz", "lib/fat16" }
+        includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "lib/nuked-opl3" }
 
         local sdl_cfg = path.join(_OPTIONS["sdl-config"], "sdl2-config")
         buildoptions { string.format("`%s --cflags`", sdl_cfg) }
