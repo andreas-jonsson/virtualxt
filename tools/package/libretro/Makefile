@@ -80,8 +80,6 @@ else ifneq (,$(findstring android,$(platform)))
    CC = $(ANDROID_NDK_LLVM)/bin/clang $(TARGET_RULE)
    AR = $(ANDROID_NDK_LLVM)/bin/ar $(TARGET_RULE)
 
-   @echo "Android CC: $(CC)"
-
 else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC
