@@ -63,22 +63,24 @@ else ifneq (,$(findstring android,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_android.so
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined
-   CROSS_TARGET := none
+   TARGET_RULE := -target unknown
 
    ifeq ($(platform), android-arm)
-      CROSS_TARGET = armv7a-linux-androideabi
+      TARGET_RULE = -target armv7a-linux-androideabi -gcc-toolchain $(ANDROID_NDK_ARM)
    else ifeq ($(platform), android-arm64)
-      CROSS_TARGET = aarch64-linux-android
+      TARGET_RULE = -target aarch64-linux-android -gcc-toolchain $(ANDROID_NDK_ARM64)
    else ifeq ($(platform), android-x86)
-      CROSS_TARGET = i686-linux-android
+      TARGET_RULE = -target i686-linux-android -gcc-toolchain $(ANDROID_NDK_X86)
    else ifeq ($(platform), android-x86_64)
-      CROSS_TARGET = x86_64-linux-android
+      TARGET_RULE = -target x86_64-linux-android -gcc-toolchain $(ANDROID_NDK_X64)
    else
       echo Unknown Android platform!
    endif
 
-   CC = $(ANDROID_NDK_LLVM)/bin/clang -target $(CROSS_TARGET) -gcc-toolchain $(ANDROID_NDK_ROOT)
-   AR = $(ANDROID_NDK_LLVM)/bin/ar -target $(CROSS_TARGET) -gcc-toolchain $(ANDROID_NDK_ROOT)
+   CC = $(ANDROID_NDK_LLVM)/bin/clang $(TARGET_RULE)
+   AR = $(ANDROID_NDK_LLVM)/bin/ar $(TARGET_RULE)
+
+   echo "Android CC: $(CC)"
 
 else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
