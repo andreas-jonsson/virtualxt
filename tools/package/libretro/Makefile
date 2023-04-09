@@ -63,6 +63,23 @@ else ifneq (,$(findstring android,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_android.so
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined
+   CROSS_TARGET := none
+
+   ifeq ($(platform), android-arm)
+      CROSS_TARGET = armv7a-linux-androideabi
+   else ifeq ($(platform), android-arm64)
+      CROSS_TARGET = aarch64-linux-android
+   else ifeq ($(platform), android-x86)
+      CROSS_TARGET = i686-linux-android
+   else ifeq ($(platform), android-x86_64)
+      CROSS_TARGET = x86_64-linux-android
+   else
+      echo Unknown Android platform!
+   endif
+
+   CC = $(ANDROID_NDK_LLVM)/bin/clang -target $(CROSS_TARGET) -gcc-toolchain $(ANDROID_NDK_ROOT)
+   AR = $(ANDROID_NDK_LLVM)/bin/ar -target $(CROSS_TARGET) -gcc-toolchain $(ANDROID_NDK_ROOT)
+
 else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC
