@@ -131,6 +131,11 @@ static int tell_file(vxt_system *s, void *fp) {
 	return (int)vfs->tell((struct retro_vfs_file_handle*)fp);
 }
 
+static bool is_zip(const char *file) {
+    const char *ext = strrchr(file, '.');    
+    return ext && !strcmp(ext, ".zip");
+}
+
 static long long ustimer(void) {
     assert(get_time_usec);
     return (long long)get_time_usec();
@@ -234,7 +239,7 @@ static unsigned get_num_images(void) {
 }
 
 static bool replace_image_index(unsigned index, const struct retro_game_info *info) {
-    if (!info)
+    if (!info || is_zip(info->path))
         return false;
 
     assert(!disk_image_files[index]);
@@ -259,18 +264,17 @@ static bool add_image_index(void) {
 }
 
 static const char *process_zip(const char *path) {
-    #ifdef ZIP2IMG
-        const char *ext = strrchr(path, '.');    
-        if (ext && !strcmp(ext, ".zip")) {
+    #ifdef ZIP2IMG 
+        if (is_zip(path)) {
             if (!temp_file_name[0]) {
                 tmpnam(temp_file_name);
                 LOG("Tempfile generated: %s\n", temp_file_name);
             }
-            
+
             if (!zip2img_tmpl(path, temp_file_name, ZIP2IMG_TMPL_FREEDOS_MINIMAL_40M))
-                return false;
+                return NULL;
             if (!zip2img_create_autoexec(temp_file_name, "@echo off\r\necho.\r\ndir\r\n"))
-                return false;
+                return NULL;
             path = temp_file_name;
         }
     #endif
@@ -503,8 +507,10 @@ void retro_run(void) {
 
 bool retro_load_game(const struct retro_game_info *info) SYNC(
     assert(sys);
-
     const char *img_path = process_zip(info->path);
+    if (!img_path)
+        return false;
+
     struct retro_vfs_file_handle *fp = load_disk_image(img_path);
     int dos_idx = ((int)vfs->size(fp) > 1474560) ? 128 : 0;
 

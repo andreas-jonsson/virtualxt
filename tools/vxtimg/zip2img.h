@@ -167,7 +167,47 @@ static bool write_img_file(const char *path, void *data, int size) {
 	ff_flush_file(&file);
 	return true;
 }
+/*
+static bool zip2img_list(const char *file, const char *ext, bool (*cb)(const char *file, void *ud), void *ud) {
+	mz_zip_archive ar;
+	memset(&ar, 0, sizeof(ar));
+	mz_bool status = mz_zip_reader_init_file(&ar, file, 0);
+	if (!status) {
+		MZ_PRINT_ERROR(&ar);
+		return false;
+	}
 
+	int num = mz_zip_reader_get_num_files(&ar);
+    for (int i = 0; i < num; i++) {
+		mz_zip_archive_file_stat stat;
+		if (!mz_zip_reader_file_stat(&ar, i, &stat)) {
+			MZ_PRINT_ERROR(&ar);
+			mz_zip_reader_end(&ar);
+			return false;
+		}
+
+		if (mz_zip_reader_is_file_a_directory(&ar, i))
+			continue;
+
+		char buffer[MZ_ZIP_MAX_ARCHIVE_FILENAME_SIZE];
+		strncpy(buffer, ext, sizeof(buffer) - 1);
+		char *ex = strtok(buffer, "|");
+
+		while (ex) {
+			const char *sub = strrchr(stat.m_filename, '.');    
+        	if (ext && !strcmp(sub + 1, ex)) {
+				if (!cb(stat.m_filename, ud)) {
+					mz_zip_reader_end(&ar);
+					return true;
+				}
+			}
+			ex = strtok(NULL, "|");
+		}
+	}
+	mz_zip_reader_end(&ar);
+	return true;
+}
+*/
 static bool do_zip2img(mz_zip_archive *in) {
 	int num = mz_zip_reader_get_num_files(in);
     for (int i = 0; i < num; i++) {
