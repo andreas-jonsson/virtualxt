@@ -78,6 +78,7 @@ else ifneq (,$(findstring android,$(platform)))
    endif
 
    CC = $(ANDROID_NDK_LLVM)/bin/clang $(TARGET_RULE)
+   CXX = $(ANDROID_NDK_LLVM)/bin/clang++ $(TARGET_RULE)
    AR = $(ANDROID_NDK_LLVM)/bin/ar $(TARGET_RULE)
 
 else ifneq (,$(findstring osx,$(platform)))
