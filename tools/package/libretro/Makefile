@@ -73,8 +73,6 @@ else ifneq (,$(findstring android,$(platform)))
       TARGET_TRIPLE = i686-linux-android
    else ifeq ($(platform), android-x86_64)
       TARGET_TRIPLE = x86_64-linux-android
-   else
-      echo Unknown Android platform!
    endif
 
    CC = $(ANDROID_NDK_LLVM)/bin/$(TARGET_TRIPLE)21-clang
