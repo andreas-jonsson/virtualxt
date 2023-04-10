@@ -69,7 +69,6 @@ stages:
 # Windows 64-bit
 libretro-build-windows-x64:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -79,7 +78,6 @@ libretro-build-windows-x64:
 # Windows 32-bit
 libretro-build-windows-i686:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -89,7 +87,6 @@ libretro-build-windows-i686:
 # Linux 64-bit
 libretro-build-linux-x64:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -99,7 +96,6 @@ libretro-build-linux-x64:
 # Linux 32-bit
 libretro-build-linux-i686:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -109,7 +105,6 @@ libretro-build-linux-i686:
 # MacOS 64-bit
 libretro-build-osx-x64:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -119,7 +114,6 @@ libretro-build-osx-x64:
 # MacOS ARM 64-bit
 libretro-build-osx-arm64:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -130,7 +124,6 @@ libretro-build-osx-arm64:
 # Android ARMv7a
 android-armeabi-v7a:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -140,7 +133,6 @@ android-armeabi-v7a:
 # Android ARMv8a
 android-arm64-v8a:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -150,7 +142,6 @@ android-arm64-v8a:
 # Android 64-bit x86
 android-x86_64:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -160,7 +151,6 @@ android-x86_64:
 # Android 32-bit x86
 android-x86:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -170,7 +160,6 @@ android-x86:
 # iOS
 libretro-build-ios-arm64:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -180,7 +169,6 @@ libretro-build-ios-arm64:
 # iOS (armv7) [iOS 9 and up]
 libretro-build-ios9:
   only:
-    - develop
     - edge
     - release
   extends:
@@ -191,7 +179,6 @@ libretro-build-ios9:
 # Emscripten
 libretro-build-emscripten:
   only:
-    - develop
     - edge
     - release
   extends:
