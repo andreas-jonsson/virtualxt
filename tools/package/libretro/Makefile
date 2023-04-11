@@ -77,7 +77,7 @@ else ifneq (,$(findstring android,$(platform)))
 
    CC = $(ANDROID_NDK_LLVM)/bin/$(TARGET_TRIPLE)21-clang
    CXX = $(ANDROID_NDK_LLVM)/bin/$(TARGET_TRIPLE)21-clang++
-   AR = $(ANDROID_NDK_LLVM)/bin/$(TARGET_TRIPLE)-ar
+   AR = $(ANDROID_NDK_LLVM)/bin/llvm-ar
 
 else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
