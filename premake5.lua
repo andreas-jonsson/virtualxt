@@ -162,6 +162,7 @@ workspace "virtualxt"
 
         links { "miniz", "fat16" }
         includedirs { "lib/miniz", "lib/fat16" }
+        defines "ZIP2IMG"
 
         cleancommands {
             "{RMDIR} build/lib",

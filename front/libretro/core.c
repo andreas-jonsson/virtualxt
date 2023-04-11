@@ -40,11 +40,8 @@
 #include "../../bios/pcxtbios.h"
 #include "../../bios/vxtx.h"
 
-// Just hardcode it for now.
-#define ZIP2IMG
-
 #ifdef ZIP2IMG
-    #include "../../tools/vxtimg/zip2img.h"
+    #include "zip2img.h"
 #endif
 
 #define AUDIO_FREQUENCY 44100
