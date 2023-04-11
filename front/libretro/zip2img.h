@@ -97,7 +97,7 @@ static bool block_open(const char *file) {
 	return output != NULL;
 }
 
-static void block_close() {
+static void block_close(void) {
 	if (!output)
 		return;
 	fflush(output);
