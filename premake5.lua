@@ -97,6 +97,9 @@ workspace "virtualxt"
         kind "StaticLib"
         pic "On"
         files { "lib/miniz/miniz.h", "lib/miniz/miniz.c" }
+        
+        filter "toolset:clang or gcc"
+            buildoptions "-Wno-error=type-limits"
 
     project "fat16"
         kind "StaticLib"
