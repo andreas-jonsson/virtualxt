@@ -173,7 +173,7 @@ workspace "virtualxt"
         }
 
         filter "toolset:clang or gcc"
-            buildoptions "-Wno-atomic-alignment"
+            buildoptions { "-Wno-atomic-alignment", "-Wno-deprecated-declarations" }
 
         -- TODO: Remove this filter! This is here to fix an issue with the GitHub builder.
         filter "not system:windows"
