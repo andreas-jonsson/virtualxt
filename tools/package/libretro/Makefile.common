@@ -3,5 +3,4 @@ VXT_SOURCES_C := $(VXT_DIR)/cga.c $(VXT_DIR)/cpu.c $(VXT_DIR)/disk.c $(VXT_DIR)/
 VXTP_SOURCES_C := $(VXTP_DIR)/joystick.c
 
 SOURCES_C   := $(CORE_DIR)/front/libretro/core.c $(VXT_SOURCES_C) $(VXTP_SOURCES_C) $(ZIP2IMG_SOURCES_C)
-SOURCES_CXX :=
 CFLAGS      := -DZIP2IMG -DVXTU_CGA_RED=2 -DVXTU_CGA_GREEN=1 -DVXTU_CGA_BLUE=0 -DVXTU_CGA_ALPHA=3 -I$(CORE_DIR)/lib/vxt/include -I$(CORE_DIR)/lib/vxtp -I$(CORE_DIR)/lib/libretro -I$(CORE_DIR)/lib/miniz -I$(CORE_DIR)/lib/fat16
