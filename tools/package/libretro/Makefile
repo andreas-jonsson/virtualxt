@@ -115,7 +115,7 @@ else ifeq ($(platform), emscripten)
    SHARED := -shared -Wl,--no-undefined
 else
    TARGET := $(TARGET_NAME)_libretro.dll
-   SHARED := -shared -static-libgcc -static-libc -s -Wl,--no-undefined
+   SHARED := -shared -static-libgcc -s -Wl,--no-undefined
 endif
 
 LDFLAGS += $(LIBM)
