@@ -9,7 +9,7 @@ VirtualXT is a IBM PC/XT (8088/V20) emulator that runs on modern hardware and op
 It is designed to be simple and lightweight yet still capable enough to run a large
 library of old application and games.
 
-Browser version is avalible [here](https://app.virtualxt.org).
+Browser version is avalible [here](https://realmode.games).
 
 ## Features
 
@@ -20,6 +20,7 @@ Browser version is avalible [here](https://app.virtualxt.org).
 * Keyboard controller with 83-key XT-style keyboard
 * Serial port with Microsoft 2-button mouse
 * Floppy and hard disk controller
+* Direct file share with host
 * AdLib Music Synthesizer
 * Ethernet adapter
 * Real Time Clock
