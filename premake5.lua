@@ -145,6 +145,22 @@ workspace "virtualxt"
         filter "toolset:gcc"
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
 
+    project "motif-frontend"
+        kind "ConsoleApp"
+        targetname "virtualxt"
+        targetdir "build/bin"
+
+        files { "front/motif/*.h", "front/motif/*.c" }
+        links "vxt"
+        includedirs "lib/vxt/include"
+
+        links { "Xm", "Xt", "Xext", "ICE", "SM", "X11" }
+
+        cleancommands {
+            "{RMDIR} build/bin",
+            "make clean %{cfg.buildcfg}"
+        }
+
     project "libretro-frontend"
         kind "SharedLib"
         targetname "virtualxt_libretro"
