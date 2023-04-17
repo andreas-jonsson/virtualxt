@@ -224,6 +224,7 @@ var diskData = null;
 var invalidateWindowSize = false;
 var halted = false;
 var dbQueue = null;
+var diskActivityImage = null;
 
 var memory = new WebAssembly.Memory({
     initial: 350, // Pages
@@ -235,6 +236,7 @@ var importObject = {
         memory: memory,
         js_puts: printCString,
         js_shutdown: shutdown,
+        js_disk_activity: diskActivity,
         js_disk_read: diskReadData,
         js_disk_write: diskWriteData,
         js_disk_size: () => { return diskData.length; },
@@ -258,9 +260,26 @@ function shutdown() {
 function isTouchDevice() {
     if (urlParams.has("touch"))
         return urlParams.get("touch") != "0";
-    return ('ontouchstart' in window) ||
+    return ("ontouchstart" in window) ||
         (navigator.maxTouchPoints > 0) ||
         (navigator.msMaxTouchPoints > 0);
+}
+
+function diskActivity(disk_id, user_data) {
+    if (diskActivityImage == null)
+        return;
+
+    var opacity = 1;
+    diskActivityImage.style.opacity = opacity;
+    diskActivityImage.style.display = "block";
+    var timer = setInterval(() => {
+        if (opacity <= 0) {
+            clearInterval(timer);
+            diskActivityImage.style.display = "none";
+        }
+        diskActivityImage.style.opacity = opacity;
+        opacity -= 0.1;
+    }, 50);
 }
 
 function diskReadData(ptr, size, head) {
@@ -626,6 +645,10 @@ window.onload = () => {
     const div = document.createElement("div");
     const btn = document.createElement("button");
 
+    if (urlParams.get("activity") != "0") {
+        diskActivityImage = document.getElementById("disk-activity");
+    }
+    
     {
         btn.type = "button";
         btn.style = "background-color: #555555; border: none; color: white; padding: 8px 16px; text-align: center; text-decoration: none; font-size: 14px;";

@@ -198,6 +198,7 @@ void wasm_initialize_emulator(int v20, int freq) {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
 	struct vxt_pirepheral *disk = vxtu_disk_create(&ALLOCATOR, &interface);
+	vxtu_disk_set_activity_callback(disk, &js_disk_activity, NULL);
 	
 	ppi = vxtu_ppi_create(&ALLOCATOR);
     cga = vxtu_cga_create(&ALLOCATOR);
