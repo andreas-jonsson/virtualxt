@@ -118,6 +118,7 @@ var vxtu_8h =
     [ "vxtu_debugger_interrupt", "vxtu_8h.html#a5101b920f9a48f0b72f4d8e5754f7570", null ],
     [ "vxtu_disk_create", "vxtu_8h.html#a710f1dfdecd7b8c5f732e2b769ea821e", null ],
     [ "vxtu_disk_mount", "vxtu_8h.html#a6ad6292ca0177dba79095f9062fd7584", null ],
+    [ "vxtu_disk_set_activity_callback", "vxtu_8h.html#ac83bc3b6d4ff7407bbf98e291e26f09b", null ],
     [ "vxtu_disk_set_boot_drive", "vxtu_8h.html#ad6c5187a5ff6529b4cceb6c311bc0172", null ],
     [ "vxtu_disk_unmount", "vxtu_8h.html#abe9166d62cc1012eb3f1b049abdc892f", null ],
     [ "vxtu_dma_create", "vxtu_8h.html#a5f68ab17dd6e7886b73392c3d7d3eecf", null ],
