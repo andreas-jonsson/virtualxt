@@ -225,6 +225,7 @@ var invalidateWindowSize = false;
 var halted = false;
 var dbQueue = null;
 var diskActivityImage = null;
+var activity_opacity = 0;
 
 var memory = new WebAssembly.Memory({
     initial: 350, // Pages
@@ -269,17 +270,22 @@ function diskActivity(disk_id, user_data) {
     if (diskActivityImage == null)
         return;
 
-    var opacity = 1;
-    diskActivityImage.style.opacity = opacity;
-    diskActivityImage.style.display = "block";
-    var timer = setInterval(() => {
-        if (opacity <= 0) {
-            clearInterval(timer);
-            diskActivityImage.style.display = "none";
-        }
-        diskActivityImage.style.opacity = opacity;
-        opacity -= 0.1;
-    }, 50);
+    if (activity_opacity <= 0) {
+        activity_opacity = 1;
+        diskActivityImage.style.opacity = activity_opacity;
+        diskActivityImage.style.display = "block";
+        var timer = setInterval(() => {
+            activity_opacity -= 0.1;
+            if (activity_opacity <= 0) {
+                clearInterval(timer);
+                diskActivityImage.style.display = "none";
+                return;
+            }
+            diskActivityImage.style.opacity = activity_opacity;
+        }, 50);
+    } else {
+        activity_opacity = 1;
+    }
 }
 
 function diskReadData(ptr, size, head) {
