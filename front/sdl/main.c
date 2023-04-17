@@ -41,6 +41,7 @@
 #include "window.h"
 #include "keys.h"
 #include "docopt.h"
+#include "icons.h"
 
 #define MIN_CLOCKS_PER_STEP 1
 #define MAX_PENALTY_USEC 1000
@@ -303,6 +304,11 @@ static void audio_callback(void *udata, uint8_t *stream, int len) {
 	);
 }
 
+static void disk_activity_cb(int disk, void *data) {
+	(void)disk;
+	SDL_AtomicSet((SDL_atomic_t*)data, (int)SDL_GetTicks() + 0xFF);
+}
+
 static vxt_word pow2(vxt_word v) {
 	v--;
 	v |= v >> 1;
@@ -512,6 +518,20 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
+	SDL_RWops *rwops = SDL_RWFromConstMem(disk_activity_icon, sizeof(disk_activity_icon));
+	SDL_Surface *surface = SDL_LoadBMP_RW(rwops, 1);
+	if (!surface) {
+		printf("SDL_LoadBMP_RW() failed with error %s\n", SDL_GetError());
+		return -1;
+	}
+
+	SDL_Texture *disk_icon_texture = SDL_CreateTextureFromSurface(renderer, surface);
+	if (!disk_icon_texture) {
+		printf("SDL_CreateTextureFromSurface() failed with error %s\n", SDL_GetError());
+		return -1;
+	}
+	SDL_FreeSurface(surface);
+
 	mr_renderer *mr = mr_init(renderer);
 	mu_Context *ctx = SDL_malloc(sizeof(mu_Context));
 	mu_init(ctx);
@@ -653,6 +673,10 @@ int main(int argc, char *argv[]) {
 		}
 		vxt_system_set_tracer(vxt, &tracer);
 	}
+
+	SDL_atomic_t icon_fade = {0};
+	if (!args.no_activity)
+		vxtu_disk_set_activity_callback(disk, &disk_activity_cb, &icon_fade);
 
 	#ifdef PI8088
 		vxt_system_set_validator(vxt, pi8088_validator());
@@ -916,7 +940,15 @@ int main(int argc, char *argv[]) {
 					case MU_COMMAND_ICON: mr_draw_icon(mr, cmd->icon.id, cmd->icon.rect, cmd->icon.color); break;
 					case MU_COMMAND_CLIP: mr_set_clip_rect(mr, cmd->clip.rect); break;
 				}
-			}		
+			}
+
+			int fade = SDL_AtomicGet(&icon_fade) - (int)SDL_GetTicks();
+			if (fade > 0) {
+				SDL_Rect dst = { 4, 2, 20, 20 };
+				SDL_SetTextureAlphaMod(disk_icon_texture, (fade > 0xFF) ? 0xFF : fade);
+				SDL_RenderCopy(renderer, disk_icon_texture, NULL, &dst);
+			}
+
 			mr_present(mr);
 		}
 	}
@@ -949,6 +981,7 @@ int main(int argc, char *argv[]) {
 	mr_destroy(mr);
 	SDL_free(ctx);
 
+	SDL_DestroyTexture(disk_icon_texture); 
 	SDL_DestroyTexture(framebuffer);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);

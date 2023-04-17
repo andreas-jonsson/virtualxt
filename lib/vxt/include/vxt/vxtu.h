@@ -260,6 +260,7 @@ extern bool vxtu_cga_snapshot(struct vxt_pirepheral *p);
 extern int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 
 extern struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *interface);
+extern void vxtu_disk_set_activity_callback(struct vxt_pirepheral *p, void (*cb)(int,void*), void *ud);
 extern void vxtu_disk_set_boot_drive(struct vxt_pirepheral *p, int num);
 extern vxt_error vxtu_disk_mount(struct vxt_pirepheral *p, int num, void *fp);
 extern bool vxtu_disk_unmount(struct vxt_pirepheral *p, int num);

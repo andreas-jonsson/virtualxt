@@ -8,6 +8,7 @@ Options:
   --hdboot                Prefer booting from harddrive.
   --mute                  Disable audio.
   --no-adlib              Disable AdLib emulation.
+  --no-activity           Disable disk activity indicator.
   --list                  List network devices and IDs.
   --fdc                   Enable experimental floppy disk controller.
   --v20                   Enable NEC V20 CPU support.

@@ -45,18 +45,26 @@ VXT_PIREPHERAL(disk, {
 	vxt_byte boot_drive;
     vxt_byte num_hd;
 
+    void (*activity_cb)(int,void*);
+    void *activity_cb_data;
+
     struct drive disks[0x100];
 })
 
-static vxt_byte execute_operation(vxt_system *s, struct vxtu_disk_interface *di, struct drive *dev, bool read, vxt_pointer addr,
+static vxt_byte execute_operation(vxt_system *s, struct disk *c, vxt_byte disk, bool read, vxt_pointer addr,
     vxt_word cylinders, vxt_word sectors, vxt_word heads, vxt_byte count)
 {
     if (!sectors)
 	    return 0;
 
+    struct vxtu_disk_interface *di = &c->interface;
+    struct drive *dev = &c->disks[disk];
+
     int lba = ((int)cylinders * (int)dev->heads + (int)heads) * (int)dev->sectors + (int)sectors - 1;
     if (di->seek(s, dev->fp, lba * SECTOR_SIZE, VXTU_SEEK_START))
         return 0;
+    else if (c->activity_cb)
+        c->activity_cb((int)disk, c->activity_cb_data);
 
     int num_sectors = 0;
     while (num_sectors < count) {
@@ -79,14 +87,14 @@ static vxt_byte execute_operation(vxt_system *s, struct vxtu_disk_interface *di,
     return num_sectors;
 }
 
-static void execute_and_set(vxt_system *s, struct vxtu_disk_interface *di, struct disk *c, bool read) {
+static void execute_and_set(vxt_system *s, struct disk *c, bool read) {
     struct vxt_registers *r = vxt_system_registers(s);
     struct drive *d = &c->disks[r->dl];
 	if (!d->fp) {
         r->ah = 1;
         r->flags |= VXT_CARRY;
 	} else {
-        r->al = execute_operation(s, di, d, read, VXT_POINTER(r->es, r->bx), (vxt_word)r->ch + (r->cl / 64) * 256, (vxt_word)r->cl & 0x3F, (vxt_word)r->dh, r->al);
+        r->al = execute_operation(s, c, r->dl, read, VXT_POINTER(r->es, r->bx), (vxt_word)r->ch + (r->cl / 64) * 256, (vxt_word)r->cl & 0x3F, (vxt_word)r->dh, r->al);
         r->ah = 0;
         r->flags &= ~VXT_CARRY;
 	}
@@ -101,7 +109,7 @@ static void bootstrap(vxt_system *s, struct disk *c) {
 
     struct vxt_registers *r = vxt_system_registers(s);
     r->dl = c->boot_drive;
-    r->al = execute_operation(s, &c->interface, d, true, VXT_POINTER(0x0, 0x7C00), 0, 1, 0, 1);
+    r->al = execute_operation(s, c, c->boot_drive, true, VXT_POINTER(0x0, 0x7C00), 0, 1, 0, 1);
 }
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
@@ -139,10 +147,10 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
                     r->flags = d->cf ? (r->flags | VXT_CARRY) : (r->flags & ~VXT_CARRY);
                     return;
                 case 2: // Read sector
-                    execute_and_set(s, &c->interface, c, true);
+                    execute_and_set(s, c, true);
                     break;
                 case 3: // Write sector
-                    execute_and_set(s, &c->interface, c, false);
+                    execute_and_set(s, c, false);
                     break;
                 case 4: // Format track
                 case 5: 
@@ -179,6 +187,12 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             break;
         }
     }
+}
+
+void vxtu_disk_set_activity_callback(struct vxt_pirepheral *p, void (*cb)(int,void*), void *ud) {
+    VXT_DEC_DEVICE(c, disk, p);
+    c->activity_cb = cb;
+    c->activity_cb_data = ud;
 }
 
 void vxtu_disk_set_boot_drive(struct vxt_pirepheral *p, int num) {
