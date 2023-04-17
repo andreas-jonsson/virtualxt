@@ -57,13 +57,15 @@
 }
 
 retro_perf_get_time_usec_t get_time_usec = NULL;
-retro_set_led_state_t set_led_state = NULL;
 retro_log_printf_t log_cb = NULL;
 retro_video_refresh_t video_cb = NULL;
 retro_audio_sample_t audio_cb = NULL;
 retro_input_poll_t input_poll_cb = NULL;
 retro_input_state_t input_state_cb = NULL;
 retro_environment_t environ_cb = NULL;
+
+bool use_led_interface = false;
+retro_set_led_state_t set_led_state = NULL;
 
 struct retro_vfs_interface *vfs = NULL;
 
@@ -298,6 +300,10 @@ static void check_variables(void) {
     var = (struct retro_variable){ .key = "virtualxt_v20" };
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
         cpu_type = strcmp(var.value, "false") ? VXT_CPU_V20 : VXT_CPU_8088;
+
+    var = (struct retro_variable){ .key = "virtualxt_led" };
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+        use_led_interface = strcmp(var.value, "false") != 0;
 }
 
 static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
@@ -341,7 +347,7 @@ void retro_init(void) {
             NULL
         };
 
-        if (set_led_state)
+        if (set_led_state && use_led_interface)
             vxtu_disk_set_activity_callback(disk, &disk_activity_cb, NULL);
 
         sys = vxt_system_create(&realloc, cpu_type, cpu_frequency, devices);
@@ -421,6 +427,7 @@ void retro_set_environment(retro_environment_t cb) {
     set_led_state = cb(RETRO_ENVIRONMENT_GET_LED_INTERFACE, &led) ? led.set_led_state : NULL;
 
     static const struct retro_variable vars[] = {
+        { "virtualxt_led", "LED Interface; false|true" },
         { "virtualxt_v20", "NEC V20; false|true" },
         { "virtualxt_cpu_frequency", "CPU Frequency; 4.77MHz|6MHz|8MHz|10MHz|12MHz|16MHz" },
         { NULL, NULL }
