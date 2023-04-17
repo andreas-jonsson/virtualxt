@@ -57,6 +57,7 @@
 }
 
 retro_perf_get_time_usec_t get_time_usec = NULL;
+retro_set_led_state_t set_led_state = NULL;
 retro_log_printf_t log_cb = NULL;
 retro_video_refresh_t video_cb = NULL;
 retro_audio_sample_t audio_cb = NULL;
@@ -131,6 +132,11 @@ static int tell_file(vxt_system *s, void *fp) {
 static bool is_zip(const char *file) {
     const char *ext = strrchr(file, '.');    
     return ext && !strcmp(ext, ".zip");
+}
+
+static void disk_activity_cb(int disk, void *data) {
+	(void)disk; (void)data;
+	set_led_state(0, 1);
 }
 
 static long long ustimer(void) {
@@ -335,6 +341,9 @@ void retro_init(void) {
             NULL
         };
 
+        if (set_led_state)
+            vxtu_disk_set_activity_callback(disk, &disk_activity_cb, NULL);
+
         sys = vxt_system_create(&realloc, cpu_type, cpu_frequency, devices);
         vxt_system_initialize(sys);
 
@@ -408,6 +417,9 @@ void retro_set_environment(retro_environment_t cb) {
     struct retro_log_callback logging;
     log_cb = cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging) ? logging.log : no_log;
 
+    struct retro_led_interface led;
+    set_led_state = cb(RETRO_ENVIRONMENT_GET_LED_INTERFACE, &led) ? led.set_led_state : NULL;
+
     static const struct retro_variable vars[] = {
         { "virtualxt_v20", "NEC V20; false|true" },
         { "virtualxt_cpu_frequency", "CPU Frequency; 4.77MHz|6MHz|8MHz|10MHz|12MHz|16MHz" },
@@ -473,6 +485,9 @@ void retro_run(void) {
     bool updated = false;
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
         SYNC(check_variables());
+
+    if (set_led_state)
+        set_led_state(0, 0);
 
     const double freq = (double)cpu_frequency / 1000000.0;
     int clocks = (int)(freq * delta);
