@@ -114,9 +114,7 @@ jobs:
           mv virtualxt-net.exe build/bin
 
       - name: Package
-        run: |
-          ./tools/package/itch/package.bat
-          cp "${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/lib/x64/SDL2.dll" "${GITHUB_WORKSPACE}/package/virtualxt"
+        run: ./tools/package/itch/package.bat
         
       - name: Deploy
         env:
