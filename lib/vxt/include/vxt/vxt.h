@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 #define VXT_VERSION_MAJOR 0
-#define VXT_VERSION_MINOR 8
+#define VXT_VERSION_MINOR 9
 #define VXT_VERSION_PATCH 0
 
 #define _VXT_STRINGIFY(x) #x
