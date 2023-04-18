@@ -138,7 +138,8 @@ static bool is_zip(const char *file) {
 
 static void disk_activity_cb(int disk, void *data) {
 	(void)disk; (void)data;
-	set_led_state(0, 1);
+    if (use_led_interface)
+	    set_led_state(0, 1);
 }
 
 static long long ustimer(void) {
@@ -347,8 +348,7 @@ void retro_init(void) {
             NULL
         };
 
-        if (set_led_state && use_led_interface)
-            vxtu_disk_set_activity_callback(disk, &disk_activity_cb, NULL);
+        vxtu_disk_set_activity_callback(disk, &disk_activity_cb, NULL);
 
         sys = vxt_system_create(&realloc, cpu_type, cpu_frequency, devices);
         vxt_system_initialize(sys);
@@ -493,7 +493,7 @@ void retro_run(void) {
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
         SYNC(check_variables());
 
-    if (set_led_state)
+    if (set_led_state && use_led_interface)
         set_led_state(0, 0);
 
     const double freq = (double)cpu_frequency / 1000000.0;
