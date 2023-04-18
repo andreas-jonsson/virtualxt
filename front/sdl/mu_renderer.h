@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -23,12 +23,7 @@
 #ifndef _MU_RENDERER_H_
 #define _MU_RENDERER_H_
 
-#ifdef _WIN32
-	#include <SDL.h>
-#else
-	#include <SDL2/SDL.h>
-#endif
-
+#include <SDL.h>
 #include <microui.h>
 
 typedef struct renderer mr_renderer;

@@ -32,10 +32,12 @@ typedef size_t bool;
 
 #include <sys/limits.h>
 
-#elif defined(__FreeBSD__) || defined(__NetBSD__)
-|| defined(__OpenBSD__) || defined(__bsdi__)
-|| defined(__DragonFly__) || defined(macintosh)
-|| defined(__APPLE__) || defined(__APPLE_CC__)
+// This is a FreeBSD hack.
+#elif defined(__NetBSD__) || defined(__OpenBSD__) || defined(__bsdi__) || defined(__DragonFly__) || defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
+//#elif defined(__FreeBSD__) || defined(__NetBSD__)
+//|| defined(__OpenBSD__) || defined(__bsdi__)
+//|| defined(__DragonFly__) || defined(macintosh)
+//|| defined(__APPLE__) || defined(__APPLE_CC__)
 
 #include <sys/syslimits.h>
 
@@ -93,7 +95,9 @@ struct DocoptArgs {
     size_t joystick;
     size_t list;
     size_t mute;
+    size_t no_activity;
     size_t no_adlib;
+    size_t v20;
     size_t version;
     /* options with arguments */
     char *bios;
@@ -104,11 +108,12 @@ struct DocoptArgs {
     char *harddrive;
     char *network;
     char *rifs;
+    char *serial_debug;
     char *trace;
     char *vga;
     /* special */
     const char *usage_pattern;
-    const char *help_message[23];
+    const char *help_message[26];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

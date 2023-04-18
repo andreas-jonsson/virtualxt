@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -29,8 +29,6 @@
 
 #include <string.h>
 #include <stdio.h>
-
-#define INT64 long long
 
 #define FIFO_SIZE 16
 #define SECTOR_SIZE 512
@@ -139,10 +137,6 @@ VXT_PIREPHERAL(fdc, {
     vxt_system *s;
     vxt_word base;
     int irq;
-    INT64 (*ustics)(void);
-
-    INT64 last_seek;
-    INT64 last_transfer;
 
     bool use_dma;
     struct vxt_pirepheral *dma_controller;
@@ -396,18 +390,18 @@ static void update_transfer(struct fdc *c) {
 	}
 }
 
-static vxt_error step(struct vxt_pirepheral *p, int cycles) {
-    (void)cycles;
+static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+    (void)id; (void)cycles;
     VXT_DEC_DEVICE(c, fdc, p);
     
-    INT64 t = c->ustics();
+    //INT64 t = c->ustics();
     //if ((t - c->last_seek) > 20000) {
-        c->last_seek = t;
+    //    c->last_seek = t;
         update_seek(c);
     //}
 
     //if ((t - c->last_transfer) > 16) {
-        c->last_transfer = t;
+    //    c->last_transfer = t;
         update_transfer(c);
     //}
     return VXT_NO_ERROR;
@@ -418,6 +412,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     c->s = s;
     vxt_system_install_io(s, p, c->base, c->base + 5);
     vxt_system_install_io_at(s, p, c->base + 7);
+    vxt_system_install_timer(s, p, 0);
 
     c->dor_reg = DOR_MASK_RESET;
 
@@ -431,33 +426,21 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return c->dma_controller ? VXT_NO_ERROR : VXT_USER_ERROR(0);
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(fdc, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static const char *name(struct vxt_pirepheral *p) {
     (void)p;
     return "FDC (NEC 765)";
 }
 
-struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, INT64 (*ustics)(void), vxt_word base, int irq) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(fdc));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(fdc));
-    VXT_DEC_DEVICE(c, fdc, p);
+struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word base, int irq) VXT_PIREPHERAL_CREATE(alloc, fdc, {
+    DEVICE->base = base;
+    DEVICE->irq = irq;
 
-    c->ustics = ustics;
-    c->base = base;
-    c->irq = irq;
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->step = &step;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num) {
     VXT_DEC_DEVICE(c, fdc, p);
@@ -496,7 +479,7 @@ vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, void *fp) {
 
     struct diskette *d = &c->floppy[num];
     if (d->fp)
-        vxtp_disk_unmount(p, num);
+        vxtu_disk_unmount(p, num);
 
     d->tracks = 80;
     d->sectors = 18;

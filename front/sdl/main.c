@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -28,35 +28,28 @@
 #include <assert.h>
 
 #define VXT_LIBC
-#define VXT_LIBC_ALLOCATOR
 #define VXTU_LIBC_IO
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 #include <vxtp.h>
 
+#include <SDL.h>
 #include <ini.h>
-
-#ifdef _WIN32
-	#include <SDL.h>
-#else
-	#include <SDL2/SDL.h>
-#endif
-
 #include <microui.h>
 
-#include "main.h"
 #include "mu_renderer.h"
 #include "window.h"
 #include "keys.h"
 #include "docopt.h"
+#include "icons.h"
 
-#define MIN_CLOCKS_PER_STEP 100
+#define MIN_CLOCKS_PER_STEP 1
 #define MAX_PENALTY_USEC 1000
 
 struct video_adapter {
 	struct vxt_pirepheral *device;
 	vxt_dword (*border_color)(struct vxt_pirepheral *p);
-	bool (*snapshot)(struct vxt_pirepheral *p);
+	_Bool (*snapshot)(struct vxt_pirepheral *p); // TODO: Add vxt_bool type.
 	int (*render)(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 };
 
@@ -68,18 +61,13 @@ struct ini_config config = {0};
 FILE *trace_op_output = NULL;
 FILE *trace_offset_output = NULL;
 
-#if defined(VXT_CPU_286)
-	#define CPU_NAME "i286"
-#elif defined(VXT_CPU_V20)
-	#define CPU_NAME "V20"
-#else
-	#define CPU_NAME "8088"
-#endif
-
-#define SYNC(...) {						\
-	while (SDL_LockMutex(emu_mutex));	\
-	{ __VA_ARGS__ ; }					\
-	SDL_UnlockMutex(emu_mutex); }		\
+#define SYNC(...) {								   	\
+	if (SDL_LockMutex(emu_mutex) == -1)			   	\
+		printf("sync error: %s\n", SDL_GetError());	\
+	{ __VA_ARGS__ ; }							   	\
+	if (SDL_UnlockMutex(emu_mutex) == -1)		   	\
+		printf("sync error: %s\n", SDL_GetError());	\
+}
 
 #ifdef PI8088
 	extern struct vxt_validator *pi8088_validator(void);
@@ -104,7 +92,8 @@ static const char key_map[256] = {
 
 Uint32 last_title_update = 0;
 int num_cycles = 0;
-double cpu_frequency = 4.772726;
+double cpu_frequency = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
+enum vxt_cpu_type cpu_type = VXT_CPU_8088;
 
 SDL_atomic_t running = {1};
 SDL_mutex *emu_mutex = NULL;
@@ -119,7 +108,7 @@ char new_floppy_image_path[FILENAME_MAX] = {0};
 int str_buffer_len = 0;
 char *str_buffer = NULL;
 
-#define AUDIO_FREQUENCY 48000
+#define AUDIO_FREQUENCY 44100
 #define AUDIO_LATENCY 10
 
 SDL_AudioDeviceID audio_device = 0;
@@ -127,10 +116,6 @@ SDL_AudioSpec audio_spec = {0};
 
 static void trigger_breakpoint(void) {
 	SDL_TriggerBreakpoint();
-}
-
-static long long ustimer(void) {
-	return SDL_GetPerformanceCounter() / (SDL_GetPerformanceFrequency() / 1000000);
 }
 
 static int text_width(mu_Font font, const char *text, int len) {
@@ -174,7 +159,7 @@ static const char *mgetline(void) {
 	return str;
 }
 
-static bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) {
+static _Bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) { // TODO: Change to vxt_bool type.
 	#ifdef __APPLE__
 		int fh;
 		char name[128] = {0};
@@ -230,7 +215,7 @@ static int emu_loop(void *ptr) {
 	while (SDL_AtomicGet(&running)) {
 		struct vxt_step res;
 		SYNC(
-			res = vxt_system_step(vxt, MIN_CLOCKS_PER_STEP); //(frequency > 0.0) ? 0 : MIN_CLOCKS_PER_STEP);
+			res = vxt_system_step(vxt, MIN_CLOCKS_PER_STEP);
 			if (res.err != VXT_NO_ERROR) {
 				if (res.err == VXT_USER_TERMINATION)
 					SDL_AtomicSet(&running, 0);
@@ -238,10 +223,10 @@ static int emu_loop(void *ptr) {
 					printf("step error: %s", vxt_error_str(res.err));
 			}
 			num_cycles += res.cycles;
-			//frequency = vxtp_ppi_turbo_enabled(ppi) ? 0.0 : cpu_frequency;
+			//frequency = vxtu_ppi_turbo_enabled(ppi) ? (cpu_frequency * 3.0) : cpu_frequency;
 		);
 
-		while (frequency > 0.0) {
+		for (;;) {
 			const Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)(frequency * 1000000.0);
 			if (!f) {
 				penalty = 0;
@@ -281,12 +266,18 @@ static SDL_Rect *target_rect(SDL_Window *window, SDL_Rect *rect) {
 static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
 	if ((framebuffer_size.x != width) || (framebuffer_size.y != height)) {
 		SDL_DestroyTexture(framebuffer);
-		framebuffer = SDL_CreateTexture(userdata, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height);
-		if (!framebuffer)
+		framebuffer = SDL_CreateTexture(userdata, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, width, height);
+		if (!framebuffer) {
+			printf("SDL_CreateTexture() failed with error %s\n", SDL_GetError());
 			return -1;
+		}
 		framebuffer_size = (SDL_Point){width, height};
 	}
-	return SDL_UpdateTexture(framebuffer, NULL, rgba, width * 4);
+
+	int status = SDL_UpdateTexture(framebuffer, NULL, rgba, width * 4);
+	if (status != 0)
+		printf("SDL_UpdateTexture() failed with error %s\n", SDL_GetError());
+	return status;
 }
 
 #ifdef VXTP_NETWORK
@@ -302,7 +293,7 @@ static void audio_callback(void *udata, uint8_t *stream, int len) {
 	
 	SYNC(
 		for (int i = 0; i < len; i++) {
-			vxt_word sample = vxtp_ppi_generate_sample(audio_sources[0], audio_spec.freq);
+			vxt_word sample = vxtu_ppi_generate_sample(audio_sources[0], audio_spec.freq);
 			if (audio_sources[1])
 				sample += vxtp_adlib_generate_sample(audio_sources[1], audio_spec.freq);
 
@@ -311,6 +302,11 @@ static void audio_callback(void *udata, uint8_t *stream, int len) {
 				((vxt_int16*)stream)[++i] = sample;
 		}
 	);
+}
+
+static void disk_activity_cb(int disk, void *data) {
+	(void)disk;
+	SDL_AtomicSet((SDL_atomic_t*)data, (int)SDL_GetTicks() + 0xFF);
 }
 
 static vxt_word pow2(vxt_word v) {
@@ -332,12 +328,12 @@ static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 	return (int)fwrite(buffer, 1, (size_t)size, (FILE*)fp);
 }
 
-static int seek_file(vxt_system *s, void *fp, int offset, enum vxtp_disk_seek whence) {
+static int seek_file(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence) {
 	(void)s;
 	switch (whence) {
-		case VXTP_SEEK_START: return (int)fseek((FILE*)fp, (long)offset, SEEK_SET);
-		case VXTP_SEEK_CURRENT: return (int)fseek((FILE*)fp, (long)offset, SEEK_CUR);
-		case VXTP_SEEK_END: return (int)fseek((FILE*)fp, (long)offset, SEEK_END);
+		case VXTU_SEEK_START: return (int)fseek((FILE*)fp, (long)offset, SEEK_SET);
+		case VXTU_SEEK_CURRENT: return (int)fseek((FILE*)fp, (long)offset, SEEK_CUR);
+		case VXTU_SEEK_END: return (int)fseek((FILE*)fp, (long)offset, SEEK_END);
 		default: return -1;
 	}
 }
@@ -357,19 +353,36 @@ static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
 }
 
 static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
+	size_t path_len = strcspn(path, "@");
+	char *file_path = (char*)SDL_malloc(path_len + 1);
+	memcpy(file_path, path, path_len);
+	file_path[path_len] = 0;
+	
 	int size = 0;
-	vxt_byte *data = vxtu_read_file(&vxt_clib_malloc, path, &size);
+	vxt_byte *data = vxtu_read_file(&realloc, file_path, &size);
+	SDL_free(file_path);
+
 	if (!data) {
 		printf("vxtu_read_file() failed!\n");
 		return NULL;
 	}
+
+	if (path_len != strlen(path)) {
+		unsigned int addr = 0;
+		if (sscanf(path + path_len + 1, "%x", &addr) == 1) {
+			base = (vxt_pointer)addr;
+		} else {
+			printf("Invalid address format!\n");
+			return NULL;
+		}
+	}
 	
-	struct vxt_pirepheral *rom = vxtu_memory_create(&vxt_clib_malloc, base, size, true);
+	struct vxt_pirepheral *rom = vxtu_memory_create(&realloc, base, size, true);
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		printf("vxtu_memory_device_fill() failed!\n");
 		return NULL;
 	}
-	vxt_clib_malloc(data, 0);
+	(void)realloc(data, 0);
 
 	printf("Loaded BIOS @ 0x%X-0x%X: %s\n", base, base + size - 1, path);
 	return rom;
@@ -390,7 +403,7 @@ static int load_config(void *user, const char *section, const char *name, const 
 	return 0;
 }
 
-int ENTRY(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 	// This is a hack because there seems to be a bug in DocOpt
 	// that prevents us from adding trailing parameters.
 	char *rifs_path = NULL;
@@ -436,13 +449,8 @@ int ENTRY(int argc, char *argv[]) {
 
 	if (!args.bios) {
 		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
-		if (!args.bios) {
-			#ifdef VXT_CPU_286
-				args.bios = "bios/vxt286.bin";
-			#else
-				args.bios = "bios/pcxtbios.bin";
-			#endif
-		}
+		if (!args.bios)
+			args.bios = args.vga ? "bios/pcxtbios_640.bin" : "bios/pcxtbios.bin";
 	}
 
 	if (!args.extension) {
@@ -462,17 +470,29 @@ int ENTRY(int argc, char *argv[]) {
 	if (args.debug)
 		printf("Internal debugger enabled!\n");
 
-	cpu_frequency = strtod(args.frequency, NULL);
-	if (cpu_frequency <= 0.0)
-		printf("No CPU frequency lock!\n");
-	else
-		printf("CPU frequency: %.2f MHz\n", cpu_frequency);
+	if (args.v20) {
+		cpu_type = VXT_CPU_V20;
+		#ifdef VXT_CPU_286
+			printf("CPU type: 286\n");
+		#else
+			printf("CPU type: V20\n");
+		#endif
+	} else {
+		printf("CPU type: 8088\n");
+	}
+
+	if (args.frequency)
+		cpu_frequency = strtod(args.frequency, NULL);
+	printf("CPU frequency: %.2f MHz\n", cpu_frequency);
 
 	#if !defined(_WIN32) && !defined(__APPLE__)
 		SDL_setenv("SDL_VIDEODRIVER", "x11", 1);
 	#endif
 
-	SDL_Init(SDL_INIT_EVERYTHING);
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+		printf("SDL_Init() failed with error %s\n", SDL_GetError());
+		return -1;
+	}
 
 	SDL_SetHint(SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1");
 	SDL_Window *window = SDL_CreateWindow(
@@ -486,7 +506,7 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
-	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
+	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 	if (!renderer) {
 		printf("SDL_CreateRenderer() failed with error %s\n", SDL_GetError());
 		return -1;
@@ -497,6 +517,20 @@ int ENTRY(int argc, char *argv[]) {
 		printf("SDL_CreateTexture() failed with error %s\n", SDL_GetError());
 		return -1;
 	}
+
+	SDL_RWops *rwops = SDL_RWFromConstMem(disk_activity_icon, sizeof(disk_activity_icon));
+	SDL_Surface *surface = SDL_LoadBMP_RW(rwops, 1);
+	if (!surface) {
+		printf("SDL_LoadBMP_RW() failed with error %s\n", SDL_GetError());
+		return -1;
+	}
+
+	SDL_Texture *disk_icon_texture = SDL_CreateTextureFromSurface(renderer, surface);
+	if (!disk_icon_texture) {
+		printf("SDL_CreateTextureFromSurface() failed with error %s\n", SDL_GetError());
+		return -1;
+	}
+	SDL_FreeSurface(surface);
 
 	mr_renderer *mr = mr_init(renderer);
 	mu_Context *ctx = SDL_malloc(sizeof(mu_Context));
@@ -531,7 +565,7 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *dbg = NULL;
 	if (args.debug) {
 		struct vxtu_debugger_interface dbgif = {&pdisasm, &mgetline, &printf};
-		dbg = vxtu_debugger_create(&vxt_clib_malloc, &dbgif);
+		dbg = vxtu_debugger_create(&realloc, &dbgif);
 	}
 
 	struct vxt_pirepheral *rom = load_bios(args.bios, 0xFE000);
@@ -540,42 +574,41 @@ int ENTRY(int argc, char *argv[]) {
 	struct vxt_pirepheral *rom_ext = load_bios(args.extension, 0xE0000);
 	if (!rom_ext) return -1;
 
-	struct vxtp_disk_interface interface = {
+	struct vxtu_disk_interface interface = {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
 
-	struct vxt_pirepheral *disk = vxtp_disk_create(&vxt_clib_malloc, &interface);
-	struct vxt_pirepheral *fdc = vxtp_fdc_create(&vxt_clib_malloc, &ustimer, 0x3F0, 6);
-	struct vxt_pirepheral *pit = vxtp_pit_create(&vxt_clib_malloc, &ustimer);
-	struct vxt_pirepheral *ppi = vxtp_ppi_create(&vxt_clib_malloc, pit);
-	struct vxt_pirepheral *mouse = vxtp_mouse_create(&vxt_clib_malloc, 0x3F8, 4); // COM1
-	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&vxt_clib_malloc);
+	struct vxt_pirepheral *disk = vxtu_disk_create(&realloc, &interface);
+	struct vxt_pirepheral *fdc = vxtp_fdc_create(&realloc, 0x3F0, 6);
+	struct vxt_pirepheral *ppi = vxtu_ppi_create(&realloc);
+	struct vxt_pirepheral *mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
+	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&realloc);
 	struct vxt_pirepheral *joystick = NULL;
 
 	int i = 2;
-	struct vxt_pirepheral *devices[32] = {vxtu_memory_create(&vxt_clib_malloc, 0x0, 0x100000, false), rom};
+	struct vxt_pirepheral *devices[32] = {vxtu_memory_create(&realloc, 0x0, 0x100000, false), rom};
 
 	struct video_adapter video = {0};
 	if (args.vga) {
-		video.device = vxtp_vga_create(&vxt_clib_malloc, &ustimer);
+		video.device = vxtp_vga_create(&realloc);
 		video.border_color = &vxtp_vga_border_color;
 		video.snapshot = &vxtp_vga_snapshot;
 		video.render = &vxtp_vga_render;
 
-		vxtp_ppi_set_xt_switches(ppi, 0);
+		vxtu_ppi_set_xt_switches(ppi, 0);
 		struct vxt_pirepheral *rom = load_bios(args.vga, 0xC0000); // Tested with ET4000 VGA BIOS.
 		if (!rom) return -1;
 
 		devices[i++] = rom;
 	} else {
-		video.device = vxtp_cga_create(&vxt_clib_malloc, &ustimer);
-		video.border_color = &vxtp_cga_border_color;
-		video.snapshot = &vxtp_cga_snapshot;
-		video.render = &vxtp_cga_render;
+		video.device = vxtu_cga_create(&realloc);
+		video.border_color = &vxtu_cga_border_color;
+		video.snapshot = &vxtu_cga_snapshot;
+		video.render = &vxtu_cga_render;
 	}
 
 	if (num_sticks)
-		devices[i++] = joystick = vxtp_joystick_create(&vxt_clib_malloc, ustimer, sticks[0], sticks[1]);
+		devices[i++] = joystick = vxtp_joystick_create(&realloc, sticks[0], sticks[1]);
 
 	if (!args.no_adlib)
 		devices[i++] = adlib;
@@ -590,26 +623,25 @@ int ENTRY(int argc, char *argv[]) {
 	if (args.rifs) {
 		bool ro = *args.rifs != '*';
 		const char *root = ro ? args.rifs : &args.rifs[1];
-		devices[i++] = vxtp_rifs_create(&vxt_clib_malloc, 0x178, root, ro);
+		devices[i++] = vxtp_rifs_create(&realloc, 0x178, root, ro);
 	}
 
-	devices[i++] = vxtp_pic_create(&vxt_clib_malloc);
-	devices[i++] = vxtp_dma_create(&vxt_clib_malloc);
-	devices[i++] = vxtp_rtc_create(&vxt_clib_malloc);
-	devices[i++] = vxtp_ctrl_create(&vxt_clib_malloc, &emu_control, NULL);
-	devices[i++] = pit;
+	devices[i++] = vxtu_pic_create(&realloc);
+	devices[i++] = vxtu_dma_create(&realloc);
+	devices[i++] = vxtp_rtc_create(&realloc);
+	devices[i++] = vxtu_pit_create(&realloc);
+	devices[i++] = vxtp_ctrl_create(&realloc, &emu_control, NULL);
 	devices[i++] = mouse;
 	devices[i++] = ppi;
 	devices[i++] = video.device;
 
-	#ifdef VXT_CPU_286
-		devices[i++] = vxtp_postcard_create(&vxt_clib_malloc);
-	#endif
+	if (args.serial_debug)
+		devices[i++] = vxtp_serial_dbg_create(&realloc, atoi(args.serial_debug));
 
 	SDL_TimerID network_timer = 0;
 	if (args.network) {
 		#ifdef VXTP_NETWORK
-			struct vxt_pirepheral *net = vxtp_network_create(&vxt_clib_malloc, atoi(args.network));
+			struct vxt_pirepheral *net = vxtp_network_create(&realloc, atoi(args.network));
 			if (net) {
 				devices[i++] = net;
 				if (!(network_timer = SDL_AddTimer(10, &network_callback, net))) {
@@ -626,7 +658,7 @@ int ENTRY(int argc, char *argv[]) {
 	devices[i++] = dbg;
 	devices[i] = NULL;
 
-	vxt_system *vxt = vxt_system_create(&vxt_clib_malloc, devices);
+	vxt_system *vxt = vxt_system_create(&realloc, cpu_type, (int)(cpu_frequency * 1000000.0), devices);
 
 	if (args.trace) {
 		if (!(trace_op_output = fopen(args.trace, "wb"))) {
@@ -641,6 +673,10 @@ int ENTRY(int argc, char *argv[]) {
 		}
 		vxt_system_set_tracer(vxt, &tracer);
 	}
+
+	SDL_atomic_t icon_fade = {0};
+	if (!args.no_activity)
+		vxtu_disk_set_activity_callback(disk, &disk_activity_cb, &icon_fade);
 
 	#ifdef PI8088
 		vxt_system_set_validator(vxt, pi8088_validator());
@@ -660,20 +696,20 @@ int ENTRY(int argc, char *argv[]) {
 	}
 
 	if (args.floppy) {
-		strncpy(floppy_image_path, args.floppy, sizeof(floppy_image_path));
+		strncpy(floppy_image_path, args.floppy, sizeof(floppy_image_path) - 1);
 
 		FILE *fp = fopen(floppy_image_path, "rb+");
-		vxt_error (*mnt)(struct vxt_pirepheral*,int,void*) = args.fdc ? vxtp_fdc_mount : vxtp_disk_mount;
+		vxt_error (*mnt)(struct vxt_pirepheral*,int,void*) = args.fdc ? vxtp_fdc_mount : vxtu_disk_mount;
 		if (fp && (mnt(args.fdc ? fdc : disk, 0, fp) == VXT_NO_ERROR))
 			printf("Floppy image: %s\n", floppy_image_path);
 	}
 
 	if (args.harddrive && !args.fdc) {
 		FILE *fp = fopen(args.harddrive, "rb+");
-		if (fp && (vxtp_disk_mount(disk, 128, fp) == VXT_NO_ERROR)) {
+		if (fp && (vxtu_disk_mount(disk, 128, fp) == VXT_NO_ERROR)) {
 			printf("Harddrive image: %s\n", args.harddrive);
 			if (args.hdboot || !args.floppy)
-				vxtp_disk_set_boot_drive(disk, 128);
+				vxtu_disk_set_boot_drive(disk, 128);
 		}
 	}
 
@@ -703,7 +739,12 @@ int ENTRY(int argc, char *argv[]) {
 		spec.userdata = audio_sources;
 		spec.callback = &audio_callback;
 
-		audio_device = SDL_OpenAudioDevice(NULL, false, &spec, &audio_spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
+		int allowed_changes = SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE;
+
+		if (!(audio_device = SDL_OpenAudioDevice(NULL, false, &spec, &audio_spec, allowed_changes))) {
+			printf("SDL_OpenAudioDevice() failed with error %s\n", SDL_GetError());
+			return -1;
+		}
 		SDL_PauseAudioDevice(audio_device, 0);
 	}
 
@@ -736,12 +777,12 @@ int ENTRY(int argc, char *argv[]) {
 				case SDL_MOUSEMOTION:
 					if (mouse && SDL_GetRelativeMouseMode() && !has_open_windows) {
 						Uint32 state = SDL_GetMouseState(NULL, NULL);
-						struct vxtp_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
+						struct vxtu_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
 						if (state & SDL_BUTTON_LMASK)
-							ev.buttons |= VXTP_MOUSE_LEFT;
+							ev.buttons |= VXTU_MOUSE_LEFT;
 						if (state & SDL_BUTTON_RMASK)
-							ev.buttons |= VXTP_MOUSE_RIGHT;
-						SYNC(vxtp_mouse_push_event(mouse, &ev));
+							ev.buttons |= VXTU_MOUSE_RIGHT;
+						SYNC(vxtu_mouse_push_event(mouse, &ev));
 					}
 					break;
 				case SDL_MOUSEBUTTONDOWN:
@@ -752,16 +793,16 @@ int ENTRY(int argc, char *argv[]) {
 						}
 						SDL_SetRelativeMouseMode(true);
 
-						struct vxtp_mouse_event ev = {0};
+						struct vxtu_mouse_event ev = {0};
 						if (e.button.button == SDL_BUTTON_LEFT)
-							ev.buttons |= VXTP_MOUSE_LEFT;
+							ev.buttons |= VXTU_MOUSE_LEFT;
 						if (e.button.button == SDL_BUTTON_RIGHT)
-							ev.buttons |= VXTP_MOUSE_RIGHT;
-						SYNC(vxtp_mouse_push_event(mouse, &ev));
+							ev.buttons |= VXTU_MOUSE_RIGHT;
+						SYNC(vxtu_mouse_push_event(mouse, &ev));
 					}
 					break;
 				case SDL_DROPFILE:
-					strncpy(new_floppy_image_path, e.drop.file, sizeof(new_floppy_image_path));
+					strncpy(new_floppy_image_path, e.drop.file, sizeof(new_floppy_image_path) - 1);
 					open_window(ctx, "Mount");
 					break;
 				case SDL_JOYAXISMOTION:
@@ -783,7 +824,7 @@ int ENTRY(int argc, char *argv[]) {
 				}
 				case SDL_KEYDOWN:
 					if (!has_open_windows && (e.key.keysym.sym != SDLK_F11) && (e.key.keysym.sym != SDLK_F12))
-						SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
+						SYNC(vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
 					if (e.key.keysym.sym == SDLK_F11) {
@@ -809,29 +850,35 @@ int ENTRY(int argc, char *argv[]) {
 					}
 
 					if (!has_open_windows)
-						SYNC(vxtp_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTP_KEY_UP_MASK, false));
+						SYNC(vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTU_KEY_UP_MASK, false));
 					break;
 			}
 		}
 
 		// Update titlebar.
 		Uint32 ticks = SDL_GetTicks();
-		if ((ticks - last_title_update) > 1000) {
+		if ((ticks - last_title_update) > 500) {
 			last_title_update = ticks;
 
 			char buffer[100];
 			double mhz;
 
 			SYNC(
-				mhz = (double)num_cycles / 1000000.0;
+				mhz = (double)num_cycles / 500000.0;
 				num_cycles = 0;
 			);
 
+			const char *name = "8088";
+			if (cpu_type == VXT_CPU_V20) {
+				#ifdef VXT_CPU_286
+					name = "286";
+				#else
+					name = "V20";
+				#endif
+			}
+			
 			if (ticks > 10000) {
-				if (mhz > 10.0)
-					snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%d MHz", (int)mhz);
-				else
-					snprintf(buffer, sizeof(buffer), "VirtualXT - " CPU_NAME "@%.2f MHz", mhz);
+				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz", name, mhz);
 			} else {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
 			}
@@ -846,7 +893,7 @@ int ENTRY(int argc, char *argv[]) {
 			error_window(ctx);
 
 			if (eject_window(ctx, (*floppy_image_path != 0) ? floppy_image_path: NULL)) {
-				SYNC(vxtp_disk_unmount(disk, 0));
+				SYNC(vxtu_disk_unmount(disk, 0));
 				*floppy_image_path = 0;
 			}
 
@@ -856,7 +903,7 @@ int ENTRY(int argc, char *argv[]) {
 					open_error_window(ctx, "Could not open floppy image file!");
 				} else {
 					vxt_error err = VXT_NO_ERROR;
-					SYNC(err = vxtp_disk_mount(disk, 0, fp));
+					SYNC(err = vxtu_disk_mount(disk, 0, fp));
 					if (err != VXT_NO_ERROR) {
 						open_error_window(ctx, "Could not mount floppy image file!");
 						fclose(fp);
@@ -882,7 +929,8 @@ int ENTRY(int argc, char *argv[]) {
 			video.render(video.device, &render_callback, renderer);
 
 			mr_clear(mr, mu_color(bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF));
-			SDL_RenderCopy(renderer, framebuffer, NULL, target_rect(window, &rect));
+			if (SDL_RenderCopy(renderer, framebuffer, NULL, target_rect(window, &rect)) != 0)
+				printf("SDL_RenderCopy() failed with error %s\n", SDL_GetError());
 
 			mu_Command *cmd = NULL;
 			while (mu_next_command(ctx, &cmd)) {
@@ -892,19 +940,28 @@ int ENTRY(int argc, char *argv[]) {
 					case MU_COMMAND_ICON: mr_draw_icon(mr, cmd->icon.id, cmd->icon.rect, cmd->icon.color); break;
 					case MU_COMMAND_CLIP: mr_set_clip_rect(mr, cmd->clip.rect); break;
 				}
-			}		
+			}
+
+			int fade = SDL_AtomicGet(&icon_fade) - (int)SDL_GetTicks();
+			if (fade > 0) {
+				SDL_Rect dst = { 4, 2, 20, 20 };
+				SDL_SetTextureAlphaMod(disk_icon_texture, (fade > 0xFF) ? 0xFF : fade);
+				SDL_RenderCopy(renderer, disk_icon_texture, NULL, &dst);
+			}
+
 			mr_present(mr);
 		}
 	}
 
 	SDL_WaitThread(emu_thread, NULL);
-	SDL_DestroyMutex(emu_mutex);
 
 	if (network_timer)
 		SDL_RemoveTimer(network_timer);
 
 	if (audio_device)
 		SDL_CloseAudioDevice(audio_device);
+
+	SDL_DestroyMutex(emu_mutex);
 
 	vxt_system_destroy(vxt);
 
@@ -924,6 +981,7 @@ int ENTRY(int argc, char *argv[]) {
 	mr_destroy(mr);
 	SDL_free(ctx);
 
+	SDL_DestroyTexture(disk_icon_texture); 
 	SDL_DestroyTexture(framebuffer);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);

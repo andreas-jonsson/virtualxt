@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -23,7 +23,7 @@
 #include "common.h"
 #include "exec.h"
 
-#define REPEAT(name, op)                                       \
+#define REPEAT(name, cycle, op)                                \
    static void name (CONSTSP(cpu) p, INST(inst)) {             \
       UNUSED(inst);                                            \
       if (!p->repeat) {                                        \
@@ -33,37 +33,37 @@
       while (p->regs.cx) {                                     \
          op                                                    \
          p->regs.cx--;                                         \
-         p->cycles++;                                          \
+         p->cycles += cycle;                                   \
       }                                                        \
    }                                                           \
 
-REPEAT(movsb_A4, {
-   vxt_system_write_byte(p->s, VXT_POINTER(p->regs.es, p->regs.di), vxt_system_read_byte(p->s, VXT_POINTER(p->seg, p->regs.si)));
+REPEAT(movsb_A4, 17, {
+   cpu_write_byte(p, VXT_POINTER(p->regs.es, p->regs.di), cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.si)));
    update_di_si(p, 1);
 })
-REPEAT(movsw_A5, {
-   vxt_system_write_word(p->s, VXT_POINTER(p->regs.es, p->regs.di), vxt_system_read_word(p->s, VXT_POINTER(p->seg, p->regs.si)));
+REPEAT(movsw_A5, 25, {
+   cpu_write_word(p, VXT_POINTER(p->regs.es, p->regs.di), cpu_read_word(p, VXT_POINTER(p->seg, p->regs.si)));
    update_di_si(p, 2);
 })
-REPEAT(stosb_AA, {
-   vxt_system_write_byte(p->s, VXT_POINTER(p->regs.es, p->regs.di), p->regs.al);
+REPEAT(stosb_AA, 10, {
+   cpu_write_byte(p, VXT_POINTER(p->regs.es, p->regs.di), p->regs.al);
    update_di(p, 1);
 })
-REPEAT(stosw_AB, {
-   vxt_system_write_word(p->s, VXT_POINTER(p->regs.es, p->regs.di), p->regs.ax);
+REPEAT(stosw_AB, 14, {
+   cpu_write_word(p, VXT_POINTER(p->regs.es, p->regs.di), p->regs.ax);
    update_di(p, 2);
 })
-REPEAT(lodsb_AC, {
-   p->regs.al = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, p->regs.si));
+REPEAT(lodsb_AC, 16, {
+   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.si));
    update_si(p, 1);
 })
-REPEAT(lodsw_AD, {
-   p->regs.ax = vxt_system_read_word(p->s, VXT_POINTER(p->seg, p->regs.si));
+REPEAT(lodsw_AD, 16, {
+   p->regs.ax = cpu_read_word(p, VXT_POINTER(p->seg, p->regs.si));
    update_si(p, 2);
 })
 #undef REPEAT
 
-#define REPEAT(name, op)                                                         \
+#define REPEAT(name, cycle, op)                                                  \
    static void name (CONSTSP(cpu) p, INST(inst)) {                               \
       UNUSED(inst);                                                              \
       if (!p->repeat) {                                                          \
@@ -76,32 +76,32 @@ REPEAT(lodsw_AD, {
          if (((p->repeat == 0xF3) && !(p->regs.flags & VXT_ZERO)) ||             \
             ((p->repeat == 0xF2) && (p->regs.flags & VXT_ZERO)))                 \
          {                                                                       \
-            p->cycles += (p->repeat == 0xF2) ? 5 : 6;                            \
+            p->cycles += (p->repeat == 0xF2) ? 5 : 6; /* Is this correct? */     \
             break;                                                               \
          }                                                                       \
-         p->cycles++;                                                            \
+         p->cycles += cycle;                                                     \
       }                                                                          \
    }                                                                             \
 
-REPEAT(cmpsb_A6, {
-   vxt_byte a = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, p->regs.si));
-   vxt_byte b = vxt_system_read_byte(p->s, VXT_POINTER(p->regs.es, p->regs.di));
+REPEAT(cmpsb_A6, 30, {
+   vxt_byte a = cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.si));
+   vxt_byte b = cpu_read_byte(p, VXT_POINTER(p->regs.es, p->regs.di));
    update_di_si(p, 1);
    flag_sub_sbb8(&p->regs, a, b, 0);
 })
-REPEAT(cmpsw_A7, {
-   vxt_word a = vxt_system_read_word(p->s, VXT_POINTER(p->seg, p->regs.si));
-   vxt_word b = vxt_system_read_word(p->s, VXT_POINTER(p->regs.es, p->regs.di));
+REPEAT(cmpsw_A7, 30, {
+   vxt_word a = cpu_read_word(p, VXT_POINTER(p->seg, p->regs.si));
+   vxt_word b = cpu_read_word(p, VXT_POINTER(p->regs.es, p->regs.di));
    update_di_si(p, 2);
    flag_sub_sbb16(&p->regs, a, b, 0);
 })
-REPEAT(scasb_AE, {
-   vxt_byte v = vxt_system_read_byte(p->s, VXT_POINTER(p->regs.es, p->regs.di));
+REPEAT(scasb_AE, 15, {
+   vxt_byte v = cpu_read_byte(p, VXT_POINTER(p->regs.es, p->regs.di));
    update_di(p, 1);
    flag_sub_sbb8(&p->regs, p->regs.al, v, 0);
 })
-REPEAT(scasw_AF, {
-   vxt_word v = vxt_system_read_word(p->s, VXT_POINTER(p->regs.es, p->regs.di));
+REPEAT(scasw_AF, 19, {
+   vxt_word v = cpu_read_word(p, VXT_POINTER(p->regs.es, p->regs.di));
    update_di(p, 2);
    flag_sub_sbb16(&p->regs, p->regs.ax, v, 0);
 })
@@ -113,6 +113,7 @@ REPEAT(scasw_AF, {
       vxt_word v = SIGNEXT16(read_opcode8(p));           \
       if (cond) {                                        \
          p->regs.ip += v;                                \
+         p->inst_queue_dirty = true;                     \
          p->cycles += taken;                             \
       } else {                                           \
          p->cycles += ntaken;                            \
@@ -130,5 +131,6 @@ static void jcxz_E3(CONSTSP(cpu) p, INST(inst)) {
    if (!p->regs.cx) {
       p->cycles += 12;
       p->regs.ip += v;
+      p->inst_queue_dirty = true;
    }
 }

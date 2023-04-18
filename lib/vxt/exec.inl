@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -30,18 +30,22 @@
 
 static void add_0_10(CONSTSP(cpu) p, INST(inst)) {
    rm_write8(p, op_add_adc8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg), CARRY));
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void add_1_11(CONSTSP(cpu) p, INST(inst)) {
    rm_write16(p, op_add_adc16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg), CARRY));
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void add_2_12(CONSTSP(cpu) p, INST(inst)) {
    reg_write8(&p->regs, p->mode.reg, op_add_adc8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p), CARRY));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void add_3_13(CONSTSP(cpu) p, INST(inst)) {
    reg_write16(&p->regs, p->mode.reg, op_add_adc16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p), CARRY));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void add_4_14(CONSTSP(cpu) p, INST(inst)) {
@@ -80,7 +84,7 @@ PUSH_POP(di)
 static void push_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      vxt_system_write_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp), p->regs.sp);
+      cpu_write_word(p, VXT_POINTER(p->regs.ss, p->regs.sp), p->regs.sp);
       p->regs.sp -= 2;
    #else
       push(p, p->regs.sp);
@@ -90,7 +94,7 @@ static void push_sp(CONSTSP(cpu) p, INST(inst)) {
 static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      p->regs.sp = vxt_system_read_word(p->s, VXT_POINTER(p->regs.ss, p->regs.sp));
+      p->regs.sp = cpu_read_word(p, VXT_POINTER(p->regs.ss, p->regs.sp));
    #else
       p->regs.sp = pop(p);
    #endif
@@ -104,21 +108,25 @@ static void push_cs(CONSTSP(cpu) p, INST(inst)) {
 static void or_8(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write8(p, op_or8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void or_9(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write16(p, op_or16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg)));
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void or_A(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    reg_write8(&p->regs, p->mode.reg, op_or8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p)));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void or_B(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    reg_write16(&p->regs, p->mode.reg, op_or16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p)));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void or_C(CONSTSP(cpu) p, INST(inst)) {
@@ -133,14 +141,13 @@ static void or_D(CONSTSP(cpu) p, INST(inst)) {
 
 static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
    VALIDATOR_DISCARD(p);
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
-      UNUSED(inst);
+   if (p->cpu_type != VXT_CPU_8088) {
       p->regs.ip = p->inst_start;
       call_int(p, 6);
-   #else
+   } else {
       PRINT("invalid opcode: 0x%X", inst->opcode);
       p->regs.debug = true;
-   #endif
+   }
 }
 
 static void invalid_prefix(CONSTSP(cpu) p, INST(inst)) {
@@ -152,18 +159,22 @@ static void invalid_prefix(CONSTSP(cpu) p, INST(inst)) {
 
 static void sub_18_28(CONSTSP(cpu) p, INST(inst)) {
    rm_write8(p, op_sub_sbb8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg), CARRY));
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void sub_19_29(CONSTSP(cpu) p, INST(inst)) {
    rm_write16(p, op_sub_sbb16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg), CARRY));
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void sub_1A_2A(CONSTSP(cpu) p, INST(inst)) {
    reg_write8(&p->regs, p->mode.reg, op_sub_sbb8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p), CARRY));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void sub_1B_2B(CONSTSP(cpu) p, INST(inst)) {
    reg_write16(&p->regs, p->mode.reg, op_sub_sbb16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p), CARRY));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void sub_1C_2C(CONSTSP(cpu) p, INST(inst)) {
@@ -204,21 +215,25 @@ static void das_2F(CONSTSP(cpu) p, INST(inst)) {
 static void and_20(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write8(p, op_and8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void and_21(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write16(p, op_and16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg)));
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void and_22(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    reg_write8(&p->regs, p->mode.reg, op_and8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p)));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void and_23(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    reg_write16(&p->regs, p->mode.reg, op_and16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p)));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void and_24(CONSTSP(cpu) p, INST(inst)) {
@@ -233,20 +248,23 @@ static void and_25(CONSTSP(cpu) p, INST(inst)) {
 
 static void daa_27(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
+   vxt_byte comp = 0x99;
    vxt_byte al = p->regs.al;
    vxt_word cf = p->regs.flags & VXT_CARRY;
    p->regs.flags &= ~VXT_CARRY;
 
+  
    if (((p->regs.al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
       vxt_word v = ((vxt_word)p->regs.al) + 6;
       p->regs.al = (vxt_byte)(v & 0xFF);
       SET_FLAG_IF(p->regs.flags, VXT_CARRY, cf || (v & 0xFF00));
    	p->regs.flags |= VXT_AUXILIARY;
+      comp = 0x9F;
 	} else {
       p->regs.flags &= ~VXT_AUXILIARY;
 	}
    
-   if ((al > 0x9F) || cf) {
+   if ((al > comp) || cf) {
       p->regs.al += 0x60;
       p->regs.flags |= VXT_CARRY;
    } else {
@@ -259,21 +277,25 @@ static void daa_27(CONSTSP(cpu) p, INST(inst)) {
 static void xor_30(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write8(p, op_xor8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void xor_31(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write16(p, op_xor16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg)));
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void xor_32(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    reg_write8(&p->regs, p->mode.reg, op_xor8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p)));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void xor_33(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    reg_write16(&p->regs, p->mode.reg, op_xor16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p)));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void xor_34(CONSTSP(cpu) p, INST(inst)) {
@@ -306,21 +328,25 @@ ASCII(aas_3F, -)
 static void cmp_38(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    flag_sub_sbb8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg), 0);
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void cmp_39(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    flag_sub_sbb16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg), 0);
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void cmp_3A(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    flag_sub_sbb8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p), 0);
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void cmp_3B(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    flag_sub_sbb16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p), 0);
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void cmp_3C(CONSTSP(cpu) p, INST(inst)) {
@@ -377,7 +403,7 @@ static void bound_62(CONSTSP(cpu) p, INST(inst)) {
    vxt_dword idx = SIGNEXT32(reg_read16(&p->regs, p->mode.reg));
    vxt_pointer addr = get_effective_address(p);
 
-   if ((idx < SIGNEXT32(vxt_system_read_word(p->s, addr))) || (idx > SIGNEXT32(vxt_system_read_word(p->s, addr + 2)))) {
+   if ((idx < SIGNEXT32(cpu_read_word(p, addr))) || (idx > SIGNEXT32(cpu_read_word(p, addr + 2)))) {
       p->regs.ip = p->inst_start;
       call_int(p, 5);
    }
@@ -407,25 +433,25 @@ static void push_6A(CONSTSP(cpu) p, INST(inst)) {
 
 static void insb_6C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_system_write_byte(p->s, VXT_POINTER(p->regs.ds, p->regs.si), system_in(p->s, p->regs.dx));
+   cpu_write_byte(p, VXT_POINTER(p->regs.ds, p->regs.si), system_in(p->s, p->regs.dx));
    update_di_si(p, 1);
 }
 
 static void insw_6D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_system_write_word(p->s, VXT_POINTER(p->regs.ds, p->regs.si), WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
+   cpu_write_word(p, VXT_POINTER(p->regs.ds, p->regs.si), WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
    update_di_si(p, 2);
 }
 
 static void outsb_6E(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   system_out(p->s, p->regs.dx, vxt_system_read_byte(p->s, VXT_POINTER(p->regs.ds, p->regs.si)));
+   system_out(p->s, p->regs.dx, cpu_read_byte(p, VXT_POINTER(p->regs.ds, p->regs.si)));
    update_di_si(p, 1);
 }
 
 static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_word data = vxt_system_read_word(p->s, VXT_POINTER(p->regs.ds, p->regs.si));
+   vxt_word data = cpu_read_word(p, VXT_POINTER(p->regs.ds, p->regs.si));
    system_out(p->s, p->regs.dx, (vxt_byte)(data & 0xFF));
    system_out(p->s, p->regs.dx + 1, (vxt_byte)(data >> 8));
    update_di_si(p, 2);
@@ -438,6 +464,7 @@ static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
       if (cond) {                                              \
          p->regs.ip += offset;                                 \
          p->cycles += 12;                                      \
+         p->inst_queue_dirty = true;                           \
       }                                                        \
    }                                                           \
 
@@ -539,11 +566,13 @@ static void grp1_81_83(CONSTSP(cpu) p, INST(inst)) {
 static void test_84(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    flag_logic8(&p->regs, reg_read8(&p->regs, p->mode.reg) & rm_read8(p));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void test_85(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    flag_logic16(&p->regs, reg_read16(&p->regs, p->mode.reg) & rm_read16(p));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void xchg_86(CONSTSP(cpu) p, INST(inst)) {
@@ -551,6 +580,7 @@ static void xchg_86(CONSTSP(cpu) p, INST(inst)) {
    vxt_byte v = reg_read8(&p->regs, p->mode.reg);
    reg_write8(&p->regs, p->mode.reg, rm_read8(p));
    rm_write8(p, v);
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void xchg_87(CONSTSP(cpu) p, INST(inst)) {
@@ -558,31 +588,37 @@ static void xchg_87(CONSTSP(cpu) p, INST(inst)) {
    vxt_word v = reg_read16(&p->regs, p->mode.reg);
    reg_write16(&p->regs, p->mode.reg, rm_read16(p));
    rm_write16(p, v);
+   ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void mov_88(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write8(p, reg_read8(&p->regs, p->mode.reg));
+   ADD_CYCLE_MOD_MEM(p, 11);
 }
 
 static void mov_89(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write16(p, reg_read16(&p->regs, p->mode.reg));
+   ADD_CYCLE_MOD_MEM(p, 11);
 }
 
 static void mov_8A(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    reg_write8(&p->regs, p->mode.reg, rm_read8(p));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void mov_8B(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    reg_write16(&p->regs, p->mode.reg, rm_read16(p));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void mov_8C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write16(p, seg_read16(p));
+   ADD_CYCLE_MOD_MEM(p, 11);
 }
 
 static void lea_8D(CONSTSP(cpu) p, INST(inst)) {
@@ -593,11 +629,13 @@ static void lea_8D(CONSTSP(cpu) p, INST(inst)) {
 static void mov_8E(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    seg_write16(p, rm_read16(p));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void pop_8F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write16(p, pop(p));
+   ADD_CYCLE_MOD_MEM(p, 13);
 }
 
 static void nop_90(CONSTSP(cpu) p, INST(inst)) {
@@ -639,6 +677,7 @@ static void call_9A(CONSTSP(cpu) p, INST(inst)) {
    push(p, p->regs.ip);
    p->regs.ip = ip;
    p->regs.cs = cs;
+   p->inst_queue_dirty = true;
 }
 
 static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
@@ -648,21 +687,25 @@ static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
 
 static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
-      push(p, (p->regs.flags & ALL_FLAGS) | 0x2);
-   #else
-      push(p, (p->regs.flags & ALL_FLAGS) | 0xF002);
+   #if defined(VXT_CPU_286)
+      if (p->cpu_type == VXT_CPU_V20) {
+         push(p, (p->regs.flags & ALL_FLAGS) | 0x2);
+         return;
+      }
    #endif
+   push(p, (p->regs.flags & ALL_FLAGS) | 0xF002);
 }
 
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.flags = pop(p) & ALL_FLAGS;
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
-      p->regs.flags |= 0x2;
-   #else
-      p->regs.flags |= 0xF002;
+   #if defined(VXT_CPU_286)
+      if (p->cpu_type == VXT_CPU_V20) {
+         p->regs.flags |= 0x2;
+         return;
+      }
    #endif
+   p->regs.flags |= 0xF002;
 }
 
 static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
@@ -677,22 +720,22 @@ static void lahf_9F(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A0(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, read_opcode16(p)));
+   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, read_opcode16(p)));
 }
 
 static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ax = vxt_system_read_word(p->s, VXT_POINTER(p->seg, read_opcode16(p)));
+   p->regs.ax = cpu_read_word(p, VXT_POINTER(p->seg, read_opcode16(p)));
 }
 
 static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_system_write_byte(p->s, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.al);
+   cpu_write_byte(p, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.al);
 }
 
 static void mov_A3(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_system_write_word(p->s, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.ax);
+   cpu_write_word(p, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.ax);
 }
 
 static void test_A8(CONSTSP(cpu) p, INST(inst)) {
@@ -730,20 +773,22 @@ static void ret_C2(CONSTSP(cpu) p, INST(inst)) {
    vxt_word ip = pop(p);
    p->regs.sp += read_opcode16(p);
    p->regs.ip = ip;
+   p->inst_queue_dirty = true;
 }
 
 static void ret_C3(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ip = pop(p);
+   p->inst_queue_dirty = true;
 }
 
-#define LOAD(name, r)                                                         \
-   static void name (CONSTSP(cpu) p, INST(inst)) {                            \
-      UNUSED(inst);                                                           \
-      vxt_pointer ea = get_effective_address(p);                              \
-      reg_write16(&p->regs, p->mode.reg, vxt_system_read_word(p->s, ea));     \
-      p->regs.r = vxt_system_read_word(p->s, ea + 2);                         \
-   }                                                                          \
+#define LOAD(name, r)                                                \
+   static void name (CONSTSP(cpu) p, INST(inst)) {                   \
+      UNUSED(inst);                                                  \
+      vxt_pointer ea = get_effective_address(p);                     \
+      reg_write16(&p->regs, p->mode.reg, cpu_read_word(p, ea));      \
+      p->regs.r = cpu_read_word(p, ea + 2);                          \
+   }                                                                 \
 
 LOAD(les_C4, es)
 LOAD(lds_C5, ds)
@@ -752,11 +797,13 @@ LOAD(lds_C5, ds)
 static void mov_C6(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write8(p, read_opcode8(p));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void mov_C7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write16(p, read_opcode16(p));
+   ADD_CYCLE_MOD_MEM(p, 10);
 }
 
 static void enter_C8(CONSTSP(cpu) p, INST(inst)) {
@@ -791,12 +838,14 @@ static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
    p->regs.sp += sp;
+   p->inst_queue_dirty = true;
 }
 
 static void retf_CB(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
+   p->inst_queue_dirty = true;
 }
 
 static void int_CC(CONSTSP(cpu) p, INST(inst)) {
@@ -823,6 +872,7 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
    p->regs.flags = pop(p);
+   p->inst_queue_dirty = true;
 }
 
 static void grp2_D0(CONSTSP(cpu) p, INST(inst)) {
@@ -861,9 +911,9 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
 static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word imm = (vxt_word)read_opcode8(p);
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+   if (p->cpu_type == VXT_CPU_V20)
       imm = 10;
-   #endif
+
    p->regs.ax = ((vxt_word)p->regs.ah * imm + (vxt_word)p->regs.al) & 0xFF;
    flag_szp8(&p->regs, p->regs.al);
    SET_FLAG(p->regs.flags, VXT_ZERO, 0);
@@ -871,16 +921,14 @@ static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
 
 static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = vxt_system_read_byte(p->s, VXT_POINTER(p->seg, p->regs.bx + p->regs.al));
+   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.bx + p->regs.al));
 }
 
 static void salc_D6(CONSTSP(cpu) p, INST(inst)) {
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+   if (p->cpu_type == VXT_CPU_V20)
       xlat_D7(p, inst);
-   #else
-      UNUSED(inst);
+   else
       p->regs.al = (p->regs.flags & VXT_CARRY) ? 0xFF : 0x0;
-   #endif
 }
 
 static void fpu_dummy(CONSTSP(cpu) p, INST(inst)) {
@@ -915,11 +963,13 @@ static void call_E8(CONSTSP(cpu) p, INST(inst)) {
    vxt_word offset = read_opcode16(p);
    push(p, p->regs.ip);
    p->regs.ip += offset;
+   p->inst_queue_dirty = true;
 }
 
 static void jmp_E9(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ip += read_opcode16(p);
+   p->inst_queue_dirty = true;
 }
 
 static void jmp_EA(CONSTSP(cpu) p, INST(inst)) {
@@ -927,11 +977,13 @@ static void jmp_EA(CONSTSP(cpu) p, INST(inst)) {
    vxt_word ip = read_opcode16(p);
    p->regs.cs = read_opcode16(p);
    p->regs.ip = ip;
+   p->inst_queue_dirty = true;
 }
 
 static void jmp_EB(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ip += SIGNEXT16(read_opcode8(p));
+   p->inst_queue_dirty = true;
 }
 
 static void in_EC(CONSTSP(cpu) p, INST(inst)) {
@@ -995,9 +1047,8 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = ((vxt_word)v) * ((vxt_word)p->regs.al);
          flag_szp8(&p->regs, p->regs.al);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
-         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
+         if (p->cpu_type == VXT_CPU_8088)
             p->regs.flags &= ~VXT_ZERO;
-         #endif
          break;
       }
       case 5: // IMUL
@@ -1009,9 +1060,8 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
 
          p->regs.ax = res;
          flag_szp8(&p->regs, res8);
-         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
+         if (p->cpu_type == VXT_CPU_8088)
             p->regs.flags &= ~VXT_ZERO;
-         #endif
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int8)res));
          break;
       }
@@ -1092,9 +1142,8 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          flag_szp16(&p->regs, p->regs.ax);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.dx);
-         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
+         if (p->cpu_type == VXT_CPU_8088)
             p->regs.flags &= ~VXT_ZERO;
-         #endif
          break;
       }
       case 5: // IMUL
@@ -1107,9 +1156,8 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.dx = (vxt_word)(res >> 16);
 
          flag_szp16(&p->regs, p->regs.ax);
-         #if !defined(VXT_CPU_286) && !defined(VXT_CPU_V20)
+         if (p->cpu_type == VXT_CPU_8088)
             p->regs.flags &= ~VXT_ZERO;
-         #endif
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int16)res));
          break;
       }
@@ -1202,13 +1250,16 @@ static void grp4_FE(CONSTSP(cpu) p, INST(inst)) {
    switch (p->mode.reg) {
       case 0: // INC
          rm_write8(p, op_add_adc8(&p->regs, v, 1, 0));
+         p->cycles += 3; ADD_CYCLE_MOD_MEM(p, 20);
          break;
       case 1: // DEC
          rm_write8(p, op_sub_sbb8(&p->regs, v, 1, 0));
+         p->cycles += 3; ADD_CYCLE_MOD_MEM(p, 20);
          break;
       default:
          VALIDATOR_DISCARD(p);
          PRINT("TODO: Invalid opcode!");
+         p->cycles++;
    }
    SET_FLAG(p->regs.flags, VXT_CARRY, c);
 }
@@ -1222,14 +1273,18 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
       case 0: // INC
          rm_write16(p, op_add_adc16(&p->regs, v, 1, 0));
          SET_FLAG(p->regs.flags, VXT_CARRY, c);
+         p->cycles += 3; ADD_CYCLE_MOD_MEM(p, 20);
          break;
       case 1: // DEC
          rm_write16(p, op_sub_sbb16(&p->regs, v, 1, 0));
          SET_FLAG(p->regs.flags, VXT_CARRY, c);
+         p->cycles += 3; ADD_CYCLE_MOD_MEM(p, 20);
          break;
       case 2: // CALL
          push(p, p->regs.ip);
          p->regs.ip = v;
+         p->inst_queue_dirty = true;
+         p->cycles += 23;
          break;
       case 3: // CALL Mp
       {
@@ -1237,23 +1292,30 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
          push(p, p->regs.ip);
 
          vxt_pointer ea = get_effective_address(p);
-         p->regs.ip = vxt_system_read_word(p->s, ea);
-         p->regs.cs = vxt_system_read_word(p->s, ea + 2);
+         p->regs.ip = cpu_read_word(p, ea);
+         p->regs.cs = cpu_read_word(p, ea + 2);
+         p->inst_queue_dirty = true;
+         p->cycles += 53;
          break;
       }
       case 4: // JMP
          p->regs.ip = v;
+         p->inst_queue_dirty = true;
+         p->cycles += 15;
          break;
       case 5: // JMP Mp
       {
          vxt_pointer ea = get_effective_address(p);
-         p->regs.ip = vxt_system_read_word(p->s, ea);
-         p->regs.cs = vxt_system_read_word(p->s, ea + 2);
+         p->regs.ip = cpu_read_word(p, ea);
+         p->regs.cs = cpu_read_word(p, ea + 2);
+         p->inst_queue_dirty = true;
+         p->cycles += 24;
          break;
       }
       case 6: // PUSH
       case 7:
          push(p, v);
+         p->cycles += 15; ADD_CYCLE_MOD_MEM(p, 9);
          break;
       default:
          UNREACHABLE();

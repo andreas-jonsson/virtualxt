@@ -1,0 +1,113 @@
+{
+  "name": "simple-keyboard",
+  "version": "3.5.21",
+  "description": "On-screen Javascript Virtual Keyboard",
+  "main": "build/index.js",
+  "scripts": {
+    "start": "webpack serve --config webpack.config.demo.js",
+    "build": "webpack && npm run build-modern && tsc",
+    "build-modern": "webpack --config webpack.config.modern.js",
+    "test": "jest --silent",
+    "coverage": "npm run test -- --coverage",
+    "prepare": "npm run build",
+    "trypublish": "npm publish || true"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hodgef/simple-keyboard"
+  },
+  "author": "Francisco Hodge <hello@franciscohodge.com> (https://github.com/hodgef)",
+  "bugs": {
+    "url": "https://github.com/hodgef/simple-keyboard/issues"
+  },
+  "homepage": "https://virtual-keyboard.js.org/",
+  "keywords": [
+    "javascript",
+    "es6",
+    "digital",
+    "keyboard",
+    "onscreen",
+    "virtual",
+    "screen-keyboard",
+    "component",
+    "virtual-keyboard",
+    "touchscreen",
+    "touch-screen",
+    "kiosk",
+    "osk",
+    "js"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.20.7",
+    "@babel/core": "^7.20.12",
+    "@babel/plugin-proposal-class-properties": "^7.17.12",
+    "@babel/plugin-transform-typescript": "^7.20.13",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.20.2",
+    "@types/jest": "^27.5.0",
+    "@typescript-eslint/eslint-plugin": "^5.51.0",
+    "@typescript-eslint/parser": "^5.50.0",
+    "autoprefixer": "^10.4.13",
+    "babel-eslint": "^10.1.0",
+    "babel-loader": "^9.1.2",
+    "babel-preset-minify": "^0.5.2",
+    "core-js": "^3.27.2",
+    "css-loader": "^6.7.3",
+    "css-minimizer-webpack-plugin": "^4.2.2",
+    "eslint": "^8.33.0",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.5.0",
+    "jest": "^26.6.3",
+    "mini-css-extract-plugin": "^2.7.2",
+    "postcss": "^8.4.21",
+    "postcss-loader": "^7.0.2",
+    "style-loader": "^3.3.1",
+    "terser-webpack-plugin": "^5.3.6",
+    "typescript": "^4.9.5",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.40.0",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "4.11.1"
+  },
+  "jest": {
+    "roots": [
+      "<rootDir>/src"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/lib/index.js",
+      "!src/lib/polyfills.js",
+      "!src/demo/**",
+      "!src/utils/**",
+      "!src/**/*.d.ts",
+      "!**/tests/**"
+    ],
+    "testMatch": [
+      "<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}",
+      "<rootDir>/src/**/*.{spec,test}.{js,jsx,ts,tsx}"
+    ],
+    "transformIgnorePatterns": [
+      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|ts|tsx)$",
+      "^.+\\.module\\.(css|sass|scss)$"
+    ],
+    "modulePaths": [],
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/scripts/testMock.js",
+      "\\.(css|less)$": "<rootDir>/scripts/testMock.js"
+    },
+    "moduleFileExtensions": [
+      "web.js",
+      "js",
+      "web.ts",
+      "ts",
+      "web.tsx",
+      "tsx",
+      "json",
+      "web.jsx",
+      "jsx",
+      "node"
+    ]
+  }
+}

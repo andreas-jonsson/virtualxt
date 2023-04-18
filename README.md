@@ -1,15 +1,15 @@
-# virtualxt
+# VirtualXT
 
-[![Build](https://github.com/andreas-jonsson/virtualxt/actions/workflows/build.yml/badge.svg)](https://github.com/andreas-jonsson/virtualxt/actions/workflows/ci.yml)
+[![Build](https://github.com/andreas-jonsson/virtualxt/actions/workflows/sdl2.yml/badge.svg)](https://github.com/andreas-jonsson/virtualxt/actions/workflows/sdl2.yml)
 [![codecov](https://codecov.io/gh/andreas-jonsson/virtualxt/branch/develop/graph/badge.svg?token=HD9I58ZGG5)](https://codecov.io/gh/andreas-jonsson/virtualxt)
-[![Chat](https://img.shields.io/matrix/virtualxt:matrix.org)](https://matrix.to/#/#virtualxt:matrix.org)
+[![Forum](https://img.shields.io/badge/forum-itch.io-blue)](https://phix.itch.io/virtualxt/community)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)
 
 VirtualXT is a IBM PC/XT (8088/V20) emulator that runs on modern hardware and operating systems.
 It is designed to be simple and lightweight yet still capable enough to run a large
 library of old application and games.
 
-Browser version is avalible [here](https://app.virtualxt.org).
+Browser version is avalible [here](https://realmode.games).
 
 ## Features
 
@@ -20,6 +20,7 @@ Browser version is avalible [here](https://app.virtualxt.org).
 * Keyboard controller with 83-key XT-style keyboard
 * Serial port with Microsoft 2-button mouse
 * Floppy and hard disk controller
+* Direct file share with host
 * AdLib Music Synthesizer
 * Ethernet adapter
 * Real Time Clock
@@ -39,21 +40,16 @@ Browser version is avalible [here](https://app.virtualxt.org).
 
 ## Build
 
-The emulator is written in C11 and should be compiled with the [Zig](https://ziglang.org/) toolchain.
-You also need to have [SDL2](https://www.libsdl.org/) installed on your system or pass `-Dsdl_path=<path to lib>` to the compiler.
+The emulator is written in C11 and can be compiled with most modern C compilers. In order to generate a Makefile you need to install [Premake](https://premake.github.io/). You also need to have [SDL2](https://www.libsdl.org/) installed on your system or pass `--sdl-path=<path to lib>` to the premake script.
 
 ```
 git clone https://github.com/andreas-jonsson/virtualxt.git
 cd virtualxt
-zig build run -Drelease-fast
+premake5 gmake
+make sdl2-frontend
 ```
 
-You can download pre-built binaries from [itch.io](https://phix.itch.io/virtualxt/purchase). OSX and Linux users can also download VirtualXT using [Homebrew](https://brew.sh).
-
-```
-brew tap andreas-jonsson/virtualxt
-brew install virtualxt
-```
+You can download pre-built binaries from [itch.io](https://phix.itch.io/virtualxt/purchase).
 
 If you want to embed the emulator or create a custom frontend you can find libvxt API documentation [here](https://andreas-jonsson.github.io/virtualxt/docs).
 

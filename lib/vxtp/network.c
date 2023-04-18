@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -84,11 +84,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(network, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(n, network, p);
     n->can_recv = false;
@@ -148,7 +143,6 @@ struct vxt_pirepheral *vxtp_network_create(vxt_allocator *alloc, int device) {
     (VXT_GET_DEVICE(network, p))->handle = handle;
 
     p->install = &install;
-    p->destroy = &destroy;
     p->name = &name;
     p->reset = &reset;
     p->io.in = &in;

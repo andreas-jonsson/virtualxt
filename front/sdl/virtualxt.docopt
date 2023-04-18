@@ -8,8 +8,10 @@ Options:
   --hdboot                Prefer booting from harddrive.
   --mute                  Disable audio.
   --no-adlib              Disable AdLib emulation.
+  --no-activity           Disable disk activity indicator.
   --list                  List network devices and IDs.
   --fdc                   Enable experimental floppy disk controller.
+  --v20                   Enable NEC V20 CPU support.
   --network=ID            Select network adapter.
   --joystick              Enable joystick support.
   --rifs=PATH             Enable experimental RIFS support. (Shared folders)
@@ -18,6 +20,7 @@ Options:
   --extension=FILE        VirtualXT BIOS extension binary.
   --trace=FILE            Write CPU trace to file.
   --vga=FILE              Load VGA BIOS.
-  -f --frequency=MHZ      CPU frequency lock (0 to disable) [default: 4.77].
+  --serial-debug=PORT     Enable debug print on serial port.
+  --frequency=MHZ         CPU frequency. [default: 4.772726]
   -a --floppy=FILE        Mount floppy image as drive A.
   -c --harddrive=FILE     Mount harddrive image as drive C.

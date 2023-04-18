@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -29,8 +29,6 @@
 #define POS_TO_OHM(axis) ((((double)((axis) + 1)) / ((double)UINT16_MAX)) * 60000.0)
 #define AXIS_TIMEOUT(axis) ((24.2 + 0.011 * POS_TO_OHM(axis)) * 1000.0)
 
-#define INT64 long long
-
 struct joystick {
     void *id;
     vxt_int16 axis[2];
@@ -39,16 +37,16 @@ struct joystick {
 };
 
 VXT_PIREPHERAL(gameport, {
-    INT64 time_stamp;
+    double time_stamp;
+    double ticker;
     struct joystick joysticks[2];
-    INT64 (*ustics)(void);
 })
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     (void)port;
     VXT_DEC_DEVICE(g, gameport, p);
     vxt_byte data = 0xF0;
-    double d = (double)(g->ustics() - g->time_stamp);
+    double d = g->ticker - g->time_stamp;
 
     for (int i = 0; i < 2; i++) {
         struct joystick *js = &g->joysticks[i];
@@ -74,7 +72,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     (void)port; (void)data;
     VXT_DEC_DEVICE(g, gameport, p);
-    g->time_stamp = g->ustics();
+    g->time_stamp = g->ticker = 0.0;
 
     for (int i = 0; i < 2; i++) {
         struct joystick *js = &g->joysticks[i];
@@ -83,37 +81,35 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     }
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io_at(s, p, 0x201);
+static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+    (void)id;
+    VXT_DEC_DEVICE(g, gameport, p);
+    if (g->ticker < 1000000.0)
+        g->ticker += (double)cycles / ((double)vxt_system_frequency(VXT_GET_SYSTEM(gameport, p)) / 1000000.0);
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(gameport, p))(p, 0);
+static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+    vxt_system_install_io_at(s, p, 0x201);
+    vxt_system_install_timer(s, p, 0);
     return VXT_NO_ERROR;
 }
 
 static const char *name(struct vxt_pirepheral *p) {
     (void)p;
-    return "Gameport Joystick Controller";
+    return "Gameport Joystick(s)";
 }
 
-struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, INT64 (*ustics)(void), void *stick_a, void *stick_b) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(gameport));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(gameport));
-    VXT_DEC_DEVICE(g, gameport, p);
+struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, void *stick_a, void *stick_b) VXT_PIREPHERAL_CREATE(alloc, gameport, {
+    DEVICE->joysticks[0].id = stick_a;
+    DEVICE->joysticks[1].id = stick_b;
 
-    g->ustics = ustics;
-    g->joysticks[0].id = stick_a;
-    g->joysticks[1].id = stick_b;
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp_joystick_event *ev) {
     VXT_DEC_DEVICE(g, gameport, p);

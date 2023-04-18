@@ -1,0 +1,169 @@
+name: Build
+
+on:
+  push:
+    branches: [ "develop", "edge", "release" ]
+  pull_request:
+    branches: [ "develop" ]
+
+  workflow_dispatch:
+
+env:
+  VXT_VERSION: 0.8.0
+  SDL2_VERSION: 2.24.1
+
+jobs:
+  linux-build:
+    name: Build (Linux AMD64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Setup
+        run: |
+          sudo apt-get update
+          sudo apt-get install kcov cppcheck libpcap-dev libfuse2 libasound2-dev libpulse-dev
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
+
+          curl -L -o sdl.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-${SDL2_VERSION}.tar.gz && tar -xf sdl.tar.gz
+          cd SDL2-${SDL2_VERSION}
+          ./configure --prefix="${GITHUB_WORKSPACE}/sdl_bin"
+          make && make install
+
+      - name: Test & Check
+        run: |
+          premake5 check
+          premake5 --test --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
+          make clean test
+
+      - name: Report
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          kcov kcov-out test/test .
+          bash <(curl -s https://codecov.io/bash) -s kcov-out
+        
+      - name: Build
+        run: |
+          premake5 --pcap --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
+          make clean sdl2-frontend
+
+      - name: Package
+        run: ./tools/package/itch/package.linux.sh
+
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
+
+  windows-build:
+    name: Build (Windows AMD64)
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: base-devel mingw-w64-x86_64-toolchain
+      
+      - name: Setup
+        run: |
+          curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o sdl.zip https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-devel-${SDL2_VERSION}-mingw.zip && unzip sdl.zip
+          curl -L -o premake5.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-windows.zip && mkdir premake5 && unzip premake5.zip -d premake5
+          echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+
+      - name: Test
+        shell: msys2 {0}
+        run: |
+          export PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
+          premake5 --test --cc=gcc gmake
+          make clean test
+      
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          export PATH="${GITHUB_WORKSPACE}/premake5":"${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32/bin":"$PATH"
+          premake5 --cc=gcc --pcap gmake
+          make clean sdl2-frontend
+          mv build/bin/virtualxt.exe virtualxt-net.exe
+          premake5 --cc=gcc gmake
+          make clean sdl2-frontend
+          mv virtualxt-net.exe build/bin
+
+      - name: Package
+        run: |
+          ./tools/package/itch/package.bat
+          cp "${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/lib/x64/SDL2.dll" "${GITHUB_WORKSPACE}/package/virtualxt"
+        
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
+
+  macos-build:
+    name: Build (MacOS AMD64)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Setup
+        run: |
+          brew update
+          brew install rpl
+          
+          curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-macosx.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
+
+          curl -L -o sdl.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-${SDL2_VERSION}.tar.gz && tar -xf sdl.tar.gz
+          cd SDL2-${SDL2_VERSION}
+          ./configure --prefix="${GITHUB_WORKSPACE}/sdl_bin"
+          make && make install
+
+      - name: Test
+        run: |
+          premake5 --test gmake
+          make clean test
+
+      - name: Build
+        run: |
+          premake5 --pcap --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
+          make clean sdl2-frontend
+
+      - name: Package
+        run: ./tools/package/itch/package.osx.sh
+
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -109,16 +109,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    #ifdef VXT_CPU_286
-        vxt_system_install_io(s, p, 0x70, 0x71);
-    #else
-        vxt_system_install_io(s, p, 0x240, 0x241);
-    #endif
-    return VXT_NO_ERROR;
-}
-
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(rtc, p))(p, 0);
+    vxt_system_install_io(s, p, 0x240, 0x241);
     return VXT_NO_ERROR;
 }
 
@@ -141,16 +132,11 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Real Time Clock";
 }
 
-struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(rtc));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(rtc));
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->reset = &reset;
-    //p->step = &step;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, rtc, {
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->reset = &reset;
+    //PIREPHERAL->step = &step;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})

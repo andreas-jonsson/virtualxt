@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,14 +13,15 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-const defaultTargetFreq = 4.77;
+const defaultTargetFreq = 4.772726;
+const defaultAudioLatency = 0.1;
 const defaultBin = "virtualxt.wasm";
 const defaultDiskImage = "freedos_web_hd.img";
 const defaultCanvas = "virtualxt-canvas";
@@ -111,12 +112,120 @@ const jsToXt = {
     "Delete": 83
 };
 
+const vkbToXt = {
+    "{esc}": 1,
+    "1": 2, "!": 2,
+    "2": 3, "@": 3,
+    "3": 4, "#": 4,
+    "4": 5, "$": 5,
+    "5": 6, "%": 6,
+    "6": 7, "^": 7,
+    "7": 8, "&": 8,
+    "8": 9, "*": 9,
+    "9": 10, "(": 10,
+    "0": 11, ")": 11,
+    "-": 12, "_": 12,
+    "=": 13, "+": 13,
+    "{bksp}": 14,
+    "{tab}": 15,
+    "q": 16, "Q": 16,
+    "w": 17, "W": 17,
+    "e": 18, "E": 18,
+    "r": 19, "R": 19,
+    "t": 20, "T": 20,
+    "y": 21, "Y": 21,
+    "u": 22, "U": 22,
+    "i": 23, "I": 23,
+    "o": 24, "O": 24,
+    "p": 25, "P": 25,
+    "[": 26, "{": 26,
+    "]": 27, "}": 27,
+    "{enter}": 28,
+    "ctrl": 29,
+    "a": 30, "A": 30,
+    "s": 31, "S": 31,
+    "d": 32, "D": 32,
+    "f": 33, "F": 33,
+    "g": 34, "G": 34,
+    "h": 35, "H": 35,
+    "j": 36, "J": 36,
+    "k": 37, "K": 37,
+    "l": 38, "L": 38,
+    ";": 39, ":": 39,
+    "'": 40, "\"": 40,
+    "`": 41,
+    "shift": 42,
+    "\\": 43, "|": 43,
+    "z": 44, "Z": 44,
+    "x": 45, "X": 45,
+    "c": 46, "C": 46,
+    "v": 47, "V": 47,
+    "b": 48, "B": 48,
+    "n": 49, "N": 49,
+    "m": 50, "M": 50,
+    ",": 51, "<": 51,
+    ".": 52, ">": 52,
+    "/": 53, "?": 53,
+    // VXTP_SCAN_RSHIFT
+    "print": 55,
+    "{alt}": 56,
+    " ": 57,
+    "{lock}": 58,
+    "F1": 59,
+    "F2": 60,
+    "F3": 61,
+    "F4": 62,
+    "F5": 63,
+    "F6": 64,
+    "F7": 65,
+    "F8": 66,
+    "F9": 67,
+    "F10": 68,
+    "num": 69,
+    "{lock}": 70,
+    "home": 71,
+    "up": 72,
+    "pgup": 73,
+    // VXTP_SCAN_KP_MINUS
+    "left": 75,
+    // VXTP_SCAN_KP_5
+    "right": 77,
+    // VXTP_SCAN_KP_PLUS
+    "end": 79,
+    "down": 80,
+    "pgdown": 81,
+    "ins": 82,
+    "{delete}": 83
+};
+
+const modelFLayout = {
+    'default': [
+        'F1 F2 F3 F4 F5 F6 F7 F8 F9 F10 scrl num',
+        '{esc} 1 2 3 4 5 6 7 8 9 0 - = {bksp}',
+        '{tab} q w e r t y u i o p [ ] {enter}',
+        '{lock} a s d f g h j k l ; \' ~ print',
+        'shift \\ z x c v b n m , . /',
+        'ctrl {alt} {space} {delete}'
+    ],
+    'shift': [
+        'up down left right pgup pgdown home end ins scrl num',
+        '{esc} ! @ # $ % ^ &amp; * ( ) _ + {bksp}',
+        '{tab} Q W E R T Y U I O P { } {enter}',
+        '{lock} A S D F G H J K L : " ` print',
+        'shift | Z X C V B N M &lt; &gt; ?',
+        'ctrl {alt} {space} {delete}'
+    ]
+}
+
 const urlParams = new URLSearchParams(window.location.search);
 
 var targetFreq = urlParams.get("freq") || defaultTargetFreq;
 var diskData = null;
 var invalidateWindowSize = false;
 var halted = false;
+var dbQueue = null;
+var diskActivityImage = null;
+var activity_opacity = 0;
 
 var memory = new WebAssembly.Memory({
     initial: 350, // Pages
@@ -128,11 +237,10 @@ var importObject = {
         memory: memory,
         js_puts: printCString,
         js_shutdown: shutdown,
+        js_disk_activity: diskActivity,
         js_disk_read: diskReadData,
         js_disk_write: diskWriteData,
         js_disk_size: () => { return diskData.length; },
-        js_ustimer: () => { return performance.now() * 1000; },
-        js_speaker_callback: (freq) => { oscillator.frequency.setValueAtTime(freq, null); },
         js_set_border_color: (color) => { document.body.style.background = "#" + ("00000" + (color | 0).toString(16)).substr(-6); }
     }
 };
@@ -150,6 +258,36 @@ function shutdown() {
     }
 }
 
+function isTouchDevice() {
+    if (urlParams.has("touch"))
+        return urlParams.get("touch") != "0";
+    return ("ontouchstart" in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (navigator.msMaxTouchPoints > 0);
+}
+
+function diskActivity(disk_id, user_data) {
+    if (diskActivityImage == null)
+        return;
+
+    if (activity_opacity <= 0) {
+        activity_opacity = 1;
+        diskActivityImage.style.opacity = activity_opacity;
+        diskActivityImage.style.display = "block";
+        var timer = setInterval(() => {
+            activity_opacity -= 0.1;
+            if (activity_opacity <= 0) {
+                clearInterval(timer);
+                diskActivityImage.style.display = "none";
+                return;
+            }
+            diskActivityImage.style.opacity = activity_opacity;
+        }, 50);
+    } else {
+        activity_opacity = 1;
+    }
+}
+
 function diskReadData(ptr, size, head) {
     const view = new Uint8Array(memory.buffer, ptr, size);
     for (let i = 0; i < size; i++) {
@@ -159,8 +297,15 @@ function diskReadData(ptr, size, head) {
 
 function diskWriteData(ptr, size, head) {
     const view = new Uint8Array(memory.buffer, ptr, size);
+    const message = { sector: head / 512, data: new Array(512) };
+
     for (let i = 0; i < size; i++) {
-        diskData[head + i] = view[i];
+        const data = view[i];
+        diskData[head + i] = data;
+        message.data[i] = data;
+    }
+    if (dbQueue) {
+        dbQueue.push(message);
     }
 }
 
@@ -200,6 +345,79 @@ function handleKeyEvent(event, mask, callback) {
     event.preventDefault();
 }
 
+function handleVirtualKeyEvent(button, keyboard, mask, callback) {
+    if (mask == 0 && (button == "{lock}")) { // || button == "{shift}")) {
+        keyboard.setOptions({
+            layoutName: (keyboard.options.layoutName == "shift") ? "default" : "shift"
+        });
+    }
+
+    const scan = vkbToXt[button];
+    if (!scan) {
+        console.log("Unknown virtual key:", button);
+        return;
+    }
+    callback(scan | mask)
+}
+
+function initLocalStorage() {
+    if (!window.localStorage) {
+        console.error("Local storage not supported!");
+        return;
+    }
+
+    console.log("Initialize local storage");
+    dbQueue = [];
+
+    if (urlParams.get("storage") == "clear") {
+        console.log("Clear local storage!");
+        window.localStorage.clear();
+    }
+
+    const calc_crc32 = (r) => {
+        for (var a, o = [], c = 0; c < 256; c++) {
+            a = c;
+            for (var f = 0; f < 8; f++) {
+                a = (1 & a) ? 3988292384 ^ a >>> 1 : a >>> 1;
+            }
+            o[c] = a;
+        }
+        for (var n = -1, t = 0; t < r.length; t++) {
+            n = n >>> 8 ^ o[255 & (n ^ r[t])];
+        }
+        return (-1 ^ n) >>> 0;
+    };
+    
+    const crc_str = calc_crc32(diskData).toString();
+    for (var key of Object.keys(window.localStorage)) {
+        const pair = key.split(" ", 2);
+        if (pair[0] != crc_str) {
+            continue;
+        }
+        const sector = parseInt(pair[1]);
+        const data = JSON.parse(window.localStorage.getItem(key));
+        diskData.set(new Uint8Array(data), sector * 512);
+        console.log("Restore sector:", sector);
+    }
+
+    setInterval(() => {
+        var i = 0;
+        for (; i < dbQueue.length; i++) {
+            const msg = dbQueue.shift();
+            const str = JSON.stringify(msg.data);
+
+            try { window.localStorage.setItem(crc_str + " " + msg.sector, str); } catch {
+                console.error("Local storager is full!");
+                alert("Local storager is full! All persistant data will be deleted.");
+                window.localStorage.clear(); // This will remove all data including CRC.
+            }
+        }
+        if (i > 0) {
+            console.log(i + " sectors written to local storage!");
+        }
+    }, 1000);
+}
+
 function uploadDiskImage(afterPickCallback) {
     var input = document.createElement("input");
     input.type = "file";
@@ -232,18 +450,33 @@ function getCanvas() {
     return document.getElementById(urlParams.get("canvas") || defaultCanvas);
 }
 
+function genAudioSamples(samples, delta) {
+    const num = delta * samples.freq;
+    const max = Math.min(samples.len + num, samples.data.length);
+    for (var i = samples.len; i < max; i++)
+        samples.data[samples.len++] = samples.func(samples.freq);
+}
+
+function nextAudioBuffer(ctx, buffer, samples) {
+    for (var i = samples.len; i < samples.data.length; i++)
+        samples.data[i] = samples.func(samples.freq);
+
+    buffer.copyToChannel(samples.data, 0);
+    samples.len = 0;
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.onended = () => {
+        nextAudioBuffer(ctx, buffer, samples);
+    }
+    source.start();
+}
+
 function startEmulator(binary) {
     WebAssembly.instantiateStreaming(binary, importObject).then((result) => {
         const C = result.instance.exports;
         const wasmMemoryArray = new Uint8Array(memory.buffer);
-
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
-
-        oscillator = audioCtx.createOscillator();
-        oscillator.type = "square";
-        oscillator.frequency = 1;
-        oscillator.connect(audioCtx.destination);
-        oscillator.start();
 
         document.body.style.padding = 0;
         document.body.style.margin = 4;
@@ -299,13 +532,36 @@ function startEmulator(binary) {
         };
 
         const initialize = () => {
-            C.wasm_initialize_emulator();
+            C.wasm_initialize_emulator((urlParams.get("v20") == 1) ? 1 : 0, targetFreq * 1000000);
 
-            window.addEventListener("keyup", (e) => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
-            window.addEventListener("keydown", (e) => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
+            if (urlParams.has("storage") && (urlParams.get("storage") != "0")) {
+                initLocalStorage();
+            }
+
+            window.addEventListener("keyup", e => { handleKeyEvent(e, 0x80, C.wasm_send_key); }, true);
+            window.addEventListener("keydown", e => { handleKeyEvent(e, 0x0, C.wasm_send_key); }, true);
             window.addEventListener("resize", () => { invalidateWindowSize = true; });
 
-            if (urlParams.get("mouse") != "0") {
+            if (isTouchDevice()) {
+                const kb = new window.SimpleKeyboard.default({
+                    onKeyReleased: button => { handleVirtualKeyEvent(button, kb, 0x80, C.wasm_send_key); },
+                    onKeyPress: button => { handleVirtualKeyEvent(button, kb, 0x0, C.wasm_send_key); },
+                    physicalKeyboardHighlightPress: false,
+                    layout: modelFLayout
+                });
+
+                const kbDiv = document.getElementById("keyboard");
+                if (kbDiv) {
+                    const handler = () => {
+                        if (kbDiv.style.getPropertyValue("display") == "none")
+                            kbDiv.style.removeProperty("display");
+                        else
+                            kbDiv.style.setProperty("display", "none");
+                    }
+                    canvas.addEventListener("pointerdown", handler, true);
+                    canvas.addEventListener("touchstart", handler, true);
+                }
+            } else if (urlParams.get("mouse") != "0") {
                 const handler = (e) => {
                     if (halted) {
                         return;
@@ -327,6 +583,21 @@ function startEmulator(binary) {
 
             window.requestAnimationFrame(renderFrame);
 
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
+            const audioSamples = {
+                data: new Float32Array(audioCtx.sampleRate * defaultAudioLatency),
+                len: 0,
+                freq: audioCtx.sampleRate,
+                func: C.wasm_generate_sample
+            };
+            const audioBuffer = audioCtx.createBuffer(
+                1,
+                audioSamples.data.length,
+                audioCtx.sampleRate
+            );
+
+            nextAudioBuffer(audioCtx, audioBuffer, audioSamples);
+
             const cycleCap = targetFreq * 15000;
             var stepper = { t: performance.now(), c: 0 };
 
@@ -339,8 +610,9 @@ function startEmulator(binary) {
                     cycles = cycleCap;
                 }
 
-                C.wasm_step_emulation(cycles);
-                stepper.c += cycles;
+                genAudioSamples(audioSamples, delta / 1000);
+
+                stepper.c += C.wasm_step_emulation(cycles);
                 stepper.t = t;
             }, 1);
 
@@ -379,6 +651,10 @@ window.onload = () => {
     const div = document.createElement("div");
     const btn = document.createElement("button");
 
+    if (urlParams.get("activity") != "0") {
+        diskActivityImage = document.getElementById("disk-activity");
+    }
+    
     {
         btn.type = "button";
         btn.style = "background-color: #555555; border: none; color: white; padding: 8px 16px; text-align: center; text-decoration: none; font-size: 14px;";

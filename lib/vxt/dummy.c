@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -45,6 +45,13 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     VXT_PRINT("writing unmapped memory: %X\n", addr);
 }
 
+static vxt_error destroy(struct vxt_pirepheral *p) {
+    (void)p;
+    // Prevent the use of freeing memory with default
+    // allocator, by setting up a empty destroy function.
+    return VXT_NO_ERROR;
+}
+
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     vxt_system_install_io(s, p, 0x0, 0xFFFF);
     vxt_system_install_mem(s, p, 0x0, 0xFFFFF);
@@ -57,6 +64,7 @@ void init_dummy_device(vxt_system *s) {
 
     struct vxt_pirepheral *d = &dummy->p;
     d->install = &install;
+    d->destroy = &destroy;
     d->io.in = &in;
     d->io.out = &out;
     d->io.read = &read;

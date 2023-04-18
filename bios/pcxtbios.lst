@@ -1,4 +1,4 @@
-Module: /home/phix/src/pcxtbios/pcxtbios.asm
+Module: C:\Users\phix\src\pcxtbios\pcxtbios.asm
 GROUP: 'DGROUP' _TEXT,_DATA
 
 File contains no line numbers.
@@ -28753,7 +28753,7 @@ E050  72 74 20 61 74 20 32 30 31 68 00                rt at 201h.
 				;   definitions if using with an original PC.
 
 TURBO_ENABLED	= 1		; Define to enable "turbo" support
-TURBO_BOOT	= 1		; Define to boot up in turbo mode (full speed)
+;TURBO_BOOT	= 1		; Define to boot up in turbo mode (full speed)
 TURBO_HOTKEY	= 1		; Define to enable "CTRL ALT -" hotkey to toggle turbo mode
 ;SLOW_FLOPPY	= 1		; Define to always run floppy drive at 4.77 MHz (turbo PCs only)
 
@@ -28763,11 +28763,11 @@ TURBO_HOTKEY	= 1		; Define to enable "CTRL ALT -" hotkey to toggle turbo mode
 ;TEST_VIDEO	= 1		; Define to test video memory at power on (Mono/Herc/CGA only)
 				;   If enabled, CLEAR_UMA must be disabled due to memory limits
 
-MAX_MEMORY	= 640		; Maximum conventional memory allowed in KB (with EGA/VGA)
+;MAX_MEMORY	= 640		; Maximum conventional memory allowed in KB (with EGA/VGA)
 ;MAX_MEMORY	= 704		; (with Mono/Hercules)
-;MAX_MEMORY	= 736		; (with CGA)
+MAX_MEMORY	= 736		; (with CGA)
 
-FAST_MEM_CHECK	= 1		; Define to use faster but less thorough memory check
+;FAST_MEM_CHECK	= 1		; Define to use faster but less thorough memory check
 ;NO_MEM_CHECK	= 1		; Define to clear memory only
 
 ;CLEAR_UMA	= 1		; Define to clear specifed upper memory area (UMA_START to UMA_END)
@@ -29381,7 +29381,7 @@ E0D6  80 C7 04				add		bh,0x04
 
 ifdef	MAX_MEMORY
 	cmp	bh, MAX_MEMORY shr 2		; Found max legal user ram?
-E0D9  80 FF A0				cmp		bh,0xa0
+E0D9  80 FF B8				cmp		bh,0xb8
 
 else
 	cmp	bh, 0A0h			; Found max legal IBM ram?
@@ -30060,49 +30060,44 @@ E280  1E				push		ds
 ifdef	TURBO_ENABLED
 ifdef	TURBO_BOOT				; If defined enable turbo speed at bootup
 	in	al, 61h 			; Read equipment flags
-E281  E4 61				in		al,0x61
-
 	xor	al, 00001100b			;   toggle speed
-E283  34 0C				xor		al,0x0c
-
 	out	61h, al 			; Write new flags back
-E285  E6 61				out		0x61,al
-
 endif
 endif
 ifdef	ROM_START
 	mov	dx, ROM_START			; ROM segment start
 else
 	mov	dx, 0C000h
-E287  BA 00 C0				mov		dx,0xc000
+E281  BA 00 C0				mov		dx,0xc000
 
 endif
 
 @@find_rom:
 	mov	ds, dx				; Load ROM segment
-E28A				L$20:
-E28A  8E DA				mov		ds,dx
+E284				L$20:
+E284  8E DA				mov		ds,dx
 
 	jmp	short @@continue		; Jump over old int 2 location
-E28C  EB 38				jmp		L$22
+E286  EB 3E				jmp		L$22
 
 
 cold_boot:
 	xor	ax, ax	 			; Force cold boot
-E28E				L$21:
-E28E  33 C0				xor		ax,ax
+E288				L$21:
+E288  33 C0				xor		ax,ax
 
 	mov	ds, ax
-E290  8E D8				mov		ds,ax
+E28A  8E D8				mov		ds,ax
 
 	mov	[ds:472h], ax			; Show data areas not init
-E292  A3 72 04				mov		word ptr ds:[0x472],ax
+E28C  A3 72 04				mov		word ptr ds:[0x472],ax
 
 	jmp	warm_boot
-E295  E9 C3 FD				jmp		post
-E298  4E 6F 20 52 4F 4D 20 42 41 53 49 43 2C 20 62 6F No ROM BASIC, bo
-E2A8  6F 74 69 6E 67 20 66 72 6F 6D 20 64 69 73 6B 2E oting from disk.
-E2B8  2E 2E 00 90 90 90 90 90 90 90 90                ...........
+E28F  E9 C9 FD				jmp		post
+E292  4E 6F 20 52 4F 4D 20 42 41 53 49 43 2C 20 62 6F No ROM BASIC, bo
+E2A2  6F 74 69 6E 67 20 66 72 6F 6D 20 64 69 73 6B 2E oting from disk.
+E2B2  2E 2E 00 90 90 90 90 90 90 90 90 90 90 90 90 90 ................
+E2C2  90                                              .
 
 
 
@@ -30207,7 +30202,7 @@ E30C  81 FA 00 FE			cmp		dx,0xfe00
 endif
 	jl	@@find_rom			;  no, continue
 E310  7D 03				jge		L$26
-E312  E9 75 FF				jmp		L$20
+E312  E9 6F FF				jmp		L$20
 
 
 	pop	ds
@@ -30249,7 +30244,7 @@ E329  8E C3				mov		es,bx
 E32B  B3 24				mov		bl,0x24
 
 	call	delay_keypress			; Delay after expansion ROM inits
-E32D  E8 61 16				call		delay_keypress
+E32D  E8 83 16				call		delay_keypress
 
 endif
 
@@ -30297,7 +30292,7 @@ E345  B5 F0				mov		ch,0xf0
 E347  CD 10				int		0x10
 
 	call	clear_screen			;   clear display
-E349  E8 62 16				call		clear_screen
+E349  E8 84 16				call		clear_screen
 
 
 ifdef	ENHANCED_KEYB
@@ -30340,7 +30335,7 @@ E362				L$29:
 E362  BE 00 E0				mov		si,offset L$1-0x2000
 
 	call	title_print
-E365  E8 60 16				call		title_print
+E365  E8 82 16				call		title_print
 
 	mov	si, offset str_banner_2
 E368  BE FF EB				mov		si,offset L$1-0x1401
@@ -30412,7 +30407,7 @@ E3A0  3C 79				cmp		al,0x79
 	jz	@@ignore_error			;   ok, continue
 E3A2  74 05				je		L$31
 E3A4  EA                                              .
-E3A5  8E E2                                           DW	offset L$323
+E3A5  88 E2                                           DW	offset L$325
 E3A7  00 F0                                           ..
 
 	jmpfar	0F000h, cold_boot		; Else cold reset
@@ -30422,7 +30417,7 @@ E3A9				L$31:
 E3A9  26 C6 06 15 00 00			mov		byte ptr es:[0x15],0x00
 
 	call	clear_screen
-E3AF  E8 FC 15				call		clear_screen
+E3AF  E8 1E 16				call		clear_screen
 
 	jmp	@@config
 E3B2  EB AE				jmp		L$29
@@ -30762,7 +30757,7 @@ E495  B3 01				mov		bl,0x01
 E497  E8 15 13				call		beep
 
 	call	clear_screen			;   clear display
-E49A  E8 11 15				call		clear_screen
+E49A  E8 33 15				call		clear_screen
 
 
 	xor	ax, ax
@@ -31384,7 +31379,7 @@ E5D4  E8 0D FF				call		locate
 
 
 	mov	si, offset str_no_basic		; Assume no BASIC
-E5D7  BE 98 E2				mov		si,offset L$1-0x1d68
+E5D7  BE 92 E2				mov		si,offset L$1-0x1d6e
 
 	xor	dl, dl
 E5DA  32 D2				xor		dl,dl
@@ -31414,7 +31409,7 @@ E5E6  E8 F0 FE				call		print
 E5E9  BB 36 00				mov		bx,0x0036
 
 	call	delay_keypress
-E5EC  E8 A2 13				call		delay_keypress
+E5EC  E8 C4 13				call		delay_keypress
 
 
 	cmp	al, ' '				; Was the keystroke a space?
@@ -33290,7 +33285,7 @@ EB26  80 FC 4A				cmp		ah,0x4a
 EB29  75 03				jne		L$120
 
 	call	toggle_turbo
-EB2B  E8 31 0E				call		toggle_turbo
+EB2B  E8 53 0E				call		toggle_turbo
 
 endif
 endif
@@ -35228,22 +35223,22 @@ F032  E2 FE				loop		L$199
 	jmp	@@strobe			; Strobe the line printer
 F034  EB E0				jmp		L$194
 F036  C3 20 43 47 41 20 47 72 61 70 68 69 63 73 00    . CGA Graphics.
-F045  15 F1                                           DW	offset L$334
-F047  BE F1                                           DW	offset L$335
-F049  CB F1                                           DW	offset L$336
-F04B  DB F1                                           DW	offset L$337
-F04D  F7 F1                                           DW	offset L$338
-F04F  78 F2                                           DW	offset L$339
-F051  98 F2                                           DW	offset L$340
-F053  98 F2                                           DW	offset L$340
-F055  E4 F3                                           DW	offset L$341
-F057  E4 F3                                           DW	offset L$341
-F059  E4 F3                                           DW	offset L$341
-F05B  BE F5                                           DW	offset L$342
-F05D  E9 F5                                           DW	offset L$343
-F05F  2C F6                                           DW	offset L$344
-F061  55 F6                                           DW	offset L$345
-F063  D3 F6                                           DW	offset L$346
+F045  15 F1                                           DW	offset L$336
+F047  BE F1                                           DW	offset L$337
+F049  CB F1                                           DW	offset L$338
+F04B  DB F1                                           DW	offset L$339
+F04D  F7 F1                                           DW	offset L$340
+F04F  78 F2                                           DW	offset L$341
+F051  98 F2                                           DW	offset L$342
+F053  98 F2                                           DW	offset L$342
+F055  E4 F3                                           DW	offset L$343
+F057  E4 F3                                           DW	offset L$343
+F059  E4 F3                                           DW	offset L$343
+F05B  BE F5                                           DW	offset L$344
+F05D  E9 F5                                           DW	offset L$345
+F05F  2C F6                                           DW	offset L$346
+F061  55 F6                                           DW	offset L$347
+F063  D3 F6                                           DW	offset L$348
 
 
 endp	int_17
@@ -38683,13 +38678,13 @@ F8EE  3C 79				cmp		al,0x79
 F8F0  74 03				je		L$295
 
 	jmp	cold_boot			; Retry on cold reboot
-F8F2  E9 99 E9				jmp		L$21
+F8F2  E9 93 E9				jmp		L$21
 
 
 @@continue:
 	call	clear_screen			; Clear display
 F8F5				L$295:
-F8F5  E8 B6 00				call		clear_screen
+F8F5  E8 D8 00				call		clear_screen
 
 	pop	ax
 F8F8  58				pop		ax
@@ -38815,113 +38810,153 @@ ifndef	NO_MEM_CHECK
 ifndef	FAST_MEM_CHECK
 @@pattern_1:
 	xor	di, di				; Pattern #1 - 55h bytes
-	mov	cx, bx
-	rep	stosw				; Fill memory,	pattern #1
-	xor	di, di
-	mov	cx, bx
-	repz	scasw				; Scan memory for not pattern #1
-	jcxz	@@pattern_2
-	stc					; Flunked
-	ret
-
-@@pattern_2:
-	xor	di, di				; Pattern #2 - AAh bytes
-	mov	cx, bx
-	not	ax
-	rep	stosw				; Fill memory,	pattern #2
-	xor	di, di
-	mov	cx, bx
-	repz	scasw				; Scan memory for not pattern #2
-	jcxz	@@pattern_3
-	stc					; Flunked
-	ret
-endif
-
-@@pattern_3:
-	xor	di, di				; Pattern #3 - FFh bytes
 F931  33 FF				xor		di,di
 
 	mov	cx, bx
 F933  8B CB				mov		cx,bx
 
-	xor	ax, ax
-F935  33 C0				xor		ax,ax
-
-	not	ax
-F937  F7 D0				not		ax
-
-	rep	stosw				; Fill memory,	pattern #3
-F939  F3 AB				rep stosw	
+	rep	stosw				; Fill memory,	pattern #1
+F935  F3 AB				rep stosw	
 
 	xor	di, di
-F93B  33 FF				xor		di,di
+F937  33 FF				xor		di,di
 
 	mov	cx, bx
-F93D  8B CB				mov		cx,bx
+F939  8B CB				mov		cx,bx
 
-	repz	scasw				; Scan memory for not pattern #3
-F93F  F3 AF				repe scasw	
+	repz	scasw				; Scan memory for not pattern #1
+F93B  F3 AF				repe scasw	
 
-	jcxz	@@pattern_4
-F941  E3 02				jcxz		L$298
+	jcxz	@@pattern_2
+F93D  E3 02				jcxz		L$298
 
 	stc					; Flunked
-F943  F9				stc		
+F93F  F9				stc		
 
 	ret
-F944  C3				ret		
+F940  C3				ret		
+
+
+@@pattern_2:
+	xor	di, di				; Pattern #2 - AAh bytes
+F941				L$298:
+F941  33 FF				xor		di,di
+
+	mov	cx, bx
+F943  8B CB				mov		cx,bx
+
+	not	ax
+F945  F7 D0				not		ax
+
+	rep	stosw				; Fill memory,	pattern #2
+F947  F3 AB				rep stosw	
+
+	xor	di, di
+F949  33 FF				xor		di,di
+
+	mov	cx, bx
+F94B  8B CB				mov		cx,bx
+
+	repz	scasw				; Scan memory for not pattern #2
+F94D  F3 AF				repe scasw	
+
+	jcxz	@@pattern_3
+F94F  E3 02				jcxz		L$299
+
+	stc					; Flunked
+F951  F9				stc		
+
+	ret
+F952  C3				ret		
+
+endif
+
+@@pattern_3:
+	xor	di, di				; Pattern #3 - FFh bytes
+F953				L$299:
+F953  33 FF				xor		di,di
+
+	mov	cx, bx
+F955  8B CB				mov		cx,bx
+
+	xor	ax, ax
+F957  33 C0				xor		ax,ax
+
+	not	ax
+F959  F7 D0				not		ax
+
+	rep	stosw				; Fill memory,	pattern #3
+F95B  F3 AB				rep stosw	
+
+	xor	di, di
+F95D  33 FF				xor		di,di
+
+	mov	cx, bx
+F95F  8B CB				mov		cx,bx
+
+	repz	scasw				; Scan memory for not pattern #3
+F961  F3 AF				repe scasw	
+
+	jcxz	@@pattern_4
+F963  E3 02				jcxz		L$300
+
+	stc					; Flunked
+F965  F9				stc		
+
+	ret
+F966  C3				ret		
 
 endif
 
 @@pattern_4:
 	xor	di, di				; Pattern #4 - 00h bytes
-F945				L$298:
-F945  33 FF				xor		di,di
+F967				L$300:
+F967  33 FF				xor		di,di
 
 	mov	cx, bx
-F947  8B CB				mov		cx,bx
+F969  8B CB				mov		cx,bx
 
 	xor	ax, ax
-F949  33 C0				xor		ax,ax
+F96B  33 C0				xor		ax,ax
 
 	rep	stosw				; Fill memory,pattern #4
-F94B  F3 AB				rep stosw	
+F96D  F3 AB				rep stosw	
 
 
 ifndef	NO_MEM_CHECK
 	xor	di, di
-F94D  33 FF				xor		di,di
+F96F  33 FF				xor		di,di
 
 	mov	cx, bx
-F94F  8B CB				mov		cx,bx
+F971  8B CB				mov		cx,bx
 
 	repz	scasw				; Scan memory for not pattern #4
-F951  F3 AF				repe scasw	
+F973  F3 AF				repe scasw	
 
 	jcxz	@@done
-F953  E3 02				jcxz		L$299
+F975  E3 02				jcxz		L$301
 
 	stc					; Flunked
-F955  F9				stc		
+F977  F9				stc		
 
 	ret
-F956  C3				ret		
+F978  C3				ret		
 
 endif
 
 @@done:
 	mov	ax, es
-F957				L$299:
-F957  8C C0				mov		ax,es
+F979				L$301:
+F979  8C C0				mov		ax,es
 
 	add	ax, 40h 			; Add 40h to segment number
-F959  83 C0 40				add		ax,0x0040
+F97B  83 C0 40				add		ax,0x0040
 
 	mov	es, ax
-F95C  8E C0				mov		es,ax
+F97E  8E C0				mov		es,ax
 
 	ret					; Passed
-F95E  C3				ret		
+F980  C3				ret		
 
 
 endp	mem_test
@@ -38954,95 +38989,95 @@ ifdef	TURBO_HOTKEY
 proc	toggle_turbo	near
 
 	push	ax
-F95F				toggle_turbo:
-F95F  50				push		ax
+F981				toggle_turbo:
+F981  50				push		ax
 
 	push	bx
-F960  53				push		bx
+F982  53				push		bx
 
 	push	cx
-F961  51				push		cx
+F983  51				push		cx
 
 	in	al, 61h 			; Read equipment flags
-F962  E4 61				in		al,0x61
+F984  E4 61				in		al,0x61
 
 	xor	al, 00001100b			;   toggle speed
-F964  34 0C				xor		al,0x0c
+F986  34 0C				xor		al,0x0c
 
 	out	61h, al 			; Write new flags back
-F966  E6 61				out		0x61,al
+F988  E6 61				out		0x61,al
 
 
 	mov	bx, 0F89h			; low pitch blip
-F968  BB 89 0F				mov		bx,0x0f89
+F98A  BB 89 0F				mov		bx,0x0f89
 
 	and	al, 4				; Is turbo mode set?
-F96B  24 04				and		al,0x04
+F98D  24 04				and		al,0x04
 
 	jz	@@do_beep
-F96D  74 03				je		L$300
+F98F  74 03				je		L$302
 
 	mov	bx, 52Eh			; high pitch blip
-F96F  BB 2E 05				mov		bx,0x052e
+F991  BB 2E 05				mov		bx,0x052e
 
 
 @@do_beep:
 	mov	al, 10110110b			; Timer IC 8253 square waves
-F972				L$300:
-F972  B0 B6				mov		al,0xb6
+F994				L$302:
+F994  B0 B6				mov		al,0xb6
 
 	out	43h, al 			;   channel 2, speaker
-F974  E6 43				out		0x43,al
+F996  E6 43				out		0x43,al
 
 	mov	ax, bx
-F976  8B C3				mov		ax,bx
+F998  8B C3				mov		ax,bx
 
 	out	42h, al 			;   send low order
-F978  E6 42				out		0x42,al
+F99A  E6 42				out		0x42,al
 
 	mov	al, ah				;   load high order
-F97A  8A C4				mov		al,ah
+F99C  8A C4				mov		al,ah
 
 	out	42h, al 			;   send high order
-F97C  E6 42				out		0x42,al
+F99E  E6 42				out		0x42,al
 
 	in	al, 61h 			; Read IC 8255 machine status
-F97E  E4 61				in		al,0x61
+F9A0  E4 61				in		al,0x61
 
 	push	ax
-F980  50				push		ax
+F9A2  50				push		ax
 
 	or	al, 00000011b
-F981  0C 03				or		al,0x03
+F9A3  0C 03				or		al,0x03
 
 	out	61h, al 			; Turn speaker on
-F983  E6 61				out		0x61,al
+F9A5  E6 61				out		0x61,al
 
 	mov	cx, 2000h
-F985  B9 00 20				mov		cx,0x2000
+F9A7  B9 00 20				mov		cx,0x2000
 
 @@delay:
 	loop    @@delay
-F988				L$301:
-F988  E2 FE				loop		L$301
+F9AA				L$303:
+F9AA  E2 FE				loop		L$303
 
 	pop	ax
-F98A  58				pop		ax
+F9AC  58				pop		ax
 
 	out	61h, al 			; Turn speaker off
-F98B  E6 61				out		0x61,al
+F9AD  E6 61				out		0x61,al
 
 	pop	cx
-F98D  59				pop		cx
+F9AF  59				pop		cx
 
 	pop	bx
-F98E  5B				pop		bx
+F9B0  5B				pop		bx
 
 	pop	ax
-F98F  58				pop		ax
+F9B1  58				pop		ax
 
 	ret
-F990  C3				ret		
+F9B2  C3				ret		
 
 
 endp	toggle_turbo
@@ -39056,54 +39091,54 @@ endif
 proc	delay_keypress	near
 
 	sti					; Enable interrupts so timer can run
-F991				delay_keypress:
-F991  FB				sti		
+F9B3				delay_keypress:
+F9B3  FB				sti		
 
 	add	bx, [es:46Ch]			; Add pause ticks to current timer ticks
-F992  26 03 1E 6C 04			add		bx,word ptr es:[0x46c]
+F9B4  26 03 1E 6C 04			add		bx,word ptr es:[0x46c]
 
 						;   (0000:046C = 0040:006C)
 @@delay:
 	mov	ah, 01h
-F997				L$302:
-F997  B4 01				mov		ah,0x01
+F9B9				L$304:
+F9B9  B4 01				mov		ah,0x01
 
 	int	16h				; Check for keypress
-F999  CD 16				int		0x16
+F9BB  CD 16				int		0x16
 
 	jnz	@@keypress			; End pause if key pressed
-F99B  75 0B				jne		L$304
+F9BD  75 0B				jne		L$306
 
 
 	mov	cx, [es:46Ch]			; Get current ticks
-F99D  26 8B 0E 6C 04			mov		cx,word ptr es:[0x46c]
+F9BF  26 8B 0E 6C 04			mov		cx,word ptr es:[0x46c]
 
 	sub	cx, bx				; See if pause is up yet
-F9A2  2B CB				sub		cx,bx
+F9C4  2B CB				sub		cx,bx
 
 	jc	@@delay				; Nope
-F9A4  72 F1				jb		L$302
+F9C6  72 F1				jb		L$304
 
 
 @@done:
 	cli					; Disable interrupts
-F9A6				L$303:
-F9A6  FA				cli		
+F9C8				L$305:
+F9C8  FA				cli		
 
 	ret
-F9A7  C3				ret		
+F9C9  C3				ret		
 
 
 @@keypress:
 	xor	ah, ah
-F9A8				L$304:
-F9A8  32 E4				xor		ah,ah
+F9CA				L$306:
+F9CA  32 E4				xor		ah,ah
 
 	int	16h				; Flush keystroke from buffer
-F9AA  CD 16				int		0x16
+F9CC  CD 16				int		0x16
 
 	jmp	short @@done
-F9AC  EB F8				jmp		L$303
+F9CE  EB F8				jmp		L$305
 
 
 endp	delay_keypress
@@ -39115,41 +39150,41 @@ endp	delay_keypress
 proc	clear_screen	near
 
 	mov	dx, 184Fh			; Lower right corner of scroll
-F9AE				clear_screen:
-F9AE  BA 4F 18				mov		dx,0x184f
+F9D0				clear_screen:
+F9D0  BA 4F 18				mov		dx,0x184f
 
 	xor	cx, cx				; Upper left  corner of scroll
-F9B1  33 C9				xor		cx,cx
+F9D3  33 C9				xor		cx,cx
 
 	mov	ax, 600h			; Blank entire window
-F9B3  B8 00 06				mov		ax,0x0600
+F9D5  B8 00 06				mov		ax,0x0600
 
 	mov	bh, 7				; Set regular cursor
-F9B6  B7 07				mov		bh,0x07
+F9D8  B7 07				mov		bh,0x07
 
 	int	10h				; Call video service scroll
-F9B8  CD 10				int		0x10
+F9DA  CD 10				int		0x10
 
 	mov	ah, 2				; Set cursor position
-F9BA  B4 02				mov		ah,0x02
+F9DC  B4 02				mov		ah,0x02
 
 	xor	dx, dx				;   upper left corner
-F9BC  33 D2				xor		dx,dx
+F9DE  33 D2				xor		dx,dx
 
 	mov	bh, 0				;   page 0
-F9BE  B7 00				mov		bh,0x00
+F9E0  B7 00				mov		bh,0x00
 
 	int	10h				;   call video service
-F9C0  CD 10				int		0x10
+F9E2  CD 10				int		0x10
 
 	mov	ax, 500h			; Set active display page zero
-F9C2  B8 00 05				mov		ax,0x0500
+F9E4  B8 00 05				mov		ax,0x0500
 
 	int	10h
-F9C5  CD 10				int		0x10
+F9E7  CD 10				int		0x10
 
 	ret
-F9C7  C3				ret		
+F9E9  C3				ret		
 
 
 endp	clear_screen
@@ -39161,47 +39196,47 @@ endp	clear_screen
 proc	title_print	near
 
 	xor	dx, dx				; Cursor starts in upper left corner
-F9C8				title_print:
-F9C8  33 D2				xor		dx,dx
+F9EA				title_print:
+F9EA  33 D2				xor		dx,dx
 
 	mov	cx, 1				; Character repeat count
-F9CA  B9 01 00				mov		cx,0x0001
+F9EC  B9 01 00				mov		cx,0x0001
 
 
 	mov	bx, 0070h			; Mono uses inverse attribute
-F9CD  BB 70 00				mov		bx,0x0070
+F9EF  BB 70 00				mov		bx,0x0070
 
 	cmp	[byte es:49h], 7		; Get CRT mode
-F9D0  26 80 3E 49 00 07			cmp		byte ptr es:[0x49],0x07
+F9F2  26 80 3E 49 00 07			cmp		byte ptr es:[0x49],0x07
 
 	je	@@loop				;   monochrome
-F9D6  74 02				je		L$305
+F9F8  74 02				je		L$307
 
 	mov	bl, 1Fh				; Color uses white on blue
-F9D8  B3 1F				mov		bl,0x1f
+F9FA  B3 1F				mov		bl,0x1f
 
 
 @@loop:
 	lodsb					; Print zero terminated string
-F9DA				L$305:
-F9DA  AC				lodsb		
+F9FC				L$307:
+F9FC  AC				lodsb		
 
 	or	al, al
-F9DB  0A C0				or		al,al
+F9FD  0A C0				or		al,al
 
 	jz	@@done				; Terminator in ax?
-F9DD  74 07				je		L$306
+F9FF  74 07				je		L$308
 
 
 	inc	dl				; New cursor position
-F9DF  FE C2				inc		dl
+FA01  FE C2				inc		dl
 
 	call	color_out_char			; Print character in ax and advance cursor
-F9E1  E8 25 00				call		L$308
+FA03  E8 25 00				call		L$310
 
 
 	jmp	@@loop				;   back for more
-F9E4  EB F4				jmp		L$305
+FA06  EB F4				jmp		L$307
 
 
 @@done:
@@ -39210,147 +39245,145 @@ ifndef	TITLE_BAR_FADE
 	mov	cl, 81 - (offset str_banner_end - offset str_banner)	; Extend color bar
 else
 	mov	cl, 9				; Repeat trailing space 9 chars
-F9E6				L$306:
-F9E6  B1 09				mov		cl,0x09
+FA08				L$308:
+FA08  B1 09				mov		cl,0x09
 
 	add	dl, cl				;   update cursor
-F9E8  02 D1				add		dl,cl
+FA0A  02 D1				add		dl,cl
 
 	call	color_out_char			;   extend bar
-F9EA  E8 1C 00				call		L$308
+FA0C  E8 1C 00				call		L$310
 
 	add	cl, 4
-F9ED  80 C1 04				add		cl,0x04
+FA0F  80 C1 04				add		cl,0x04
 
 
 	sub	bl, 61h				; Change color to white on black
-F9F0  80 EB 61				sub		bl,0x61
+FA12  80 EB 61				sub		bl,0x61
 
 	jns	@@fade				;   jump if monochrome
-F9F3  79 02				jns		L$307
+FA15  79 02				jns		L$309
 
 	mov	bl, 001h			;   else use black on blue
-F9F5  B3 01				mov		bl,0x01
+FA17  B3 01				mov		bl,0x01
 
 
 @@fade:
 	mov	al, 0B2h			; 75% block
-F9F7				L$307:
-F9F7  B0 B2				mov		al,0xb2
+FA19				L$309:
+FA19  B0 B2				mov		al,0xb2
 
 	add	dl, cl				;   update cursor
-F9F9  02 D1				add		dl,cl
+FA1B  02 D1				add		dl,cl
 
 	call	color_out_char			;   extend bar
-F9FB  E8 0B 00				call		L$308
+FA1D  E8 0B 00				call		L$310
 
 
 	mov	al, 0B1h			; 50% block
-F9FE  B0 B1				mov		al,0xb1
+FA20  B0 B1				mov		al,0xb1
 
 	add	dl, cl				;   update cursor
-FA00  02 D1				add		dl,cl
+FA22  02 D1				add		dl,cl
 
 	inc	cl
-FA02  FE C1				inc		cl
+FA24  FE C1				inc		cl
 
 	call	color_out_char			;   extend bar
-FA04  E8 02 00				call		L$308
+FA26  E8 02 00				call		L$310
 
 
 	mov	al, 0B0h			; 25% block
-FA07  B0 B0				mov		al,0xb0
+FA29  B0 B0				mov		al,0xb0
 
 endif
 
 color_out_char:
 	mov	ah, 09h 			; Write character and attribute
-FA09				L$308:
-FA09  B4 09				mov		ah,0x09
+FA2B				L$310:
+FA2B  B4 09				mov		ah,0x09
 
 	int	10h
-FA0B  CD 10				int		0x10
+FA2D  CD 10				int		0x10
 
 
 	mov	ah, 02h				; Set cursor position
-FA0D  B4 02				mov		ah,0x02
+FA2F  B4 02				mov		ah,0x02
 
 	int	10h
-FA0F  CD 10				int		0x10
+FA31  CD 10				int		0x10
 
 
 	ret
-FA11  C3				ret		
-FA12  90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 ................
-FA22  90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 ................
-FA32  90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 ................
-FA42  90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 ................
-FA52  90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 ................
-FA62  90 90 90 90 90 90 90 90 90 90 90 90 00 00 00 00 ................
-FA72  00 00 00 00 7E 81 A5 81 BD 99 81 7E 7E FF DB FF ....~......~~...
-FA82  C3 E7 FF 7E 6C FE FE FE 7C 38 10 00 10 38 7C FE ...~l...|8...8|.
-FA92  7C 38 10 00 38 7C 38 FE FE 7C 38 7C 10 10 38 7C |8..8|8..|8|..8|
-FAA2  FE 7C 38 7C 00 00 18 3C 3C 18 00 00 FF FF E7 C3 .|8|...<<.......
-FAB2  C3 E7 FF FF 00 3C 66 42 42 66 3C 00 FF C3 99 BD .....<fBBf<.....
-FAC2  BD 99 C3 FF 0F 07 0F 7D CC CC CC 78 3C 66 66 66 .......}...x<fff
-FAD2  3C 18 7E 18 3F 33 3F 30 30 70 F0 E0 7F 63 7F 63 <.~.?3?00p...c.c
-FAE2  63 67 E6 C0 99 5A 3C E7 E7 3C 5A 99 80 E0 F8 FE cg...Z<..<Z.....
-FAF2  F8 E0 80 00 02 0E 3E FE 3E 0E 02 00 18 3C 7E 18 ......>.>....<~.
-FB02  18 7E 3C 18 66 66 66 66 66 00 66 00 7F DB DB 7B .~<.fffff.f....{
-FB12  1B 1B 1B 00 3E 63 38 6C 6C 38 CC 78 00 00 00 00 ....>c8ll8.x....
-FB22  7E 7E 7E 00 18 3C 7E 18 7E 3C 18 FF 18 3C 7E 18 ~~~..<~.~<...<~.
-FB32  18 18 18 00 18 18 18 18 7E 3C 18 00 00 18 0C FE ........~<......
-FB42  0C 18 00 00 00 30 60 FE 60 30 00 00 00 00 C0 C0 .....0`.`0......
-FB52  C0 FE 00 00 00 24 66 FF 66 24 00 00 00 18 3C 7E .....$f.f$....<~
-FB62  FF FF 00 00 00 FF FF 7E 3C 18 00 00 00 00 00 00 .......~<.......
-FB72  00 00 00 00 30 78 78 30 30 00 30 00 6C 6C 6C 00 ....0xx00.0.lll.
-FB82  00 00 00 00 6C 6C FE 6C FE 6C 6C 00 30 7C C0 78 ....ll.l.ll.0|.x
-FB92  0C F8 30 00 00 C6 CC 18 30 66 C6 00 38 6C 38 76 ..0.....0f..8l8v
-FBA2  DC CC 76 00 60 60 C0 00 00 00 00 00 18 30 60 60 ..v.``.......0``
-FBB2  60 30 18 00 60 30 18 18 18 30 60 00 00 66 3C FF `0..`0...0`..f<.
-FBC2  3C 66 00 00 00 30 30 FC 30 30 00 00 00 00 00 00 <f...00.00......
-FBD2  00 30 30 60 00 00 00 FC 00 00 00 00 00 00 00 00 .00`............
-FBE2  00 30 30 00 06 0C 18 30 60 C0 80 00 7C C6 CE DE .00....0`...|...
-FBF2  F6 E6 7C 00 30 70 30 30 30 30 FC 00 78 CC 0C 38 ..|.0p0000..x..8
-FC02  60 CC FC 00 78 CC 0C 38 0C CC 78 00 1C 3C 6C CC `...x..8..x..<l.
-FC12  FE 0C 1E 00 FC C0 F8 0C 0C CC 78 00 38 60 C0 F8 ..........x.8`..
-FC22  CC CC 78 00 FC CC 0C 18 30 30 30 00 78 CC CC 78 ..x.....000.x..x
-FC32  CC CC 78 00 78 CC CC 7C 0C 18 70 00 00 30 30 00 ..x.x..|..p..00.
-FC42  00 30 30 00 00 30 30 00 00 30 30 60 18 30 60 C0 .00..00..00`.0`.
-FC52  60 30 18 00 00 00 FC 00 00 FC 00 00 60 30 18 0C `0..........`0..
-FC62  18 30 60 00 78 CC 0C 18 30 00 30 00 7C C6 DE DE .0`.x...0.0.|...
-FC72  DE C0 78 00 30 78 CC CC FC CC CC 00 FC 66 66 7C ..x.0x.......ff|
-FC82  66 66 FC 00 3C 66 C0 C0 C0 66 3C 00 F8 6C 66 66 ff..<f...f<..lff
-FC92  66 6C F8 00 FE 62 68 78 68 62 FE 00 FE 62 68 78 fl...bhxhb...bhx
-FCA2  68 60 F0 00 3C 66 C0 C0 CE 66 3E 00 CC CC CC FC h`..<f...f>.....
-FCB2  CC CC CC 00 78 30 30 30 30 30 78 00 1E 0C 0C 0C ....x00000x.....
-FCC2  CC CC 78 00 E6 66 6C 78 6C 66 E6 00 F0 60 60 60 ..x..flxlf...```
-FCD2  62 66 FE 00 C6 EE FE FE D6 C6 C6 00 C6 E6 F6 DE bf..............
-FCE2  CE C6 C6 00 38 6C C6 C6 C6 6C 38 00 FC 66 66 7C ....8l...l8..ff|
-FCF2  60 60 F0 00 78 CC CC CC DC 78 1C 00 FC 66 66 7C ``..x....x...ff|
-FD02  6C 66 E6 00 78 CC E0 70 1C CC 78 00 FC B4 30 30 lf..x..p..x...00
-FD12  30 30 78 00 CC CC CC CC CC CC FC 00 CC CC CC CC 00x.............
-FD22  CC 78 30 00 C6 C6 C6 D6 FE EE C6 00 C6 C6 6C 38 .x0...........l8
-FD32  38 6C C6 00 CC CC CC 78 30 30 78 00 FE C6 8C 18 8l.....x00x.....
-FD42  32 66 FE 00 78 60 60 60 60 60 78 00 C0 60 30 18 2f..x`````x..`0.
-FD52  0C 06 02 00 78 18 18 18 18 18 78 00 10 38 6C C6 ....x.....x..8l.
-FD62  00 00 00 00 00 00 00 00 00 00 00 FF 30 30 18 00 ............00..
-FD72  00 00 00 00 00 00 78 0C 7C CC 76 00 E0 60 60 7C ......x.|.v..``|
-FD82  66 66 DC 00 00 00 78 CC C0 CC 78 00 1C 0C 0C 7C ff....x...x....|
-FD92  CC CC 76 00 00 00 78 CC FC C0 78 00 38 6C 60 F0 ..v...x...x.8l`.
-FDA2  60 60 F0 00 00 00 76 CC CC 7C 0C F8 E0 60 6C 76 ``....v..|...`lv
-FDB2  66 66 E6 00 30 00 70 30 30 30 78 00 0C 00 0C 0C ff..0.p000x.....
-FDC2  0C CC CC 78 E0 60 66 6C 78 6C E6 00 70 30 30 30 ...x.`flxl..p000
-FDD2  30 30 78 00 00 00 CC FE FE D6 C6 00 00 00 F8 CC 00x.............
-FDE2  CC CC CC 00 00 00 78 CC CC CC 78 00 00 00 DC 66 ......x...x....f
-FDF2  66 7C 60 F0 00 00 76 CC CC 7C 0C 1E 00 00 DC 76 f|`...v..|.....v
-FE02  66 60 F0 00 00 00 7C C0 78 0C F8 00 10 30 7C 30 f`....|.x....0|0
-FE12  30 34 18 00 00 00 CC CC CC CC 76 00 00 00 CC CC 04........v.....
-FE22  CC 78 30 00 00 00 C6 D6 FE FE 6C 00 00 00 C6 6C .x0.......l....l
-FE32  38 6C C6 00 00 00 CC CC CC 7C 0C F8 00 00 FC 98 8l.......|......
-FE42  30 64 FC 00 1C 30 30 E0 30 30 1C 00 18 18 18 00 0d...00.00......
-FE52  18 18 18 00 E0 30 30 1C 30 30 E0 00 76 DC 00 00 .....00.00..v...
-FE62  00 00 00 00 00 10 38 6C C6 C6 FE 00             ......8l....
+FA33  C3				ret		
+FA34  90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 ................
+FA44  90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 ................
+FA54  90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 ................
+FA64  90 90 90 90 90 90 90 90 90 90 00 00 00 00 00 00 ................
+FA74  00 00 7E 81 A5 81 BD 99 81 7E 7E FF DB FF C3 E7 ..~......~~.....
+FA84  FF 7E 6C FE FE FE 7C 38 10 00 10 38 7C FE 7C 38 .~l...|8...8|.|8
+FA94  10 00 38 7C 38 FE FE 7C 38 7C 10 10 38 7C FE 7C ..8|8..|8|..8|.|
+FAA4  38 7C 00 00 18 3C 3C 18 00 00 FF FF E7 C3 C3 E7 8|...<<.........
+FAB4  FF FF 00 3C 66 42 42 66 3C 00 FF C3 99 BD BD 99 ...<fBBf<.......
+FAC4  C3 FF 0F 07 0F 7D CC CC CC 78 3C 66 66 66 3C 18 .....}...x<fff<.
+FAD4  7E 18 3F 33 3F 30 30 70 F0 E0 7F 63 7F 63 63 67 ~.?3?00p...c.ccg
+FAE4  E6 C0 99 5A 3C E7 E7 3C 5A 99 80 E0 F8 FE F8 E0 ...Z<..<Z.......
+FAF4  80 00 02 0E 3E FE 3E 0E 02 00 18 3C 7E 18 18 7E ....>.>....<~..~
+FB04  3C 18 66 66 66 66 66 00 66 00 7F DB DB 7B 1B 1B <.fffff.f....{..
+FB14  1B 00 3E 63 38 6C 6C 38 CC 78 00 00 00 00 7E 7E ..>c8ll8.x....~~
+FB24  7E 00 18 3C 7E 18 7E 3C 18 FF 18 3C 7E 18 18 18 ~..<~.~<...<~...
+FB34  18 00 18 18 18 18 7E 3C 18 00 00 18 0C FE 0C 18 ......~<........
+FB44  00 00 00 30 60 FE 60 30 00 00 00 00 C0 C0 C0 FE ...0`.`0........
+FB54  00 00 00 24 66 FF 66 24 00 00 00 18 3C 7E FF FF ...$f.f$....<~..
+FB64  00 00 00 FF FF 7E 3C 18 00 00 00 00 00 00 00 00 .....~<.........
+FB74  00 00 30 78 78 30 30 00 30 00 6C 6C 6C 00 00 00 ..0xx00.0.lll...
+FB84  00 00 6C 6C FE 6C FE 6C 6C 00 30 7C C0 78 0C F8 ..ll.l.ll.0|.x..
+FB94  30 00 00 C6 CC 18 30 66 C6 00 38 6C 38 76 DC CC 0.....0f..8l8v..
+FBA4  76 00 60 60 C0 00 00 00 00 00 18 30 60 60 60 30 v.``.......0```0
+FBB4  18 00 60 30 18 18 18 30 60 00 00 66 3C FF 3C 66 ..`0...0`..f<.<f
+FBC4  00 00 00 30 30 FC 30 30 00 00 00 00 00 00 00 30 ...00.00.......0
+FBD4  30 60 00 00 00 FC 00 00 00 00 00 00 00 00 00 30 0`.............0
+FBE4  30 00 06 0C 18 30 60 C0 80 00 7C C6 CE DE F6 E6 0....0`...|.....
+FBF4  7C 00 30 70 30 30 30 30 FC 00 78 CC 0C 38 60 CC |.0p0000..x..8`.
+FC04  FC 00 78 CC 0C 38 0C CC 78 00 1C 3C 6C CC FE 0C ..x..8..x..<l...
+FC14  1E 00 FC C0 F8 0C 0C CC 78 00 38 60 C0 F8 CC CC ........x.8`....
+FC24  78 00 FC CC 0C 18 30 30 30 00 78 CC CC 78 CC CC x.....000.x..x..
+FC34  78 00 78 CC CC 7C 0C 18 70 00 00 30 30 00 00 30 x.x..|..p..00..0
+FC44  30 00 00 30 30 00 00 30 30 60 18 30 60 C0 60 30 0..00..00`.0`.`0
+FC54  18 00 00 00 FC 00 00 FC 00 00 60 30 18 0C 18 30 ..........`0...0
+FC64  60 00 78 CC 0C 18 30 00 30 00 7C C6 DE DE DE C0 `.x...0.0.|.....
+FC74  78 00 30 78 CC CC FC CC CC 00 FC 66 66 7C 66 66 x.0x.......ff|ff
+FC84  FC 00 3C 66 C0 C0 C0 66 3C 00 F8 6C 66 66 66 6C ..<f...f<..lfffl
+FC94  F8 00 FE 62 68 78 68 62 FE 00 FE 62 68 78 68 60 ...bhxhb...bhxh`
+FCA4  F0 00 3C 66 C0 C0 CE 66 3E 00 CC CC CC FC CC CC ..<f...f>.......
+FCB4  CC 00 78 30 30 30 30 30 78 00 1E 0C 0C 0C CC CC ..x00000x.......
+FCC4  78 00 E6 66 6C 78 6C 66 E6 00 F0 60 60 60 62 66 x..flxlf...```bf
+FCD4  FE 00 C6 EE FE FE D6 C6 C6 00 C6 E6 F6 DE CE C6 ................
+FCE4  C6 00 38 6C C6 C6 C6 6C 38 00 FC 66 66 7C 60 60 ..8l...l8..ff|``
+FCF4  F0 00 78 CC CC CC DC 78 1C 00 FC 66 66 7C 6C 66 ..x....x...ff|lf
+FD04  E6 00 78 CC E0 70 1C CC 78 00 FC B4 30 30 30 30 ..x..p..x...0000
+FD14  78 00 CC CC CC CC CC CC FC 00 CC CC CC CC CC 78 x..............x
+FD24  30 00 C6 C6 C6 D6 FE EE C6 00 C6 C6 6C 38 38 6C 0...........l88l
+FD34  C6 00 CC CC CC 78 30 30 78 00 FE C6 8C 18 32 66 .....x00x.....2f
+FD44  FE 00 78 60 60 60 60 60 78 00 C0 60 30 18 0C 06 ..x`````x..`0...
+FD54  02 00 78 18 18 18 18 18 78 00 10 38 6C C6 00 00 ..x.....x..8l...
+FD64  00 00 00 00 00 00 00 00 00 FF 30 30 18 00 00 00 ..........00....
+FD74  00 00 00 00 78 0C 7C CC 76 00 E0 60 60 7C 66 66 ....x.|.v..``|ff
+FD84  DC 00 00 00 78 CC C0 CC 78 00 1C 0C 0C 7C CC CC ....x...x....|..
+FD94  76 00 00 00 78 CC FC C0 78 00 38 6C 60 F0 60 60 v...x...x.8l`.``
+FDA4  F0 00 00 00 76 CC CC 7C 0C F8 E0 60 6C 76 66 66 ....v..|...`lvff
+FDB4  E6 00 30 00 70 30 30 30 78 00 0C 00 0C 0C 0C CC ..0.p000x.......
+FDC4  CC 78 E0 60 66 6C 78 6C E6 00 70 30 30 30 30 30 .x.`flxl..p00000
+FDD4  78 00 00 00 CC FE FE D6 C6 00 00 00 F8 CC CC CC x...............
+FDE4  CC 00 00 00 78 CC CC CC 78 00 00 00 DC 66 66 7C ....x...x....ff|
+FDF4  60 F0 00 00 76 CC CC 7C 0C 1E 00 00 DC 76 66 60 `...v..|.....vf`
+FE04  F0 00 00 00 7C C0 78 0C F8 00 10 30 7C 30 30 34 ....|.x....0|004
+FE14  18 00 00 00 CC CC CC CC 76 00 00 00 CC CC CC 78 ........v......x
+FE24  30 00 00 00 C6 D6 FE FE 6C 00 00 00 C6 6C 38 6C 0.......l....l8l
+FE34  C6 00 00 00 CC CC CC 7C 0C F8 00 00 FC 98 30 64 .......|......0d
+FE44  FC 00 1C 30 30 E0 30 30 1C 00 18 18 18 00 18 18 ...00.00........
+FE54  18 00 E0 30 30 1C 30 30 E0 00 76 DC 00 00 00 00 ...00.00..v.....
+FE64  00 00 00 10 38 6C C6 C6 FE 00                   ....8l....
 
 
 endp	title_print
@@ -39534,13 +39567,13 @@ FE76  FA				cli
 FE77  0A E4				or		ah,ah
 
 	jz	@@read				; Read time, ah=0
-FE79  74 12				je		L$309
+FE79  74 12				je		L$311
 
 	dec	ah
 FE7B  FE CC				dec		ah
 
 	jnz	@@end				;   invalid request
-FE7D  75 19				jne		L$310
+FE7D  75 19				jne		L$312
 
 
 @@set:
@@ -39554,23 +39587,23 @@ FE83  89 0E 6E 04			mov		word ptr ds:[0x46e],cx
 FE87  88 26 70 04			mov		byte ptr ds:[0x470],ah
 
 	jmp	short @@end
-FE8B  EB 0B				jmp		L$310
+FE8B  EB 0B				jmp		L$312
 
 
 @@read:
 	mov	cx, [ds:46Eh]			; Read low order time
-FE8D				L$309:
+FE8D				L$311:
 FE8D  8B 0E 6E 04			mov		cx,word ptr ds:[0x46e]
 
 	mov	dx, [ds:46Ch]			;   high order time
 FE91  8B 16 6C 04			mov		dx,word ptr ds:[0x46c]
 
 	call	near @@reset			; Read resets overflow
-FE95  E8 03 00				call		L$311
+FE95  E8 03 00				call		L$313
 
 
 @@end:	sti					; Resume clock
-FE98				L$310:
+FE98				L$312:
 FE98  FB				sti		
 
 	pop	ds
@@ -39582,7 +39615,7 @@ FE9A  CF				iret
 
 @@reset:
 	mov	al, [ds:470h]			; Zero the overflow and return
-FE9B				L$311:
+FE9B				L$313:
 FE9B  A0 70 04				mov		al,byte ptr ds:[0x470]
 
 	xor	[ds:470h], al			;   previous status in flags
@@ -39629,7 +39662,7 @@ FEAB  8E D8				mov		ds,ax
 FEAD  FE 0E 40 04			dec		byte ptr ds:[0x440]
 
 	jnz	@@increment			;   not time to shut off
-FEB1  75 0B				jne		L$312
+FEB1  75 0B				jne		L$314
 
 
 	and	[byte ds:43Fh], 11110000b	; Else show motor off
@@ -39647,11 +39680,11 @@ FEBD  EE				out		dx,al
 
 @@increment:
 	inc	[word ds:46Ch]			; Bump low order time of day
-FEBE				L$312:
+FEBE				L$314:
 FEBE  FF 06 6C 04			inc		word ptr ds:[0x46c]
 
 	jnz	@@check_midnight		;   no carry
-FEC2  75 04				jne		L$313
+FEC2  75 04				jne		L$315
 
 	inc	[word ds:46Eh]			; Bump high order time of day
 FEC4  FF 06 6E 04			inc		word ptr ds:[0x46e]
@@ -39659,17 +39692,17 @@ FEC4  FF 06 6E 04			inc		word ptr ds:[0x46e]
 
 @@check_midnight:
 	cmp	[word ds:46Eh], 18h		; Is it midnight yet?
-FEC8				L$313:
+FEC8				L$315:
 FEC8  83 3E 6E 04 18			cmp		word ptr ds:[0x46e],0x0018
 
 	jnz	@@user				;   no
-FECD  75 15				jne		L$314
+FECD  75 15				jne		L$316
 
 	cmp	[word ds:46Ch], 0B0h		; Possibly, check low order
 FECF  81 3E 6C 04 B0 00			cmp		word ptr ds:[0x46c],0x00b0
 
 	jnz	@@user				;   not midnight
-FED5  75 0D				jne		L$314
+FED5  75 0D				jne		L$316
 
 
 	xor	ax, ax
@@ -39687,7 +39720,7 @@ FEDF  C6 06 70 04 01			mov		byte ptr ds:[0x470],0x01
 
 @@user:
 	int	1Ch				; Execute user clock service
-FEE4				L$314:
+FEE4				L$316:
 FEE4  CD 1C				int		0x1c
 
 	mov	al, 20h 			;   send end_of_interrupt
@@ -39726,29 +39759,29 @@ FEF0  CD 16				int		0x16
 
 	ret
 FEF2  C3				ret		
-FEF3  A5 FE                                           DW	offset L$351
-FEF5  87 E9                                           DW	offset L$327
-FEF7  23 FF                                           DW	offset L$352
-FEF9  23 FF                                           DW	offset L$352
-FEFB  23 FF                                           DW	offset L$352
-FEFD  23 FF                                           DW	offset L$352
-FEFF  57 EF                                           DW	offset L$329
-FF01  23 FF                                           DW	offset L$352
-FF03  65 F0                                           DW	offset L$332
-FF05  4D F8                                           DW	offset L$348
-FF07  41 F8                                           DW	offset L$347
-FF09  59 EC                                           DW	offset L$328
-FF0B  39 E7                                           DW	offset L$325
-FF0D  59 F8                                           DW	offset L$349
-FF0F  2E E8                                           DW	offset L$326
-FF11  D2 EF                                           DW	offset L$331
-FF13  23 FF                                           DW	offset L$352
-FF15  F2 E6                                           DW	offset L$324
-FF17  6E FE                                           DW	offset L$350
-FF19  53 FF                                           DW	offset L$353
-FF1B  53 FF                                           DW	offset L$353
-FF1D  A4 F0                                           DW	offset L$333
-FF1F  C7 EF                                           DW	offset L$330
+FEF3  A5 FE                                           DW	offset L$353
+FEF5  87 E9                                           DW	offset L$329
+FEF7  23 FF                                           DW	offset L$354
+FEF9  23 FF                                           DW	offset L$354
+FEFB  23 FF                                           DW	offset L$354
+FEFD  23 FF                                           DW	offset L$354
+FEFF  57 EF                                           DW	offset L$331
+FF01  23 FF                                           DW	offset L$354
+FF03  65 F0                                           DW	offset L$334
+FF05  4D F8                                           DW	offset L$350
+FF07  41 F8                                           DW	offset L$349
+FF09  59 EC                                           DW	offset L$330
+FF0B  39 E7                                           DW	offset L$327
+FF0D  59 F8                                           DW	offset L$351
+FF0F  2E E8                                           DW	offset L$328
+FF11  D2 EF                                           DW	offset L$333
+FF13  23 FF                                           DW	offset L$354
+FF15  F2 E6                                           DW	offset L$326
+FF17  6E FE                                           DW	offset L$352
+FF19  53 FF                                           DW	offset L$355
+FF1B  53 FF                                           DW	offset L$355
+FF1D  A4 F0                                           DW	offset L$335
+FF1F  C7 EF                                           DW	offset L$332
 FF21  00 00                                           ..
 
 
@@ -39830,18 +39863,18 @@ FF31  8A E0				mov		ah,al
 FF33  0A C0				or		al,al
 
 	jnz	@@hardware
-FF35  75 04				jne		L$315
+FF35  75 04				jne		L$317
 
 	mov	al, 0FFh			; Not hardware, say 0FFh IRQ
 FF37  B0 FF				mov		al,0xff
 
 	jmp	short @@done
-FF39  EB 0A				jmp		L$316
+FF39  EB 0A				jmp		L$318
 
 
 @@hardware:
 	in	al, 21h 			; Clear the IRQ
-FF3B				L$315:
+FF3B				L$317:
 FF3B  E4 21				in		al,0x21
 
 	or	al, ah
@@ -39859,7 +39892,7 @@ FF43  E6 20				out		0x20,al
 
 @@done:
 	mov	[ds:46Bh], ah			; Save last nonsense interrupt
-FF45				L$316:
+FF45				L$318:
 FF45  88 26 6B 04			mov		byte ptr ds:[0x46b],ah
 
 
@@ -39934,7 +39967,7 @@ FF5C  8E D8				mov		ds,ax
 FF5E  80 3E 00 05 01			cmp		byte ptr ds:[0x500],0x01
 
 	jz	@@done				;   yes, ignore
-FF63  74 56				je		L$321
+FF63  74 56				je		L$323
 
 
 	mov	[byte ds:500h], 1		; Flag print screen in progress
@@ -39978,7 +40011,7 @@ FF7C  33 D2				xor		dx,dx
 
 @@loop:
 	mov	ah, 2				; Set cursor to position
-FF7E				L$317:
+FF7E				L$319:
 FF7E  B4 02				mov		ah,0x02
 
 	int	10h
@@ -39994,7 +40027,7 @@ FF84  CD 10				int		0x10
 FF86  0A C0				or		al,al
 
 	jnz	@@print_char
-FF88  75 02				jne		L$318
+FF88  75 02				jne		L$320
 
 	mov	al, ' ' 			;   convert to spaces
 FF8A  B0 20				mov		al,0x20
@@ -40002,7 +40035,7 @@ FF8A  B0 20				mov		al,0x20
 
 @@print_char:
 	push	dx
-FF8C				L$318:
+FF8C				L$320:
 FF8C  52				push		dx
 
 	xor	dx, dx
@@ -40021,25 +40054,25 @@ FF93  5A				pop		dx
 FF94  F6 C4 25				test		ah,0x25
 
 	jz	@@next_char
-FF97  74 07				je		L$319
+FF97  74 07				je		L$321
 
 	mov	[byte ds:500h], 0FFh		; No, error in Print Screen
 FF99  C6 06 00 05 FF			mov		byte ptr ds:[0x500],0xff
 
 	jmp	short @@restore_cursor
-FF9E  EB 16				jmp		L$320
+FF9E  EB 16				jmp		L$322
 
 
 @@next_char:
 	inc	dl				; Increment column count
-FFA0				L$319:
+FFA0				L$321:
 FFA0  FE C2				inc		dl
 
 	cmp	cl, dl
 FFA2  3A CA				cmp		cl,dl
 
 	jnz	@@loop				;   in range, continue
-FFA4  75 D8				jne		L$317
+FFA4  75 D8				jne		L$319
 
 	mov	dl, 0
 FFA6  B2 00				mov		dl,0x00
@@ -40054,7 +40087,7 @@ FFAB  FE C6				inc		dh
 FFAD  3A F5				cmp		dh,ch
 
 	jnz	@@loop				;   no, continue
-FFAF  75 CD				jne		L$317
+FFAF  75 CD				jne		L$319
 
 	mov	[byte ds:500h], 0		; Show done Print Screen OK
 FFB1  C6 06 00 05 00			mov		byte ptr ds:[0x500],0x00
@@ -40062,7 +40095,7 @@ FFB1  C6 06 00 05 00			mov		byte ptr ds:[0x500],0x00
 
 @@restore_cursor:
 	pop	dx				; Get saved cursor position
-FFB6				L$320:
+FFB6				L$322:
 FFB6  5A				pop		dx
 
 	mov	ah, 2
@@ -40074,7 +40107,7 @@ FFB9  CD 10				int		0x10
 
 @@done:
 	pop	dx
-FFBB				L$321:
+FFBB				L$323:
 FFBB  5A				pop		dx
 
 	pop	cx
@@ -40140,7 +40173,7 @@ FFDC  56 32 30 20 43 50 55 20 28 00 38 30 38 37 20 46 V20 CPU (.8087 F
 FFEC  50 55 29 00                                     PU).
 FFF0				power:
 FFF0  EA                                              .
-FFF1  5B E0                                           DW	offset L$322
+FFF1  5B E0                                           DW	offset L$324
 FFF3  00 F0 31 30 2F 32 38 2F 31 37 00 FE             ..10/28/17..
 
 Routine Size: 65535 bytes,    Routine Base: code + 0000

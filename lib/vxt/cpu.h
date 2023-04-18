@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -24,6 +24,15 @@
 #define _CPU_H_
 
 #include "common.h"
+
+// TODO: This need some more work.
+#if !defined(VXT_NO_PREFETCH) && defined(PI8088)
+   #define VXT_NO_PREFETCH
+#endif
+
+#ifndef VXT_NO_PREFETCH
+   //#define VXT_DEBUG_PREFETCH
+#endif
 
 #define VALIDATOR_BEGIN(p, regs) { if ((p)->validator) (p)->validator->begin((regs), (p)->validator->userdata); }
 #define VALIDATOR_END(p, name, op, mod, cycles, regs) { if ((p)->validator) (p)->validator->end((name), (op), (mod), (cycles), (regs), (p)->validator->userdata); }
@@ -42,6 +51,8 @@ struct cpu {
    int cycles, ea_cycles;
    vxt_word inst_start;
 
+   enum vxt_cpu_type cpu_type;
+   const struct instruction *opcode_table;
    int opcode_zero_count;
 
    vxt_byte opcode, repeat;
@@ -50,14 +61,26 @@ struct cpu {
    vxt_word seg;
    vxt_byte seg_override;
 
+   int bus_transfers;
+
+   bool inst_queue_dirty;
+   int inst_queue_count;
+   vxt_byte inst_queue[6];
+   vxt_pointer inst_queue_debug[6];
+
    void (*tracer)(vxt_system*,vxt_pointer,vxt_byte);
    const struct vxt_validator *validator;
    struct vxt_pirepheral *pic;
    vxt_system *s;
 };
 
-extern void cpu_reset(CONSTSP(cpu) p);
-extern void cpu_reset_cycle_count(CONSTSP(cpu) p);
-extern int cpu_step(CONSTSP(cpu) p);
+void cpu_init(CONSTSP(cpu) p, vxt_system *s, enum vxt_cpu_type ty);
+vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr);
+void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data);
+vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr);
+void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data);
+void cpu_reset(CONSTSP(cpu) p);
+void cpu_reset_cycle_count(CONSTSP(cpu) p);
+int cpu_step(CONSTSP(cpu) p);
 
 #endif

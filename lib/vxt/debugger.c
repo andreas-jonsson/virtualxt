@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -302,11 +302,12 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     vxt_system_install_io_at(s, p, 0xE9);
     vxt_system_install_io_at(s, p, 0x500);
     vxt_system_install_mem(s, p, 0, 0xFFFFF);
+    vxt_system_install_timer(s, p, 0);
     return VXT_NO_ERROR;
 }
 
-static vxt_error step(struct vxt_pirepheral *p, int cycles) {
-    VXT_DEC_DEVICE(dbg, debugger, p); UNUSED(cycles);
+static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+    VXT_DEC_DEVICE(dbg, debugger, p); UNUSED(id); UNUSED(cycles);
     vxt_system *s = vxt_pirepheral_system(p);
     CONSTSP(vxt_registers) regs = vxt_system_registers(s);
 
@@ -326,11 +327,6 @@ static vxt_error step(struct vxt_pirepheral *p, int cycles) {
     return err;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(vxt_pirepheral_system(p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
     UNUSED(p); return VXT_PCLASS_DEBUGGER;
 }
@@ -345,24 +341,18 @@ void vxtu_debugger_interrupt(struct vxt_pirepheral *p) {
     dbg->print("\aInterrupted!\n");
 }
 
-struct vxt_pirepheral *vxtu_debugger_create(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(debugger));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(debugger));
-    VXT_DEC_DEVICE(d, debugger, p);
+struct vxt_pirepheral *vxtu_debugger_create(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface) VXT_PIREPHERAL_CREATE(alloc, debugger, {
+    DEVICE->pdisasm = interface->pdisasm;
+    DEVICE->getline = interface->getline;
+    DEVICE->print = interface->print;
+    DEVICE->breakpoint = DEVICE->until = DEVICE->watch = -1;
 
-    d->pdisasm = interface->pdisasm;
-    d->getline = interface->getline;
-    d->print = interface->print;
-    d->breakpoint = d->until = d->watch = -1;
-
-    p->install = &install;
-    p->destroy = &destroy;
-    p->step = &step;
-    p->pclass = &pclass;
-    p->name = &name;
-    p->io.read = &read;
-    p->io.write = &write;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.read = &read;
+    PIREPHERAL->io.write = &write;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})

@@ -10,11 +10,9 @@ mkdir -p $APP_DIR/usr/lib/x86_64-linux-gnu $APP_DIR/lib64 $APP_DIR/bios $APP_DIR
 DST="$APP_DIR/usr/lib/x86_64-linux-gnu"
 SRC="/usr/lib/x86_64-linux-gnu"
 
-cp "${GITHUB_WORKSPACE}/sdl_bin/lib/libSDL2*.so*" $APP_DIR/usr/lib
-
-#cp $SRC/libc.so* $DST
-#cp $SRC/libm.so* $DST
-#cp /lib64/ld-linux-x86-64.so* $APP_DIR/lib64/
+#cp $SRC/libc.so* $APP_DIR/lib64/
+#cp $SRC/libm.so* $APP_DIR/lib64/
+cp /lib64/ld-linux-x86-64.so* $APP_DIR/lib64/
 
 # Required for network support.
 cp $SRC/libpcap.so* $DST
@@ -29,6 +27,7 @@ cp $SRC/libgpg-error.so* $DST
 
 cp build/bin/virtualxt $APP_DIR/
 cp bios/pcxtbios.bin $APP_DIR/bios/
+cp bios/pcxtbios_640.bin $APP_DIR/bios/
 cp bios/glabios.bin $APP_DIR/bios/
 cp bios/vxtx.bin $APP_DIR/bios/
 cp boot/freedos_hd.img $APP_DIR/boot/

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -36,9 +36,8 @@ static vxt_byte bitshift_8(CONSTSP(cpu) p, vxt_byte v, vxt_byte c) {
 	if (c == 0)
 		return v;
 
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+   if (p->cpu_type != VXT_CPU_8088)
 	   c &= 0x1F;
-   #endif
 
    vxt_byte o = v;
    vxt_byte s;
@@ -120,9 +119,8 @@ static vxt_word bitshift_16(CONSTSP(cpu) p, vxt_word v, vxt_byte c) {
 	if (c == 0)
 		return v;
 
-   #if defined(VXT_CPU_286) || defined(VXT_CPU_V20)
+   if (p->cpu_type != VXT_CPU_8088)
 	   c &= 0x1F;
-   #endif
 
    vxt_word o = v;
    vxt_word s;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -36,15 +36,10 @@
 extern void (*breakpoint)(void);
 
 #ifdef VXT_LIBC
-   #include <string.h>
-   #include <stdio.h>
-   #include <stdlib.h>
-   #include <stddef.h>
-
+   void abort(void);
    #define ABORT() { breakpoint(); abort(); }
 #else
-   static volatile int *_just_null = NULL;
-   #define ABORT() { breakpoint(); *_just_null = 0; for(;;); }
+   #define ABORT() { breakpoint(); static volatile int *_null = NULL; *_null = 0; for(;;); }
 #endif
 
 // Host to 8088 endian conversion.

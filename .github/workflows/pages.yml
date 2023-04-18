@@ -6,11 +6,8 @@ on:
 
   workflow_dispatch:
 
-env:
-  ZIG_VERSION: 0.10.0
-
 jobs:
-  linux-pages:
+  pages-build:
     name: Pages
     runs-on: ubuntu-latest
 
@@ -23,24 +20,28 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install doxygen
-          curl -L -o zig.tar.xz https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz && tar -xf zig.tar.xz
-          echo "${GITHUB_WORKSPACE}/zig-linux-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
+          curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
+          echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
       
       - name: Test
-        run: zig build test
+        run: |
+          premake5 check
+          premake5 --test gmake
+          make clean test
 
       - name: Build
-        run: zig build web -Drelease-fast -Dv20
+        run: |
+          premake5 gmake
+          make clean web-frontend
 
       - name: Docs
-        run: zig build doc
+        run: premake5 doc
 
       - name: Package
         run: |
           mkdir gh-pages
           echo -n app.virtualxt.org > gh-pages/CNAME
           cp -r docs gh-pages
-          rm build/web/*.o
           cp -r build/web/* gh-pages
 
       - name: Deploy

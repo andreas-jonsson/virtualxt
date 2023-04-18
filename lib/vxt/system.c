@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -42,6 +42,20 @@
    int (*_vxt_logger)(const char*, ...) = &no_print;
 #endif
 
+static vxt_error update_timers(CONSTP(vxt_system) s, int ticks) {
+    for (int i = 0; i < s->num_timers; i++) {
+        struct timer *t = &s->timers[i];
+        t->ticks += ticks;
+        if (t->ticks >= (INT64)(t->interval * (double)s->frequency)) {
+            vxt_error err = t->dev->timer(t->dev, t->id, (int)t->ticks);
+            if (err != VXT_NO_ERROR)
+                return err;
+            t->ticks = 0;
+        }
+    }
+    return VXT_NO_ERROR;
+}
+
 static void no_breakpoint(void) {}
 void (*breakpoint)(void) = &no_breakpoint;
 
@@ -68,12 +82,13 @@ void vxt_set_breakpoint(void (*f)(void)) {
     breakpoint = f;
 }
 
-vxt_system *vxt_system_create(vxt_allocator *alloc, struct vxt_pirepheral * const devs[]) {
+vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]) {
     vxt_system *s = (vxt_system*)alloc(NULL, sizeof(struct system));
     vxt_memclear(s, sizeof(struct system));
     s->alloc = alloc;
-    s->cpu.s = s;
-
+    s->frequency = frequency;
+    cpu_init(&s->cpu, s, ty);
+    
     int i = 1;
     for (; devs && devs[i-1]; i++) {
         s->devices[i] = devs[i-1];
@@ -113,7 +128,7 @@ vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, unsigned reg_size, int v_
 }
 
 TEST(system_initialize,
-    CONSTP(vxt_system) sp = vxt_system_create(TALLOC, NULL);
+    CONSTP(vxt_system) sp = vxt_system_create(TALLOC, VXT_CPU_V20, VXT_DEFAULT_FREQUENCY, NULL);
     TENSURE(sp);
     TENSURE_NO_ERR(vxt_system_initialize(sp));
     vxt_system_destroy(sp);
@@ -126,11 +141,13 @@ vxt_error vxt_system_destroy(CONSTP(vxt_system) s) {
     }
 
     for (int i = 0; i < s->num_devices; i++) {
-        CONSTSP(vxt_pirepheral) d = s->devices[i];
+        struct vxt_pirepheral *d = s->devices[i];
         if (d->destroy) {
             vxt_error (*destroy)(struct vxt_pirepheral*) = d->destroy;
             vxt_error err = destroy(d);
             if (err) return err;
+        } else {
+            s->alloc(d, 0);
         }
     }
     s->alloc(s, 0);
@@ -166,13 +183,8 @@ struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
         step.cycles += c;
         step.halted = s->cpu.halt;
 
-        for (int i = 0; i < s->num_devices; i++) {
-            CONSTSP(vxt_pirepheral) d = s->devices[i];
-            if (d->step) {
-                if ((step.err = d->step(d, c)) != VXT_NO_ERROR)
-                    return step;
-            }
-        }
+        if ((step.err = update_timers(s, c)) != VXT_NO_ERROR)
+            return step;
 
         if (newc >= cycles)
             return step;
@@ -228,16 +240,23 @@ void vxt_system_interrupt(CONSTP(vxt_system) s, int n) {
         s->cpu.pic->pic.irq(s->cpu.pic, n);
 }
 
-bool vxt_system_a20(vxt_system *s) {
-    return s->a20_enable;
+int vxt_system_frequency(CONSTP(vxt_system) s) {
+    return s->frequency;
 }
 
-void vxt_system_set_a20(vxt_system *s, bool b) {
-    #ifdef VXT_CPU_286
-        s->a20_enable = b;
-    #else
-        (void)s; (void)b;
-    #endif
+void vxt_system_set_frequency(CONSTP(vxt_system) s, int freq) {
+    s->frequency = freq;
+}
+
+vxt_timer_id vxt_system_install_timer(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, unsigned int us) {
+    if (s->num_timers >= MAX_TIMERS)
+        return VXT_INVALID_TIMER_ID;
+    struct timer *t = &s->timers[s->num_timers];
+    t->ticks = 0;
+    t->interval = (double)us / 1000000.0;
+    t->dev = dev;
+    t->id = (vxt_timer_id)s->num_timers++;
+    return t->id;
 }
 
 void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word addr) {
@@ -262,33 +281,15 @@ void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vx
 }
 
 vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
-    #ifdef VXT_CPU_286
-        if ((addr > 0xFFFFF) && s->a20_enable) {
-            addr &= (VXT_EXTENDED_MEMORY_MASK | 0xFFFFF);
-            return s->high_mem[addr - 0x100000];
-        }
-    #endif
-
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
-    vxt_byte data = dev->io.read(dev, addr);
-    VALIDATOR_READ(&s->cpu, addr, data);
-    return data;
+    return dev->io.read(dev, addr);
 }
 
 void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
-    #ifdef VXT_CPU_286
-        if ((addr > 0xFFFFF) && s->a20_enable) {
-            addr &= (VXT_EXTENDED_MEMORY_MASK | 0xFFFFF);
-            s->high_mem[addr - 0x100000] = data;
-            return;
-        }
-    #endif
-
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
     dev->io.write(dev, addr, data);
-    VALIDATOR_WRITE(&s->cpu, addr, data);
 }
 
 vxt_word vxt_system_read_word(CONSTP(vxt_system) s, vxt_pointer addr) {
@@ -302,12 +303,14 @@ void vxt_system_write_word(CONSTP(vxt_system) s, vxt_pointer addr, vxt_word data
 
 vxt_byte system_in(CONSTP(vxt_system) s, vxt_word port) {
     CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
+    s->cpu.bus_transfers++;
     VALIDATOR_DISCARD(&s->cpu);
     return dev->io.in(dev, port);
 }
 
 void system_out(CONSTP(vxt_system) s, vxt_word port, vxt_byte data) {
     CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
+    s->cpu.bus_transfers++;
     VALIDATOR_DISCARD(&s->cpu);
     dev->io.out(dev, port, data);
 }

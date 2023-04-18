@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -46,12 +46,8 @@ static struct Test {
 #define TENSURE_NO_ERR(e)  { vxt_error __err = (e); TASSERT(__err == VXT_NO_ERROR, "%s", vxt_error_str(__err)); }
 #define TEST(n, ...)       int test_ ## n (struct Test T) { T.name = #n ; { __VA_ARGS__ } return 0; }
 #define TLOG(...)          { fprintf(T.output, __VA_ARGS__); fprintf(T.output, "%s", "\n"); }
-#define TALLOC             test_malloc
-#define TFREE(p)           { void *_ = test_malloc(p, 0); (void)_; }
-
-static void *test_malloc(void *p, int s) {
-   return realloc(p, s);
-}
+#define TALLOC             realloc
+#define TFREE(p)           { void *_ = realloc(p, 0); (void)_; }
 
 static bool run_test(int (*t)(struct Test T)) {
    if (!test_state.output) test_state.output = stderr;

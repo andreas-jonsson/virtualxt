@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 #include <errno.h>
 
 #define VXT_LIBC
@@ -39,8 +40,9 @@
 #define HW_REVISION 1
 
 #define NL "\n"
-#define DEBUG(...) log(LOG_DEBUG, __VA_ARGS__)
-#define ERROR(...) { log(LOG_ERROR, "ERROR: " __VA_ARGS__); abort(); }
+#define LOG print_log
+#define DEBUG(...) LOG(LOG_DEBUG, __VA_ARGS__)
+#define ERROR(...) { LOG(LOG_ERROR, "ERROR: " __VA_ARGS__); abort(); }
 #define ENSURE(e) if (!(e)) ERROR("Ensure failed!")
 #define ASSERT(e, ...) if (!(e)) ERROR(__VA_ARGS__)
 
@@ -140,7 +142,7 @@ const enum log_level {
 	LOG_SILENT
 } level = LOG_INFO;
 
-static int log(const enum log_level lv, const char *fmt, ...) {
+static int print_log(const enum log_level lv, const char *fmt, ...) {
 	va_list va;
 	va_start(va, fmt);
 
@@ -297,7 +299,7 @@ static vxt_byte validate_data_read(vxt_pointer addr) {
 
 			// TODO: This is a bug in the validator! The emulator needs to indicate data or code fetch to avoid this.
 			if ((cpu_memory_access != ACC_CODE_OR_NONE) && (abs((int)addr - (int)next_inst_addr) < 6)) {
-				log(LOG_INFO, "Fetching next instruction as data is not supported!" NL);
+				LOG(LOG_INFO, "Fetching next instruction as data is not supported!" NL);
 				code_as_data_skip = true;
 				state = STATE_FINISHED;
 				return 0;
@@ -392,7 +394,7 @@ static void execute_bus_cycle(void) {
 }
 
 static void init_pins(void) {
-	log(LOG_INFO, "Initialize pins..." NL);
+	LOG(LOG_INFO, "Initialize pins..." NL);
 
 	// Output pins.
 
@@ -562,7 +564,7 @@ static void end(const char *name, vxt_byte opcode, bool modregrm, int cycles, st
 	if ((ip_addr >= 0xFFFF0) || (ip_addr <= 0xFF))
 		current_frame.discard = true;
 
-	log(LOG_INFO, "%s: %s (0x%X) @ %0*X:%0*X" NL, current_frame.discard ? "DISCARD" : "VALIDATE", name, opcode, 4, current_frame.regs->cs, 4, current_frame.regs->ip);
+	LOG(LOG_INFO, "%s: %s (0x%X) @ %0*X:%0*X" NL, current_frame.discard ? "DISCARD" : "VALIDATE", name, opcode, 4, current_frame.regs->cs, 4, current_frame.regs->ip);
 	if (current_frame.discard)
 		return;
 
@@ -619,7 +621,7 @@ static void end(const char *name, vxt_byte opcode, bool modregrm, int cycles, st
 	validate_registers();
 
 	//if (executed_cycles != cycles)
-	//	log(LOG_WARNING, "WARNING: Unexpected cycle timing! EMU: %d, CPU: %d" NL, cycles, executed_cycles);
+	//	LOG(LOG_WARNING, "WARNING: Unexpected cycle timing! EMU: %d, CPU: %d" NL, cycles, executed_cycles);
 }
 
 static void rw_byte(struct mem_op *rw_op, vxt_pointer addr, vxt_byte data) {
@@ -658,7 +660,7 @@ static vxt_error initialize(vxt_system *s, void *userdata) {
 
 	printf("VirtualXT Hardware Validator\nRev: %d\n\n", HW_REVISION);
 	if (!(chip = gpiod_chip_open_by_name("gpiochip0"))) {
-		log(LOG_ERROR, "Could not connect GPIO chip!" NL);
+		LOG(LOG_ERROR, "Could not connect GPIO chip!" NL);
 		return -1;
 	}
 
@@ -675,7 +677,7 @@ static vxt_error initialize(vxt_system *s, void *userdata) {
 
 static vxt_error destroy(void *userdata) {
 	(void)userdata;
-	log(LOG_INFO, "Cleanup..." NL);
+	LOG(LOG_INFO, "Cleanup..." NL);
 
 	allocator(load_code, 0);
 	allocator(store_code, 0);
@@ -701,7 +703,7 @@ static vxt_error destroy(void *userdata) {
 	
 	gpiod_chip_close(chip);
 
-	log(LOG_INFO, "Cleanup done!" NL);
+	LOG(LOG_INFO, "Cleanup done!" NL);
 	return VXT_NO_ERROR;
 }
 

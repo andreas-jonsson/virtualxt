@@ -1,0 +1,98 @@
+name: Libretro
+
+on:
+  push:
+    branches: [ "develop", "edge", "release" ]
+  pull_request:
+    branches: [ "develop" ]
+
+  workflow_dispatch:
+
+env:
+  VXT_VERSION: 0.8.0
+  ZIG_VERSION: 0.10.1
+  ZIG_ARCHS: "x86_64-linux-gnu i386-linux-gnu aarch64-linux-gnu arm-linux-gnueabi x86_64-macos-none aarch64-macos-none"
+  NDK_VERSION: r20
+  NDK_ARCHS: "aarch64-linux-android armv7a-linux-androideabi x86_64-linux-android i686-linux-android"
+
+jobs:
+  libretro-build:
+    name: Libretro
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: base-devel mingw-w64-x86_64-toolchain
+      
+      - name: Setup
+        run: |
+          curl -L -o ndk.zip https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-windows-x86_64.zip && unzip ndk.zip
+          curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o premake5.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-windows.zip && mkdir premake5 && unzip premake5.zip -d premake5
+          curl -L -o zig.zip https://ziglang.org/download/${ZIG_VERSION}/zig-windows-x86_64-${ZIG_VERSION}.zip && unzip zig.zip
+
+          echo "${GITHUB_WORKSPACE}/zig-windows-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+
+          mkdir -p package/virtualxt
+          cp front/libretro/*.info package/virtualxt
+
+      - name: Test
+        shell: msys2 {0}
+        run: |
+          PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
+          premake5 --test --cc=gcc gmake
+          make clean test
+      
+      - name: Build (Windows)
+        shell: msys2 {0}
+        run: |
+          PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
+          premake5 --cc=gcc gmake
+          make clean libretro-frontend
+          mkdir package/virtualxt/x86_64-windows-gnu
+          cp build/lib/*.dll package/virtualxt/x86_64-windows-gnu
+
+      - name: Build (Android)
+        env:
+          CLANG_PATH: "./android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/windows-x86_64/bin"
+        run: |
+          premake5 --cc=clang --os=android gmake
+          for arch in ${NDK_ARCHS}; do
+            echo Building ${arch}...
+            rm -rf build/lib
+            make CC="${CLANG_PATH}/${arch}21-clang" LD="${CLANG_PATH}/llvm-ld" AR="${CLANG_PATH}/llvm-ar" clean libretro-frontend
+            mkdir package/virtualxt/${arch}
+            cp build/lib/*.so package/virtualxt/${arch}
+          done
+
+      - name: Build (Unix)
+        run: |
+          premake5 --cc=clang --os=linux gmake
+          for arch in ${ZIG_ARCHS}; do
+            echo Building ${arch}...
+            rm -rf build/lib
+            make CC="zig cc -target ${arch}" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
+            mkdir package/virtualxt/${arch}
+            cp build/lib/*.so package/virtualxt/${arch}
+          done
+
+      - name: Package & Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push-libretro.sh; fi

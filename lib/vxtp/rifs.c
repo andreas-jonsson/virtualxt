@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,7 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2022 Andreas T Jonsson <mail@andreasjonsson.se>
+//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -260,7 +260,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
                 break;
             }
 
-            assert((ln + 2) <= (BUFFER_SIZE - sizeof(struct rifs_packet)));
+            assert((ln + 2) <= (vxt_word)(BUFFER_SIZE - sizeof(struct rifs_packet)));
             size_t res = fread(pk->data + 2, 1, (size_t)ln, fp);
             if ((res != (size_t)ln) && !feof(fp)) {
                 pk->cmd = 0x1E; // Read fault
@@ -480,11 +480,6 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    vxt_system_allocator(VXT_GET_SYSTEM(rifs, p))(p, 0);
-    return VXT_NO_ERROR;
-}
-
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(fs, rifs, p);
     for (int i = 0; i < MAX_DOS_PROC; i++) {
@@ -506,25 +501,19 @@ static const char *name(struct vxt_pirepheral *p) {
     return "RIFS Server";
 }
 
-struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root, bool ro) {
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(rifs));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(rifs));
-    VXT_DEC_DEVICE(fs, rifs, p);
-
+struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root, bool ro) VXT_PIREPHERAL_CREATE(alloc, rifs, {
     // This is still a beta feature. Be safe!
     if (!ro)
         printf("WARNING: '%s' is writable from guest!\n", root);
 
-    fs->readonly = ro;
-    fs->base_port = base_port;
+    DEVICE->readonly = ro;
+    DEVICE->base_port = base_port;
     // TODO: Add autoexec.
-    rifs_copy_root(fs->root_path, root);
+    rifs_copy_root(DEVICE->root_path, root);
 
-    p->install = &install;
-    p->destroy = &destroy;
-    p->name = &name;
-    p->reset = &reset;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
