@@ -63,8 +63,49 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
 }
 
 static vxt_error setup_adapter(struct isa *d) {
-    (void)d;
-    // TODO
+    d->fd = ch36x_open(d->config.device);
+    if (d->fd < 0) {
+        VXT_LOG("ERROR: Could not open: %s", d->config.device);
+        return VXT_USER_ERROR(0);
+    }
+
+    enum CHIP_TYPE ct;
+    if (ch36x_get_chiptype(d->fd, &ct) != 0) {
+        VXT_LOG("ERROR: Could not read chip type!");
+        return VXT_USER_ERROR(1);
+    }
+
+    switch (ct) {
+        case CHIP_CH365:
+            VXT_LOG("ISA Passthrugh device: CH365");
+            break;
+        case CHIP_CH367:
+            VXT_LOG("ISA Passthrugh device: CH367");
+            break;
+        case CHIP_CH368:
+            VXT_LOG("ISA Passthrugh device: CH368");
+            break;
+        default:
+            VXT_LOG("ERROR: Unsupported chip type!");
+            return VXT_USER_ERROR(2);
+    }
+
+    /*
+    ret = ch36x_get_ioaddr(fd, &iobase);
+    if (ret != 0) {
+        printf("ch36x_get_ioaddr error.\n");
+        goto exit;
+    }
+    printf("iobase:%lx\n", iobase);
+
+    if (chiptype == CHIP_CH368) {
+        ret = ch36x_get_memaddr(fd, &membase);
+        if (ret != 0) {
+            printf("ch36x_get_memaddr error.\n");
+            goto exit;
+        }
+    */
+
     return VXT_NO_ERROR;
 }
 
@@ -78,12 +119,19 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
 
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(d, isa, p);
-    ch36x_close(d->fd);
+    if (d->fd) {
+        ch36x_close(d->fd);
+        d->fd = -1;
+    }
     return setup_adapter(d);
 }
 
 static vxt_error destroy(struct vxt_pirepheral *p) {
-    ch36x_close((VXT_GET_DEVICE(isa, p))->fd);
+    VXT_DEC_DEVICE(d, isa, p);
+    if (d->fd) {
+        ch36x_close(d->fd);
+        d->fd = -1;
+    }
     vxt_system_allocator(VXT_GET_SYSTEM(isa, p))(p, 0);
     return VXT_NO_ERROR;
 }
@@ -93,6 +141,8 @@ static const char *name(struct vxt_pirepheral *p) {
 }
 
 struct vxt_pirepheral *vxtp_isa_create(vxt_allocator *alloc, const char *device, vxt_word io_start, vxt_word io_end, vxt_pointer mem_start, vxt_pointer mem_end) VXT_PIREPHERAL_CREATE(alloc, isa, {
+    DEVICE->fd = -1;
+
     DEVICE->config.device = device;
     DEVICE->config.io_start = io_start;
     DEVICE->config.io_end = io_end;
