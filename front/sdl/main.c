@@ -400,7 +400,11 @@ static int load_config(void *user, const char *section, const char *name, const 
 		if (!strcmp("detatch", name) && (atoi(value) != 0))
 			config->args->rifs = NULL;
 	}
-	return 0;
+	return 1;
+}
+
+static int configure_pirepherals(void *user, const char *section, const char *name, const char *value) {
+	return (vxt_system_configure(user, section, name, value) == VXT_NO_ERROR) ? 1 : 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -441,8 +445,8 @@ int main(int argc, char *argv[]) {
 		if (fp) fclose(fp);
 
 		config.args = &args;
-		if (ini_parse(path, &load_config, &config) < 0) {
-			printf("Can't open: %s\n", path);
+		if (ini_parse(path, &load_config, &config) != 0) {
+			printf("Can't open, or parse: %s\n", path);
 			return -1;
 		}
 	}
@@ -659,6 +663,15 @@ int main(int argc, char *argv[]) {
 	devices[i] = NULL;
 
 	vxt_system *vxt = vxt_system_create(&realloc, cpu_type, (int)(cpu_frequency * 1000000.0), devices);
+	if (!vxt) {
+		printf("Could not create system!\n");
+		return -1;
+	}
+
+	if (ini_parse(sprint("%s/config.ini", args.config), &configure_pirepherals, vxt) != 0) {
+		printf("ERROR: Could not configure all pirepherals!\n");
+		return -1;
+	}
 
 	if (args.trace) {
 		if (!(trace_op_output = fopen(args.trace, "wb"))) {
