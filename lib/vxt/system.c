@@ -104,6 +104,17 @@ vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int fr
     return s;
 }
 
+vxt_error vxt_system_configure(vxt_system *s, const char *section, const char *key, const char *value) {
+    for (int i = 0; i < s->num_devices; i++) {
+        CONSTSP(vxt_pirepheral) d = s->devices[i];
+        if (d->config) {
+            vxt_error err = d->config((struct vxt_pirepheral*)d, section, key, value);
+            if (err) return err;
+        }
+    }
+    return VXT_NO_ERROR;
+}
+
 vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, unsigned reg_size, int v_major, int v_minor) {
     if (sizeof(struct vxt_registers) != reg_size)
         return VXT_INVALID_REGISTER_PACKING;

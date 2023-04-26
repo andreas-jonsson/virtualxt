@@ -294,17 +294,23 @@ static void check_variables(void) {
         if (sscanf(var.value, "%lf", &freq) != 1)
             log_cb(RETRO_LOG_ERROR, "Invalid frequency: %s\n", var.value);
         cpu_frequency = (int)(freq * 1000000.0);
-        if (sys)
-            SYNC(vxt_system_set_frequency(sys, cpu_frequency));
+        if (sys) SYNC(
+            vxt_system_set_frequency(sys, cpu_frequency);
+            vxt_system_configure(sys, "libretro", var.key, var.value);
+        )
     }
 
     var = (struct retro_variable){ .key = "virtualxt_v20" };
-    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
         cpu_type = strcmp(var.value, "false") ? VXT_CPU_V20 : VXT_CPU_8088;
+        if (sys) SYNC(vxt_system_configure(sys, "libretro", var.key, var.value));
+    }
 
     var = (struct retro_variable){ .key = "virtualxt_led" };
-    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
         use_led_interface = strcmp(var.value, "false") != 0;
+        if (sys) SYNC(vxt_system_configure(sys, "libretro", var.key, var.value));
+    }
 }
 
 static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {

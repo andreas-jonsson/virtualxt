@@ -203,6 +203,7 @@ struct vxt_pirepheral;
 /// Interface for ISA bus devices.
 struct vxt_pirepheral {
 	vxt_error (*install)(vxt_system*,struct vxt_pirepheral*);
+    vxt_error (*config)(struct vxt_pirepheral*,const char*,const char*,const char*);
     vxt_error (*destroy)(struct vxt_pirepheral*);
     vxt_error (*reset)(struct vxt_pirepheral*);
     vxt_error (*timer)(struct vxt_pirepheral*,vxt_timer_id,int);
@@ -284,6 +285,7 @@ extern const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
 extern enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
 
 extern vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]);
+extern vxt_error vxt_system_configure(vxt_system *s, const char *section, const char *key, const char *value);
 extern vxt_error vxt_system_destroy(vxt_system *s);
 extern struct vxt_step vxt_system_step(vxt_system *s, int cycles);
 extern void vxt_system_reset(vxt_system *s);
