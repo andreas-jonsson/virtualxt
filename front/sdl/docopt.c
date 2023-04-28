@@ -251,8 +251,10 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->mute = option->value;
         } else if (strcmp(option->olong, "--no-activity") == 0) {
             args->no_activity = option->value;
-        } else if (strcmp(option->olong, "--no-adlib") == 0) {
-            args->no_adlib = option->value;
+        } else if (strcmp(option->olong, "--no-modules") == 0) {
+            args->no_modules = option->value;
+        } else if (strcmp(option->olong, "--no-mouse") == 0) {
+            args->no_mouse = option->value;
         } else if (strcmp(option->olong, "--v20") == 0) {
             args->v20 = option->value;
         } else if (strcmp(option->olong, "--version") == 0) {
@@ -289,10 +291,6 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             if (option->argument) {
                 args->rifs = (char *) option->argument;
             }
-        } else if (strcmp(option->olong, "--serial-debug") == 0) {
-            if (option->argument) {
-                args->serial_debug = (char *) option->argument;
-            }
         } else if (strcmp(option->olong, "--trace") == 0) {
             if (option->argument) {
                 args->trace = (char *) option->argument;
@@ -323,8 +321,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
-        "4.772726", NULL, NULL, NULL, NULL, NULL, NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
+        "4.772726", NULL, NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -335,7 +333,8 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --halt                  Debugger will stop after first instruction.",
               "  --hdboot                Prefer booting from harddrive.",
               "  --mute                  Disable audio.",
-              "  --no-adlib              Disable AdLib emulation.",
+              "  --no-mouse              Disable serial mouse.",
+              "  --no-modules            Disable all modules.",
               "  --no-activity           Disable disk activity indicator.",
               "  --list                  List network devices and IDs.",
               "  --fdc                   Enable experimental floppy disk controller.",
@@ -348,7 +347,6 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --extension=FILE        VirtualXT BIOS extension binary.",
               "  --trace=FILE            Write CPU trace to file.",
               "  --vga=FILE              Load VGA BIOS.",
-              "  --serial-debug=PORT     Enable debug print on serial port.",
               "  --frequency=MHZ         CPU frequency. [default: 4.772726]",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
               "  -c --harddrive=FILE     Mount harddrive image as drive C."}
@@ -367,7 +365,8 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--list", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
         {NULL, "--no-activity", 0, 0, NULL},
-        {NULL, "--no-adlib", 0, 0, NULL},
+        {NULL, "--no-modules", 0, 0, NULL},
+        {NULL, "--no-mouse", 0, 0, NULL},
         {NULL, "--v20", 0, 0, NULL},
         {"-v", "--version", 0, 0, NULL},
         {NULL, "--bios", 1, 0, NULL},
@@ -378,7 +377,6 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {"-c", "--harddrive", 1, 0, NULL},
         {NULL, "--network", 1, 0, NULL},
         {NULL, "--rifs", 1, 0, NULL},
-        {NULL, "--serial-debug", 1, 0, NULL},
         {NULL, "--trace", 1, 0, NULL},
         {NULL, "--vga", 1, 0, NULL}
     };

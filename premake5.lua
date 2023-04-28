@@ -15,6 +15,11 @@ newoption {
 }
 
 newoption {
+    trigger = "modules",
+    description = "Generate make files for all modules"
+}
+
+newoption {
     trigger = "pcap",
     description = "Enable network support by linking with pcap"
 }
@@ -85,6 +90,32 @@ workspace "virtualxt"
     filter "toolset:clang or gcc"
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
 
+    local modules = {}
+    local module_names = {}
+
+    if _OPTIONS["modules"] then
+        defines "VXT_MODULES"
+        
+        for _,v in ipairs(os.matchfiles("modules/**/premake5.lua")) do
+            module_root = path.getdirectory(v)
+            module_name = path.getname(module_root)
+    
+            local libname = module_name .. "-module"
+            table.insert(modules, libname)
+            table.insert(module_names, module_name)
+
+            defines { "VXT_MODULE_" .. string.upper(module_name) }
+
+            project(libname)
+                kind "StaticLib"
+                basedir "."
+                includedirs "lib/vxt/include"
+                defines { "VXT_MODULE_NAME=" .. module_name }
+    
+            dofile(v)
+        end
+    end
+
     project "inih"
         kind "StaticLib"
         files { "lib/inih/ini.h", "lib/inih/ini.c" }
@@ -111,10 +142,6 @@ workspace "virtualxt"
             "lib/fat16/fat16.c"
         }
 
-    project "nuked-opl3"
-        kind "StaticLib"
-        files { "lib/nuked-opl3/opl3.h", "lib/nuked-opl3/opl3.c" }
-
     project "ch36x"
         kind "StaticLib"
         defines { "_POSIX_C_SOURCE=200809L", "FASYNC=O_ASYNC" }
@@ -137,7 +164,7 @@ workspace "virtualxt"
         defines "VXTP_NUKED_OPL3"
 
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
-        includedirs { "lib/vxtp", "lib/vxt/include", "lib/nuked-opl3", "lib/ch36x" }
+        includedirs { "lib/vxtp", "lib/vxt/include", "lib/ch36x" }
 
         filter "not options:pcap"
             removefiles "lib/vxtp/network.c"
@@ -232,8 +259,15 @@ workspace "virtualxt"
 
         files { "front/sdl/*.h", "front/sdl/*.c" }
 
-        links { "vxt", "vxtp", "inih", "microui", "nuked-opl3" }
-        includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "lib/nuked-opl3" }
+        links { "vxt", "vxtp", "inih", "microui" }
+        includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src" }
+
+        files "modules/modules.h"
+        includedirs "modules"
+
+        if _OPTIONS["modules"] then
+            links(modules)
+        end
 
         local sdl_cfg = path.join(_OPTIONS["sdl-config"], "sdl2-config")
         buildoptions { string.format("`%s --cflags`", sdl_cfg) }
@@ -254,7 +288,7 @@ workspace "virtualxt"
             links { "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"
-            buildoptions "-Wno-unused-parameter"
+            buildoptions { "-Wno-unused-parameter", "-Wno-pedantic" }
 
         filter "toolset:clang"
             buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
@@ -320,3 +354,15 @@ if _OPTIONS["test"] then
         return string.format("%s\nint main(int argc, char *argv[]) {\n%s}\n", head, body)
     end)())
 end
+
+io.writefile("modules/modules.h", (function()
+    local str = "#include <vxt/vxt.h>\n\nstruct vxt_module_entry {\n\tconst char *name;\n\tstruct vxt_pirepheral *(*entry)(vxt_allocator*);\n};\n\n#ifdef VXT_MODULES\n"
+    for _,mod in ipairs(module_names) do
+        str = string.format("%s\nextern struct vxt_pirepheral *_vxt_module_%s_entry(vxt_allocator *a);\n", str, mod)
+    end
+    str = string.format("%s\nconst struct vxt_module_entry vxt_module_table[%d] = {\n", str, #module_names + 1)
+    for _,mod in ipairs(module_names) do
+        str = string.format('%s\t{ "%s", &_vxt_module_%s_entry },\n', str, mod, mod)
+    end
+    return string.format("%s\t{ NULL, NULL }\n};\n\n#else\n\nconst struct vxt_module_entry vxt_module_table[1] = { { NULL, NULL } };\n\n#endif\n", str)
+end)())

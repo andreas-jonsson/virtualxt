@@ -12,6 +12,7 @@ __pycache__
 /*.trace
 /Makefile
 /*.make
+/modules/modules.h
 
 tools/vxtdrv/vxtdrv.com
 tools/shutdown/shutdown.com
