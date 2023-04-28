@@ -33,6 +33,8 @@
 #include <vxt/vxtu.h>
 #include <vxtp.h>
 
+#include <modules.h>
+
 #include <SDL.h>
 #include <ini.h>
 #include <microui.h>
@@ -43,8 +45,14 @@
 #include "docopt.h"
 #include "icons.h"
 
+#define CONFIG_FILE_NAME "config.ini"
 #define MIN_CLOCKS_PER_STEP 1
 #define MAX_PENALTY_USEC 1000
+
+// Known module interfaces.
+#ifdef VXT_MODULE_ADLIB
+	extern vxt_int16 vxtp_adlib_generate_sample(struct vxt_pirepheral *p, int freq);
+#endif
 
 struct video_adapter {
 	struct vxt_pirepheral *device;
@@ -95,6 +103,10 @@ int num_cycles = 0;
 double cpu_frequency = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
 enum vxt_cpu_type cpu_type = VXT_CPU_8088;
 
+int num_devices = 0;
+struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = { NULL };
+#define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
+
 SDL_atomic_t running = {1};
 SDL_mutex *emu_mutex = NULL;
 SDL_Thread *emu_thread = NULL;
@@ -113,6 +125,7 @@ char *str_buffer = NULL;
 
 SDL_AudioDeviceID audio_device = 0;
 SDL_AudioSpec audio_spec = {0};
+struct vxt_pirepheral *audio_sources[2] = { NULL };
 
 static void trigger_breakpoint(void) {
 	SDL_TriggerBreakpoint();
@@ -294,8 +307,10 @@ static void audio_callback(void *udata, uint8_t *stream, int len) {
 	SYNC(
 		for (int i = 0; i < len; i++) {
 			vxt_word sample = vxtu_ppi_generate_sample(audio_sources[0], audio_spec.freq);
-			if (audio_sources[1])
-				sample += vxtp_adlib_generate_sample(audio_sources[1], audio_spec.freq);
+			#ifdef VXT_MODULE_ADLIB
+				if (audio_sources[1])
+					sample += vxtp_adlib_generate_sample(audio_sources[1], audio_spec.freq);
+			#endif
 
 			((vxt_int16*)stream)[i] = sample;
 			if (audio_spec.channels > 1)
@@ -403,8 +418,56 @@ static int load_config(void *user, const char *section, const char *name, const 
 	return 1;
 }
 
+static int load_modules(void *user, const char *section, const char *name, const char *value) {
+	if (!strcmp("modules", section) && !strcmp("load", name)) {
+		for (int i = 0; true; i++) {
+			const struct vxt_module_entry *e = &vxt_module_table[i];
+			if (!e->entry)
+				break;
+			else if (strcmp(e->name, value))
+				continue;
+
+			struct vxt_pirepheral *p = e->entry((vxt_allocator*)user);
+			if (!e)
+				continue; // Assume the module chose not to be loaded.
+
+			// Handle special cases.
+			if (!strcmp("adlib", value))
+				audio_sources[1] = p;
+
+			printf("%d - %s\n", i + 1, e->name);
+			APPEND_DEVICE(p);
+		}
+	}
+	return 1;
+}
+
 static int configure_pirepherals(void *user, const char *section, const char *name, const char *value) {
 	return (vxt_system_configure(user, section, name, value) == VXT_NO_ERROR) ? 1 : 0;
+}
+
+static void write_default_config(const char *path) {
+	FILE *fp = fopen(path, "r");
+	if (fp) {
+		fclose(fp);
+		return;
+	}
+
+	printf("WARNING: No config file found. Creating new default: %s\n", path);
+	if (!(fp = fopen(path, "w"))) {
+		printf("ERROR: Could not create config file: %s\n", path);
+		return;
+	}
+
+	fprintf(fp,
+		"[modules]\n"
+		"load=adlib\n"
+		";load=serial_dbg\n"
+		"\n"
+		"[serial_debug]\n"
+		"port=0x3F8\n"
+	);
+	fclose(fp);
 }
 
 int main(int argc, char *argv[]) {
@@ -440,12 +503,11 @@ int main(int argc, char *argv[]) {
 	printf("Base path: %s\n", base_path);
 
 	{
-		const char *path = sprint("%s/config.ini", args.config);
-		FILE *fp = fopen(path, "a");
-		if (fp) fclose(fp);
+		const char *path = sprint("%s/" CONFIG_FILE_NAME, args.config);
+		write_default_config(path);
 
 		config.args = &args;
-		if (ini_parse(path, &load_config, &config) != 0) {
+		if (ini_parse(path, &load_config, &config)) {
 			printf("Can't open, or parse: %s\n", path);
 			return -1;
 		}
@@ -585,12 +647,11 @@ int main(int argc, char *argv[]) {
 	struct vxt_pirepheral *disk = vxtu_disk_create(&realloc, &interface);
 	struct vxt_pirepheral *fdc = vxtp_fdc_create(&realloc, 0x3F0, 6);
 	struct vxt_pirepheral *ppi = vxtu_ppi_create(&realloc);
-	struct vxt_pirepheral *mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
-	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&realloc);
+	struct vxt_pirepheral *mouse = args.no_mouse ? NULL : vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
 	struct vxt_pirepheral *joystick = NULL;
 
-	int i = 2;
-	struct vxt_pirepheral *devices[32] = {vxtu_memory_create(&realloc, 0x0, 0x100000, false), rom};
+	APPEND_DEVICE(vxtu_memory_create(&realloc, 0x0, 0x100000, false));
+	APPEND_DEVICE(rom);
 
 	struct video_adapter video = {0};
 	if (args.vga) {
@@ -602,8 +663,7 @@ int main(int argc, char *argv[]) {
 		vxtu_ppi_set_xt_switches(ppi, 0);
 		struct vxt_pirepheral *rom = load_bios(args.vga, 0xC0000); // Tested with ET4000 VGA BIOS.
 		if (!rom) return -1;
-
-		devices[i++] = rom;
+		APPEND_DEVICE(rom);
 	} else {
 		video.device = vxtu_cga_create(&realloc);
 		video.border_color = &vxtu_cga_border_color;
@@ -612,42 +672,38 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (num_sticks)
-		devices[i++] = joystick = vxtp_joystick_create(&realloc, sticks[0], sticks[1]);
-
-	if (!args.no_adlib)
-		devices[i++] = adlib;
+		APPEND_DEVICE(joystick = vxtp_joystick_create(&realloc, sticks[0], sticks[1]));
 
 	if (args.fdc) {
-		devices[i++] = fdc;
+		APPEND_DEVICE(fdc);
 	} else {
-		devices[i++] = disk;
-		devices[i++] = rom_ext;
+		APPEND_DEVICE(disk);
+		APPEND_DEVICE(rom_ext);
 	}
 
 	if (args.rifs) {
 		bool ro = *args.rifs != '*';
 		const char *root = ro ? args.rifs : &args.rifs[1];
-		devices[i++] = vxtp_rifs_create(&realloc, 0x178, root, ro);
+		APPEND_DEVICE(vxtp_rifs_create(&realloc, 0x178, root, ro));
 	}
 
-	devices[i++] = vxtu_pic_create(&realloc);
-	devices[i++] = vxtu_dma_create(&realloc);
-	devices[i++] = vxtp_rtc_create(&realloc);
-	devices[i++] = vxtu_pit_create(&realloc);
-	devices[i++] = vxtp_ctrl_create(&realloc, &emu_control, NULL);
-	devices[i++] = mouse;
-	devices[i++] = ppi;
-	devices[i++] = video.device;
+	if (!args.no_mouse)
+		APPEND_DEVICE(mouse);
 
-	if (args.serial_debug)
-		devices[i++] = vxtp_serial_dbg_create(&realloc, atoi(args.serial_debug));
+	APPEND_DEVICE(vxtu_pic_create(&realloc));
+	APPEND_DEVICE(vxtu_dma_create(&realloc));
+	APPEND_DEVICE(vxtp_rtc_create(&realloc));
+	APPEND_DEVICE(vxtu_pit_create(&realloc));
+	APPEND_DEVICE(vxtp_ctrl_create(&realloc, &emu_control, NULL));
+	APPEND_DEVICE(ppi);
+	APPEND_DEVICE(video.device);
 
 	SDL_TimerID network_timer = 0;
 	if (args.network) {
 		#ifdef VXTP_NETWORK
 			struct vxt_pirepheral *net = vxtp_network_create(&realloc, atoi(args.network));
 			if (net) {
-				devices[i++] = net;
+				APPEND_DEVICE(net);
 				if (!(network_timer = SDL_AddTimer(10, &network_callback, net))) {
 					printf("SDL_AddTimer failed!\n");
 					return -1;
@@ -659,8 +715,13 @@ int main(int argc, char *argv[]) {
 		#endif
 	}
 
-	devices[i++] = dbg;
-	devices[i] = NULL;
+	printf("Loaded modules:\n");
+	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, (void*)&realloc)) {
+		printf("ERROR: Could not load all modules!\n");
+		return -1;
+	}
+
+	APPEND_DEVICE(dbg);
 
 	vxt_system *vxt = vxt_system_create(&realloc, cpu_type, (int)(cpu_frequency * 1000000.0), devices);
 	if (!vxt) {
@@ -668,7 +729,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	if (ini_parse(sprint("%s/config.ini", args.config), &configure_pirepherals, vxt) != 0) {
+	if (ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &configure_pirepherals, vxt)) {
 		printf("ERROR: Could not configure all pirepherals!\n");
 		return -1;
 	}
@@ -739,7 +800,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	struct vxt_pirepheral *audio_sources[2] = {ppi, adlib};
+	audio_sources[0] = ppi;
 
 	if (args.mute) {
 		printf("Audio is muted!\n");

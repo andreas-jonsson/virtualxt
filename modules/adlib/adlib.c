@@ -20,42 +20,75 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
+#include <vxt/vxt.h>
+#include "nuked-opl3/opl3.h"
 
-VXT_PIREPHERAL(serial_dbg, {
-    vxt_word base_port;
+VXT_PIREPHERAL(adlib, {
+	opl3_chip chip;
+    int freq;
+    vxt_byte index;
+    vxt_byte reg4;
 })
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    (void)p; (void)port;
-    VXT_DEC_DEVICE(d, serial_dbg, p);
-    vxt_word reg = port - d->base_port;
-    if (reg == 5)
-        return 0x20; // Set transmission holding register empty (THRE); data can be sent.
-    return 0;
+    VXT_DEC_DEVICE(a, adlib, p);
+    if (port == 0x388) {
+        vxt_byte status = ((a->reg4 & 2) << 4) | ((a->reg4 & 1) << 6);
+        status |= status ? 0x80 : 0;
+        return status;
+    }
+    return 0xFF;
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    (void)p; (void)port;
-    VXT_PRINT("%c", data);
+    VXT_DEC_DEVICE(a, adlib, p);
+    switch (port) {
+        case 0x388:
+            a->index = data;
+            break;
+        case 0x389:
+            if (port == 4)
+                a->reg4 = data;
+            OPL3_WriteRegBuffered(&a->chip, a->index, data);
+            break;
+    }
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(d, serial_dbg, p);
-    vxt_system_install_io(s, p, d->base_port, d->base_port + 7);
+    vxt_system_install_io(s, p, 0x388, 0x389);
+    return VXT_NO_ERROR;
+}
+
+static vxt_error reset(struct vxt_pirepheral *p) {
+    VXT_DEC_DEVICE(a, adlib, p);
+    OPL3_Reset(&a->chip, a->freq);
     return VXT_NO_ERROR;
 }
 
 static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
-    return "Serial Debug Printer";
+    (void)p; return "AdLib Music Synthesizer";
 }
 
-struct vxt_pirepheral *vxtp_serial_dbg_create(vxt_allocator *alloc, vxt_word base_port) VXT_PIREPHERAL_CREATE(alloc, serial_dbg, {
-    DEVICE->base_port = base_port;
+static struct vxt_pirepheral *create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, adlib, {
+    DEVICE->freq = 48000;
 
     PIREPHERAL->install = &install;
+    PIREPHERAL->reset = &reset;
     PIREPHERAL->name = &name;
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;
 })
+
+vxt_int16 vxtp_adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
+    VXT_DEC_DEVICE(a, adlib, p);
+    if (a->freq != freq) {
+        a->freq = freq;
+        OPL3_Reset(&a->chip, freq);
+    }
+
+    int16_t sample[2] = {0};
+    OPL3_GenerateResampled(&a->chip, sample);
+    return sample[0];
+}
+
+VXT_MODULE_ENTRY(create)

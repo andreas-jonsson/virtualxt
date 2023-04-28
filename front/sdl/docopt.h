@@ -96,7 +96,8 @@ struct DocoptArgs {
     size_t list;
     size_t mute;
     size_t no_activity;
-    size_t no_adlib;
+    size_t no_modules;
+    size_t no_mouse;
     size_t v20;
     size_t version;
     /* options with arguments */
@@ -108,7 +109,6 @@ struct DocoptArgs {
     char *harddrive;
     char *network;
     char *rifs;
-    char *serial_debug;
     char *trace;
     char *vga;
     /* special */

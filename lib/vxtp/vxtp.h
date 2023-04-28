@@ -56,8 +56,6 @@ extern struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word bas
 extern vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, void *fp);
 extern bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num);
 
-extern struct vxt_pirepheral *vxtp_serial_dbg_create(vxt_allocator *alloc, vxt_word base_port);
-
 extern struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root, bool ro);
 
 extern struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, void *stick_a, void *stick_b);
@@ -66,9 +64,6 @@ extern bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp
 extern struct vxt_pirepheral *vxtp_ctrl_create(vxt_allocator *alloc, vxt_byte (*f)(enum vxtp_ctrl_command,void*), void *userdata);
 
 extern struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc);
-
-extern struct vxt_pirepheral *vxtp_adlib_create(vxt_allocator *alloc);
-extern vxt_int16 vxtp_adlib_generate_sample(struct vxt_pirepheral *p, int freq);
 
 extern struct vxt_pirepheral *vxtp_isa_create(vxt_allocator *alloc, const char *device, vxt_word io_start, vxt_word io_end, vxt_pointer mem_start, vxt_pointer mem_end);
 
