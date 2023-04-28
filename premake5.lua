@@ -220,7 +220,7 @@ workspace "virtualxt"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
-        files { "lib/vxtp/ctrl.c", "lib/vxtp/serial_dbg.c" }
+        files { "lib/vxtp/ctrl.c" }
 
         files { "lib/printf/printf.h", "lib/printf/printf.c" }
 
