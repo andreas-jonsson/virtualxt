@@ -20,11 +20,12 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include <vxt/vxt.h>
+#include <vxt/vxtu.h>
 #include <stdio.h>
 #include <string.h>
 
 VXT_PIREPHERAL(serial_dbg, {
+    char section_name[32];
     vxt_word base_port;
 })
 
@@ -50,7 +51,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
 
 static vxt_error config(struct vxt_pirepheral *p, const char *section, const char *key, const char *value) {
     VXT_DEC_DEVICE(d, serial_dbg, p);
-    if (!strcmp(VXT_MODULE_NAME_STRING, section)) {
+    if (!strcmp(d->section_name, section)) {
         if (strcmp("port", key))
             return VXT_NO_ERROR;
         sscanf(value, "%hx", &d->base_port);
@@ -63,7 +64,8 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Serial Debug Printer";
 }
 
-VXT_MODULE_CREATE(serial_dbg, {
+VXTU_MODULE_CREATE(serial_dbg, {
+    strncpy(DEVICE->section_name, ARGS, sizeof(DEVICE->section_name) - 1);
     PIREPHERAL->install = &install;
     PIREPHERAL->config = &config;
     PIREPHERAL->name = &name;
