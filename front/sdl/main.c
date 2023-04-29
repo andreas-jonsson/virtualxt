@@ -419,23 +419,23 @@ static int load_config(void *user, const char *section, const char *name, const 
 }
 
 static int load_modules(void *user, const char *section, const char *name, const char *value) {
-	if (!strcmp("modules", section) && !strcmp("load", name)) {
+	if (!strcmp("modules", section)) {
 		for (int i = 0; true; i++) {
-			const struct vxt_module_entry *e = &vxt_module_table[i];
+			const struct vxtu_module_entry *e = &vxtu_module_table[i];
 			if (!e->entry)
 				break;
-			else if (strcmp(e->name, value))
+			else if (strcmp(e->name, name))
 				continue;
 
-			struct vxt_pirepheral *p = e->entry((vxt_allocator*)user);
+			struct vxt_pirepheral *p = e->entry((vxt_allocator*)user, value);
 			if (!e)
 				continue; // Assume the module chose not to be loaded.
 
 			// Handle special cases.
-			if (!strcmp("adlib", value))
+			if (!strcmp("adlib", name))
 				audio_sources[1] = p;
 
-			printf("%d - %s\n", i + 1, e->name);
+			printf("%d - %s\n", i + 1, name);
 			APPEND_DEVICE(p);
 		}
 	}
@@ -461,10 +461,10 @@ static void write_default_config(const char *path) {
 
 	fprintf(fp,
 		"[modules]\n"
-		"load=adlib\n"
-		";load=serial_dbg\n"
+		"adlib=\n"
+		";serial_dbg=serial_debug1\n"
 		"\n"
-		"[serial_debug]\n"
+		"[serial_debug1]\n"
 		"port=0x3F8\n"
 	);
 	fclose(fp);

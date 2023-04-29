@@ -45,6 +45,17 @@ extern "C" {
 	#define VXTU_CGA_ALPHA_FILL 0xFF
 #endif
 
+#ifdef VXTU_MODULES
+    #define _VXTU_MODULE_ENTRY(n, f) struct vxt_pirepheral *_vxtu_module_ ## n ## _entry(vxt_allocator *alloc, const char *args) { return (f)(alloc, args); }
+    #define VXTU_MODULE_ENTRY(f) _VXT_EVALUATOR(_VXTU_MODULE_ENTRY, VXTU_MODULE_NAME, f)
+    #define VXTU_MODULE_CREATE(name, body) static struct vxt_pirepheral *_vxtu_pirepheral_create(vxt_allocator *alloc, const char *ARGS) VXT_PIREPHERAL_CREATE(alloc, name, { body ; (void)ARGS; }) VXTU_MODULE_ENTRY(&_vxtu_pirepheral_create)
+    #define VXTU_MODULE_NAME_STRING _VXT_EVALUATOR(_VXT_STRINGIFY, VXTU_MODULE_NAME)
+#else
+    #define VXTU_MODULE_ENTRY(f)
+    #define VXTU_MODULE_CREATE(name, body)
+    #define VXTU_MODULE_NAME_STRING ""
+#endif
+
 #define vxtu_static_allocator(name, size)                               \
     static vxt_byte name ## allocator_data[(size)];                     \
     static vxt_byte * name ## allocator_ptr = name ## allocator_data;   \

@@ -106,18 +106,6 @@ typedef enum {_VXT_ERROR_CODES(_VXT_ERROR_ENUM) _VXT_NUM_ERRORS} vxt_error;
 #define VXT_USER_ERROR(e) ((vxt_error)(e) + _VXT_NUM_ERRORS)
 #define VXT_GET_USER_ERROR(e) ((vxt_error)(e) - _VXT_NUM_ERRORS)
 
-#ifdef VXT_MODULES
-    #define _VXT_MODULE_ENTRY(n, f) struct vxt_pirepheral *_vxt_module_ ## n ## _entry(vxt_allocator *a) { return (f)(a); }
-    #define VXT_MODULE_ENTRY(f) _VXT_EVALUATOR(_VXT_MODULE_ENTRY, VXT_MODULE_NAME, f)
-    #define VXT_MODULE_CREATE(name, body) static struct vxt_pirepheral *_vxt_pirepheral_create(vxt_allocator *a) VXT_PIREPHERAL_CREATE(a, name, { body }) VXT_MODULE_ENTRY(&_vxt_pirepheral_create)
-    #define VXT_MODULE_NAME_STRING _VXT_EVALUATOR(_VXT_STRINGIFY, VXT_MODULE_NAME)
-#else
-    #define VXT_MODULE_ENTRY(f)
-    #define VXT_MODULE_CREATE(body)
-    #define VXT_MODULE_NAME_STRING ""
-#endif
-
-
 typedef vxt_byte vxt_device_id;
 typedef int vxt_timer_id;
 

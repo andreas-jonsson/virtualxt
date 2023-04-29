@@ -20,7 +20,7 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include <vxt/vxt.h>
+#include <vxt/vxtu.h>
 #include "nuked-opl3/opl3.h"
 
 VXT_PIREPHERAL(adlib, {
@@ -69,7 +69,8 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "AdLib Music Synthesizer";
 }
 
-static struct vxt_pirepheral *create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, adlib, {
+static struct vxt_pirepheral *create(vxt_allocator *alloc, const char *args) VXT_PIREPHERAL_CREATE(alloc, adlib, {
+    (void)args;
     DEVICE->freq = 48000;
 
     PIREPHERAL->install = &install;
@@ -91,4 +92,4 @@ vxt_int16 vxtp_adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
     return sample[0];
 }
 
-VXT_MODULE_ENTRY(create)
+VXTU_MODULE_ENTRY(create)

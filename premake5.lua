@@ -94,7 +94,7 @@ workspace "virtualxt"
     local module_names = {}
 
     if _OPTIONS["modules"] then
-        defines "VXT_MODULES"
+        defines "VXTU_MODULES"
         
         for _,v in ipairs(os.matchfiles("modules/**/premake5.lua")) do
             module_root = path.getdirectory(v)
@@ -104,13 +104,13 @@ workspace "virtualxt"
             table.insert(modules, libname)
             table.insert(module_names, module_name)
 
-            defines { "VXT_MODULE_" .. string.upper(module_name) }
+            defines { "VXTU_MODULE_" .. string.upper(module_name) }
 
             project(libname)
                 kind "StaticLib"
                 basedir "."
                 includedirs "lib/vxt/include"
-                defines { "VXT_MODULE_NAME=" .. module_name }
+                defines { "VXTU_MODULE_NAME=" .. module_name }
     
             dofile(v)
         end
@@ -356,13 +356,13 @@ if _OPTIONS["test"] then
 end
 
 io.writefile("modules/modules.h", (function()
-    local str = "#include <vxt/vxt.h>\n\nstruct vxt_module_entry {\n\tconst char *name;\n\tstruct vxt_pirepheral *(*entry)(vxt_allocator*);\n};\n\n#ifdef VXT_MODULES\n"
+    local str = "#include <vxt/vxtu.h>\n\nstruct vxtu_module_entry {\n\tconst char *name;\n\tstruct vxt_pirepheral *(*entry)(vxt_allocator*,const char*);\n};\n\n#ifdef VXTU_MODULES\n"
     for _,mod in ipairs(module_names) do
-        str = string.format("%s\nextern struct vxt_pirepheral *_vxt_module_%s_entry(vxt_allocator *a);\n", str, mod)
+        str = string.format("%s\nextern struct vxt_pirepheral *_vxtu_module_%s_entry(vxt_allocator *alloc, const char *args);\n", str, mod)
     end
-    str = string.format("%s\nconst struct vxt_module_entry vxt_module_table[%d] = {\n", str, #module_names + 1)
+    str = string.format("%s\nconst struct vxtu_module_entry vxtu_module_table[%d] = {\n", str, #module_names + 1)
     for _,mod in ipairs(module_names) do
-        str = string.format('%s\t{ "%s", &_vxt_module_%s_entry },\n', str, mod, mod)
+        str = string.format('%s\t{ "%s", &_vxtu_module_%s_entry },\n', str, mod, mod)
     end
-    return string.format("%s\t{ NULL, NULL }\n};\n\n#else\n\nconst struct vxt_module_entry vxt_module_table[1] = { { NULL, NULL } };\n\n#endif\n", str)
+    return string.format("%s\t{ NULL, NULL }\n};\n\n#else\n\nconst struct vxtu_module_entry vxtu_module_table[1] = { { NULL, NULL } };\n\n#endif\n", str)
 end)())
