@@ -51,7 +51,7 @@
 
 // Known module interfaces.
 #ifdef VXT_MODULE_ADLIB
-	extern vxt_int16 vxtp_adlib_generate_sample(struct vxt_pirepheral *p, int freq);
+	extern vxt_int16 adlib_generate_sample(struct vxt_pirepheral *p, int freq);
 #endif
 
 struct video_adapter {
@@ -309,7 +309,7 @@ static void audio_callback(void *udata, uint8_t *stream, int len) {
 			vxt_word sample = vxtu_ppi_generate_sample(audio_sources[0], audio_spec.freq);
 			#ifdef VXT_MODULE_ADLIB
 				if (audio_sources[1])
-					sample += vxtp_adlib_generate_sample(audio_sources[1], audio_spec.freq);
+					sample += adlib_generate_sample(audio_sources[1], audio_spec.freq);
 			#endif
 
 			((vxt_int16*)stream)[i] = sample;
@@ -427,16 +427,18 @@ static int load_modules(void *user, const char *section, const char *name, const
 			else if (strcmp(e->name, name))
 				continue;
 
-			struct vxt_pirepheral *p = e->entry((vxt_allocator*)user, value);
-			if (!e)
-				continue; // Assume the module chose not to be loaded.
+			for (vxtu_module_entry_func *entries = e->entry(); *entries; entries++) {
+				struct vxt_pirepheral *p = (*entries)((vxt_allocator*)user, value);
+				if (!p)
+					continue; // Assume the module chose not to be loaded.
 
-			// Handle special cases.
-			if (!strcmp("adlib", name))
-				audio_sources[1] = p;
+				// Handle special cases.
+				if (!strcmp("adlib", name))
+					audio_sources[1] = p;
 
+				APPEND_DEVICE(p);
+			}
 			printf("%d - %s\n", i + 1, name);
-			APPEND_DEVICE(p);
 		}
 	}
 	return 1;
