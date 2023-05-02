@@ -30,11 +30,6 @@ newoption {
 }
 
 newoption {
-    trigger = "isa-passthrough",
-    description = "Enable CH36x ISA passthrough"
-}
-
-newoption {
     trigger = "i286",
     description = "Provide some 286 support when running with a V20"
 }
@@ -142,12 +137,6 @@ workspace "virtualxt"
             "lib/fat16/fat16.c"
         }
 
-    project "ch36x"
-        kind "StaticLib"
-        defines { "_POSIX_C_SOURCE=200809L", "FASYNC=O_ASYNC" }
-        files { "lib/ch36x/ch36x_lib.h", "lib/ch36x/ch36x_lib.c" }
-        buildoptions { "-Wno-unused-parameter", "-Wno-unused-variable", "-Wno-type-limits" }
-
     project "vxt"
         kind "StaticLib"
 
@@ -164,7 +153,7 @@ workspace "virtualxt"
         defines "VXTP_NUKED_OPL3"
 
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
-        includedirs { "lib/vxtp", "lib/vxt/include", "lib/ch36x" }
+        includedirs { "lib/vxtp", "lib/vxt/include"}
 
         filter "not options:pcap"
             removefiles "lib/vxtp/network.c"
@@ -281,14 +270,11 @@ workspace "virtualxt"
         filter "options:validator"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
 
-        filter "options:isa-passthrough"
-            links "ch36x"
-
         filter "system:windows"
             links { "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"
-            buildoptions { "-Wno-unused-parameter", "-Wno-pedantic" }
+            buildoptions { "-Wno-unused-parameter", "-Wno-pedantic" } -- no-pedantic, bacause of a problem with conversion from funcion pointers.
 
         filter "toolset:clang"
             buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }

@@ -23,6 +23,8 @@
 #include <vxt/vxtu.h>
 #include "nuked-opl3/opl3.h"
 
+extern vxt_int16 (*frontend_adlib_generate_sample)(struct vxt_pirepheral*,int);
+
 VXT_PIREPHERAL(adlib, {
 	opl3_chip chip;
     int freq;
@@ -69,18 +71,7 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "AdLib Music Synthesizer";
 }
 
-static struct vxt_pirepheral *create(vxt_allocator *alloc, const char *args) VXT_PIREPHERAL_CREATE(alloc, adlib, {
-    (void)args;
-    DEVICE->freq = 48000;
-
-    PIREPHERAL->install = &install;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
-})
-
-vxt_int16 adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
+static vxt_int16 generate_sample(struct vxt_pirepheral *p, int freq) {
     VXT_DEC_DEVICE(a, adlib, p);
     if (a->freq != freq) {
         a->freq = freq;
@@ -91,5 +82,18 @@ vxt_int16 adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
     OPL3_GenerateResampled(&a->chip, sample);
     return sample[0];
 }
+
+static struct vxt_pirepheral *create(vxt_allocator *alloc, const char *args) VXT_PIREPHERAL_CREATE(alloc, adlib, {
+    (void)args;
+    frontend_adlib_generate_sample = &generate_sample;
+
+    DEVICE->freq = 48000;
+
+    PIREPHERAL->install = &install;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
 
 VXTU_MODULE_ENTRIES(&create)

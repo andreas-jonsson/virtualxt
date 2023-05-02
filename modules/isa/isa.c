@@ -20,11 +20,11 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
+#include <vxt/vxtu.h>
 
 #ifdef __linux__
 
-#include <ch36x_lib.h>
+#include "ch36x/ch36x_lib.h"
 
 VXT_PIREPHERAL(isa, {
     int fd;
@@ -140,15 +140,15 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "ISA Passthrough (CH367)";
 }
 
-struct vxt_pirepheral *vxtp_isa_create(vxt_allocator *alloc, const char *device, vxt_word io_start, vxt_word io_end, vxt_pointer mem_start, vxt_pointer mem_end) VXT_PIREPHERAL_CREATE(alloc, isa, {
+VXTU_MODULE_CREATE(isa, {
     DEVICE->fd = -1;
-
+/*
     DEVICE->config.device = device;
     DEVICE->config.io_start = io_start;
     DEVICE->config.io_end = io_end;
     DEVICE->config.mem_start = mem_start;
     DEVICE->config.mem_end = mem_end;
-
+*/
     PIREPHERAL->install = &install;
     PIREPHERAL->destroy = &destroy;
     PIREPHERAL->reset = &reset;
@@ -161,9 +161,7 @@ struct vxt_pirepheral *vxtp_isa_create(vxt_allocator *alloc, const char *device,
 
 #else
 
-struct vxt_pirepheral *vxtp_isa_create(vxt_allocator *alloc, const char *device, vxt_word io_start, vxt_word io_end, vxt_pointer mem_start, vxt_pointer mem_end) {
-    (void)alloc; (void)device; (void)io_start; (void)io_end; (void)mem_start; (void)mem_end;
-    return NULL;
-}
+VXT_PIREPHERAL(isa, { int _; })
+VXTU_MODULE_CREATE(isa, {})
 
 #endif

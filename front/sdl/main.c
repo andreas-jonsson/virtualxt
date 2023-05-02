@@ -50,9 +50,7 @@
 #define MAX_PENALTY_USEC 1000
 
 // Known module interfaces.
-#ifdef VXT_MODULE_ADLIB
-	extern vxt_int16 adlib_generate_sample(struct vxt_pirepheral *p, int freq);
-#endif
+vxt_int16 (*frontend_adlib_generate_sample)(struct vxt_pirepheral*,int) = NULL;
 
 struct video_adapter {
 	struct vxt_pirepheral *device;
@@ -307,10 +305,8 @@ static void audio_callback(void *udata, uint8_t *stream, int len) {
 	SYNC(
 		for (int i = 0; i < len; i++) {
 			vxt_word sample = vxtu_ppi_generate_sample(audio_sources[0], audio_spec.freq);
-			#ifdef VXT_MODULE_ADLIB
-				if (audio_sources[1])
-					sample += adlib_generate_sample(audio_sources[1], audio_spec.freq);
-			#endif
+			if (audio_sources[1] && frontend_adlib_generate_sample)
+				sample += frontend_adlib_generate_sample(audio_sources[1], audio_spec.freq);
 
 			((vxt_int16*)stream)[i] = sample;
 			if (audio_spec.channels > 1)
