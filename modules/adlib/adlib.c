@@ -80,7 +80,7 @@ static struct vxt_pirepheral *create(vxt_allocator *alloc, const char *args) VXT
     PIREPHERAL->io.out = &out;
 })
 
-vxt_int16 vxtp_adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
+vxt_int16 adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
     VXT_DEC_DEVICE(a, adlib, p);
     if (a->freq != freq) {
         a->freq = freq;
@@ -92,4 +92,4 @@ vxt_int16 vxtp_adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
     return sample[0];
 }
 
-VXTU_MODULE_ENTRY(create)
+VXTU_MODULE_ENTRIES(&create)

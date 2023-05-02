@@ -45,13 +45,19 @@ extern "C" {
 	#define VXTU_CGA_ALPHA_FILL 0xFF
 #endif
 
+typedef struct vxt_pirepheral *(*vxtu_module_entry_func)(vxt_allocator*,const char*);
+
 #ifdef VXTU_MODULES
-    #define _VXTU_MODULE_ENTRY(n, f) struct vxt_pirepheral *_vxtu_module_ ## n ## _entry(vxt_allocator *alloc, const char *args) { return (f)(alloc, args); }
-    #define VXTU_MODULE_ENTRY(f) _VXT_EVALUATOR(_VXTU_MODULE_ENTRY, VXTU_MODULE_NAME, f)
-    #define VXTU_MODULE_CREATE(name, body) static struct vxt_pirepheral *_vxtu_pirepheral_create(vxt_allocator *alloc, const char *ARGS) VXT_PIREPHERAL_CREATE(alloc, name, { body ; (void)ARGS; }) VXTU_MODULE_ENTRY(&_vxtu_pirepheral_create)
+    #define _VXTU_MODULE_ENTRIES(n, ...) vxtu_module_entry_func *_vxtu_module_ ## n ## _entry(void) {		\
+		static vxtu_module_entry_func _vxtu_module_ ## n ## _entries[] = { __VA_ARGS__, NULL };				\
+		return _vxtu_module_ ## n ## _entries;																\
+	}																										\
+    
+	#define VXTU_MODULE_ENTRIES(...) _VXT_EVALUATOR(_VXTU_MODULE_ENTRIES, VXTU_MODULE_NAME, __VA_ARGS__)
+    #define VXTU_MODULE_CREATE(name, body) static struct vxt_pirepheral *_vxtu_pirepheral_create(vxt_allocator *alloc, const char *ARGS) VXT_PIREPHERAL_CREATE(alloc, name, { body ; (void)ARGS; }) VXTU_MODULE_ENTRIES(&_vxtu_pirepheral_create)
     #define VXTU_MODULE_NAME_STRING _VXT_EVALUATOR(_VXT_STRINGIFY, VXTU_MODULE_NAME)
 #else
-    #define VXTU_MODULE_ENTRY(f)
+    #define VXTU_MODULE_ENTRIES(...)
     #define VXTU_MODULE_CREATE(name, body)
     #define VXTU_MODULE_NAME_STRING ""
 #endif

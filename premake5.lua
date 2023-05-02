@@ -356,13 +356,13 @@ if _OPTIONS["test"] then
 end
 
 io.writefile("modules/modules.h", (function()
-    local str = "#include <vxt/vxtu.h>\n\nstruct vxtu_module_entry {\n\tconst char *name;\n\tstruct vxt_pirepheral *(*entry)(vxt_allocator*,const char*);\n};\n\n#ifdef VXTU_MODULES\n"
+    local str = "#include <vxt/vxtu.h>\n\nstruct vxtu_module_entry {\n\tconst char *name;\n\tvxtu_module_entry_func *(*entry)(void);\n};\n\n#ifdef VXTU_MODULES\n"
     for _,mod in ipairs(module_names) do
-        str = string.format("%s\nextern struct vxt_pirepheral *_vxtu_module_%s_entry(vxt_allocator *alloc, const char *args);\n", str, mod)
+        str = string.format("%s\nextern vxtu_module_entry_func *_vxtu_module_%s_entry(void);\n", str, mod)
     end
     str = string.format("%s\nconst struct vxtu_module_entry vxtu_module_table[%d] = {\n", str, #module_names + 1)
     for _,mod in ipairs(module_names) do
-        str = string.format('%s\t{ "%s", &_vxtu_module_%s_entry },\n', str, mod, mod)
+        str = string.format('%s\t{ "%s", _vxtu_module_%s_entry },\n', str, mod, mod)
     end
     return string.format("%s\t{ NULL, NULL }\n};\n\n#else\n\nconst struct vxtu_module_entry vxtu_module_table[1] = { { NULL, NULL } };\n\n#endif\n", str)
 end)())
