@@ -8,7 +8,11 @@ var vxtu_8h =
     [ "VXTU_CGA_BLUE", "vxtu_8h.html#a79c379d5ca73232728cd37d3eb44c388", null ],
     [ "VXTU_CGA_GREEN", "vxtu_8h.html#a943591b62a69bbaa4633a4ed01254b41", null ],
     [ "VXTU_CGA_RED", "vxtu_8h.html#ac30882bf81f7510540a902919464ce05", null ],
+    [ "VXTU_MODULE_CREATE", "vxtu_8h.html#a5c5f3b5d5db9aebf398a733617e612ce", null ],
+    [ "VXTU_MODULE_ENTRIES", "vxtu_8h.html#a94f02d7da3b95b3d2ba20d85e6dbd141", null ],
+    [ "VXTU_MODULE_NAME_STRING", "vxtu_8h.html#a3fff8082902c9af3063b8d8cc3a37daa", null ],
     [ "vxtu_static_allocator", "vxtu_8h.html#a9e056a6f11b996dcd8f34ba2dbbb2387", null ],
+    [ "vxtu_module_entry_func", "vxtu_8h.html#a29cce5f0083e0f94d01d8ab11ae1481f", null ],
     [ "vxtu_disk_seek", "vxtu_8h.html#a51e30675ddfde71aab800a8e7f6f8b8c", [
       [ "VXTU_SEEK_START", "vxtu_8h.html#a51e30675ddfde71aab800a8e7f6f8b8ca0e755a930aea014eab41036043e0a483", null ],
       [ "VXTU_SEEK_CURRENT", "vxtu_8h.html#a51e30675ddfde71aab800a8e7f6f8b8cabc13709e21c71c6dfdaf6fdc55a4ce92", null ],

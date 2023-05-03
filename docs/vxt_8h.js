@@ -88,6 +88,7 @@ var vxt_8h =
     [ "vxt_set_breakpoint", "vxt_8h.html#a1adea5f870acb5ad4a0721229db066ce", null ],
     [ "vxt_set_logger", "vxt_8h.html#afc92432fb861f2208ef8a5bcfd18987f", null ],
     [ "vxt_system_allocator", "vxt_8h.html#a58cead00ea3b88fe95753cd6f002f6f4", null ],
+    [ "vxt_system_configure", "vxt_8h.html#a4f150e7b80713286f3d99d40ea2e07a2", null ],
     [ "vxt_system_create", "vxt_8h.html#a4bcc01d952ab4b8b71e819373c42711e", null ],
     [ "vxt_system_destroy", "vxt_8h.html#a28cb435dac218f9aab23c829fde46887", null ],
     [ "vxt_system_frequency", "vxt_8h.html#a0470a50f9b795cbd8c41ed03d85cc662", null ],

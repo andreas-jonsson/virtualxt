@@ -55,6 +55,7 @@ $(document).ready(function(){initNavTree('vxtu_8h.html',''); initResizable(); })
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#define-members">Macros</a> &#124;
+<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
@@ -86,8 +87,19 @@ Macros</h2></td></tr>
 <tr class="separator:a6618054f81fdb665cc4a6850777d43a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2eaaf0d5dbab6593312e5e2c43cb43c0"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a2eaaf0d5dbab6593312e5e2c43cb43c0">VXTU_CGA_ALPHA_FILL</a>&#160;&#160;&#160;0xFF</td></tr>
 <tr class="separator:a2eaaf0d5dbab6593312e5e2c43cb43c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94f02d7da3b95b3d2ba20d85e6dbd141"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a94f02d7da3b95b3d2ba20d85e6dbd141">VXTU_MODULE_ENTRIES</a>(...)</td></tr>
+<tr class="separator:a94f02d7da3b95b3d2ba20d85e6dbd141"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c5f3b5d5db9aebf398a733617e612ce"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a5c5f3b5d5db9aebf398a733617e612ce">VXTU_MODULE_CREATE</a>(name,  body)</td></tr>
+<tr class="separator:a5c5f3b5d5db9aebf398a733617e612ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fff8082902c9af3063b8d8cc3a37daa"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a3fff8082902c9af3063b8d8cc3a37daa">VXTU_MODULE_NAME_STRING</a>&#160;&#160;&#160;&quot;&quot;</td></tr>
+<tr class="separator:a3fff8082902c9af3063b8d8cc3a37daa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e056a6f11b996dcd8f34ba2dbbb2387"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a9e056a6f11b996dcd8f34ba2dbbb2387">vxtu_static_allocator</a>(name,  size)</td></tr>
 <tr class="separator:a9e056a6f11b996dcd8f34ba2dbbb2387"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a29cce5f0083e0f94d01d8ab11ae1481f"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a29cce5f0083e0f94d01d8ab11ae1481f">vxtu_module_entry_func</a>) (<a class="el" href="vxt_8h.html#ac10b97a0ac675a0471f30c4432a64190">vxt_allocator</a> *, const char *)</td></tr>
+<tr class="separator:a29cce5f0083e0f94d01d8ab11ae1481f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -347,6 +359,66 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a5c5f3b5d5db9aebf398a733617e612ce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5c5f3b5d5db9aebf398a733617e612ce">&#9670;&nbsp;</a></span>VXTU_MODULE_CREATE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXTU_MODULE_CREATE</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">name, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">body&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a94f02d7da3b95b3d2ba20d85e6dbd141"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a94f02d7da3b95b3d2ba20d85e6dbd141">&#9670;&nbsp;</a></span>VXTU_MODULE_ENTRIES</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXTU_MODULE_ENTRIES</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>...</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3fff8082902c9af3063b8d8cc3a37daa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3fff8082902c9af3063b8d8cc3a37daa">&#9670;&nbsp;</a></span>VXTU_MODULE_NAME_STRING</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXTU_MODULE_NAME_STRING&#160;&#160;&#160;&quot;&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a9e056a6f11b996dcd8f34ba2dbbb2387"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9e056a6f11b996dcd8f34ba2dbbb2387">&#9670;&nbsp;</a></span>vxtu_static_allocator</h2>
 
@@ -392,6 +464,21 @@ Functions</h2></td></tr>
 <div class="ttc" id="avxt_8h_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> vxt.h:66</div></div>
 <div class="ttc" id="avxt_8h_html_a1a2c86d8b0bade734327e283188d6b77"><div class="ttname"><a href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a></div><div class="ttdeci">unsigned char vxt_byte</div><div class="ttdef"><b>Definition:</b> vxt.h:50</div></div>
 </div><!-- fragment -->
+</div>
+</div>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a id="a29cce5f0083e0f94d01d8ab11ae1481f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a29cce5f0083e0f94d01d8ab11ae1481f">&#9670;&nbsp;</a></span>vxtu_module_entry_func</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a>*(* vxtu_module_entry_func) (<a class="el" href="vxt_8h.html#ac10b97a0ac675a0471f30c4432a64190">vxt_allocator</a> *, const char *)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
 </div>
 </div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>

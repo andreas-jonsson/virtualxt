@@ -1,5 +1,6 @@
 var structvxt__pirepheral =
 [
+    [ "config", "structvxt__pirepheral.html#a040c39f173afa66a2524417464ed9228", null ],
     [ "destroy", "structvxt__pirepheral.html#aebc98728781c5a48dcdb8e0b43256235", null ],
     [ "dma", "structvxt__pirepheral.html#abe5aad18f095cfc34db1d4f94b3a695e", null ],
     [ "in", "structvxt__pirepheral.html#a8b529657c0d2f33488ad2f7ab0859b93", null ],
