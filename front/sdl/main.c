@@ -407,9 +407,6 @@ static int load_config(void *user, const char *section, const char *name, const 
 			config->args->debug = atoi(value);
 		else if (!strcmp("halt", name))
 			config->args->halt = atoi(value);
-	} else if (!strcmp("rifs", section)) {
-		if (!strcmp("detatch", name) && (atoi(value) != 0))
-			config->args->rifs = NULL;
 	}
 	return 1;
 }
@@ -460,15 +457,16 @@ static void write_default_config(const char *path) {
 	fprintf(fp,
 		"[modules]\n"
 		"adlib=\n"
+		"rifs=\n"
 		";isa=ch36x\n"
-		";serial_dbg=serial_debug1\n"
-		"\n"
-		"[serial_debug1]\n"
+		";serial_dbg=sdbg1\n"
+		"\n[sdbg1]\n"
 		"port=0x3F8\n"
-		"\n"
-		"[ch36x]\n"
+		"\n[ch36x]\n"
 		"device=/dev/ch36xpci0\n"
 		"io=0x201\n"
+		"\n[rifs]\n"
+		"port=0x178\n"
 	);
 	fclose(fp);
 }
@@ -531,9 +529,6 @@ int main(int argc, char *argv[]) {
 		args.harddrive = SDL_getenv("VXT_DEFAULT_HD_IMAGE");
 		if (!args.harddrive) args.harddrive = "boot/freedos_hd.img";
 	}
-	
-	if (!args.rifs)
-		args.rifs = ".";
 
 	args.debug |= args.halt;
 	if (args.debug)
@@ -684,12 +679,6 @@ int main(int argc, char *argv[]) {
 		APPEND_DEVICE(rom_ext);
 	}
 
-	if (args.rifs) {
-		bool ro = *args.rifs != '*';
-		const char *root = ro ? args.rifs : &args.rifs[1];
-		APPEND_DEVICE(vxtp_rifs_create(&realloc, 0x178, root, ro));
-	}
-
 	if (!args.no_mouse)
 		APPEND_DEVICE(mouse);
 
@@ -736,6 +725,15 @@ int main(int argc, char *argv[]) {
 		printf("ERROR: Could not configure all pirepherals!\n");
 		return -1;
 	}
+
+	#ifdef VXTU_MODULE_RIFS
+		if (args.rifs) {
+			bool wr = *args.rifs == '*';
+			const char *root = wr ? &args.rifs[1] : args.rifs;
+			vxt_system_configure(vxt, "rifs", "writable", wr ? "1" : "0");
+			vxt_system_configure(vxt, "rifs", "root", root);
+		}
+	#endif
 
 	if (args.trace) {
 		if (!(trace_op_output = fopen(args.trace, "wb"))) {

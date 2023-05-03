@@ -90,16 +90,18 @@ workspace "virtualxt"
 
     if _OPTIONS["modules"] then
         defines "VXTU_MODULES"
+        local files = os.matchfiles("modules/**/premake5.lua")
+        for _,v in ipairs(files) do
+            defines { "VXTU_MODULE_" .. string.upper(path.getname(path.getdirectory(v))) }
+        end
         
-        for _,v in ipairs(os.matchfiles("modules/**/premake5.lua")) do
+        for _,v in ipairs(files) do
             module_root = path.getdirectory(v)
             module_name = path.getname(module_root)
     
             local libname = module_name .. "-module"
             table.insert(modules, libname)
             table.insert(module_names, module_name)
-
-            defines { "VXTU_MODULE_" .. string.upper(module_name) }
 
             project(libname)
                 kind "StaticLib"
@@ -269,9 +271,6 @@ workspace "virtualxt"
 
         filter "options:validator"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
-
-        filter "system:windows"
-            links { "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"
             buildoptions { "-Wno-unused-parameter", "-Wno-pedantic" } -- no-pedantic, bacause of a problem with conversion from funcion pointers.

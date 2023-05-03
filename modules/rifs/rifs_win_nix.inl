@@ -20,7 +20,7 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
+#include <vxt/vxtu.h>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -133,24 +133,24 @@ static const char *rifs_copy_root(char *dest, const char *path) {
                 file_name = path;
             }
 
-            strncpy(dest, path, strlen(path) - strlen(file_name));
+            memcpy(dest, path, strlen(path) - strlen(file_name));
             if (*dest == 0)
                 strcpy(dest, "./");
             return file_name;
         }
     }
-    strncpy(dest, path, MAX_PATH_LEN);
+    strncpy(dest, path, MAX_PATH_LEN - 1);
     return NULL;
 }
 
 static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
     if (proc->dir_it) {
-        char *full_path = alloca(MAX_PATH_LEN);
+        char *full_path = alloca(MAX_PATH_LEN + 257);
 
         for (struct dirent *dire = readdir((DIR*)proc->dir_it); dire; dire = readdir((DIR*)proc->dir_it)) {
             if (pattern_comp(proc->dir_pattern, dire->d_name, proc->is_root)) {
                 memset(data, 0, 43);
-                snprintf(full_path, MAX_PATH_LEN, "%s/%s", proc->dir_path, dire->d_name);
+                snprintf(full_path, MAX_PATH_LEN + 256, "%s/%s", proc->dir_path, dire->d_name);
 
                 // Reference: https://www.stanislavs.org/helppc/int_21-4e.html
             
@@ -164,7 +164,7 @@ static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
                 data[0x15] = is_dir ? 0x10 : 0x0;
                 time_and_data(&stbuf.st_mtime, (vxt_word*)&data[0x16], (vxt_word*)&data[0x18]);
 
-                snprintf(full_path, MAX_PATH_LEN, "%s/%s", proc->dir_path, dire->d_name);
+                snprintf(full_path, MAX_PATH_LEN + 256, "%s/%s", proc->dir_path, dire->d_name);
                 *(vxt_word*)&data[0x1A] = (vxt_word)(((stbuf.st_size > 0xFFFF) || !S_ISREG(stbuf.st_mode)) ? 0xFFFF : stbuf.st_size);
 
                 char *dst = (char*)&data[0x1E];
@@ -203,7 +203,7 @@ static vxt_word rifs_findfirst(struct dos_proc *proc, vxt_word attrib, const cha
         if ((proc->dir_it = opendir(dir_path))) {
             proc->is_root = root;
             proc->find_attrib = attrib;
-            strncpy(proc->dir_path, dir_path, sizeof(proc->dir_path));
+            strncpy(proc->dir_path, dir_path, sizeof(proc->dir_path) - 1);
             pattern = pattern ? pattern + 1 : "????????.???";
             strncpy(proc->dir_pattern, pattern, sizeof(proc->dir_pattern));
             return rifs_findnext(proc, data);

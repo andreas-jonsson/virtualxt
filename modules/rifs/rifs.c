@@ -20,12 +20,13 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
+#include <vxt/vxtu.h>
 #include "crc32.h"
 
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 #define BUFFER_SIZE 0x10000
@@ -168,7 +169,7 @@ static const char *host_path(struct rifs *fs, const char *path) {
     else
         fprintf(stderr, "RIFS path is not absolute!\n");
        
-    strncat(fs->path_scratchpad, path, sizeof(fs->path_scratchpad));
+    strncat(fs->path_scratchpad, path, sizeof(fs->path_scratchpad) - 1);
 
     // Convert slashes.
     int ln = strlen(fs->path_scratchpad);
@@ -477,6 +478,16 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(fs, rifs, p);
     vxt_system_install_io(s, p, fs->base_port, fs->base_port + 7);
+    
+    if (!fs->readonly)
+        VXT_LOG("WARNING: '%s' is writable from guest!", fs->root_path);
+    /*
+    #if defined(_WIN32)
+        HMODULE lib = LoadLibrary("Shlwapi.dll"),
+        GetProcAddress(lib, "Test");
+        LoadLibrary("Shell32");
+    #endif
+    */
     return VXT_NO_ERROR;
 }
 
@@ -501,18 +512,28 @@ static const char *name(struct vxt_pirepheral *p) {
     return "RIFS Server";
 }
 
-struct vxt_pirepheral *vxtp_rifs_create(vxt_allocator *alloc, vxt_word base_port, const char *root, bool ro) VXT_PIREPHERAL_CREATE(alloc, rifs, {
-    // This is still a beta feature. Be safe!
-    if (!ro)
-        printf("WARNING: '%s' is writable from guest!\n", root);
+static vxt_error config(struct vxt_pirepheral *p, const char *section, const char *key, const char *value) {
+   VXT_DEC_DEVICE(fs, rifs, p);
+    if (!strcmp("rifs", section)) {
+        if (!strcmp("port", key)) {
+            sscanf(value, "%hx", &fs->base_port);
+        } else if (!strcmp("writable", key)) {
+            fs->readonly = atoi(value) == 0;
+        } else if (!strcmp("root", key)) {
+            rifs_copy_root(fs->root_path, value);
+        }
+    }
+    return VXT_NO_ERROR;
+}
 
-    DEVICE->readonly = ro;
-    DEVICE->base_port = base_port;
-    // TODO: Add autoexec.
-    rifs_copy_root(DEVICE->root_path, root);
-
+VXTU_MODULE_CREATE(rifs, {
+    DEVICE->readonly = true;
+    DEVICE->base_port = 0x178;
+    rifs_copy_root(DEVICE->root_path, ".");
+    
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
+    PIREPHERAL->config = &config;
     PIREPHERAL->reset = &reset;
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;
