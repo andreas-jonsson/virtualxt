@@ -478,16 +478,8 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(fs, rifs, p);
     vxt_system_install_io(s, p, fs->base_port, fs->base_port + 7);
-    
     if (!fs->readonly)
         VXT_LOG("WARNING: '%s' is writable from guest!", fs->root_path);
-    /*
-    #if defined(_WIN32)
-        HMODULE lib = LoadLibrary("Shlwapi.dll"),
-        GetProcAddress(lib, "Test");
-        LoadLibrary("Shell32");
-    #endif
-    */
     return VXT_NO_ERROR;
 }
 
