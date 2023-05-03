@@ -25,12 +25,16 @@
 #ifdef __linux__
 
 #include "ch36x/ch36x_lib.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 VXT_PIREPHERAL(isa, {
     int fd;
 
     struct {
-        const char *device;
+        char device[32];
+        int irq;
         vxt_word io_start;
         vxt_word io_end;
         vxt_pointer mem_start;
@@ -111,7 +115,8 @@ static vxt_error setup_adapter(struct isa *d) {
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(d, isa, p);
-    vxt_system_install_io(s, p, d->config.io_start, d->config.io_end);
+    if (d->config.io_start || d->config.io_end)
+        vxt_system_install_io(s, p, d->config.io_start, d->config.io_end);
     if (d->config.mem_start || d->config.mem_end)
         vxt_system_install_mem(s, p, d->config.mem_start, d->config.mem_end);
     return VXT_NO_ERROR;
@@ -140,18 +145,33 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "ISA Passthrough (CH367)";
 }
 
+static vxt_error config(struct vxt_pirepheral *p, const char *section, const char *key, const char *value) {
+    VXT_DEC_DEVICE(d, isa, p);
+    if (!strcmp("ch36x", section)) {
+        if (!strcmp("device", key)) {
+            strncpy(d->config.device, value, sizeof(d->config.device) - 1);
+        } else if (!strcmp("memory", key)) {
+            if (sscanf(value, "%x,%x", &d->config.mem_start, &d->config.mem_end) < 2)
+                d->config.mem_end = d->config.mem_start + 1;
+        } else if (!strcmp("io", key)) {
+            if (sscanf(value, "%hx,%hx", &d->config.io_start, &d->config.io_end) < 2)
+                d->config.io_end = d->config.io_start + 1;
+        } else if (!strcmp("irq", key)) {
+            d->config.irq = atoi(value);
+        }
+    }
+    return VXT_NO_ERROR;
+}
+
 VXTU_MODULE_CREATE(isa, {
     DEVICE->fd = -1;
-/*
-    DEVICE->config.device = device;
-    DEVICE->config.io_start = io_start;
-    DEVICE->config.io_end = io_end;
-    DEVICE->config.mem_start = mem_start;
-    DEVICE->config.mem_end = mem_end;
-*/
+    DEVICE->config.irq = -1;
+    strcpy(DEVICE->config.device, "/dev/ch36xpci0");
+
     PIREPHERAL->install = &install;
     PIREPHERAL->destroy = &destroy;
     PIREPHERAL->reset = &reset;
+    PIREPHERAL->config = &config;
     PIREPHERAL->name = &name;
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;

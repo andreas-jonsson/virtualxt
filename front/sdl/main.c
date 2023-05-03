@@ -460,10 +460,15 @@ static void write_default_config(const char *path) {
 	fprintf(fp,
 		"[modules]\n"
 		"adlib=\n"
+		";isa=ch36x\n"
 		";serial_dbg=serial_debug1\n"
 		"\n"
 		"[serial_debug1]\n"
 		"port=0x3F8\n"
+		"\n"
+		"[ch36x]\n"
+		"device=/dev/ch36xpci0\n"
+		"io=0x201\n"
 	);
 	fclose(fp);
 }
