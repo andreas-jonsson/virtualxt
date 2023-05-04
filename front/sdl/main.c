@@ -461,6 +461,7 @@ static void write_default_config(const char *path) {
 		"[modules]\n"
 		"adlib=\n"
 		"rifs=\n"
+		";rtc=\n"
 		";isa=ch36x\n"
 		";serial_dbg=sdbg1\n"
 		"\n[sdbg1]\n"
@@ -687,7 +688,6 @@ int main(int argc, char *argv[]) {
 
 	APPEND_DEVICE(vxtu_pic_create(&realloc));
 	APPEND_DEVICE(vxtu_dma_create(&realloc));
-	APPEND_DEVICE(vxtp_rtc_create(&realloc));
 	APPEND_DEVICE(vxtu_pit_create(&realloc));
 	APPEND_DEVICE(vxtp_ctrl_create(&realloc, &emu_control, NULL));
 	APPEND_DEVICE(ppi);

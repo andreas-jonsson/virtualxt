@@ -20,7 +20,7 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
+#include <vxt/vxtu.h>
 
 #include <time.h>
 
@@ -120,23 +120,16 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     c->enable_interrupt = false;
     return VXT_NO_ERROR;
 }
-/*
-static vxt_error step(struct vxt_pirepheral *p, int cycles) {
-    (void)cycles;
-    VXT_DEC_DEVICE(c, rtc, p);
-    return VXT_NO_ERROR;
-}
-*/
+
 static const char *name(struct vxt_pirepheral *p) {
     (void)p;
     return "Real Time Clock";
 }
 
-struct vxt_pirepheral *vxtp_rtc_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, rtc, {
+VXTU_MODULE_CREATE(rtc, {
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
     PIREPHERAL->reset = &reset;
-    //PIREPHERAL->step = &step;
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;
 })
