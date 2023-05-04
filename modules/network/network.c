@@ -28,7 +28,9 @@
 #include <stdlib.h>
 #include <pcap/pcap.h>
 
-#ifdef __linux__
+#ifdef _WIN32
+    #include <windows.h>
+#else
     #include <dlfcn.h>
 #endif
 
@@ -210,10 +212,20 @@ static bool list_devices(struct network *n, int *prefered) {
 }
 
 static bool load_pcap(struct network *n) {
-    if (!pcap_lib_handle && !(pcap_lib_handle = dlopen("libpcap.so.1", RTLD_LAZY))) {
-        VXT_LOG(dlerror());
-        return false;
-    }
+    #ifndef _WIN32
+        #define LIB_NAME "libpcap.so.1"
+        if (!pcap_lib_handle && !(pcap_lib_handle = dlopen(LIB_NAME, RTLD_LAZY))) {
+            VXT_LOG(dlerror());
+            return false;
+        }
+    #else
+        #define dlsym(l, n) GetProcAddress((HMODULE)l, (LPCSTR)n)
+        #define LIB_NAME "npcap.dll"
+        if (!pcap_lib_handle && !(pcap_lib_handle = (void*)LoadLibrary(LIB_NAME))) {
+            VXT_LOG("Could not load: " LIB_NAME);
+            return false;
+        }
+    #endif
 
     const char *(*lib_version)(void) = dlsym(pcap_lib_handle, "pcap_lib_version");
     if (!lib_version) {
