@@ -4,4 +4,4 @@ filter "toolset:clang or gcc"
     buildoptions "-Wno-pedantic"
 
 filter "system:windows"
-    includedirs "tools/npcap/sdk/Include"
+    includedirs "../../tools/npcap/sdk/Include"
