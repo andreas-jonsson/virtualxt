@@ -54,7 +54,7 @@ jobs:
         
       - name: Build
         run: |
-          premake5 --modules --pcap --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
+          premake5 --modules --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
           make clean sdl2-frontend
 
       - name: Package
@@ -106,7 +106,7 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="${GITHUB_WORKSPACE}/premake5":"${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32/bin":"$PATH"
-          premake5 --cc=gcc --modules --pcap gmake
+          premake5 --cc=gcc --modules gmake
           make clean sdl2-frontend
           mv build/bin/virtualxt.exe virtualxt-net.exe
           premake5 --cc=gcc gmake
@@ -155,7 +155,7 @@ jobs:
 
       - name: Build
         run: |
-          premake5 --modules --pcap --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
+          premake5 --modules --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
           make clean sdl2-frontend
 
       - name: Package
