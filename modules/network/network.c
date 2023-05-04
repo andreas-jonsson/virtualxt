@@ -30,19 +30,21 @@
 
 #ifdef _WIN32
     #include <windows.h>
+    #define API WINAPI
 #else
     #include <dlfcn.h>
+    #define API
 #endif
 
 void *pcap_lib_handle = NULL;
 
 VXT_PIREPHERAL(network, {
     struct {
-        int	(*sendpacket)(pcap_t*,const u_char*,int);
-        int	(*findalldevs)(pcap_if_t**,char*);
-        void (*freealldevs)(pcap_if_t*);
-        pcap_t *(*open_live)(const char*,int,int,int,char*);
-        int (*next_ex)(pcap_t*, struct pcap_pkthdr**, const u_char**);
+        int	(API *sendpacket)(pcap_t*,const u_char*,int);
+        int	(API *findalldevs)(pcap_if_t**,char*);
+        void (API *freealldevs)(pcap_if_t*);
+        pcap_t *(API *open_live)(const char*,int,int,int,char*);
+        int (API *next_ex)(pcap_t*, struct pcap_pkthdr**, const u_char**);
     } pcap;
 
     pcap_t *handle;
@@ -227,7 +229,7 @@ static bool load_pcap(struct network *n) {
         }
     #endif
 
-    const char *(*lib_version)(void) = dlsym(pcap_lib_handle, "pcap_lib_version");
+    const char *(API *lib_version)(void) = dlsym(pcap_lib_handle, "pcap_lib_version");
     if (!lib_version) {
         VXT_LOG("ERROR: Could not get pcap version!");
         return false;
