@@ -431,7 +431,10 @@ static int load_modules(void *user, const char *section, const char *name, const
 
 				APPEND_DEVICE(p);
 			}
-			printf("%d - %s\n", i + 1, name);
+
+			printf("%d - %s", i + 1, name);
+			if (*value) printf(" = %s\n", value);
+			else putc('\n', stdout);
 		}
 	}
 	return 1;

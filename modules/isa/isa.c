@@ -31,6 +31,8 @@
 
 VXT_PIREPHERAL(isa, {
     int fd;
+    unsigned long io_base;
+    unsigned long mem_base;
 
     struct {
         char device[32];
@@ -42,27 +44,38 @@ VXT_PIREPHERAL(isa, {
     } config;
 })
 
+int interrupt_trigger = 0;
+
+static void ch36x_isr_handler(int signo) {
+    (void)signo;
+    interrupt_trigger++;
+}
+
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
+    VXT_DEC_DEVICE(d, isa, p);
     vxt_byte data;
-    if (ch36x_read_io_byte((VXT_GET_DEVICE(isa, p))->fd, (unsigned long)port, &data))
+    if (ch36x_read_io_byte(d->fd, d->io_base + (unsigned long)port, &data))
         VXT_LOG("ERROR: Could not read IO port 0x%X!", port);
     return data;
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    if (ch36x_write_io_byte((VXT_GET_DEVICE(isa, p))->fd, (unsigned long)port, data))
+    VXT_DEC_DEVICE(d, isa, p);
+    if (ch36x_write_io_byte(d->fd, d->io_base + (unsigned long)port, data))
         VXT_LOG("ERROR: Could not write IO port 0x%X!", port);
 }
 
 static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
+    VXT_DEC_DEVICE(d, isa, p);
     vxt_byte data;
-    if (ch36x_read_mem_byte((VXT_GET_DEVICE(isa, p))->fd, (unsigned long)addr, &data))
+    if (ch36x_read_mem_byte(d->fd, d->mem_base + (unsigned long)addr, &data))
         VXT_LOG("ERROR: Could not read memory at 0x%X!", addr);
     return data;
 }
 
 static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
-    if (ch36x_write_mem_byte((VXT_GET_DEVICE(isa, p))->fd, (unsigned long)addr, data))
+    VXT_DEC_DEVICE(d, isa, p);
+    if (ch36x_write_mem_byte(d->fd, d->mem_base + (unsigned long)addr, data))
         VXT_LOG("ERROR: Could not write memory at 0x%X!", addr);
 }
 
@@ -74,7 +87,7 @@ static vxt_error setup_adapter(struct isa *d) {
     }
 
     enum CHIP_TYPE ct;
-    if (ch36x_get_chiptype(d->fd, &ct) != 0) {
+    if (ch36x_get_chiptype(d->fd, &ct)) {
         VXT_LOG("ERROR: Could not read chip type!");
         return VXT_USER_ERROR(1);
     }
@@ -94,22 +107,26 @@ static vxt_error setup_adapter(struct isa *d) {
             return VXT_USER_ERROR(2);
     }
 
-    /*
-    ret = ch36x_get_ioaddr(fd, &iobase);
-    if (ret != 0) {
-        printf("ch36x_get_ioaddr error.\n");
-        goto exit;
+    if (ch36x_get_ioaddr(d->fd, &d->io_base)) {
+        VXT_LOG("ERROR: Could not get IO base address!");
+        return VXT_USER_ERROR(3);
     }
-    printf("iobase:%lx\n", iobase);
+    VXT_LOG("IO base address: 0x%lX", d->io_base);
 
-    if (chiptype == CHIP_CH368) {
-        ret = ch36x_get_memaddr(fd, &membase);
-        if (ret != 0) {
-            printf("ch36x_get_memaddr error.\n");
-            goto exit;
+    if ((ct == CHIP_CH368) && ch36x_get_memaddr(d->fd, &d->mem_base)) {
+        VXT_LOG("ERROR: Could not get memory base address!");
+        return VXT_USER_ERROR(4);
+    }
+    VXT_LOG("Memory base address: 0x%lX", d->mem_base);
+
+    if (d->config.irq >= 0) {
+        if (ch36x_enable_isr(d->fd, INT_FALLING)) {
+            VXT_LOG("ERROR: Could not enable ISR!");
+            return VXT_USER_ERROR(5);
         }
-    */
-
+        ch36x_set_int_routine(d->fd, &ch36x_isr_handler);
+        VXT_LOG("Passthrough interrupt: %d", d->config.irq);
+    }
     return VXT_NO_ERROR;
 }
 
@@ -119,12 +136,15 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
         vxt_system_install_io(s, p, d->config.io_start, d->config.io_end);
     if (d->config.mem_start || d->config.mem_end)
         vxt_system_install_mem(s, p, d->config.mem_start, d->config.mem_end);
+    if (d->config.irq >= 0)
+        vxt_system_install_timer(s, p, 0);
     return VXT_NO_ERROR;
 }
 
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(d, isa, p);
     if (d->fd) {
+        ch36x_set_int_routine(d->fd, NULL);
         ch36x_close(d->fd);
         d->fd = -1;
     }
@@ -134,10 +154,21 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 static vxt_error destroy(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(d, isa, p);
     if (d->fd) {
+        ch36x_set_int_routine(d->fd, NULL);
         ch36x_close(d->fd);
         d->fd = -1;
     }
     vxt_system_allocator(VXT_GET_SYSTEM(isa, p))(p, 0);
+    return VXT_NO_ERROR;
+}
+
+static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+    (void)id; (void)cycles;
+    VXT_DEC_DEVICE(d, isa, p);
+    if (interrupt_trigger) {
+        interrupt_trigger = 0;
+        vxt_system_interrupt(VXT_GET_SYSTEM(isa, p), d->config.irq);
+    }
     return VXT_NO_ERROR;
 }
 
@@ -172,6 +203,7 @@ VXTU_MODULE_CREATE(isa, {
     PIREPHERAL->destroy = &destroy;
     PIREPHERAL->reset = &reset;
     PIREPHERAL->config = &config;
+    PIREPHERAL->timer = &timer;
     PIREPHERAL->name = &name;
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;

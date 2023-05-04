@@ -73,7 +73,11 @@ int ch36x_close(int fd)
  */
 int ch36x_get_chiptype(int fd, enum CHIP_TYPE *chiptype)
 {
-    return ioctl(fd, CH36x_GET_CHIPTYPE, (unsigned long)chiptype);
+    int ret;
+    unsigned long ct;
+    ret = ioctl(fd, CH36x_GET_CHIPTYPE, &ct);
+    *chiptype = (enum CHIP_TYPE)ct;
+    return ret;
 }
 
 /**
@@ -249,15 +253,20 @@ int ch36x_write_config_dword(int fd, uint8_t offset, uint32_t idword)
  */
 int ch36x_read_io_byte(int fd, unsigned long ioaddr, uint8_t *obyte)
 {
+    unsigned long tmp;
+    int ret;
+
     struct {
         unsigned long ioaddr;
         uint8_t *obyte;
     } ch36x_read_io_t;
 
     ch36x_read_io_t.ioaddr = ioaddr;
-    ch36x_read_io_t.obyte = obyte;
+    ch36x_read_io_t.obyte = (uint8_t*)&tmp;
 
-    return ioctl(fd, CH36x_READ_IO_BYTE, (unsigned long)&ch36x_read_io_t);
+    ret = ioctl(fd, CH36x_READ_IO_BYTE, (unsigned long)&ch36x_read_io_t);
+    *obyte = (uint8_t)tmp;
+    return ret;
 }
 
 /**
@@ -375,15 +384,20 @@ int ch36x_write_io_dword(int fd, unsigned long ioaddr, uint32_t idword)
  */
 int ch36x_read_mem_byte(int fd, unsigned long memaddr, uint8_t *obyte)
 {
+    unsigned long tmp;
+    int ret;
+
     struct {
         unsigned long memaddr;
         uint8_t *obyte;
     } ch36x_read_mem_t;
 
     ch36x_read_mem_t.memaddr = memaddr;
-    ch36x_read_mem_t.obyte = obyte;
+    ch36x_read_mem_t.obyte = (uint8_t*)&tmp;
 
-    return ioctl(fd, CH36x_READ_MEM_BYTE, (unsigned long)&ch36x_read_mem_t);
+    ret = ioctl(fd, CH36x_READ_MEM_BYTE, (unsigned long)&ch36x_read_mem_t);
+    *obyte = (uint8_t)tmp;
+    return ret;
 }
 
 /**
