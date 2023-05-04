@@ -54,7 +54,7 @@ typedef struct vxt_pirepheral *(*vxtu_module_entry_func)(vxt_allocator*,const ch
 	}																										\
     
 	#define VXTU_MODULE_ENTRIES(...) _VXT_EVALUATOR(_VXTU_MODULE_ENTRIES, VXTU_MODULE_NAME, __VA_ARGS__)
-    #define VXTU_MODULE_CREATE(name, body) static struct vxt_pirepheral *_vxtu_pirepheral_create(vxt_allocator *alloc, const char *ARGS) VXT_PIREPHERAL_CREATE(alloc, name, { body ; (void)ARGS; }) VXTU_MODULE_ENTRIES(&_vxtu_pirepheral_create)
+    #define VXTU_MODULE_CREATE(name, body) static struct vxt_pirepheral *_vxtu_pirepheral_create(vxt_allocator *ALLOC, const char *ARGS) VXT_PIREPHERAL_CREATE(ALLOC, name, { body ; (void)ARGS; }) VXTU_MODULE_ENTRIES(&_vxtu_pirepheral_create)
     #define VXTU_MODULE_NAME_STRING _VXT_EVALUATOR(_VXT_STRINGIFY, VXTU_MODULE_NAME)
 #else
     #define VXTU_MODULE_ENTRIES(...)

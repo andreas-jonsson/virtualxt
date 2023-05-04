@@ -93,7 +93,6 @@ struct DocoptArgs {
     size_t hdboot;
     size_t help;
     size_t joystick;
-    size_t list;
     size_t mute;
     size_t no_activity;
     size_t no_modules;
@@ -107,13 +106,12 @@ struct DocoptArgs {
     char *floppy;
     char *frequency;
     char *harddrive;
-    char *network;
     char *rifs;
     char *trace;
     char *vga;
     /* special */
     const char *usage_pattern;
-    const char *help_message[26];
+    const char *help_message[24];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

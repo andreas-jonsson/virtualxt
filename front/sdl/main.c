@@ -291,13 +291,6 @@ static int render_callback(int width, int height, const vxt_byte *rgba, void *us
 	return status;
 }
 
-#ifdef VXTP_NETWORK
-	static Uint32 network_callback(Uint32 interval, void *param) {
-		SYNC(vxtp_network_poll(param));
-		return interval;
-	}
-#endif
-
 static void audio_callback(void *udata, uint8_t *stream, int len) {
 	struct vxt_pirepheral **audio_sources = (struct vxt_pirepheral**)udata;
 	len /= 2;
@@ -462,6 +455,7 @@ static void write_default_config(const char *path) {
 		"adlib=\n"
 		"rifs=\n"
 		";rtc=\n"
+		";network=eth0\n"
 		";isa=ch36x\n"
 		";serial_dbg=sdbg1\n"
 		"\n[sdbg1]\n"
@@ -486,13 +480,6 @@ int main(int argc, char *argv[]) {
 
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
 	args.rifs = rifs_path ? rifs_path : args.rifs;
-
-	#ifdef VXTP_NETWORK
-		if (args.list) {
-			vxtp_network_list(NULL);
-			return 0;
-		}
-	#endif
 
 	if (!args.config) {
 		args.config = SDL_GetPrefPath("virtualxt", "VirtualXT-SDL");
@@ -692,23 +679,6 @@ int main(int argc, char *argv[]) {
 	APPEND_DEVICE(vxtp_ctrl_create(&realloc, &emu_control, NULL));
 	APPEND_DEVICE(ppi);
 	APPEND_DEVICE(video.device);
-
-	SDL_TimerID network_timer = 0;
-	if (args.network) {
-		#ifdef VXTP_NETWORK
-			struct vxt_pirepheral *net = vxtp_network_create(&realloc, atoi(args.network));
-			if (net) {
-				APPEND_DEVICE(net);
-				if (!(network_timer = SDL_AddTimer(10, &network_callback, net))) {
-					printf("SDL_AddTimer failed!\n");
-					return -1;
-				}
-			}
-		#else
-			printf("No network support in this build!\n");
-			return -1;
-		#endif
-	}
 
 	printf("Loaded modules:\n");
 	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, (void*)&realloc)) {
@@ -1032,9 +1002,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	SDL_WaitThread(emu_thread, NULL);
-
-	if (network_timer)
-		SDL_RemoveTimer(network_timer);
 
 	if (audio_device)
 		SDL_CloseAudioDevice(audio_device);

@@ -20,11 +20,6 @@ newoption {
 }
 
 newoption {
-    trigger = "pcap",
-    description = "Enable network support by linking with pcap"
-}
-
-newoption {
     trigger = "validator",
     description = "Enable the PI8088 hardware validator"
 }
@@ -70,17 +65,9 @@ workspace "virtualxt"
         defines "PI8088"
         links "gpiod"
 
-    filter { "options:pcap", "not system:windows" }
-        defines "VXTP_NETWORK"
-        links "pcap"
-
-    filter { "options:pcap", "system:windows" }
-        defines { "VXTP_NETWORK", "_WINSOCK_DEPRECATED_NO_WARNINGS" }
-        includedirs "tools/npcap/sdk/Include"
-        links { "Ws2_32", "tools/npcap/sdk/Lib/x64/wpcap" }
-
     filter "system:windows"
-        defines "_CRT_SECURE_NO_WARNINGS"
+        defines { "_CRT_SECURE_NO_WARNINGS", "_WINSOCK_DEPRECATED_NO_WARNINGS" }
+        links "Ws2_32"
 
     filter "toolset:clang or gcc"
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
@@ -152,13 +139,8 @@ workspace "virtualxt"
     project "vxtp"
         kind "StaticLib"
 
-        defines "VXTP_NUKED_OPL3"
-
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
         includedirs { "lib/vxtp", "lib/vxt/include"}
-
-        filter "not options:pcap"
-            removefiles "lib/vxtp/network.c"
 
         filter "toolset:gcc"
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
@@ -245,8 +227,6 @@ workspace "virtualxt"
         kind "ConsoleApp"
         targetname "virtualxt"
         targetdir "build/bin"
-
-        defines "VXTP_NUKED_OPL3"
 
         files { "front/sdl/*.h", "front/sdl/*.c" }
 

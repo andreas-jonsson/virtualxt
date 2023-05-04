@@ -22,15 +22,31 @@
 
 #define _DEFAULT_SOURCE	1
 
-#include "vxtp.h"
+#include <vxt/vxtu.h>
 
 #include <string.h>
+#include <stdlib.h>
 #include <pcap/pcap.h>
 
+#ifdef __linux__
+    #include <dlfcn.h>
+#endif
+
+void *pcap_lib_handle = NULL;
+
 VXT_PIREPHERAL(network, {
+    struct {
+        int	(*sendpacket)(pcap_t*,const u_char*,int);
+        int	(*findalldevs)(pcap_if_t**,char*);
+        void (*freealldevs)(pcap_if_t*);
+        pcap_t *(*open_live)(const char*,int,int,int,char*);
+        int (*next_ex)(pcap_t*, struct pcap_pkthdr**, const u_char**);
+    } pcap;
+
     pcap_t *handle;
     bool can_recv;
     int pkg_len;
+    char nif[128];
     vxt_byte buffer[0x10000];
 })
 
@@ -61,8 +77,8 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
             for (int i = 0; i < (int)r->cx; i++)
                 n->buffer[i] = vxt_system_read_byte(s, VXT_POINTER(r->ds, r->si + i));
             
-            if (pcap_sendpacket(n->handle, n->buffer, r->cx))
-                fprintf(stderr, "Could not send packet!\n");
+            if (n->pcap.sendpacket(n->handle, n->buffer, r->cx))
+                VXT_LOG("Could not send packet!");
             break;
         case 2: // Return packet info (packet buffer in DS:SI, length in CX)
             r->ds = 0xD000;
@@ -79,11 +95,6 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 	}
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io_at(s, p, 0xB2);
-    return VXT_NO_ERROR;
-}
-
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(n, network, p);
     n->can_recv = false;
@@ -96,70 +107,80 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Network Adapter (Fake86 Interface)";
 }
 
-static pcap_t *init_pcap(int device) {
+static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+    (void)id; (void)cycles;
+    VXT_DEC_DEVICE(n, network, p);
+    vxt_system *s = VXT_GET_SYSTEM(network, p);
+
+    if (!n->can_recv)
+        return VXT_NO_ERROR;
+
+    const vxt_byte *data = NULL;
+    struct pcap_pkthdr *header = NULL;
+
+    if (n->pcap.next_ex(n->handle, &header, &data) <= 0)
+        return VXT_NO_ERROR;
+
+    if (header->len > sizeof(n->buffer))
+        return VXT_NO_ERROR;
+    
+    n->can_recv = false;
+    n->pkg_len = header->len;
+
+    for (int i = 0; i < n->pkg_len; i++)
+        vxt_system_write_byte(s, VXT_POINTER(0xD000, i), data[i]);
+    vxt_system_interrupt(s, 6);
+
+    return VXT_NO_ERROR;
+}
+
+static pcap_t *init_pcap(struct network *n) {
     pcap_t *handle = NULL;
     pcap_if_t *devs = NULL;
     char buffer[PCAP_ERRBUF_SIZE] = {0};
 
     puts("Initialize network:");
 
-	if (pcap_findalldevs(&devs, buffer)) {
-        fprintf(stderr, "pcap_findalldevs() failed with error: %s\n", buffer);
+	if (n->pcap.findalldevs(&devs, buffer)) {
+        VXT_LOG("pcap_findalldevs() failed with error: %s", buffer);
         return NULL;
 	}
 
     int i = 0;
     pcap_if_t *dev = NULL;
 	for (dev = devs; dev; dev = dev->next) {
-        if (++i == device)
+        i++;
+        if (!strcmp(dev->name, n->nif))
             break;
     }
 
 	if (!dev) {
-        fprintf(stderr, "No network interface found! (Check device ID.)\n");
-        pcap_freealldevs(devs);
+        VXT_LOG("No network interface found! (Check device name.)");
+        n->pcap.freealldevs(devs);
         return NULL;
     }
 
-    if (!(handle = pcap_open_live(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, -1, buffer))) {
-        fprintf(stderr, "pcap error: %s\n", buffer);
-        pcap_freealldevs(devs);
+    if (!(handle = n->pcap.open_live(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, -1, buffer))) {
+        VXT_LOG("pcap error: %s", buffer);
+        n->pcap.freealldevs(devs);
         return NULL;
     }
 
-    printf("%d - %s\n", device, dev->name);
-    pcap_freealldevs(devs);
+    printf("%d - %s\n", i, dev->name);
+    n->pcap.freealldevs(devs);
     return handle;
 }
 
-struct vxt_pirepheral *vxtp_network_create(vxt_allocator *alloc, int device) {
-    pcap_t *handle = NULL;
-    if (!(handle = init_pcap(device)))
-        return NULL;
-
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, VXT_PIREPHERAL_SIZE(network));
-    vxt_memclear(p, VXT_PIREPHERAL_SIZE(network));
-
-    (VXT_GET_DEVICE(network, p))->handle = handle;
-
-    p->install = &install;
-    p->name = &name;
-    p->reset = &reset;
-    p->io.in = &in;
-    p->io.out = &out;
-    return p;
-}
-
-vxt_error vxtp_network_list(int *prefered) {
+static bool list_devices(struct network *n, int *prefered) {
     pcap_if_t *devs = NULL;
     char buffer[PCAP_ERRBUF_SIZE] = {0};
 
-	if (pcap_findalldevs(&devs, buffer)) {
-        fprintf(stderr, "pcap_findalldevs() failed with error: %s\n", buffer);
-        return VXT_USER_ERROR(0);
+	if (n->pcap.findalldevs(&devs, buffer)) {
+        VXT_LOG("pcap_findalldevs() failed with error: %s", buffer);
+        return false;
 	}
 
-    puts("Available network devices:");
+    puts("Host network devices:");
 
     int i = 0;
     pcap_if_t *selected = NULL;
@@ -182,34 +203,62 @@ vxt_error vxtp_network_list(int *prefered) {
         puts("");
     }
 
-    pcap_freealldevs(devs);
+    n->pcap.freealldevs(devs);
     if (prefered && selected)
         *prefered = i;
-    return VXT_NO_ERROR;
+    return true;
 }
 
-vxt_error vxtp_network_poll(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(n, network, p);
-    vxt_system *s = VXT_GET_SYSTEM(network, p);
+static bool load_pcap(struct network *n) {
+    if (!pcap_lib_handle && !(pcap_lib_handle = dlopen("libpcap.so.1", RTLD_LAZY))) {
+        VXT_LOG(dlerror());
+        return false;
+    }
 
-    if (!n->can_recv)
-        return VXT_NO_ERROR;
+    const char *(*lib_version)(void) = dlsym(pcap_lib_handle, "pcap_lib_version");
+    if (!lib_version) {
+        VXT_LOG("ERROR: Could not get pcap version!");
+        return false;
+    }
+    VXT_LOG("Pcap version: %s", lib_version());
 
-    const vxt_byte *data = NULL;
-    struct pcap_pkthdr *header = NULL;
-
-    if (pcap_next_ex(n->handle, &header, &data) <= 0)
-        return VXT_NO_ERROR;
-
-    if (header->len > sizeof(n->buffer))
-        return VXT_NO_ERROR;
+    #define LOAD_SYM(name)                                                  \
+        if (!(n->pcap. name = dlsym(pcap_lib_handle, "pcap_" # name))) {    \
+            VXT_LOG("ERROR: Could not load: " # name);                      \
+            return false;                                                   \
+        }                                                                   \
     
-    n->can_recv = false;
-    n->pkg_len = header->len;
+    LOAD_SYM(sendpacket);
+    LOAD_SYM(findalldevs);
+    LOAD_SYM(freealldevs);
+    LOAD_SYM(open_live);
+    LOAD_SYM(next_ex);
 
-    for (int i = 0; i < n->pkg_len; i++)
-        vxt_system_write_byte(s, VXT_POINTER(0xD000, i), data[i]);
-    vxt_system_interrupt(s, 6);
+    #undef LOAD_SYM
 
+    list_devices(n, NULL);
+    return true;
+}
+
+static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+    VXT_DEC_DEVICE(n, network, p);
+    if (!load_pcap(n))
+        return VXT_USER_ERROR(0);
+
+    if (!(n->handle = init_pcap(n)))
+        return VXT_USER_ERROR(1);
+
+    vxt_system_install_io_at(s, p, 0xB2);
+    vxt_system_install_timer(s, p, 10000);
     return VXT_NO_ERROR;
 }
+
+VXTU_MODULE_CREATE(network, {
+    strncpy(DEVICE->nif, ARGS, sizeof(DEVICE->nif) - 1);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
