@@ -214,6 +214,6 @@ VXTU_MODULE_CREATE(isa, {
 #else
 
 VXT_PIREPHERAL(isa, { int _; })
-VXTU_MODULE_CREATE(isa, {})
+VXTU_MODULE_CREATE(isa, { return NULL; })
 
 #endif

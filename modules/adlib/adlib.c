@@ -23,8 +23,6 @@
 #include <vxt/vxtu.h>
 #include "nuked-opl3/opl3.h"
 
-extern vxt_int16 (*frontend_adlib_generate_sample)(struct vxt_pirepheral*,int);
-
 VXT_PIREPHERAL(adlib, {
 	opl3_chip chip;
     int freq;
@@ -71,7 +69,7 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "AdLib Music Synthesizer";
 }
 
-static vxt_int16 generate_sample(struct vxt_pirepheral *p, int freq) {
+vxt_int16 adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
     VXT_DEC_DEVICE(a, adlib, p);
     if (a->freq != freq) {
         a->freq = freq;
@@ -83,10 +81,7 @@ static vxt_int16 generate_sample(struct vxt_pirepheral *p, int freq) {
     return sample[0];
 }
 
-static struct vxt_pirepheral *create(vxt_allocator *alloc, const char *args) VXT_PIREPHERAL_CREATE(alloc, adlib, {
-    (void)args;
-    frontend_adlib_generate_sample = &generate_sample;
-
+VXTU_MODULE_CREATE(adlib, {
     DEVICE->freq = 48000;
 
     PIREPHERAL->install = &install;
@@ -95,5 +90,3 @@ static struct vxt_pirepheral *create(vxt_allocator *alloc, const char *args) VXT
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;
 })
-
-VXTU_MODULE_ENTRIES(&create)

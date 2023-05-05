@@ -268,6 +268,8 @@ struct vxt_validator {
 
 #endif
 
+#define vxt_logger() _vxt_logger
+
 /// @private
 extern vxt_error _vxt_system_initialize(vxt_system *s, unsigned reg_size, int v_major, int v_minor);
 

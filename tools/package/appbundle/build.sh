@@ -4,9 +4,10 @@ APP_DIR="$GITHUB_WORKSPACE/VirtualXT.app"
 rm -rf $APP_DIR
 
 cp -r "$GITHUB_WORKSPACE/tools/package/appbundle/virtualxt-appbundle" $APP_DIR
-mkdir -p $APP_DIR/Contents/MacOS $APP_DIR/Contents/Resources/bios $APP_DIR/Contents/Resources/boot
+mkdir -p $APP_DIR/Contents/MacOS $APP_DIR/Contents/Resources/bios $APP_DIR/Contents/Resources/boot $APP_DIR/Contents/Resources/modules
 
 cp build/bin/virtualxt $APP_DIR/Contents/MacOS/
+cp modules/*-module.* $APP_DIR/Contents/Resources/modules/
 cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
 cp bios/pcxtbios_640.bin $APP_DIR/Contents/Resources/bios/
 cp bios/glabios.bin $APP_DIR/Contents/Resources/bios/

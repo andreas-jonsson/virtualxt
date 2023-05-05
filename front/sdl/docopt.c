@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 24; j++)
+            for (j = 0; j < 25; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -281,6 +281,10 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             if (option->argument) {
                 args->harddrive = (char *) option->argument;
             }
+        } else if (strcmp(option->olong, "--modules") == 0) {
+            if (option->argument) {
+                args->modules = (char *) option->argument;
+            }
         } else if (strcmp(option->olong, "--rifs") == 0) {
             if (option->argument) {
                 args->rifs = (char *) option->argument;
@@ -316,7 +320,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
-        "4.772726", NULL, NULL, NULL, NULL,
+        "4.772726", NULL, NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -335,6 +339,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --joystick              Enable joystick support.",
               "  --rifs=PATH             Enable experimental RIFS support. (Shared folders)",
               "  --config=PATH           Set config directory.",
+              "  --modules=PATH          Set modules directory.",
               "  --bios=FILE             BIOS binary.",
               "  --extension=FILE        VirtualXT BIOS extension binary.",
               "  --trace=FILE            Write CPU trace to file.",
@@ -366,6 +371,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {"-a", "--floppy", 1, 0, NULL},
         {NULL, "--frequency", 1, 0, NULL},
         {"-c", "--harddrive", 1, 0, NULL},
+        {NULL, "--modules", 1, 0, NULL},
         {NULL, "--rifs", 1, 0, NULL},
         {NULL, "--trace", 1, 0, NULL},
         {NULL, "--vga", 1, 0, NULL}
@@ -375,7 +381,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 21;
+    elements.n_options = 22;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;

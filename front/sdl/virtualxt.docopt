@@ -15,6 +15,7 @@ Options:
   --joystick              Enable joystick support.
   --rifs=PATH             Enable experimental RIFS support. (Shared folders)
   --config=PATH           Set config directory.
+  --modules=PATH          Set modules directory.
   --bios=FILE             BIOS binary.
   --extension=FILE        VirtualXT BIOS extension binary.
   --trace=FILE            Write CPU trace to file.

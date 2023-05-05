@@ -115,6 +115,8 @@ SDL_Point framebuffer_size = {640, 200};
 char floppy_image_path[FILENAME_MAX] = {0};
 char new_floppy_image_path[FILENAME_MAX] = {0};
 
+const char *modules_search_path = NULL;
+
 int str_buffer_len = 0;
 char *str_buffer = NULL;
 
@@ -408,19 +410,58 @@ static int load_modules(void *user, const char *section, const char *name, const
 	if (!strcmp("modules", section)) {
 		for (int i = 0; true; i++) {
 			const struct vxtu_module_entry *e = &vxtu_module_table[i];
-			if (!e->entry)
+			if (!e->name)
 				break;
 			else if (strcmp(e->name, name))
 				continue;
 
-			for (vxtu_module_entry_func *entries = e->entry(); *entries; entries++) {
-				struct vxt_pirepheral *p = (*entries)((vxt_allocator*)user, value);
+			vxtu_module_entry_func *(*constructors)(int(*)(const char*, ...)) = NULL;
+
+			#ifdef VXTU_STATIC_MODULES
+				constructors = e->entry;
+			#else
+				char buffer[FILENAME_MAX];
+				sprintf(buffer, "%s/%s-module."
+					#ifdef _WIN32
+						"dll"
+					#else
+						"so"
+					#endif
+					, modules_search_path, name);
+
+				void *lib = SDL_LoadObject(buffer);
+				if (!lib) {
+					printf("ERROR: Could not load module: %s\n", name);
+					printf("ERROR: %s\n", SDL_GetError());
+					continue;
+				}
+
+				sprintf(buffer, "_vxtu_module_%s_entry", name);
+				constructors = SDL_LoadFunction(lib, buffer);
+
+				if (!constructors) {
+					printf("ERROR: Could not load module entry: %s\n", SDL_GetError());
+					SDL_UnloadObject(lib);
+					continue;
+				}
+			#endif
+
+			for (vxtu_module_entry_func *f = constructors(vxt_logger()); *f; f++) {
+				struct vxt_pirepheral *p = (*f)((vxt_allocator*)user, value);
 				if (!p)
 					continue; // Assume the module chose not to be loaded.
 
 				// Handle special cases.
-				if (!strcmp("adlib", name))
+				if (!strcmp("adlib", name)) {
 					audio_sources[1] = p;
+					#ifdef VXTU_STATIC_MODULES
+						void *lib = SDL_LoadObject(NULL);
+						frontend_adlib_generate_sample = SDL_LoadFunction(lib, "adlib_generate_sample");
+						SDL_UnloadObject(lib);
+					#else
+						frontend_adlib_generate_sample = SDL_LoadFunction(lib, "adlib_generate_sample");
+					#endif
+				}
 
 				APPEND_DEVICE(p);
 			}
@@ -504,6 +545,13 @@ int main(int argc, char *argv[]) {
 			return -1;
 		}
 	}
+
+	if (!args.modules) {
+		args.modules = SDL_getenv("VXT_DEFAULT_MODULES_PATH");
+		if (!args.modules)
+			args.modules = "modules";
+	}
+	modules_search_path = args.modules;
 
 	if (!args.bios) {
 		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
@@ -680,7 +728,11 @@ int main(int argc, char *argv[]) {
 	APPEND_DEVICE(ppi);
 	APPEND_DEVICE(video.device);
 
+	#ifdef VXTU_STATIC_MODULES
+		printf("Modules are staticly linked!\n");
+	#endif
 	printf("Loaded modules:\n");
+
 	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, (void*)&realloc)) {
 		printf("ERROR: Could not load all modules!\n");
 		return -1;

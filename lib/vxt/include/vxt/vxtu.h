@@ -48,10 +48,11 @@ extern "C" {
 typedef struct vxt_pirepheral *(*vxtu_module_entry_func)(vxt_allocator*,const char*);
 
 #ifdef VXTU_MODULES
-    #define _VXTU_MODULE_ENTRIES(n, ...) vxtu_module_entry_func *_vxtu_module_ ## n ## _entry(void) {		\
-		static vxtu_module_entry_func _vxtu_module_ ## n ## _entries[] = { __VA_ARGS__, NULL };				\
-		return _vxtu_module_ ## n ## _entries;																\
-	}																										\
+    #define _VXTU_MODULE_ENTRIES(n, ...) vxtu_module_entry_func *_vxtu_module_ ## n ## _entry(int (*f)(const char*, ...)) {		\
+		vxt_set_logger(f);																										\
+		static vxtu_module_entry_func _vxtu_module_ ## n ## _entries[] = { __VA_ARGS__, NULL };									\
+		return _vxtu_module_ ## n ## _entries;																					\
+	}																															\
     
 	#define VXTU_MODULE_ENTRIES(...) _VXT_EVALUATOR(_VXTU_MODULE_ENTRIES, VXTU_MODULE_NAME, __VA_ARGS__)
     #define VXTU_MODULE_CREATE(name, body) static struct vxt_pirepheral *_vxtu_pirepheral_create(vxt_allocator *ALLOC, const char *ARGS) VXT_PIREPHERAL_CREATE(ALLOC, name, { body ; (void)ARGS; }) VXTU_MODULE_ENTRIES(&_vxtu_pirepheral_create)

@@ -20,6 +20,11 @@ newoption {
 }
 
 newoption {
+    trigger = "static",
+    description = "Use static modules"
+}
+
+newoption {
     trigger = "validator",
     description = "Enable the PI8088 hardware validator"
 }
@@ -65,10 +70,6 @@ workspace "virtualxt"
         defines "PI8088"
         links "gpiod"
 
-    filter "system:windows"
-        defines { "_CRT_SECURE_NO_WARNINGS", "_WINSOCK_DEPRECATED_NO_WARNINGS" }
-        links "Ws2_32"
-
     filter "toolset:clang or gcc"
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
 
@@ -76,7 +77,13 @@ workspace "virtualxt"
     local module_names = {}
 
     if _OPTIONS["modules"] then
+        filter()
+
         defines "VXTU_MODULES"
+        if _OPTIONS["static"] then
+            defines "VXTU_STATIC_MODULES"
+        end
+
         local files = os.matchfiles("modules/**/premake5.lua")
         for _,v in ipairs(files) do
             defines { "VXTU_MODULE_" .. string.upper(path.getname(path.getdirectory(v))) }
@@ -91,10 +98,25 @@ workspace "virtualxt"
             table.insert(module_names, module_name)
 
             project(libname)
-                kind "StaticLib"
-                basedir "."
+                if _OPTIONS["static"] then
+                    kind "StaticLib"
+                    basedir "."
+                else
+                    kind "SharedLib"
+                    targetdir "modules"
+                    targetprefix ""
+                    basedir "."
+                    links "vxt"
+                    pic "On"
+                end
+
                 includedirs "lib/vxt/include"
                 defines { "VXTU_MODULE_NAME=" .. module_name }
+
+                cleancommands {
+                    "{RMFILE} modules/" .. libname .. ".*",
+                    "make clean %{cfg.buildcfg}"
+                }
     
             dofile(v)
         end
@@ -128,6 +150,7 @@ workspace "virtualxt"
 
     project "vxt"
         kind "StaticLib"
+        pic "On"
 
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         includedirs "lib/vxt/include"
@@ -138,12 +161,17 @@ workspace "virtualxt"
 
     project "vxtp"
         kind "StaticLib"
+        pic "On"
 
         files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
         includedirs { "lib/vxtp", "lib/vxt/include"}
 
         filter "toolset:gcc"
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
+
+    project "modules"
+        kind "StaticLib" -- This is just a dummy.
+        links(modules)
 
     project "libretro-frontend"
         kind "SharedLib"
@@ -236,7 +264,7 @@ workspace "virtualxt"
         files "modules/modules.h"
         includedirs "modules"
 
-        if _OPTIONS["modules"] then
+        if _OPTIONS["modules"] and _OPTIONS["static"] then
             links(modules)
         end
 
@@ -321,13 +349,20 @@ if _OPTIONS["test"] then
 end
 
 io.writefile("modules/modules.h", (function()
-    local str = "#include <vxt/vxtu.h>\n\nstruct vxtu_module_entry {\n\tconst char *name;\n\tvxtu_module_entry_func *(*entry)(void);\n};\n\n#ifdef VXTU_MODULES\n"
-    for _,mod in ipairs(module_names) do
-        str = string.format("%s\nextern vxtu_module_entry_func *_vxtu_module_%s_entry(void);\n", str, mod)
+    local is_static = _OPTIONS["static"]
+    local str = "#include <vxt/vxtu.h>\n\nstruct vxtu_module_entry {\n\tconst char *name;\n\tvxtu_module_entry_func *(*entry)(int(*)(const char*, ...));\n};\n\n#ifdef VXTU_MODULES\n"
+    if is_static then
+        for _,mod in ipairs(module_names) do
+            str = string.format("%s\nextern vxtu_module_entry_func *_vxtu_module_%s_entry(int(*)(const char*, ...));\n", str, mod)
+        end
     end
     str = string.format("%s\nconst struct vxtu_module_entry vxtu_module_table[%d] = {\n", str, #module_names + 1)
     for _,mod in ipairs(module_names) do
-        str = string.format('%s\t{ "%s", _vxtu_module_%s_entry },\n', str, mod, mod)
+        if is_static then
+            str = string.format('%s\t{ "%s", _vxtu_module_%s_entry },\n', str, mod, mod)
+        else
+            str = string.format('%s\t{ "%s", NULL },\n', str, mod)  
+        end
     end
     return string.format("%s\t{ NULL, NULL }\n};\n\n#else\n\nconst struct vxtu_module_entry vxtu_module_table[1] = { { NULL, NULL } };\n\n#endif\n", str)
 end)())

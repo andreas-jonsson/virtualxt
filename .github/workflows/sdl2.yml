@@ -55,7 +55,7 @@ jobs:
       - name: Build
         run: |
           premake5 --modules --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
-          make clean sdl2-frontend
+          make clean sdl2-frontend modules
 
       - name: Package
         run: ./tools/package/itch/package.linux.sh
@@ -107,11 +107,7 @@ jobs:
         run: |
           export PATH="${GITHUB_WORKSPACE}/premake5":"${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32/bin":"$PATH"
           premake5 --cc=gcc --modules gmake
-          make clean sdl2-frontend
-          mv build/bin/virtualxt.exe virtualxt-net.exe
-          premake5 --cc=gcc gmake
-          make clean sdl2-frontend
-          mv virtualxt-net.exe build/bin
+          make clean sdl2-frontend modules
 
       - name: Package
         run: ./tools/package/itch/package.bat
@@ -156,7 +152,7 @@ jobs:
       - name: Build
         run: |
           premake5 --modules --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
-          make clean sdl2-frontend
+          make clean sdl2-frontend modules
 
       - name: Package
         run: ./tools/package/itch/package.osx.sh
