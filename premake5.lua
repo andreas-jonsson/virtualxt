@@ -80,7 +80,7 @@ workspace "virtualxt"
     local module_names = {}
 
     if _OPTIONS["modules"] then
-        filter()
+        filter {}
 
         defines "VXTU_MODULES"
         if _OPTIONS["static"] then

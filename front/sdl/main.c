@@ -446,7 +446,13 @@ static int load_modules(void *user, const char *section, const char *name, const
 				}
 			#endif
 
-			for (vxtu_module_entry_func *f = constructors(vxt_logger()); *f; f++) {
+			vxtu_module_entry_func *const_func = constructors(vxt_logger());
+			if (!const_func) {
+				printf("ERROR: Module '%s' does not return entries!\n", name);
+				continue;
+			}
+
+			for (vxtu_module_entry_func *f = const_func; *f; f++) {
 				struct vxt_pirepheral *p = (*f)((vxt_allocator*)user, value);
 				if (!p)
 					continue; // Assume the module chose not to be loaded.
