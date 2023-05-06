@@ -125,6 +125,13 @@ workspace "virtualxt"
         end
     end
 
+    -- This is just a dummy project.
+    project "modules"
+        kind "StaticLib"
+        files "modules/dummy.c"
+        links(modules)
+        io.writefile("modules/dummy.c", "int dummy;\n")
+
     project "inih"
         kind "StaticLib"
         files { "lib/inih/ini.h", "lib/inih/ini.c" }
@@ -171,10 +178,6 @@ workspace "virtualxt"
 
         filter "toolset:gcc"
             buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
-
-    project "modules"
-        kind "StaticLib" -- This is just a dummy.
-        links(modules)
 
     project "libretro-frontend"
         kind "SharedLib"

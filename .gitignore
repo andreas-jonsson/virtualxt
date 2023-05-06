@@ -14,6 +14,7 @@ __pycache__
 /*.make
 
 /modules/modules.h
+/modules/dummy.c
 /modules/*-module.*
 
 tools/vxtdrv/vxtdrv.com
