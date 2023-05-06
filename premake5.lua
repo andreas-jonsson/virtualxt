@@ -70,6 +70,9 @@ workspace "virtualxt"
         defines "PI8088"
         links "gpiod"
 
+    filter "system:windows"
+        defines "_CRT_SECURE_NO_WARNINGS"
+
     filter "toolset:clang or gcc"
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
 
