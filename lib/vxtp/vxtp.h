@@ -46,10 +46,6 @@ extern vxt_dword vxtp_vga_border_color(struct vxt_pirepheral *p);
 extern bool vxtp_vga_snapshot(struct vxt_pirepheral *p);
 extern int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 
-extern struct vxt_pirepheral *vxtp_fdc_create(vxt_allocator *alloc, vxt_word base, int irq);
-extern vxt_error vxtp_fdc_mount(struct vxt_pirepheral *p, int num, void *fp);
-extern bool vxtp_fdc_unmount(struct vxt_pirepheral *p, int num);
-
 extern struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, void *stick_a, void *stick_b);
 extern bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp_joystick_event *ev);
 

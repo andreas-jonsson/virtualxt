@@ -11,7 +11,7 @@ Options:
   --no-modules            Disable all modules.
   --no-activity           Disable disk activity indicator.
   --no-cga                Disable default CGA video adapter.
-  --fdc                   Enable experimental floppy disk controller.
+  --no-disk               Disable default disk controller.
   --v20                   Enable NEC V20 CPU support.
   --joystick              Enable joystick support.
   --clean                 Remove config file and write a new default one.

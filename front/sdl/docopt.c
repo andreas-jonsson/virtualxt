@@ -237,8 +237,6 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->clean = option->value;
         } else if (strcmp(option->olong, "--debug") == 0) {
             args->debug = option->value;
-        } else if (strcmp(option->olong, "--fdc") == 0) {
-            args->fdc = option->value;
         } else if (strcmp(option->olong, "--halt") == 0) {
             args->halt = option->value;
         } else if (strcmp(option->olong, "--hdboot") == 0) {
@@ -253,6 +251,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->no_activity = option->value;
         } else if (strcmp(option->olong, "--no-cga") == 0) {
             args->no_cga = option->value;
+        } else if (strcmp(option->olong, "--no-disk") == 0) {
+            args->no_disk = option->value;
         } else if (strcmp(option->olong, "--no-modules") == 0) {
             args->no_modules = option->value;
         } else if (strcmp(option->olong, "--no-mouse") == 0) {
@@ -335,7 +335,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --no-modules            Disable all modules.",
               "  --no-activity           Disable disk activity indicator.",
               "  --no-cga                Disable default CGA video adapter.",
-              "  --fdc                   Enable experimental floppy disk controller.",
+              "  --no-disk               Disable default disk controller.",
               "  --v20                   Enable NEC V20 CPU support.",
               "  --joystick              Enable joystick support.",
               "  --clean                 Remove config file and write a new default one.",
@@ -356,7 +356,6 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
     struct Option options[] = {
         {NULL, "--clean", 0, 0, NULL},
         {"-d", "--debug", 0, 0, NULL},
-        {NULL, "--fdc", 0, 0, NULL},
         {NULL, "--halt", 0, 0, NULL},
         {NULL, "--hdboot", 0, 0, NULL},
         {"-h", "--help", 0, 0, NULL},
@@ -364,6 +363,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--mute", 0, 0, NULL},
         {NULL, "--no-activity", 0, 0, NULL},
         {NULL, "--no-cga", 0, 0, NULL},
+        {NULL, "--no-disk", 0, 0, NULL},
         {NULL, "--no-modules", 0, 0, NULL},
         {NULL, "--no-mouse", 0, 0, NULL},
         {NULL, "--v20", 0, 0, NULL},

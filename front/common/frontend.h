@@ -25,6 +25,8 @@
 
 #include <vxt/vxt.h>
 
+#define FRONTEND_INTERFACE_VERSION 0
+
 struct frontend_video_adapter {
 	struct vxt_pirepheral *device;
 	vxt_dword (*border_color)(struct vxt_pirepheral *p);
@@ -37,6 +39,13 @@ struct frontend_audio_adapter {
 	vxt_int16 (*generate_sample)(struct vxt_pirepheral *p, int freq);
 };
 
+struct frontend_disk_controller {
+	struct vxt_pirepheral *device;
+	vxt_error (*mount)(struct vxt_pirepheral *p, int num, void *fp);
+	bool (*unmount)(struct vxt_pirepheral *p, int num);
+	void (*set_boot)(struct vxt_pirepheral *p, int num);
+};
+
 enum frontend_ctrl_command {
 	FRONTEND_CTRL_SHUTDOWN = 0x1
 };
@@ -46,11 +55,21 @@ struct frontend_ctrl_interface {
 	vxt_byte (*callback)(enum frontend_ctrl_command cmd, void *userdata);
 };
 
+struct frontend_disk_interface {
+    void *userdata;
+	void (*activity_callback)(int num, void *userdata);
+	struct vxtu_disk_interface di;
+};
+
 struct frontend_interface {
+	int interface_version;
+
     bool (*set_video_adapter)(const struct frontend_video_adapter *adapter);
     bool (*set_audio_adapter)(const struct frontend_audio_adapter *adapter);
+	bool (*set_disk_controller)(const struct frontend_disk_controller *controller);
 
     struct frontend_ctrl_interface ctrl;
+	struct frontend_disk_interface disk;
 };
 
 #endif

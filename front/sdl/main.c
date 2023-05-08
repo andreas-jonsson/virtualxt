@@ -123,6 +123,10 @@ struct frontend_audio_adapter audio_adapters[MAX_AUDIO_ADAPTERS] = {0};
 
 struct frontend_video_adapter video_adapter = {0};
 
+struct frontend_disk_controller disk_controller = {0};
+
+struct frontend_interface front_interface = {0};
+
 static void trigger_breakpoint(void) {
 	SDL_TriggerBreakpoint();
 }
@@ -347,6 +351,10 @@ static int tell_file(vxt_system *s, void *fp) {
 	return (int)ftell((FILE*)fp);
 }
 
+struct vxtu_disk_interface disk_interface = {
+	&read_file, &write_file, &seek_file, &tell_file
+};
+
 static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
 	(void)userdata;
 	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
@@ -371,6 +379,12 @@ static bool set_video_adapter(const struct frontend_video_adapter *adapter) {
 
 	printf("Setup video pirepheral: %s\n", vxt_pirepheral_name(adapter->device));
 	video_adapter = *adapter;
+	return true;
+}
+
+static bool set_disk_controller(const struct frontend_disk_controller *controller) {
+	printf("Setup disk controller: %s\n", vxt_pirepheral_name(controller->device));
+	disk_controller = *controller;
 	return true;
 }
 
@@ -420,6 +434,8 @@ static int load_config(void *user, const char *section, const char *name, const 
 			config->args->halt = atoi(value);
 		else if (!strcmp("no-cga", name))
 			config->args->no_cga = atoi(value);
+		else if (!strcmp("no-disk", name))
+			config->args->no_disk = atoi(value);
 	}
 	return 1;
 }
@@ -479,11 +495,6 @@ static int load_modules(void *user, const char *section, const char *name, const
 			}
 
 			for (vxtu_module_entry_func *f = const_func; *f; f++) {
-				struct frontend_interface front_interface = {0};
-				front_interface.set_video_adapter = &set_video_adapter;
-				front_interface.set_audio_adapter = &set_audio_adapter;
-				front_interface.ctrl.callback = &emu_control;
-
 				struct vxt_pirepheral *p = (*f)((vxt_allocator*)user, (void*)&front_interface, value);
 				if (!p)
 					continue; // Assume the module chose not to be loaded.
@@ -520,12 +531,14 @@ static void write_default_config(const char *path, bool clean) {
 		"adlib=\n"
 		"rifs=\n"
 		"ctrl=\n"
+		";fdc=\n"
 		";rtc=\n"
 		";network=eth0\n"
 		";isa=ch36x\n"
 		";serial_dbg=sdbg1\n"
-		"\n;[args]\n"
+		"\n[args]\n"
 		";no-cga=1\n"
+		";no-disk=1\n"
 		";debug=1\n"
 		"\n[sdbg1]\n"
 		"port=0x3F8\n"
@@ -700,15 +713,6 @@ int main(int argc, char *argv[]) {
 	struct vxt_pirepheral *rom = load_bios(args.bios, 0xFE000);
 	if (!rom) return -1;
 
-	struct vxt_pirepheral *rom_ext = load_bios(args.extension, 0xE0000);
-	if (!rom_ext) return -1;
-
-	struct vxtu_disk_interface interface = {
-		&read_file, &write_file, &seek_file, &tell_file
-	};
-
-	struct vxt_pirepheral *disk = vxtu_disk_create(&realloc, &interface);
-	struct vxt_pirepheral *fdc = vxtp_fdc_create(&realloc, 0x3F0, 6);
 	struct vxt_pirepheral *ppi = vxtu_ppi_create(&realloc);
 	struct vxt_pirepheral *mouse = args.no_mouse ? NULL : vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
 	struct vxt_pirepheral *joystick = NULL;
@@ -732,11 +736,21 @@ int main(int argc, char *argv[]) {
 	if (num_sticks)
 		APPEND_DEVICE(joystick = vxtp_joystick_create(&realloc, sticks[0], sticks[1]));
 
-	if (args.fdc) {
-		APPEND_DEVICE(fdc);
-	} else {
-		APPEND_DEVICE(disk);
-		APPEND_DEVICE(rom_ext);
+	if (!args.no_disk) {
+		struct vxt_pirepheral *rom = load_bios(args.extension, 0xE0000);
+		if (!rom)
+			return -1;
+
+		struct frontend_disk_controller c = {
+			.device = vxtu_disk_create(&realloc, &disk_interface),
+			.mount = &vxtu_disk_mount,
+			.unmount = &vxtu_disk_unmount,
+			.set_boot = &vxtu_disk_set_boot_drive
+		};
+		set_disk_controller(&c);
+
+		APPEND_DEVICE(rom);
+		APPEND_DEVICE(disk_controller.device);
 	}
 
 	if (!args.no_mouse)
@@ -746,6 +760,19 @@ int main(int argc, char *argv[]) {
 	APPEND_DEVICE(vxtu_dma_create(&realloc));
 	APPEND_DEVICE(vxtu_pit_create(&realloc));
 	APPEND_DEVICE(ppi);
+
+	front_interface.interface_version = FRONTEND_INTERFACE_VERSION;
+	front_interface.set_video_adapter = &set_video_adapter;
+	front_interface.set_audio_adapter = &set_audio_adapter;
+	front_interface.set_disk_controller = &set_disk_controller;
+	front_interface.ctrl.callback = &emu_control;
+	front_interface.disk.di = disk_interface;
+
+	SDL_atomic_t icon_fade = {0};
+	if (!args.no_activity) {
+		front_interface.disk.activity_callback = &disk_activity_cb;
+		front_interface.disk.userdata = &icon_fade;
+	}
 
 	#ifdef VXTU_STATIC_MODULES
 		printf("Modules are staticly linked!\n");
@@ -806,10 +833,6 @@ int main(int argc, char *argv[]) {
 		vxt_system_set_tracer(vxt, &tracer);
 	}
 
-	SDL_atomic_t icon_fade = {0};
-	if (!args.no_activity)
-		vxtu_disk_set_activity_callback(disk, &disk_activity_cb, &icon_fade);
-
 	#ifdef PI8088
 		vxt_system_set_validator(vxt, pi8088_validator());
 	#endif
@@ -834,17 +857,16 @@ int main(int argc, char *argv[]) {
 		strncpy(floppy_image_path, args.floppy, sizeof(floppy_image_path) - 1);
 
 		FILE *fp = fopen(floppy_image_path, "rb+");
-		vxt_error (*mnt)(struct vxt_pirepheral*,int,void*) = args.fdc ? vxtp_fdc_mount : vxtu_disk_mount;
-		if (fp && (mnt(args.fdc ? fdc : disk, 0, fp) == VXT_NO_ERROR))
+		if (fp && (disk_controller.mount(disk_controller.device, 0, fp) == VXT_NO_ERROR))
 			printf("Floppy image: %s\n", floppy_image_path);
 	}
 
-	if (args.harddrive && !args.fdc) {
+	if (args.harddrive) {
 		FILE *fp = fopen(args.harddrive, "rb+");
-		if (fp && (vxtu_disk_mount(disk, 128, fp) == VXT_NO_ERROR)) {
+		if (fp && (disk_controller.mount(disk_controller.device, 128, fp) == VXT_NO_ERROR)) {
 			printf("Harddrive image: %s\n", args.harddrive);
 			if (args.hdboot || !args.floppy)
-				vxtu_disk_set_boot_drive(disk, 128);
+				disk_controller.set_boot(disk_controller.device, 128);
 		}
 	}
 
@@ -1025,7 +1047,7 @@ int main(int argc, char *argv[]) {
 			error_window(ctx);
 
 			if (eject_window(ctx, (*floppy_image_path != 0) ? floppy_image_path: NULL)) {
-				SYNC(vxtu_disk_unmount(disk, 0));
+				SYNC(disk_controller.unmount(disk_controller.device, 0));
 				*floppy_image_path = 0;
 			}
 
@@ -1035,7 +1057,7 @@ int main(int argc, char *argv[]) {
 					open_error_window(ctx, "Could not open floppy image file!");
 				} else {
 					vxt_error err = VXT_NO_ERROR;
-					SYNC(err = vxtu_disk_mount(disk, 0, fp));
+					SYNC(err = disk_controller.mount(disk_controller.device, 0, fp));
 					if (err != VXT_NO_ERROR) {
 						open_error_window(ctx, "Could not mount floppy image file!");
 						fclose(fp);

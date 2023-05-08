@@ -89,7 +89,6 @@ struct DocoptArgs {
     /* options without arguments */
     size_t clean;
     size_t debug;
-    size_t fdc;
     size_t halt;
     size_t hdboot;
     size_t help;
@@ -97,6 +96,7 @@ struct DocoptArgs {
     size_t mute;
     size_t no_activity;
     size_t no_cga;
+    size_t no_disk;
     size_t no_modules;
     size_t no_mouse;
     size_t v20;
