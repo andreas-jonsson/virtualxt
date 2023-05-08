@@ -10,6 +10,7 @@ Options:
   --no-mouse              Disable serial mouse.
   --no-modules            Disable all modules.
   --no-activity           Disable disk activity indicator.
+  --no-cga                Disable default CGA video adapter.
   --fdc                   Enable experimental floppy disk controller.
   --v20                   Enable NEC V20 CPU support.
   --joystick              Enable joystick support.
@@ -19,7 +20,6 @@ Options:
   --bios=FILE             BIOS binary.
   --extension=FILE        VirtualXT BIOS extension binary.
   --trace=FILE            Write CPU trace to file.
-  --vga=FILE              Load VGA BIOS.
   --frequency=MHZ         CPU frequency. [default: 4.772726]
   -a --floppy=FILE        Mount floppy image as drive A.
   -c --harddrive=FILE     Mount harddrive image as drive C.

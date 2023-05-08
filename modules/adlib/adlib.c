@@ -21,6 +21,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include <vxt/vxtu.h>
+#include <frontend.h>
 #include "nuked-opl3/opl3.h"
 
 VXT_PIREPHERAL(adlib, {
@@ -28,6 +29,8 @@ VXT_PIREPHERAL(adlib, {
     int freq;
     vxt_byte index;
     vxt_byte reg4;
+    
+    bool (*set_audio_adapter)(const struct frontend_audio_adapter *adapter);
 })
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
@@ -54,7 +57,25 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     }
 }
 
+static vxt_int16 generate_sample(struct vxt_pirepheral *p, int freq) {
+    VXT_DEC_DEVICE(a, adlib, p);
+    if (a->freq != freq) {
+        a->freq = freq;
+        OPL3_Reset(&a->chip, freq);
+    }
+
+    int16_t sample[2] = {0};
+    OPL3_GenerateResampled(&a->chip, sample);
+    return sample[0];
+}
+
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+    VXT_DEC_DEVICE(a, adlib, p);
+    if (a->set_audio_adapter) {
+        struct frontend_audio_adapter adapter = { p, &generate_sample };
+        a->set_audio_adapter(&adapter);
+    }
+
     vxt_system_install_io(s, p, 0x388, 0x389);
     return VXT_NO_ERROR;
 }
@@ -69,20 +90,10 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "AdLib Music Synthesizer";
 }
 
-vxt_int16 adlib_generate_sample(struct vxt_pirepheral *p, int freq) {
-    VXT_DEC_DEVICE(a, adlib, p);
-    if (a->freq != freq) {
-        a->freq = freq;
-        OPL3_Reset(&a->chip, freq);
-    }
-
-    int16_t sample[2] = {0};
-    OPL3_GenerateResampled(&a->chip, sample);
-    return sample[0];
-}
-
 VXTU_MODULE_CREATE(adlib, {
     DEVICE->freq = 48000;
+    if (FRONTEND)
+        DEVICE->set_audio_adapter = ((struct frontend_interface*)FRONTEND)->set_audio_adapter;
 
     PIREPHERAL->install = &install;
     PIREPHERAL->reset = &reset;

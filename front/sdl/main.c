@@ -34,6 +34,7 @@
 #include <vxtp.h>
 
 #include <modules.h>
+#include <frontend.h>
 
 #include <SDL.h>
 #include <ini.h>
@@ -48,16 +49,6 @@
 #define CONFIG_FILE_NAME "config.ini"
 #define MIN_CLOCKS_PER_STEP 1
 #define MAX_PENALTY_USEC 1000
-
-// Known module interfaces.
-vxt_int16 (*frontend_adlib_generate_sample)(struct vxt_pirepheral*,int) = NULL;
-
-struct video_adapter {
-	struct vxt_pirepheral *device;
-	vxt_dword (*border_color)(struct vxt_pirepheral *p);
-	_Bool (*snapshot)(struct vxt_pirepheral *p); // TODO: Add vxt_bool type.
-	int (*render)(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
-};
 
 struct ini_config {
 	struct DocoptArgs *args;
@@ -125,7 +116,12 @@ char *str_buffer = NULL;
 
 SDL_AudioDeviceID audio_device = 0;
 SDL_AudioSpec audio_spec = {0};
-struct vxt_pirepheral *audio_sources[2] = { NULL };
+
+#define MAX_AUDIO_ADAPTERS 8
+int num_audio_adapters = 0;
+struct frontend_audio_adapter audio_adapters[MAX_AUDIO_ADAPTERS] = {0};
+
+struct frontend_video_adapter video_adapter = {0};
 
 static void trigger_breakpoint(void) {
 	SDL_TriggerBreakpoint();
@@ -294,14 +290,16 @@ static int render_callback(int width, int height, const vxt_byte *rgba, void *us
 }
 
 static void audio_callback(void *udata, uint8_t *stream, int len) {
-	struct vxt_pirepheral **audio_sources = (struct vxt_pirepheral**)udata;
+	(void)udata;
 	len /= 2;
 	
 	SYNC(
 		for (int i = 0; i < len; i++) {
-			vxt_word sample = vxtu_ppi_generate_sample(audio_sources[0], audio_spec.freq);
-			if (audio_sources[1] && frontend_adlib_generate_sample)
-				sample += frontend_adlib_generate_sample(audio_sources[1], audio_spec.freq);
+			vxt_word sample = 0;
+			for (int j = 0; j < num_audio_adapters; j++) {
+				struct frontend_audio_adapter *a = &audio_adapters[j];
+				sample += a->generate_sample(a->device, audio_spec.freq);
+			}
 
 			((vxt_int16*)stream)[i] = sample;
 			if (audio_spec.channels > 1)
@@ -358,6 +356,24 @@ static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
 	return 0;
 }
 
+static bool set_audio_adapter(const struct frontend_audio_adapter *adapter) {
+	if (num_audio_adapters >= MAX_AUDIO_ADAPTERS)
+		return false;
+
+	printf("Setup audio pirepheral: %s\n", vxt_pirepheral_name(adapter->device));
+	memcpy(&audio_adapters[num_audio_adapters++], adapter, sizeof(struct frontend_audio_adapter));
+	return true;
+}
+
+static bool set_video_adapter(const struct frontend_video_adapter *adapter) {
+	if (video_adapter.device)
+		return false;
+
+	printf("Setup video pirepheral: %s\n", vxt_pirepheral_name(adapter->device));
+	video_adapter = *adapter;
+	return true;
+}
+
 static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 	size_t path_len = strcspn(path, "@");
 	char *file_path = (char*)SDL_malloc(path_len + 1);
@@ -397,27 +413,37 @@ static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 static int load_config(void *user, const char *section, const char *name, const char *value) {
 	(void)user; (void)section; (void)name; (void)value;
 	struct ini_config *config = (struct ini_config*)user;
-	if (!strcmp("debug", section)) {
-		if (!strcmp("debugger", name))
+	if (!strcmp("args", section)) {
+		if (!strcmp("debug", name))
 			config->args->debug = atoi(value);
 		else if (!strcmp("halt", name))
 			config->args->halt = atoi(value);
+		else if (!strcmp("no-cga", name))
+			config->args->no_cga = atoi(value);
 	}
 	return 1;
 }
 
 static int load_modules(void *user, const char *section, const char *name, const char *value) {
 	if (!strcmp("modules", section)) {
-		for (int i = 0; true; i++) {
-			const struct vxtu_module_entry *e = &vxtu_module_table[i];
-			if (!e->name)
-				break;
-			else if (strcmp(e->name, name))
-				continue;
-
+		for (
+			int i = 0;
+			#ifdef VXTU_STATIC_MODULES
+				true;
+			#else
+				i < 1;
+			#endif
+			i++
+		) {
 			vxtu_module_entry_func *(*constructors)(int(*)(const char*, ...)) = NULL;
 
 			#ifdef VXTU_STATIC_MODULES
+				const struct vxtu_module_entry *e = &vxtu_module_table[i];
+				if (!e->name)
+					break;
+				else if (strcmp(e->name, name))
+					continue;
+
 				constructors = e->entry;
 			#else
 				char buffer[FILENAME_MAX];
@@ -453,22 +479,14 @@ static int load_modules(void *user, const char *section, const char *name, const
 			}
 
 			for (vxtu_module_entry_func *f = const_func; *f; f++) {
-				struct vxt_pirepheral *p = (*f)((vxt_allocator*)user, value);
+				struct frontend_interface front_interface = {0};
+				front_interface.set_video_adapter = &set_video_adapter;
+				front_interface.set_audio_adapter = &set_audio_adapter;
+				//front_interface.ctrl.callback = &emu_control;
+
+				struct vxt_pirepheral *p = (*f)((vxt_allocator*)user, (void*)&front_interface, value);
 				if (!p)
 					continue; // Assume the module chose not to be loaded.
-
-				// Handle special cases.
-				if (!strcmp("adlib", name)) {
-					audio_sources[1] = p;
-					#ifdef VXTU_STATIC_MODULES
-						void *lib = SDL_LoadObject(NULL);
-						frontend_adlib_generate_sample = SDL_LoadFunction(lib, "adlib_generate_sample");
-						SDL_UnloadObject(lib);
-					#else
-						frontend_adlib_generate_sample = SDL_LoadFunction(lib, "adlib_generate_sample");
-					#endif
-				}
-
 				APPEND_DEVICE(p);
 			}
 
@@ -505,6 +523,9 @@ static void write_default_config(const char *path) {
 		";network=eth0\n"
 		";isa=ch36x\n"
 		";serial_dbg=sdbg1\n"
+		"\n;[args]\n"
+		";no-cga=1\n"
+		";debug=1\n"
 		"\n[sdbg1]\n"
 		"port=0x3F8\n"
 		"\n[ch36x]\n"
@@ -529,7 +550,7 @@ int main(int argc, char *argv[]) {
 	args.rifs = rifs_path ? rifs_path : args.rifs;
 
 	if (!args.config) {
-		args.config = SDL_GetPrefPath("virtualxt", "VirtualXT-SDL");
+		args.config = SDL_GetPrefPath("virtualxt", "VirtualXT-SDL2-" VXT_VERSION);
 		if (!args.config) {
 			printf("No config path!\n");
 			return -1;
@@ -554,15 +575,13 @@ int main(int argc, char *argv[]) {
 
 	if (!args.modules) {
 		args.modules = SDL_getenv("VXT_DEFAULT_MODULES_PATH");
-		if (!args.modules)
-			args.modules = "modules";
+		if (!args.modules) args.modules = "modules";
 	}
 	modules_search_path = args.modules;
 
 	if (!args.bios) {
 		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
-		if (!args.bios)
-			args.bios = args.vga ? "bios/pcxtbios_640.bin" : "bios/pcxtbios.bin";
+		if (!args.bios) args.bios = "bios/pcxtbios.bin";
 	}
 
 	if (!args.extension) {
@@ -696,7 +715,7 @@ int main(int argc, char *argv[]) {
 	APPEND_DEVICE(vxtu_memory_create(&realloc, 0x0, 0x100000, false));
 	APPEND_DEVICE(rom);
 
-	struct video_adapter video = {0};
+	/*struct video_adapter video = {0};
 	if (args.vga) {
 		video.device = vxtp_vga_create(&realloc);
 		video.border_color = &vxtp_vga_border_color;
@@ -707,12 +726,7 @@ int main(int argc, char *argv[]) {
 		struct vxt_pirepheral *rom = load_bios(args.vga, 0xC0000); // Tested with ET4000 VGA BIOS.
 		if (!rom) return -1;
 		APPEND_DEVICE(rom);
-	} else {
-		video.device = vxtu_cga_create(&realloc);
-		video.border_color = &vxtu_cga_border_color;
-		video.snapshot = &vxtu_cga_snapshot;
-		video.render = &vxtu_cga_render;
-	}
+	} else {*/
 
 	if (num_sticks)
 		APPEND_DEVICE(joystick = vxtp_joystick_create(&realloc, sticks[0], sticks[1]));
@@ -732,7 +746,6 @@ int main(int argc, char *argv[]) {
 	APPEND_DEVICE(vxtu_pit_create(&realloc));
 	APPEND_DEVICE(vxtp_ctrl_create(&realloc, &emu_control, NULL));
 	APPEND_DEVICE(ppi);
-	APPEND_DEVICE(video.device);
 
 	#ifdef VXTU_STATIC_MODULES
 		printf("Modules are staticly linked!\n");
@@ -742,6 +755,19 @@ int main(int argc, char *argv[]) {
 	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, (void*)&realloc)) {
 		printf("ERROR: Could not load all modules!\n");
 		return -1;
+	}
+
+	if (args.no_cga) {
+		vxtu_ppi_set_xt_switches(ppi, 0);
+	} else {
+		struct frontend_video_adapter a = {
+			vxtu_cga_create(&realloc),
+			&vxtu_cga_border_color,
+			&vxtu_cga_snapshot,
+			&vxtu_cga_render
+		};
+		set_video_adapter(&a);
+		APPEND_DEVICE(a.device);
 	}
 
 	APPEND_DEVICE(dbg);
@@ -794,6 +820,9 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
+	struct frontend_audio_adapter ppi_audio = { ppi, &vxtu_ppi_generate_sample };
+	set_audio_adapter(&ppi_audio);
+
 	printf("Installed pirepherals:\n");
 	for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
 		struct vxt_pirepheral *device = vxt_system_pirepheral(vxt, (vxt_byte)i);
@@ -832,8 +861,6 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	audio_sources[0] = ppi;
-
 	if (args.mute) {
 		printf("Audio is muted!\n");
 	} else {
@@ -842,7 +869,6 @@ int main(int argc, char *argv[]) {
 		spec.format = AUDIO_S16;
 		spec.channels = 1;
 		spec.samples = pow2((AUDIO_FREQUENCY / 1000) * AUDIO_LATENCY);
-		spec.userdata = audio_sources;
 		spec.callback = &audio_callback;
 
 		int allowed_changes = SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE;
@@ -1029,10 +1055,10 @@ int main(int argc, char *argv[]) {
 			SDL_Rect rect = {0};
 
 			SYNC(
-				bg = video.border_color(video.device);
-				video.snapshot(video.device);
+				bg = video_adapter.border_color(video_adapter.device);
+				video_adapter.snapshot(video_adapter.device);
 			);
-			video.render(video.device, &render_callback, renderer);
+			video_adapter.render(video_adapter.device, &render_callback, renderer);
 
 			mr_clear(mr, mu_color(bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF));
 			if (SDL_RenderCopy(renderer, framebuffer, NULL, target_rect(window, &rect)) != 0)

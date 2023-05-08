@@ -95,6 +95,7 @@ struct DocoptArgs {
     size_t joystick;
     size_t mute;
     size_t no_activity;
+    size_t no_cga;
     size_t no_modules;
     size_t no_mouse;
     size_t v20;
@@ -109,7 +110,6 @@ struct DocoptArgs {
     char *modules;
     char *rifs;
     char *trace;
-    char *vga;
     /* special */
     const char *usage_pattern;
     const char *help_message[25];

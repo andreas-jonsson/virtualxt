@@ -113,7 +113,7 @@ workspace "virtualxt"
                     pic "On"
                 end
 
-                includedirs "lib/vxt/include"
+                includedirs { "lib/vxt/include", "front/common" }
                 defines { "VXTU_MODULE_NAME=" .. module_name }
 
                 cleancommands {
@@ -186,7 +186,7 @@ workspace "virtualxt"
         targetdir "build/lib"
         pic "On"
 
-        includedirs "lib/libretro"
+        includedirs { "lib/libretro", "front/common" }
         files { "front/libretro/*.h", "front/libretro/*.c" }
         
         defines { "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
@@ -221,7 +221,7 @@ workspace "virtualxt"
         targetextension ".wasm"
         targetdir "build/web"
 
-        includedirs { "lib/vxt/include", "lib/vxtp", "lib/printf" }
+        includedirs { "lib/vxt/include", "lib/vxtp", "lib/printf", "front/common" }
         files { "front/web/*.h", "front/web/*.c" }
 
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
@@ -265,7 +265,7 @@ workspace "virtualxt"
         files { "front/sdl/*.h", "front/sdl/*.c" }
 
         links { "vxt", "vxtp", "inih", "microui" }
-        includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src" }
+        includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "front/common" }
 
         files "modules/modules.h"
         includedirs "modules"

@@ -249,6 +249,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->mute = option->value;
         } else if (strcmp(option->olong, "--no-activity") == 0) {
             args->no_activity = option->value;
+        } else if (strcmp(option->olong, "--no-cga") == 0) {
+            args->no_cga = option->value;
         } else if (strcmp(option->olong, "--no-modules") == 0) {
             args->no_modules = option->value;
         } else if (strcmp(option->olong, "--no-mouse") == 0) {
@@ -293,10 +295,6 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             if (option->argument) {
                 args->trace = (char *) option->argument;
             }
-        } else if (strcmp(option->olong, "--vga") == 0) {
-            if (option->argument) {
-                args->vga = (char *) option->argument;
-            }
         }
     }
     /* commands */
@@ -319,8 +317,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
-        "4.772726", NULL, NULL, NULL, NULL, NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
+        "4.772726", NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -334,6 +332,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --no-mouse              Disable serial mouse.",
               "  --no-modules            Disable all modules.",
               "  --no-activity           Disable disk activity indicator.",
+              "  --no-cga                Disable default CGA video adapter.",
               "  --fdc                   Enable experimental floppy disk controller.",
               "  --v20                   Enable NEC V20 CPU support.",
               "  --joystick              Enable joystick support.",
@@ -343,7 +342,6 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --bios=FILE             BIOS binary.",
               "  --extension=FILE        VirtualXT BIOS extension binary.",
               "  --trace=FILE            Write CPU trace to file.",
-              "  --vga=FILE              Load VGA BIOS.",
               "  --frequency=MHZ         CPU frequency. [default: 4.772726]",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
               "  -c --harddrive=FILE     Mount harddrive image as drive C."}
@@ -361,6 +359,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--joystick", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
         {NULL, "--no-activity", 0, 0, NULL},
+        {NULL, "--no-cga", 0, 0, NULL},
         {NULL, "--no-modules", 0, 0, NULL},
         {NULL, "--no-mouse", 0, 0, NULL},
         {NULL, "--v20", 0, 0, NULL},
@@ -373,8 +372,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {"-c", "--harddrive", 1, 0, NULL},
         {NULL, "--modules", 1, 0, NULL},
         {NULL, "--rifs", 1, 0, NULL},
-        {NULL, "--trace", 1, 0, NULL},
-        {NULL, "--vga", 1, 0, NULL}
+        {NULL, "--trace", 1, 0, NULL}
     };
     struct Elements elements;
     int return_code = EXIT_SUCCESS;
