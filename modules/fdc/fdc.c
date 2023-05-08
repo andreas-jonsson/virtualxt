@@ -506,9 +506,8 @@ VXTU_MODULE_CREATE(fdc, {
     DEVICE->base = 0x3F0;
     DEVICE->irq = 6;
 
-    struct frontend_interface *fi = (struct frontend_interface*)FRONTEND;
-    if (fi && fi->set_disk_controller)
-        DEVICE->set_disk_controller = fi->set_disk_controller;
+    if (FRONTEND)
+        DEVICE->set_disk_controller = ((struct frontend_interface*)FRONTEND)->set_disk_controller;
 
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;

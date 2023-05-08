@@ -531,6 +531,7 @@ static void write_default_config(const char *path, bool clean) {
 		"adlib=\n"
 		"rifs=\n"
 		"ctrl=\n"
+		";vga=et4000.bin\n"
 		";fdc=\n"
 		";rtc=\n"
 		";network=eth0\n"
@@ -719,19 +720,6 @@ int main(int argc, char *argv[]) {
 
 	APPEND_DEVICE(vxtu_memory_create(&realloc, 0x0, 0x100000, false));
 	APPEND_DEVICE(rom);
-
-	/*struct video_adapter video = {0};
-	if (args.vga) {
-		video.device = vxtp_vga_create(&realloc);
-		video.border_color = &vxtp_vga_border_color;
-		video.snapshot = &vxtp_vga_snapshot;
-		video.render = &vxtp_vga_render;
-
-		vxtu_ppi_set_xt_switches(ppi, 0);
-		struct vxt_pirepheral *rom = load_bios(args.vga, 0xC0000); // Tested with ET4000 VGA BIOS.
-		if (!rom) return -1;
-		APPEND_DEVICE(rom);
-	} else {*/
 
 	if (num_sticks)
 		APPEND_DEVICE(joystick = vxtp_joystick_create(&realloc, sticks[0], sticks[1]));

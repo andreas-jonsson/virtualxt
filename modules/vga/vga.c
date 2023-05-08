@@ -22,7 +22,12 @@
 
 // Reference: https://www.scs.stanford.edu/10wi-cs140/pintos/specs/freevga/vga/vga.htm
 
-#include "vxtp.h"
+#define VXT_LIBC
+#define VXTU_LIBC_IO
+#include <vxt/vxtu.h>
+
+#include <frontend.h>
+
 #include "vga_font.h"
 #include "vga_palette.h"
 
@@ -115,6 +120,8 @@ VXT_PIREPHERAL(vga_video, {
     vxt_byte mem_latch[4];
 
     vxt_dword palette[0x100];
+
+    bool (*set_video_adapter)(const struct frontend_video_adapter*);
 
     struct {
         vxt_byte mode_ctrl_reg;
@@ -388,45 +395,6 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     }
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(v, vga_video, p);
-    vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + 0x20000) - 1);
-    vxt_system_install_mem_at(s, p, VIDEO_MODE_BDA_ADDRESS); // BDA video mode
-
-    vxt_system_install_timer(s, p, CURSOR_TIMING);
-    v->scanline_timer = vxt_system_install_timer(s, p, SCANLINE_TIMING);
-
-    vxt_system_install_io_at(s, p, 0x3B4); // --
-    vxt_system_install_io_at(s, p, 0x3D4); // R/W: CRT Index
-
-    vxt_system_install_io_at(s, p, 0x3B5); // --
-    vxt_system_install_io_at(s, p, 0x3D5); // R/W: CRT Data
-
-    vxt_system_install_io_at(s, p, 0x3C0); // R/W: Attribute Controller Index
-    vxt_system_install_io_at(s, p, 0x3C1); // R/W: Attribute Data
-    vxt_system_install_io_at(s, p, 0x3C2); // W: Misc Output, R: Input Status 0
-    vxt_system_install_io_at(s, p, 0x3C3); // R/W: VGA Enable
-    vxt_system_install_io_at(s, p, 0x3C4); // R/W: Sequencer Index
-    vxt_system_install_io_at(s, p, 0x3C5); // R/W: Sequencer Data
-    vxt_system_install_io_at(s, p, 0x3C6); // R: DAC State Register or Pixel Mask
-    vxt_system_install_io_at(s, p, 0x3C7); // R: DAC State
-    vxt_system_install_io_at(s, p, 0x3C8); // R/W: Pixel Address
-    vxt_system_install_io_at(s, p, 0x3C9); // R/W: Color Data
-    vxt_system_install_io_at(s, p, 0x3CA); // R: Feature Control
-    vxt_system_install_io_at(s, p, 0x3CC); // R: Misc Output
-    vxt_system_install_io_at(s, p, 0x3CE); // R/W: Graphics Controller Index
-    vxt_system_install_io_at(s, p, 0x3CF); // R/W: Graphics Data
-    
-    vxt_system_install_io_at(s, p, 0x3D8); // R/W: Mode Control
-    vxt_system_install_io_at(s, p, 0x3D9); // R/W: Color Control
-
-    vxt_system_install_io_at(s, p, 0x3BA); // --
-    vxt_system_install_io_at(s, p, 0x3DA); // W: Feature Control
-
-    vxt_system_install_io_at(s, p, 0xAFFF); // R/W: Plane System Latch
-    return VXT_NO_ERROR;
-}
-
 static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(v, vga_video, p);
 
@@ -511,23 +479,11 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 	}
 }
 
-struct vxt_pirepheral *vxtp_vga_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, vga_video, {
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
-})
-
-vxt_dword vxtp_vga_border_color(struct vxt_pirepheral *p) {
+static vxt_dword border_color(struct vxt_pirepheral *p) {
     return cga_palette[(VXT_GET_DEVICE(vga_video, p))->reg.color_ctrl_reg & 0xF];
 }
 
-bool vxtp_vga_snapshot(struct vxt_pirepheral *p) {
+static bool snapshot(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(v, vga_video, p);
     if (!v->is_dirty)
         return false;
@@ -551,7 +507,7 @@ bool vxtp_vga_snapshot(struct vxt_pirepheral *p) {
     return true;
 }
 
-int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
+static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
     struct snapshot *snap = &(VXT_GET_DEVICE(vga_video, p))->snap;
     int num_col = 80;
     int height = 480;
@@ -671,3 +627,82 @@ int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
     VXT_LOG("Unsupported video mode: 0x%X", snap->video_mode);
     return -1;
 }
+
+static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+    VXT_DEC_DEVICE(v, vga_video, p);
+
+    if (v->set_video_adapter) {
+        struct frontend_video_adapter a = { p, &border_color, &snapshot, &render };
+        v->set_video_adapter(&a);
+    }
+
+    vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + 0x20000) - 1);
+    vxt_system_install_mem_at(s, p, VIDEO_MODE_BDA_ADDRESS); // BDA video mode
+
+    vxt_system_install_timer(s, p, CURSOR_TIMING);
+    v->scanline_timer = vxt_system_install_timer(s, p, SCANLINE_TIMING);
+
+    vxt_system_install_io_at(s, p, 0x3B4); // --
+    vxt_system_install_io_at(s, p, 0x3D4); // R/W: CRT Index
+
+    vxt_system_install_io_at(s, p, 0x3B5); // --
+    vxt_system_install_io_at(s, p, 0x3D5); // R/W: CRT Data
+
+    vxt_system_install_io_at(s, p, 0x3C0); // R/W: Attribute Controller Index
+    vxt_system_install_io_at(s, p, 0x3C1); // R/W: Attribute Data
+    vxt_system_install_io_at(s, p, 0x3C2); // W: Misc Output, R: Input Status 0
+    vxt_system_install_io_at(s, p, 0x3C3); // R/W: VGA Enable
+    vxt_system_install_io_at(s, p, 0x3C4); // R/W: Sequencer Index
+    vxt_system_install_io_at(s, p, 0x3C5); // R/W: Sequencer Data
+    vxt_system_install_io_at(s, p, 0x3C6); // R: DAC State Register or Pixel Mask
+    vxt_system_install_io_at(s, p, 0x3C7); // R: DAC State
+    vxt_system_install_io_at(s, p, 0x3C8); // R/W: Pixel Address
+    vxt_system_install_io_at(s, p, 0x3C9); // R/W: Color Data
+    vxt_system_install_io_at(s, p, 0x3CA); // R: Feature Control
+    vxt_system_install_io_at(s, p, 0x3CC); // R: Misc Output
+    vxt_system_install_io_at(s, p, 0x3CE); // R/W: Graphics Controller Index
+    vxt_system_install_io_at(s, p, 0x3CF); // R/W: Graphics Data
+    
+    vxt_system_install_io_at(s, p, 0x3D8); // R/W: Mode Control
+    vxt_system_install_io_at(s, p, 0x3D9); // R/W: Color Control
+
+    vxt_system_install_io_at(s, p, 0x3BA); // --
+    vxt_system_install_io_at(s, p, 0x3DA); // W: Feature Control
+
+    vxt_system_install_io_at(s, p, 0xAFFF); // R/W: Plane System Latch
+    return VXT_NO_ERROR;
+}
+
+static struct vxt_pirepheral *vga_create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PIREPHERAL_CREATE(alloc, vga_video, {
+    (void)args;
+    if (frontend)
+        DEVICE->set_video_adapter = ((struct frontend_interface*)frontend)->set_video_adapter;
+
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->io.read = &read;
+    PIREPHERAL->io.write = &write;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+})
+
+// Tested with ET4000 VGA BIOS.
+static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {
+    (void)frontend;
+
+    int size = 0;
+    vxt_byte *data = vxtu_read_file(alloc, args, &size);
+    if (!data) {
+        VXT_LOG("Could not load VGA BIOS: %s", args);
+        return NULL;
+    }
+
+    struct vxt_pirepheral *p = vxtu_memory_create(alloc, 0xC0000, size, true);
+    alloc(data, 0);
+    return p;
+}
+
+VXTU_MODULE_ENTRIES(&vga_create, &bios_create)

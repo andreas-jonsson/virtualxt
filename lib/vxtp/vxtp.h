@@ -41,11 +41,6 @@ struct vxtp_joystick_event {
     vxt_int16 yaxis;
 };
 
-extern struct vxt_pirepheral *vxtp_vga_create(vxt_allocator *alloc);
-extern vxt_dword vxtp_vga_border_color(struct vxt_pirepheral *p);
-extern bool vxtp_vga_snapshot(struct vxt_pirepheral *p);
-extern int vxtp_vga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
-
 extern struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, void *stick_a, void *stick_b);
 extern bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp_joystick_event *ev);
 
