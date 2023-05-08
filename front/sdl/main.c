@@ -347,9 +347,9 @@ static int tell_file(vxt_system *s, void *fp) {
 	return (int)ftell((FILE*)fp);
 }
 
-static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
+static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
 	(void)userdata;
-	if (cmd == VXTP_CTRL_SHUTDOWN) {
+	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
 		printf("Guest OS shutdown!\n");
 		SDL_AtomicSet(&running, 0);
 	}
@@ -482,7 +482,7 @@ static int load_modules(void *user, const char *section, const char *name, const
 				struct frontend_interface front_interface = {0};
 				front_interface.set_video_adapter = &set_video_adapter;
 				front_interface.set_audio_adapter = &set_audio_adapter;
-				//front_interface.ctrl.callback = &emu_control;
+				front_interface.ctrl.callback = &emu_control;
 
 				struct vxt_pirepheral *p = (*f)((vxt_allocator*)user, (void*)&front_interface, value);
 				if (!p)
@@ -502,9 +502,9 @@ static int configure_pirepherals(void *user, const char *section, const char *na
 	return (vxt_system_configure(user, section, name, value) == VXT_NO_ERROR) ? 1 : 0;
 }
 
-static void write_default_config(const char *path) {
-	FILE *fp = fopen(path, "r");
-	if (fp) {
+static void write_default_config(const char *path, bool clean) {
+	FILE *fp;
+	if (!clean && (fp = fopen(path, "r"))) {
 		fclose(fp);
 		return;
 	}
@@ -519,6 +519,7 @@ static void write_default_config(const char *path) {
 		"[modules]\n"
 		"adlib=\n"
 		"rifs=\n"
+		"ctrl=\n"
 		";rtc=\n"
 		";network=eth0\n"
 		";isa=ch36x\n"
@@ -564,7 +565,7 @@ int main(int argc, char *argv[]) {
 
 	{
 		const char *path = sprint("%s/" CONFIG_FILE_NAME, args.config);
-		write_default_config(path);
+		write_default_config(path, args.clean != 0);
 
 		config.args = &args;
 		if (ini_parse(path, &load_config, &config)) {
@@ -744,7 +745,6 @@ int main(int argc, char *argv[]) {
 	APPEND_DEVICE(vxtu_pic_create(&realloc));
 	APPEND_DEVICE(vxtu_dma_create(&realloc));
 	APPEND_DEVICE(vxtu_pit_create(&realloc));
-	APPEND_DEVICE(vxtp_ctrl_create(&realloc, &emu_control, NULL));
 	APPEND_DEVICE(ppi);
 
 	#ifdef VXTU_STATIC_MODULES

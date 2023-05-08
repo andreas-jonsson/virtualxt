@@ -20,11 +20,12 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "vxtp.h"
+#include <vxt/vxtu.h>
+#include <frontend.h>
 
 VXT_PIREPHERAL(ctrl, {
  	vxt_byte ret;
-    vxt_byte (*callback)(enum vxtp_ctrl_command,void*);
+    vxt_byte (*callback)(enum frontend_ctrl_command,void*);
     void *userdata;
 })
 
@@ -39,12 +40,14 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(c, ctrl, p);
     (void)port;
+    if (!c->callback)
+        return;
     switch (data) {
         case 0: // Reset controller
             c->ret = 0;
             break;
         case 1: // Shutdown
-            c->ret = c->callback(VXTP_CTRL_SHUTDOWN, c->userdata);
+            c->ret = c->callback(FRONTEND_CTRL_SHUTDOWN, c->userdata);
             break;
     }
 }
@@ -59,12 +62,17 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Emulator Control";
 }
 
-struct vxt_pirepheral *vxtp_ctrl_create(vxt_allocator *alloc, vxt_byte (*f)(enum vxtp_ctrl_command,void*), void *userdata) VXT_PIREPHERAL_CREATE(alloc, ctrl, {
-    DEVICE->callback = f;
-    DEVICE->userdata = userdata;
+struct vxt_pirepheral *ctrl_create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PIREPHERAL_CREATE(alloc, ctrl, {
+    (void)args;
+    if (frontend) {
+        struct frontend_interface *fi = (struct frontend_interface*)frontend;
+        DEVICE->callback = fi->ctrl.callback;
+        DEVICE->userdata = fi->ctrl.userdata;
+    }
 
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;
 })
+VXTU_MODULE_ENTRIES(&ctrl_create)

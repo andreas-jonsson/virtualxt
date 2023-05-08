@@ -221,13 +221,13 @@ workspace "virtualxt"
         targetextension ".wasm"
         targetdir "build/web"
 
-        includedirs { "lib/vxt/include", "lib/vxtp", "lib/printf", "front/common" }
+        includedirs { "lib/vxt/include", "lib/printf", "front/common" }
         files { "front/web/*.h", "front/web/*.c" }
 
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
-        files { "lib/vxtp/ctrl.c" }
+        files "modules/ctrl//ctrl.c"
 
         files { "lib/printf/printf.h", "lib/printf/printf.c" }
 

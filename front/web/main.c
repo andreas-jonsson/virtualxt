@@ -24,9 +24,9 @@
 
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
-#include <vxtp.h>
 
 #include <printf.h>
+#include <frontend.h>
 
 #include "../../bios/pcxtbios.h"
 #include "../../bios/vxtx.h"
@@ -37,6 +37,9 @@
 vxtu_static_allocator(ALLOCATOR, ALLOCATOR_SIZE)
 
 #define LOG(...) ( log_wrapper(__VA_ARGS__) )
+
+// This is from the ctrl module.
+struct vxt_pirepheral *ctrl_create(vxt_allocator *alloc, void *frontend, const char *args);
 
 int disk_head = 0;
 
@@ -131,9 +134,9 @@ static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_poin
 	return rom;
 }
 
-static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
+static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
 	(void)userdata;
-	if (cmd == VXTP_CTRL_SHUTDOWN) {
+	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
 		LOG("Guest OS shutdown!");
 		js_shutdown();
 	}
@@ -204,6 +207,9 @@ void wasm_initialize_emulator(int v20, int freq) {
     cga = vxtu_cga_create(&ALLOCATOR);
 	mouse = vxtu_mouse_create(&ALLOCATOR, 0x3F8, 4); // COM1
 
+	struct frontend_interface fi = {0};
+	fi.ctrl.callback = &emu_control;
+
 	struct vxt_pirepheral *devices[] = {
 		vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false),
         load_bios(pcxtbios_bin, (int)pcxtbios_bin_len, 0xFE000),
@@ -211,7 +217,7 @@ void wasm_initialize_emulator(int v20, int freq) {
         vxtu_pic_create(&ALLOCATOR),
 	    vxtu_dma_create(&ALLOCATOR),
 		vxtu_pit_create(&ALLOCATOR),
-		vxtp_ctrl_create(&ALLOCATOR, &emu_control, NULL),
+		ctrl_create(&ALLOCATOR, &fi, ""),
         ppi,
 		cga,
         disk,

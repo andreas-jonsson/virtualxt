@@ -14,6 +14,7 @@ Options:
   --fdc                   Enable experimental floppy disk controller.
   --v20                   Enable NEC V20 CPU support.
   --joystick              Enable joystick support.
+  --clean                 Remove config file and write a new default one.
   --rifs=PATH             Enable experimental RIFS support. (Shared folders)
   --config=PATH           Set config directory.
   --modules=PATH          Set modules directory.
