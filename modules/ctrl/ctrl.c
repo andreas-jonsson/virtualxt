@@ -62,10 +62,9 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Emulator Control";
 }
 
-struct vxt_pirepheral *ctrl_create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PIREPHERAL_CREATE(alloc, ctrl, {
-    (void)args;
-    if (frontend) {
-        struct frontend_interface *fi = (struct frontend_interface*)frontend;
+VXTU_MODULE_CREATE(ctrl, {
+    if (FRONTEND) {
+        struct frontend_interface *fi = (struct frontend_interface*)FRONTEND;
         DEVICE->callback = fi->ctrl.callback;
         DEVICE->userdata = fi->ctrl.userdata;
     }
@@ -75,4 +74,3 @@ struct vxt_pirepheral *ctrl_create(vxt_allocator *alloc, void *frontend, const c
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;
 })
-VXTU_MODULE_ENTRIES(&ctrl_create)

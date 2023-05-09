@@ -64,6 +64,7 @@ workspace "virtualxt"
         optimize "On"
 
     filter "platforms:web"
+        toolset "clang"
         buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }
 
     filter "options:i286"
@@ -205,7 +206,6 @@ workspace "virtualxt"
 
     project "web-frontend"
         kind "ConsoleApp"
-        toolset "clang"
         targetname "virtualxt"
         targetprefix ""
         targetextension ".wasm"
