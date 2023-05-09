@@ -63,6 +63,9 @@ workspace "virtualxt"
         defines "NDEBUG"
         optimize "On"
 
+    filter "platforms:web"
+        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }
+
     filter "options:i286"
         defines "VXT_CPU_286"
 
@@ -208,15 +211,22 @@ workspace "virtualxt"
         targetextension ".wasm"
         targetdir "build/web"
 
-        includedirs { "lib/vxt/include", "lib/printf", "front/common" }
+        includedirs "front/common"
         files { "front/web/*.h", "front/web/*.c" }
 
+        includedirs "lib/vxt/include"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
-        files "modules/ctrl//ctrl.c"
-
+        includedirs "lib/printf"
         files { "lib/printf/printf.h", "lib/printf/printf.c" }
+
+        files "modules/modules.h"
+        includedirs "modules"
+
+        if _OPTIONS["modules"] and _OPTIONS["static"] then
+            links(modules)
+        end
 
         -- Perhaps move this to options?
         local page_size = 0x10000
@@ -226,7 +236,6 @@ workspace "virtualxt"
             base = 6560                  -- Offset in linear memory to place global data
         }
 
-        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }
         linkoptions { "--target=wasm32", "-nostdlib", "-Wl,--allow-undefined", "-Wl,--lto-O3", "-Wl,--no-entry", "-Wl,--export-all", "-Wl,--import-memory" }
         linkoptions { "-Wl,--initial-memory=" .. tostring(memory.initial), "-Wl,--max-memory=" .. tostring(memory.max), "-Wl,--global-base=" .. tostring(memory.base) }
 

@@ -27,6 +27,7 @@
 
 #include <printf.h>
 #include <frontend.h>
+#include <modules.h>
 
 #include "../../bios/pcxtbios.h"
 #include "../../bios/vxtx.h"
@@ -38,8 +39,9 @@ vxtu_static_allocator(ALLOCATOR, ALLOCATOR_SIZE)
 
 #define LOG(...) ( log_wrapper(__VA_ARGS__) )
 
-// This is from the ctrl module.
-struct vxt_pirepheral *ctrl_create(vxt_allocator *alloc, void *frontend, const char *args);
+int num_devices = 0;
+struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = { NULL };
+#define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
 
 int disk_head = 0;
 
@@ -207,23 +209,27 @@ void wasm_initialize_emulator(int v20, int freq) {
     cga = vxtu_cga_create(&ALLOCATOR);
 	mouse = vxtu_mouse_create(&ALLOCATOR, 0x3F8, 4); // COM1
 
-	struct frontend_interface fi = {0};
-	fi.ctrl.callback = &emu_control;
+	APPEND_DEVICE(vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false));
+	APPEND_DEVICE(load_bios(pcxtbios_bin, (int)pcxtbios_bin_len, 0xFE000));
+	APPEND_DEVICE(load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000))
+	APPEND_DEVICE(vxtu_pic_create(&ALLOCATOR));
+	APPEND_DEVICE(vxtu_dma_create(&ALLOCATOR))
+	APPEND_DEVICE(vxtu_pit_create(&ALLOCATOR))
+	APPEND_DEVICE(ppi);
+	APPEND_DEVICE(cga);
+	APPEND_DEVICE(disk);
 
-	struct vxt_pirepheral *devices[] = {
-		vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false),
-        load_bios(pcxtbios_bin, (int)pcxtbios_bin_len, 0xFE000),
-        load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000),
-        vxtu_pic_create(&ALLOCATOR),
-	    vxtu_dma_create(&ALLOCATOR),
-		vxtu_pit_create(&ALLOCATOR),
-		ctrl_create(&ALLOCATOR, &fi, ""),
-        ppi,
-		cga,
-        disk,
-		mouse,
-		NULL
-	};
+	#ifdef VXTU_MODULES
+		#ifndef VXTU_STATIC_MODULES
+			#error The web frontend requires all modules to be staticlly linked!
+		#endif
+		vxtu_module_entry_func *e = _vxtu_module_isa_entry(&log_wrapper);
+		if (e) {
+			static struct frontend_interface fi = {0};
+			fi.ctrl.callback = &emu_control;
+			APPEND_DEVICE((*e)(&ALLOCATOR, &fi, ""));
+		}
+	#endif
 
 	sys = vxt_system_create(&ALLOCATOR, v20 ? VXT_CPU_V20 : VXT_CPU_8088, freq, devices);
 	vxt_system_initialize(sys);

@@ -38,8 +38,8 @@ jobs:
 
       - name: Build
         run: |
-          premake5 gmake
-          make clean web-frontend
+          premake5 --modules --static gmake
+          make config=release_web clean web-frontend
 
       - name: Package
         run: |

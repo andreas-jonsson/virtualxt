@@ -772,7 +772,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	#ifdef VXTU_STATIC_MODULES
-		printf("Modules are staticly linked!\n");
+		printf("Modules are staticlly linked!\n");
 	#endif
 	printf("Loaded modules:\n");
 
