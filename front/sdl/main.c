@@ -235,7 +235,6 @@ static int emu_loop(void *ptr) {
 					printf("step error: %s", vxt_error_str(res.err));
 			}
 			num_cycles += res.cycles;
-			//frequency = vxtu_ppi_turbo_enabled(ppi) ? (cpu_frequency * 3.0) : cpu_frequency;
 		);
 
 		for (;;) {
