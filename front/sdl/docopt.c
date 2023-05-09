@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 26; j++)
+            for (j = 0; j < 25; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -243,8 +243,6 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->hdboot = option->value;
         } else if (strcmp(option->olong, "--help") == 0) {
             args->help = option->value;
-        } else if (strcmp(option->olong, "--joystick") == 0) {
-            args->joystick = option->value;
         } else if (strcmp(option->olong, "--mute") == 0) {
             args->mute = option->value;
         } else if (strcmp(option->olong, "--no-activity") == 0) {
@@ -319,8 +317,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char
-        *) "4.772726", NULL, NULL, NULL, NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
+        "4.772726", NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -337,7 +335,6 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --no-cga                Disable default CGA video adapter.",
               "  --no-disk               Disable default disk controller.",
               "  --v20                   Enable NEC V20 CPU support.",
-              "  --joystick              Enable joystick support.",
               "  --clean                 Remove config file and write a new default one.",
               "  --rifs=PATH             Enable experimental RIFS support. (Shared folders)",
               "  --config=PATH           Set config directory.",
@@ -359,7 +356,6 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--halt", 0, 0, NULL},
         {NULL, "--hdboot", 0, 0, NULL},
         {"-h", "--help", 0, 0, NULL},
-        {NULL, "--joystick", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
         {NULL, "--no-activity", 0, 0, NULL},
         {NULL, "--no-cga", 0, 0, NULL},
@@ -383,7 +379,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 23;
+    elements.n_options = 22;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;

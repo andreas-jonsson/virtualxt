@@ -694,22 +694,20 @@ int main(int argc, char *argv[]) {
 
 	int num_sticks = 0;
 	SDL_Joystick *sticks[2] = {NULL};
+	
+	printf("Initialize joysticks:\n");
+	if (!(num_sticks = SDL_NumJoysticks())) {
+		printf("No joystick found!\n");
+	} else {
+		for (int i = 0; i < num_sticks; i++) {
+			const char *name = SDL_JoystickNameForIndex(i);
+			if (!name) name = "Unknown Joystick";
 
-	if (args.joystick) {
-		printf("Initialize joysticks:\n");
-		if (!(num_sticks = SDL_NumJoysticks())) {
-			printf("No joystick found!\n");
-		} else {
-			for (int i = 0; i < num_sticks; i++) {
-				const char *name = SDL_JoystickNameForIndex(i);
-				if (!name) name = "Unknown Joystick";
-
-				if ((i < 2) && (sticks[i] = SDL_JoystickOpen(i))) {
-					printf("%d - *%s\n", i + 1, name);
-					continue;
-				}
-				printf("%d - %s\n", i + 1, name);
+			if ((i < 2) && (sticks[i] = SDL_JoystickOpen(i))) {
+				printf("%d - *%s\n", i + 1, name);
+				continue;
 			}
+			printf("%d - %s\n", i + 1, name);
 		}
 	}
 
