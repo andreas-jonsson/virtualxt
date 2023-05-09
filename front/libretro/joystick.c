@@ -20,32 +20,12 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#ifndef _VXTP_H_
-#define _VXTP_H_
+#include "../../modules/joystick/joystick.c"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <vxt/vxtu.h>
-
-enum vxtp_joystick_button {
-    VXTP_JOYSTICK_A	= 0x1,
-	VXTP_JOYSTICK_B = 0x2
-};
-
-struct vxtp_joystick_event {
-	void *id;
-	enum vxtp_joystick_button buttons;
-	vxt_int16 xaxis;
-    vxt_int16 yaxis;
-};
-
-extern struct vxt_pirepheral *vxtp_joystick_create(vxt_allocator *alloc, void *stick_a, void *stick_b);
-extern bool vxtp_joystick_push_event(struct vxt_pirepheral *p, const struct vxtp_joystick_event *ev);
-
-#ifdef __cplusplus
+bool joystick_push_event(struct vxt_pirepheral *p, const struct frontend_joystick_event *ev) {
+    return push_event(p, ev);
 }
-#endif
 
-#endif
+struct vxt_pirepheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args) {
+    return create(alloc, frontend, args);
+}

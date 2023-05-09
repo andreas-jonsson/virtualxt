@@ -31,7 +31,6 @@
 #define VXTU_LIBC_IO
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
-#include <vxtp.h>
 
 #include <modules.h>
 #include <frontend.h>
@@ -122,8 +121,8 @@ int num_audio_adapters = 0;
 struct frontend_audio_adapter audio_adapters[MAX_AUDIO_ADAPTERS] = {0};
 
 struct frontend_video_adapter video_adapter = {0};
-
 struct frontend_disk_controller disk_controller = {0};
+struct frontend_joystick_controller joystick_controller = {0};
 
 struct frontend_interface front_interface = {0};
 
@@ -383,8 +382,20 @@ static bool set_video_adapter(const struct frontend_video_adapter *adapter) {
 }
 
 static bool set_disk_controller(const struct frontend_disk_controller *controller) {
+	if (disk_controller.device)
+		return false;
+
 	printf("Setup disk controller: %s\n", vxt_pirepheral_name(controller->device));
 	disk_controller = *controller;
+	return true;
+}
+
+static bool set_joystick_controller(const struct frontend_joystick_controller *controller) {
+	if (joystick_controller.device)
+		return false;
+
+	printf("Setup joystick controller: %s\n", vxt_pirepheral_name(controller->device));
+	joystick_controller = *controller;
 	return true;
 }
 
@@ -531,6 +542,7 @@ static void write_default_config(const char *path, bool clean) {
 		"adlib=\n"
 		"rifs=\n"
 		"ctrl=\n"
+		"joystick=0x201\n"
 		";vga=et4000.bin\n"
 		";fdc=\n"
 		";rtc=\n"
@@ -716,13 +728,9 @@ int main(int argc, char *argv[]) {
 
 	struct vxt_pirepheral *ppi = vxtu_ppi_create(&realloc);
 	struct vxt_pirepheral *mouse = args.no_mouse ? NULL : vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
-	struct vxt_pirepheral *joystick = NULL;
 
 	APPEND_DEVICE(vxtu_memory_create(&realloc, 0x0, 0x100000, false));
 	APPEND_DEVICE(rom);
-
-	if (num_sticks)
-		APPEND_DEVICE(joystick = vxtp_joystick_create(&realloc, sticks[0], sticks[1]));
 
 	if (!args.no_disk) {
 		struct vxt_pirepheral *rom = load_bios(args.extension, 0xE0000);
@@ -753,6 +761,7 @@ int main(int argc, char *argv[]) {
 	front_interface.set_video_adapter = &set_video_adapter;
 	front_interface.set_audio_adapter = &set_audio_adapter;
 	front_interface.set_disk_controller = &set_disk_controller;
+	front_interface.set_joystick_controller = &set_joystick_controller;
 	front_interface.ctrl.callback = &emu_control;
 	front_interface.disk.di = disk_interface;
 
@@ -953,14 +962,16 @@ int main(int argc, char *argv[]) {
 				{
 					assert(e.jaxis.which == e.jbutton.which);
 					SDL_Joystick *js = SDL_JoystickFromInstanceID(e.jaxis.which);
-					if (js && ((sticks[0] == js) || (sticks[0] == js))) {
-						struct vxtp_joystick_event ev = {
-							js,
-							(SDL_JoystickGetButton(js, 0) ? VXTP_JOYSTICK_A : 0) | (SDL_JoystickGetButton(js, 1) ? VXTP_JOYSTICK_B : 0),
+					if (js && ((sticks[0] == js) || (sticks[1] == js))) {
+						struct frontend_joystick_event ev = {
+							(sticks[0] == js) ? FRONTEND_JOYSTICK_1 : FRONTEND_JOYSTICK_2,
+							(SDL_JoystickGetButton(js, 0) ? FRONTEND_JOYSTICK_A : 0) | (SDL_JoystickGetButton(js, 1) ? FRONTEND_JOYSTICK_B : 0),
 							SDL_JoystickGetAxis(js, 0),
 							SDL_JoystickGetAxis(js, 1)
 						};
-						SYNC(vxtp_joystick_push_event(joystick, &ev));
+						if (joystick_controller.device) SYNC(
+							joystick_controller.push_event(joystick_controller.device, &ev)
+						)
 					}
 					break;
 				}

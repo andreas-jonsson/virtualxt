@@ -46,6 +46,28 @@ struct frontend_disk_controller {
 	void (*set_boot)(struct vxt_pirepheral *p, int num);
 };
 
+enum frontend_joystick_id {
+	FRONTEND_JOYSTICK_1,
+	FRONTEND_JOYSTICK_2
+};
+
+enum frontend_joystick_button {
+    FRONTEND_JOYSTICK_A	= 0x1,
+	FRONTEND_JOYSTICK_B = 0x2
+};
+
+struct frontend_joystick_event {
+	enum frontend_joystick_id id;
+	enum frontend_joystick_button buttons;
+	vxt_int16 xaxis;
+    vxt_int16 yaxis;
+};
+
+struct frontend_joystick_controller {
+    struct vxt_pirepheral *device;
+	bool (*push_event)(struct vxt_pirepheral *p, const struct frontend_joystick_event *ev);
+};
+
 enum frontend_ctrl_command {
 	FRONTEND_CTRL_SHUTDOWN = 0x1
 };
@@ -67,6 +89,7 @@ struct frontend_interface {
     bool (*set_video_adapter)(const struct frontend_video_adapter *adapter);
     bool (*set_audio_adapter)(const struct frontend_audio_adapter *adapter);
 	bool (*set_disk_controller)(const struct frontend_disk_controller *controller);
+	bool (*set_joystick_controller)(const struct frontend_joystick_controller *controller);
 
     struct frontend_ctrl_interface ctrl;
 	struct frontend_disk_interface disk;

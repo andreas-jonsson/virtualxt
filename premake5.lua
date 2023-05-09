@@ -169,16 +169,6 @@ workspace "virtualxt"
         filter "toolset:clang or gcc"
             buildoptions { "-nostdinc" }
 
-    project "vxtp"
-        kind "StaticLib"
-        pic "On"
-
-        files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
-        includedirs { "lib/vxtp", "lib/vxt/include"}
-
-        filter "toolset:gcc"
-            buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
-
     project "libretro-frontend"
         kind "SharedLib"
         targetname "virtualxt_libretro"
@@ -193,9 +183,6 @@ workspace "virtualxt"
         includedirs "lib/vxt/include"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
-
-        includedirs "lib/vxtp"
-        files { "lib/vxtp/**.h", "lib/vxtp/joystick.c" }
 
         links { "miniz", "fat16" }
         includedirs { "lib/miniz", "lib/fat16" }
@@ -264,8 +251,8 @@ workspace "virtualxt"
 
         files { "front/sdl/*.h", "front/sdl/*.c" }
 
-        links { "vxt", "vxtp", "inih", "microui" }
-        includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "front/common" }
+        links { "vxt", "inih", "microui" }
+        includedirs { "lib/vxt/include", "lib/inih", "lib/microui/src", "front/common" }
 
         files "modules/modules.h"
         includedirs "modules"

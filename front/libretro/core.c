@@ -33,7 +33,8 @@
 #define VXT_LIBC
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
-#include <vxtp.h>
+
+#include <frontend.h>
 
 #include "keys.h"
 
@@ -88,6 +89,10 @@ struct vxt_pirepheral *ppi = NULL;
 struct vxt_pirepheral *cga = NULL;
 struct vxt_pirepheral *mouse = NULL;
 struct vxt_pirepheral *joystick = NULL;
+
+// From joystick.c
+bool joystick_push_event(struct vxt_pirepheral *p, const struct frontend_joystick_event *ev);
+struct vxt_pirepheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args);
 
 static void no_log(enum retro_log_level level, const char *fmt, ...) {
     (void)level; (void)fmt;
@@ -164,14 +169,14 @@ static void keyboard_event(bool down, unsigned keycode, uint32_t character, uint
 static void joystick_event(unsigned port) {
     vxt_int16 x = (input_state_cb(port, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X) / 256) + 128;
     vxt_int16 y = (input_state_cb(port, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y) / 256) + 128;
-    enum vxtp_joystick_button btn = (input_state_cb(port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A ) ? VXTP_JOYSTICK_A : 0)
-        | (input_state_cb(port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B ) ? VXTP_JOYSTICK_B : 0);
+    enum frontend_joystick_button btn = (input_state_cb(port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A ) ? FRONTEND_JOYSTICK_A : 0)
+        | (input_state_cb(port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B ) ? FRONTEND_JOYSTICK_B : 0);
 
-    struct vxtp_joystick_event ev = {
-        (void*)(uintptr_t)port,
+    struct frontend_joystick_event ev = {
+        port ? FRONTEND_JOYSTICK_2 : FRONTEND_JOYSTICK_1,
         btn, x, y
     };
-    SYNC(vxtp_joystick_push_event(joystick, &ev));
+    SYNC(joystick_push_event(joystick, &ev));
 }
 
 static void mouse_event(void) {
@@ -337,7 +342,7 @@ void retro_init(void) {
         ppi = vxtu_ppi_create(&realloc);
         cga = vxtu_cga_create(&realloc);
         mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
-        joystick = vxtp_joystick_create(&realloc, (void*)0, (void*)1);
+        joystick = joystick_create(&realloc, NULL, "0x201");
 
         struct vxt_pirepheral *devices[] = {
             vxtu_memory_create(&realloc, 0x0, 0x100000, false),
