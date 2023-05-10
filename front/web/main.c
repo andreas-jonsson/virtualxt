@@ -219,7 +219,7 @@ void wasm_initialize_emulator(int v20, int freq) {
 	APPEND_DEVICE(cga);
 	APPEND_DEVICE(disk);
 
-	#ifdef VXTU_MODULES
+	#ifdef VXTU_MODULE_CTRL
 		#ifndef VXTU_STATIC_MODULES
 			#error The web frontend requires all modules to be staticlly linked!
 		#endif
