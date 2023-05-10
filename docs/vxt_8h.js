@@ -18,6 +18,7 @@ var vxt_8h =
     [ "VXT_INVALID_TIMER_ID", "vxt_8h.html#a6c0046a05a72819962103e3cde8575bb", null ],
     [ "VXT_IO_MAP_SIZE", "vxt_8h.html#a0805f80bc96947fff1919912df1e8d5e", null ],
     [ "VXT_LOG", "vxt_8h.html#af9aee7044c7743909456cb3c36774270", null ],
+    [ "vxt_logger", "vxt_8h.html#a6ea9641cc8d820a0432c1e7d78ad9de7", null ],
     [ "VXT_MAX_PIREPHERALS", "vxt_8h.html#ab740cb9791821ffb26bf633c05c0cf50", null ],
     [ "VXT_MEM_MAP_SIZE", "vxt_8h.html#a4cdd4ee72c72a2d4a86a9fafa8eb4a25", null ],
     [ "vxt_memclear", "vxt_8h.html#a28eea7dc46eb2990dadd367616f94b32", null ],
