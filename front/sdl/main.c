@@ -435,13 +435,32 @@ static int load_config(void *user, const char *section, const char *name, const 
 	struct ini_config *config = (struct ini_config*)user;
 	if (!strcmp("args", section)) {
 		if (!strcmp("debug", name))
-			config->args->debug = atoi(value);
+			config->args->debug |= atoi(value);
 		else if (!strcmp("halt", name))
-			config->args->halt = atoi(value);
-		else if (!strcmp("no-cga", name))
-			config->args->no_cga = atoi(value);
+			config->args->halt |= atoi(value);
+		else if (!strcmp("no-mouse", name))
+			config->args->no_cga |= atoi(value);
+		else if (!strcmp("no-mouse", name))
+			config->args->no_cga |= atoi(value);
 		else if (!strcmp("no-disk", name))
-			config->args->no_disk = atoi(value);
+			config->args->no_disk |= atoi(value);
+		else if (!strcmp("hdboot", name))
+			config->args->hdboot |= atoi(value);
+		else if (!strcmp("mute", name))
+			config->args->mute |= atoi(value);
+		else if (!strcmp("v20", name))
+			config->args->v20 |= atoi(value);
+		else if (!strcmp("no-activity", name))
+			config->args->no_activity |= atoi(value);
+		else if (!strcmp("bios", name) && !config->args->bios) {
+			static char bios_image_path[FILENAME_MAX] = {0};
+			strncpy(bios_image_path, value, FILENAME_MAX - 1);
+			config->args->bios = bios_image_path;
+		} else if (!strcmp("harddrive", name) && !config->args->harddrive) {
+			static char harddrive_image_path[FILENAME_MAX] = {0};
+			strncpy(harddrive_image_path, value, FILENAME_MAX - 1);
+			config->args->harddrive = harddrive_image_path;
+		}
 	}
 	return 1;
 }
@@ -545,9 +564,13 @@ static void write_default_config(const char *path, bool clean) {
 		";isa=ch36x\n"
 		";serial_dbg=sdbg1\n"
 		"\n[args]\n"
+		";bios=bios/pcxtbios_640.bin\n"
 		";no-cga=1\n"
 		";no-disk=1\n"
+		";v20=1\n"
 		";debug=1\n"
+		";hdboot=1\n"
+		";harddrive=boot/freedos_hd.img\n"
 		"\n[sdbg1]\n"
 		"port=0x3F8\n"
 		"\n[ch36x]\n"
