@@ -349,10 +349,6 @@ static int tell_file(vxt_system *s, void *fp) {
 	return (int)ftell((FILE*)fp);
 }
 
-struct vxtu_disk_interface disk_interface = {
-	&read_file, &write_file, &seek_file, &tell_file
-};
-
 static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
 	(void)userdata;
 	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
@@ -728,6 +724,10 @@ int main(int argc, char *argv[]) {
 
 	APPEND_DEVICE(vxtu_memory_create(&realloc, 0x0, 0x100000, false));
 	APPEND_DEVICE(rom);
+
+	struct vxtu_disk_interface disk_interface = {
+		&read_file, &write_file, &seek_file, &tell_file
+	};
 
 	if (!args.no_disk) {
 		struct vxt_pirepheral *rom = load_bios(args.extension, 0xE0000);
