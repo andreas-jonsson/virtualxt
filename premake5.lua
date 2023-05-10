@@ -163,8 +163,13 @@ workspace "virtualxt"
         }
 
     project "vxt"
-        kind "StaticLib"
-        pic "On"
+        if _OPTIONS["modules"] and not _OPTIONS["static"] then
+            kind "SharedLib"
+            targetdir "build/bin"
+            pic "On"
+        else
+            kind "StaticLib"
+        end
 
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         includedirs "lib/vxt/include"
