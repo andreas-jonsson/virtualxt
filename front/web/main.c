@@ -223,7 +223,7 @@ void wasm_initialize_emulator(int v20, int freq) {
 		#ifndef VXTU_STATIC_MODULES
 			#error The web frontend requires all modules to be staticlly linked!
 		#endif
-		vxtu_module_entry_func *e = _vxtu_module_isa_entry(&log_wrapper);
+		vxtu_module_entry_func *e = _vxtu_module_ctrl_entry(&log_wrapper);
 		if (e) {
 			static struct frontend_interface fi = {0};
 			fi.ctrl.callback = &emu_control;
