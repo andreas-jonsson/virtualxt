@@ -557,7 +557,7 @@ static void write_default_config(const char *path, bool clean) {
 		"rifs=\n"
 		"ctrl=\n"
 		"joystick=0x201\n"
-		";ems=lotech_ems\n"
+		"ems=lotech_ems\n"
 		";vga=bios/et4000.bin\n"
 		";fdc=\n"
 		";rtc=\n"

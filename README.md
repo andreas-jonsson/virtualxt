@@ -21,7 +21,9 @@ Browser version is avalible [here](https://realmode.games).
 * Serial port with Microsoft 2-button mouse
 * Floppy and hard disk controller
 * Direct file share with host
-* AdLib Music Synthesizer
+* Flexible module system
+* AdLib music synthesizer
+* EMS memory expansion
 * Ethernet adapter
 * Real Time Clock
 * PC speaker

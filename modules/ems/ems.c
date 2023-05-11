@@ -94,6 +94,8 @@ static vxt_error config(struct vxt_pirepheral *p, const char *section, const cha
 VXTU_MODULE_CREATE(ems, {
     if (strcmp(ARGS, "lotech_ems"))
         return NULL;
+    
+    vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (long long int)PIREPHERAL);
 
     DEVICE->mem_base = 0xE0000;
     DEVICE->io_base = 0x260;
