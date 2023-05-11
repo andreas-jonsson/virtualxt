@@ -701,6 +701,7 @@ static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, 
     }
 
     struct vxt_pirepheral *p = vxtu_memory_create(alloc, 0xC0000, size, true);
+    vxtu_memory_device_fill(p, data, size);
     alloc(data, 0);
     return p;
 }

@@ -184,7 +184,7 @@ static vxt_error config(struct vxt_pirepheral *p, const char *section, const cha
         } else if (!strcmp("memory", key)) {
             if (sscanf(value, "%x,%x", &d->config.mem_start, &d->config.mem_end) < 2)
                 d->config.mem_end = d->config.mem_start + 1;
-        } else if (!strcmp("io", key)) {
+        } else if (!strcmp("port", key)) {
             if (sscanf(value, "%hx,%hx", &d->config.io_start, &d->config.io_end) < 2)
                 d->config.io_end = d->config.io_start + 1;
         } else if (!strcmp("irq", key)) {

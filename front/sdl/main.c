@@ -439,8 +439,8 @@ static int load_config(void *user, const char *section, const char *name, const 
 		else if (!strcmp("halt", name))
 			config->args->halt |= atoi(value);
 		else if (!strcmp("no-mouse", name))
-			config->args->no_cga |= atoi(value);
-		else if (!strcmp("no-mouse", name))
+			config->args->no_mouse |= atoi(value);
+		else if (!strcmp("no-cga", name))
 			config->args->no_cga |= atoi(value);
 		else if (!strcmp("no-disk", name))
 			config->args->no_disk |= atoi(value);
@@ -557,7 +557,8 @@ static void write_default_config(const char *path, bool clean) {
 		"rifs=\n"
 		"ctrl=\n"
 		"joystick=0x201\n"
-		";vga=et4000.bin\n"
+		";ems=lotech_ems\n"
+		";vga=bios/et4000.bin\n"
 		";fdc=\n"
 		";rtc=\n"
 		";network=eth0\n"
@@ -575,7 +576,10 @@ static void write_default_config(const char *path, bool clean) {
 		"port=0x3F8\n"
 		"\n[ch36x]\n"
 		"device=/dev/ch36xpci0\n"
-		"io=0x201\n"
+		"port=0x201\n"
+		"\n[lotech_ems]\n"
+		"memory=0xD0000\n"
+		"port=0x260\n"
 		"\n[rifs]\n"
 		"port=0x178\n"
 	);
@@ -791,16 +795,6 @@ int main(int argc, char *argv[]) {
 		front_interface.disk.userdata = &icon_fade;
 	}
 
-	#ifdef VXTU_STATIC_MODULES
-		printf("Modules are staticlly linked!\n");
-	#endif
-	printf("Loaded modules:\n");
-
-	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, (void*)&realloc)) {
-		printf("ERROR: Could not load all modules!\n");
-		return -1;
-	}
-
 	if (args.no_cga) {
 		vxtu_ppi_set_xt_switches(ppi, 0);
 	} else {
@@ -812,6 +806,16 @@ int main(int argc, char *argv[]) {
 		};
 		set_video_adapter(&a);
 		APPEND_DEVICE(a.device);
+	}
+
+	#ifdef VXTU_STATIC_MODULES
+		printf("Modules are staticlly linked!\n");
+	#endif
+	printf("Loaded modules:\n");
+
+	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, (void*)&realloc)) {
+		printf("ERROR: Could not load all modules!\n");
+		return -1;
 	}
 
 	APPEND_DEVICE(dbg);
