@@ -45,6 +45,16 @@ extern "C" {
 	#define VXTU_CGA_ALPHA_FILL 0xFF
 #endif
 
+#define vxtu_randomize(ptr, size, seed) {					\
+    int s = (int)(seed);									\
+    for (int i = 0; i < (int)(size); i++) {					\
+        const int m = 2147483647;							\
+        s = (16807 * s) % m;								\
+        float r = (float)s / m;								\
+        ((vxt_byte*)(ptr))[i] = (vxt_byte)(255.0 * r);		\
+    }														\
+}															\
+
 typedef struct vxt_pirepheral *(*vxtu_module_entry_func)(vxt_allocator*,void*,const char*);
 
 #ifdef VXTU_MODULES
@@ -250,7 +260,7 @@ extern struct vxt_pirepheral *vxtu_debugger_create(vxt_allocator *alloc, const s
 extern void vxtu_debugger_interrupt(struct vxt_pirepheral *dbg);
 
 extern struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);
-extern void *vxtu_memory_internal_pointer(const struct vxt_pirepheral *p);
+extern void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p);
 extern bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size);
 
 extern struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc);

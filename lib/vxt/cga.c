@@ -312,6 +312,8 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 }
 
 struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, cga_video, {
+    vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (long long int)PIREPHERAL);
+
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;

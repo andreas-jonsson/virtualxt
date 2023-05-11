@@ -21,6 +21,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include "common.h"
+#include <vxt/vxtu.h>
 
 VXT_PIREPHERAL_WITH_DATA(memory, vxt_byte, {
     vxt_pointer base;
@@ -61,9 +62,13 @@ struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base
     vxt_memclear(p, size);
     VXT_DEC_DEVICE(m, memory, p);
 
+    #ifndef VXTU_MEMCLEAR
+        if (!read_only) vxtu_randomize(VXT_GET_DEVICE_DATA(memory, p), amount, (long long int)p);
+    #endif
+
     m->base = base;
     m->read_only = read_only;
-    m->size = amount;
+    m->size = amount;   
 
     p->install = &install;
     p->name = &name;
@@ -72,11 +77,11 @@ struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base
     return p;
 }
 
-void *vxtu_memory_internal_pointer(const struct vxt_pirepheral *p) {
+void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p) {
     return VXT_GET_DEVICE_DATA(memory, p);
 }
 
-bool vxtu_memory_device_fill(const struct vxt_pirepheral *p, const vxt_byte *data, int size) {
+bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size) {
     VXT_DEC_DEVICE(m, memory, p);
     ENSURE(data);
     if (m->size < size)

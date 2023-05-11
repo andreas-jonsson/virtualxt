@@ -58,6 +58,8 @@ workspace "virtualxt"
 
     filter "configurations:debug"
         symbols "On"
+        optimize "Off"
+        sanitize { "Address", "Fuzzer" }
 
     filter "configurations:release"
         defines "NDEBUG"
@@ -331,10 +333,11 @@ if _OPTIONS["test"] then
         kind "ConsoleApp"
         targetdir "test"
         includedirs "lib/vxt/include"
-        defines { "TESTING", "VXT_CPU_286" }
+        defines { "TESTING", "VXT_CPU_286", "VXTU_MEMCLEAR" }
         files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
         optimize "Off"
         symbols "On"
+        sanitize { "Address", "Fuzzer" }
 
         postbuildcommands "./test/test"
         cleancommands "{RMDIR} test"
