@@ -11,6 +11,7 @@ var vxtu_8h =
     [ "VXTU_MODULE_CREATE", "vxtu_8h.html#a5c5f3b5d5db9aebf398a733617e612ce", null ],
     [ "VXTU_MODULE_ENTRIES", "vxtu_8h.html#a94f02d7da3b95b3d2ba20d85e6dbd141", null ],
     [ "VXTU_MODULE_NAME_STRING", "vxtu_8h.html#a3fff8082902c9af3063b8d8cc3a37daa", null ],
+    [ "vxtu_randomize", "vxtu_8h.html#a21d7ce948278da994dbac4bc6d419f20", null ],
     [ "vxtu_static_allocator", "vxtu_8h.html#a9e056a6f11b996dcd8f34ba2dbbb2387", null ],
     [ "vxtu_module_entry_func", "vxtu_8h.html#a4e374b46d3d6f90a0666a8aa52b0f9bf", null ],
     [ "vxtu_disk_seek", "vxtu_8h.html#a51e30675ddfde71aab800a8e7f6f8b8c", [
@@ -131,7 +132,7 @@ var vxtu_8h =
     [ "vxtu_mda_traverse", "vxtu_8h.html#a8604c410bfc57310be11504e41a49f86", null ],
     [ "vxtu_memory_create", "vxtu_8h.html#acebf0b7330f2e1def0569b384aa0acaf", null ],
     [ "vxtu_memory_device_fill", "vxtu_8h.html#a41eb9011a2e77e7ae3ec6020b6c72f66", null ],
-    [ "vxtu_memory_internal_pointer", "vxtu_8h.html#a9ef35807c454f90245ff08d6c35f163b", null ],
+    [ "vxtu_memory_internal_pointer", "vxtu_8h.html#ab9f31ad23c33f1370f08d691b6571237", null ],
     [ "vxtu_mouse_create", "vxtu_8h.html#a9a2d07a0d7d5bbe31f59d776ede597e8", null ],
     [ "vxtu_mouse_push_event", "vxtu_8h.html#af6d441980f70af062e334238da5cf61d", null ],
     [ "vxtu_pic_create", "vxtu_8h.html#a4da136382cb23d776cdb827f2cfb115e", null ],

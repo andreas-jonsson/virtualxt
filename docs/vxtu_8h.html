@@ -87,6 +87,8 @@ Macros</h2></td></tr>
 <tr class="separator:a6618054f81fdb665cc4a6850777d43a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2eaaf0d5dbab6593312e5e2c43cb43c0"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a2eaaf0d5dbab6593312e5e2c43cb43c0">VXTU_CGA_ALPHA_FILL</a>&#160;&#160;&#160;0xFF</td></tr>
 <tr class="separator:a2eaaf0d5dbab6593312e5e2c43cb43c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21d7ce948278da994dbac4bc6d419f20"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a21d7ce948278da994dbac4bc6d419f20">vxtu_randomize</a>(ptr,  size,  seed)</td></tr>
+<tr class="separator:a21d7ce948278da994dbac4bc6d419f20"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a94f02d7da3b95b3d2ba20d85e6dbd141"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a94f02d7da3b95b3d2ba20d85e6dbd141">VXTU_MODULE_ENTRIES</a>(...)</td></tr>
 <tr class="separator:a94f02d7da3b95b3d2ba20d85e6dbd141"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5c5f3b5d5db9aebf398a733617e612ce"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a5c5f3b5d5db9aebf398a733617e612ce">VXTU_MODULE_CREATE</a>(name,  body)</td></tr>
@@ -235,8 +237,8 @@ Functions</h2></td></tr>
 <tr class="separator:a5101b920f9a48f0b72f4d8e5754f7570"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acebf0b7330f2e1def0569b384aa0acaf"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#acebf0b7330f2e1def0569b384aa0acaf">vxtu_memory_create</a> (<a class="el" href="vxt_8h.html#ac10b97a0ac675a0471f30c4432a64190">vxt_allocator</a> *alloc, <a class="el" href="vxt_8h.html#af39a2a43386c5266fe94d53223308671">vxt_pointer</a> base, int amount, <a class="el" href="vxt_8h.html#afaa87723b8417d40fcf45b7330261ef9">bool</a> read_only)</td></tr>
 <tr class="separator:acebf0b7330f2e1def0569b384aa0acaf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9ef35807c454f90245ff08d6c35f163b"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a9ef35807c454f90245ff08d6c35f163b">vxtu_memory_internal_pointer</a> (const struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p)</td></tr>
-<tr class="separator:a9ef35807c454f90245ff08d6c35f163b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9f31ad23c33f1370f08d691b6571237"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#ab9f31ad23c33f1370f08d691b6571237">vxtu_memory_internal_pointer</a> (struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p)</td></tr>
+<tr class="separator:ab9f31ad23c33f1370f08d691b6571237"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a41eb9011a2e77e7ae3ec6020b6c72f66"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#afaa87723b8417d40fcf45b7330261ef9">bool</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a41eb9011a2e77e7ae3ec6020b6c72f66">vxtu_memory_device_fill</a> (struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *p, const <a class="el" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a> *data, int size)</td></tr>
 <tr class="separator:a41eb9011a2e77e7ae3ec6020b6c72f66"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4da136382cb23d776cdb827f2cfb115e"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a4da136382cb23d776cdb827f2cfb115e">vxtu_pic_create</a> (<a class="el" href="vxt_8h.html#ac10b97a0ac675a0471f30c4432a64190">vxt_allocator</a> *alloc)</td></tr>
@@ -419,6 +421,50 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a21d7ce948278da994dbac4bc6d419f20"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a21d7ce948278da994dbac4bc6d419f20">&#9670;&nbsp;</a></span>vxtu_randomize</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define vxtu_randomize</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">ptr, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">size, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">seed&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    {                   \</div>
+<div class="line">    int s = (int)(seed);                                    \</div>
+<div class="line">    for (<span class="keywordtype">int</span> i = 0; i &lt; (int)(size); i++) {                 \</div>
+<div class="line">        const <span class="keywordtype">int</span> m = 2147483647;                           \</div>
+<div class="line">        s = (16807 * s) % m;                                \</div>
+<div class="line">        float r = (float)s / m;                             \</div>
+<div class="line">        ((<a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>*)(ptr))[i] = (<a class="code" href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a>)(255.0 * r);      \</div>
+<div class="line">    }                                                       \</div>
+<div class="line">}                                                           \</div>
+<div class="ttc" id="avxt_8h_html_a1a2c86d8b0bade734327e283188d6b77"><div class="ttname"><a href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a></div><div class="ttdeci">unsigned char vxt_byte</div><div class="ttdef"><b>Definition:</b> vxt.h:50</div></div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="a9e056a6f11b996dcd8f34ba2dbbb2387"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9e056a6f11b996dcd8f34ba2dbbb2387">&#9670;&nbsp;</a></span>vxtu_static_allocator</h2>
 
@@ -462,7 +508,6 @@ Functions</h2></td></tr>
 <div class="line">        return p;                                                       \</div>
 <div class="line">    }                                                                   \</div>
 <div class="ttc" id="avxt_8h_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="vxt_8h.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> vxt.h:66</div></div>
-<div class="ttc" id="avxt_8h_html_a1a2c86d8b0bade734327e283188d6b77"><div class="ttname"><a href="vxt_8h.html#a1a2c86d8b0bade734327e283188d6b77">vxt_byte</a></div><div class="ttdeci">unsigned char vxt_byte</div><div class="ttdef"><b>Definition:</b> vxt.h:50</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1088,8 +1133,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a9ef35807c454f90245ff08d6c35f163b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9ef35807c454f90245ff08d6c35f163b">&#9670;&nbsp;</a></span>vxtu_memory_internal_pointer()</h2>
+<a id="ab9f31ad23c33f1370f08d691b6571237"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab9f31ad23c33f1370f08d691b6571237">&#9670;&nbsp;</a></span>vxtu_memory_internal_pointer()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1097,7 +1142,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname">void* vxtu_memory_internal_pointer </td>
           <td>(</td>
-          <td class="paramtype">const struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td>
+          <td class="paramtype">struct <a class="el" href="structvxt__pirepheral.html">vxt_pirepheral</a> *&#160;</td>
           <td class="paramname"><em>p</em></td><td>)</td>
           <td></td>
         </tr>
