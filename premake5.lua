@@ -25,6 +25,11 @@ newoption {
 }
 
 newoption {
+    trigger = "memclear",
+    description = "Clear main memory when initializing"
+}
+
+newoption {
     trigger = "validator",
     description = "Enable the PI8088 hardware validator"
 }
@@ -59,6 +64,7 @@ workspace "virtualxt"
     filter "configurations:debug"
         symbols "On"
         optimize "Off"
+        defines "VXT_DEBUG_PREFETCH"
         sanitize { "Address", "Fuzzer" }
 
     filter "configurations:release"
@@ -68,6 +74,9 @@ workspace "virtualxt"
     filter "platforms:web"
         toolset "clang"
         buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }
+
+    filter "options:memclear"
+        defines "VXTU_MEMCLEAR"
 
     filter "options:i286"
         defines "VXT_CPU_286"

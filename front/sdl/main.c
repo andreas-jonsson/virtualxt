@@ -568,6 +568,7 @@ static void write_default_config(const char *path, bool clean) {
 		";bios=bios/pcxtbios_640.bin\n"
 		";no-cga=1\n"
 		";no-disk=1\n"
+		";no-mouse=1\n"
 		";v20=1\n"
 		";debug=1\n"
 		";hdboot=1\n"
