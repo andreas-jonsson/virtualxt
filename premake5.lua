@@ -82,6 +82,9 @@ workspace "virtualxt"
     filter "toolset:clang or gcc"
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
 
+    filter { "toolset:clang or gcc", "configurations:debug" }
+        buildoptions "-Wno-error"
+
     local modules = {}
     local module_names = {}
     local module_opt = _OPTIONS["modules"]

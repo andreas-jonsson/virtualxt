@@ -26,8 +26,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
+// The Lo-tech EMS board driver is hardcoded to 2MB.
 #define MEMORY_SIZE 0x200000
 
 VXT_PIREPHERAL(ems, {
@@ -39,14 +39,14 @@ VXT_PIREPHERAL(ems, {
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     (void)p; (void)port;
-    return 0;
+    VXT_LOG("Register read is not supported!");
+    return 0xFF;
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     VXT_DEC_DEVICE(m, ems, p);
     int sel = port - m->io_base;
-    assert(sel < 4);
-    m->page_selectors[sel] = data;
+    m->page_selectors[sel & 3] = data;
 }
 
 static vxt_pointer physical_address(struct ems *m, vxt_pointer addr) {
@@ -59,15 +59,14 @@ static vxt_pointer physical_address(struct ems *m, vxt_pointer addr) {
 static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
     VXT_DEC_DEVICE(m, ems, p);
     vxt_pointer phys_addr = physical_address(m, addr);
-    assert(phys_addr < MEMORY_SIZE);
-    return m->mem[phys_addr];
+    return (phys_addr < MEMORY_SIZE) ? m->mem[phys_addr] : 0xFF;
 }
 
 static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     VXT_DEC_DEVICE(m, ems, p);
     vxt_pointer phys_addr = physical_address(m, addr);
-    assert(phys_addr < MEMORY_SIZE);
-    m->mem[phys_addr] = data;
+    if (phys_addr < MEMORY_SIZE)
+        m->mem[phys_addr] = data;
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
