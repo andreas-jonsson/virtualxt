@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-VXT_PIREPHERAL(isa, {
+VXT_PIREPHERAL(ch36x_isa, {
     int fd;
     unsigned long io_base;
     unsigned long mem_base;
@@ -52,7 +52,7 @@ static void ch36x_isr_handler(int signo) {
 }
 
 static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(d, isa, p);
+    VXT_DEC_DEVICE(d, ch36x_isa, p);
     vxt_byte data;
     if (ch36x_read_io_byte(d->fd, d->io_base + (unsigned long)port, &data))
         VXT_LOG("ERROR: Could not read IO port 0x%X!", port);
@@ -60,13 +60,13 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 }
 
 static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(d, isa, p);
+    VXT_DEC_DEVICE(d, ch36x_isa, p);
     if (ch36x_write_io_byte(d->fd, d->io_base + (unsigned long)port, data))
         VXT_LOG("ERROR: Could not write IO port 0x%X!", port);
 }
 
 static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    VXT_DEC_DEVICE(d, isa, p);
+    VXT_DEC_DEVICE(d, ch36x_isa, p);
     vxt_byte data;
     if (ch36x_read_mem_byte(d->fd, d->mem_base + (unsigned long)addr, &data))
         VXT_LOG("ERROR: Could not read memory at 0x%X!", addr);
@@ -74,12 +74,12 @@ static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
 }
 
 static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
-    VXT_DEC_DEVICE(d, isa, p);
+    VXT_DEC_DEVICE(d, ch36x_isa, p);
     if (ch36x_write_mem_byte(d->fd, d->mem_base + (unsigned long)addr, data))
         VXT_LOG("ERROR: Could not write memory at 0x%X!", addr);
 }
 
-static vxt_error setup_adapter(struct isa *d) {
+static vxt_error setup_adapter(struct ch36x_isa *d) {
     d->fd = ch36x_open(d->config.device);
     if (d->fd < 0) {
         VXT_LOG("ERROR: Could not open: %s", d->config.device);
@@ -131,7 +131,7 @@ static vxt_error setup_adapter(struct isa *d) {
 }
 
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(d, isa, p);
+    VXT_DEC_DEVICE(d, ch36x_isa, p);
     if (d->config.io_start || d->config.io_end)
         vxt_system_install_io(s, p, d->config.io_start, d->config.io_end);
     if (d->config.mem_start || d->config.mem_end)
@@ -142,7 +142,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
 }
 
 static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(d, isa, p);
+    VXT_DEC_DEVICE(d, ch36x_isa, p);
     if (d->fd) {
         ch36x_set_int_routine(d->fd, NULL);
         ch36x_close(d->fd);
@@ -152,22 +152,22 @@ static vxt_error reset(struct vxt_pirepheral *p) {
 }
 
 static vxt_error destroy(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(d, isa, p);
+    VXT_DEC_DEVICE(d, ch36x_isa, p);
     if (d->fd) {
         ch36x_set_int_routine(d->fd, NULL);
         ch36x_close(d->fd);
         d->fd = -1;
     }
-    vxt_system_allocator(VXT_GET_SYSTEM(isa, p))(p, 0);
+    vxt_system_allocator(VXT_GET_SYSTEM(ch36x_isa, p))(p, 0);
     return VXT_NO_ERROR;
 }
 
 static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
-    VXT_DEC_DEVICE(d, isa, p);
+    VXT_DEC_DEVICE(d, ch36x_isa, p);
     if (interrupt_trigger) {
         interrupt_trigger = 0;
-        vxt_system_interrupt(VXT_GET_SYSTEM(isa, p), d->config.irq);
+        vxt_system_interrupt(VXT_GET_SYSTEM(ch36x_isa, p), d->config.irq);
     }
     return VXT_NO_ERROR;
 }
@@ -177,8 +177,8 @@ static const char *name(struct vxt_pirepheral *p) {
 }
 
 static vxt_error config(struct vxt_pirepheral *p, const char *section, const char *key, const char *value) {
-    VXT_DEC_DEVICE(d, isa, p);
-    if (!strcmp("ch36x", section)) {
+    VXT_DEC_DEVICE(d, ch36x_isa, p);
+    if (!strcmp("ch36x_isa", section)) {
         if (!strcmp("device", key)) {
             strncpy(d->config.device, value, sizeof(d->config.device) - 1);
         } else if (!strcmp("memory", key)) {
@@ -194,10 +194,10 @@ static vxt_error config(struct vxt_pirepheral *p, const char *section, const cha
     return VXT_NO_ERROR;
 }
 
-VXTU_MODULE_CREATE(isa, {
+VXTU_MODULE_CREATE(ch36x_isa, {
     DEVICE->fd = -1;
     DEVICE->config.irq = -1;
-    strcpy(DEVICE->config.device, "/dev/ch36xpci0");
+    strcpy(DEVICE->config.device, ARGS);
 
     PIREPHERAL->install = &install;
     PIREPHERAL->destroy = &destroy;
@@ -213,7 +213,7 @@ VXTU_MODULE_CREATE(isa, {
 
 #else
 
-VXT_PIREPHERAL(isa, { int _; })
-VXTU_MODULE_CREATE(isa, { return NULL; })
+VXT_PIREPHERAL(ch36x_isa, { int _; })
+VXTU_MODULE_CREATE(ch36x_isa, { return NULL; })
 
 #endif
