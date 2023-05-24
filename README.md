@@ -20,6 +20,7 @@ Browser version is avalible [here](https://realmode.games).
 * Keyboard controller with 83-key XT-style keyboard
 * Serial port with Microsoft 2-button mouse
 * Floppy and hard disk controller
+* ISA passthrough​ using Arstech USB2ISA adapter
 * Direct file share with host
 * Flexible module system
 * AdLib music synthesizer
@@ -55,7 +56,14 @@ You can download pre-built binaries from [itch.io](https://phix.itch.io/virtualx
 
 If you want to embed the emulator or create a custom frontend you can find libvxt API documentation [here](https://andreas-jonsson.github.io/virtualxt/docs).
 
-## Validation
+## ISA Passthrough​
+
+VirtualXT supports ISA passthrough using Arstech [USB2ISA](https://arstech.com/install/ecom-catshow/usb2.0.html) adapter or the [CH367](https://www.aliexpress.com/item/1005003569540792.html) development board.
+It should be noted that DMA currently not supported and the CH367 board is **VERY** limited in it's capabilities.
+
+![isa passthrough screenshot​](screenshots/isa.jpg)
+
+## Hardware Validation
 
 A hardware validator was developed to ensure proper CPU behaviour.
 Some additional information about that can be found [here](https://hackaday.io/project/184209-virtualxt-hardware-validator).
