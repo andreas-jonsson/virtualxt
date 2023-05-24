@@ -121,17 +121,34 @@ static vxt_error config(struct vxt_pirepheral *p, const char *section, const cha
     return VXT_NO_ERROR;
 }
 
-#include <dlfcn.h>
+#ifdef _WIN32
+    #include <windows.h>
 
-#define LOADSYM(func, sym) DEVICE->api.func = dlsym(lib, sym);                                  \
-    if (!DEVICE->api.func) { VXT_LOG("ERROR: %s", dlerror()); dlclose(lib); return NULL; }      \
-    
-VXTU_MODULE_CREATE(arstech_isa, {
-    void *lib = dlopen(ARGS, RTLD_LAZY);
-    if (!lib) {
-        VXT_LOG("ERROR: %s", dlerror());
-        return NULL;
+    static void print_error(void) {
+        char buffer[256];
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffer, sizeof(buffer), NULL);
+        VXT_LOG("ERROR: %s", buffer);
     }
+
+    #define LOADLIB(name) HMODULE lib = LoadLibraryA(name);     \
+        if (!lib) { print_error(); return NULL; }               \
+
+    #define LOADSYM(func, sym) DEVICE->api.func = (void*)GetProcAddress(lib, sym);  \
+        if (!DEVICE->api.func) { print_error(); FreeLibrary(lib); return NULL; }    \
+
+#else
+    #include <dlfcn.h>
+
+    #define LOADLIB(name) void *lib = dlopen(ARGS, RTLD_LAZY);          \
+        if (!lib) { VXT_LOG("ERROR: %s", dlerror()); return NULL; }     \
+
+    #define LOADSYM(func, sym) DEVICE->api.func = dlsym(lib, sym);                                  \
+        if (!DEVICE->api.func) { VXT_LOG("ERROR: %s", dlerror()); dlclose(lib); return NULL; }      \
+
+#endif
+
+VXTU_MODULE_CREATE(arstech_isa, {
+    LOADLIB(ARGS);
 
     LOADSYM(initialize, "ArsInit");
     LOADSYM(shutdown, "ArsExit");
