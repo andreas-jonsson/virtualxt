@@ -70,6 +70,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
         vxt_system_install_mem(s, p, d->config.mem_start, d->config.mem_end);
     if (d->config.irq_poll >= 0)
         vxt_system_install_timer(s, p, (unsigned int)d->config.irq_poll);
+
     if (!d->api.initialize()) {
         VXT_LOG("ERROR: Could not initialize Arstech USB library!");
         return VXT_USER_ERROR(0);

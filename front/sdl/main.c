@@ -1102,11 +1102,13 @@ int main(int argc, char *argv[]) {
 			vxt_dword bg = 0;
 			SDL_Rect rect = {0};
 
-			SYNC(
-				bg = video_adapter.border_color(video_adapter.device);
-				video_adapter.snapshot(video_adapter.device);
-			);
-			video_adapter.render(video_adapter.device, &render_callback, renderer);
+			if (video_adapter.device) {
+				SYNC(
+					bg = video_adapter.border_color(video_adapter.device);
+					video_adapter.snapshot(video_adapter.device);
+				);
+				video_adapter.render(video_adapter.device, &render_callback, renderer);
+			}
 
 			mr_clear(mr, mu_color(bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF));
 			if (SDL_RenderCopy(renderer, framebuffer, NULL, target_rect(window, &rect)) != 0)
