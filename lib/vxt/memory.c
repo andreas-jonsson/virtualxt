@@ -63,7 +63,7 @@ struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base
     VXT_DEC_DEVICE(m, memory, p);
 
     #ifndef VXTU_MEMCLEAR
-        if (!read_only) vxtu_randomize(VXT_GET_DEVICE_DATA(memory, p), amount, (long long int)p);
+        if (!read_only) vxtu_randomize(VXT_GET_DEVICE_DATA(memory, p), amount, (intptr_t)p);
     #endif
 
     m->base = base;

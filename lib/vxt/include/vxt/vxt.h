@@ -62,6 +62,22 @@ typedef unsigned int vxt_pointer;
     typedef __SIZE_TYPE__ size_t;
 #endif
 
+#ifndef intptr_t
+    #ifdef __INTPTR_TYPE__
+        typedef __INTPTR_TYPE__ intptr_t;
+    #else
+        typedef long long int intptr_t;
+    #endif
+#endif
+
+#ifndef uintptr_t
+    #ifdef __UINTPTR_TYPE__
+        typedef __UINTPTR_TYPE__ uintptr_t;
+    #else
+        typedef unsigned long long int uintptr_t;
+    #endif
+#endif
+
 #ifndef NULL
     #define NULL ((void*)0)
 #endif
@@ -327,6 +343,12 @@ _Static_assert(sizeof(long long) == 8, "invalid size of 'long long'");
 
 /// @private
 _Static_assert(sizeof(vxt_word) == 2, "invalid size of 'short'");
+
+/// @private
+_Static_assert(sizeof(intptr_t) == sizeof(void*), "invalid intptr_t size");
+
+/// @private
+_Static_assert(sizeof(uintptr_t) == sizeof(void*), "invalid uintptr_t size");
 
 #ifdef __cplusplus
 }

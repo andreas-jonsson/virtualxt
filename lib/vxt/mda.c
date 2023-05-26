@@ -120,7 +120,7 @@ static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
 }
 
 struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, mda_video, {
-    vxtu_randomize(DEVICE->mem, sizeof(DEVICE->mem), (long long int)PIREPHERAL);
+    vxtu_randomize(DEVICE->mem, sizeof(DEVICE->mem), (intptr_t)PIREPHERAL);
 
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;

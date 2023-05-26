@@ -94,7 +94,7 @@ VXTU_MODULE_CREATE(ems, {
     if (strcmp(ARGS, "lotech_ems"))
         return NULL;
     
-    vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (long long int)PIREPHERAL);
+    vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PIREPHERAL);
 
     DEVICE->mem_base = 0xE0000;
     DEVICE->io_base = 0x260;
