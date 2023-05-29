@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "bus_isa_socket_8bit")(type "KiCad")(uri "${KIPRJMOD}/bus_isa_socket_8bit.kicad_sym")(options "")(descr ""))
+)
