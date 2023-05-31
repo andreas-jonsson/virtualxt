@@ -250,15 +250,6 @@ struct vxtu_disk_interface {
 	int (*tell)(vxt_system *s, void *fp);
 };
 
-struct vxtu_debugger_interface {
-    bool (*pdisasm)(vxt_system*, vxt_pointer, int, int);
-    const char *(*getline)(void);
-    int (*print)(const char*, ...);
-};
-
-extern struct vxt_pirepheral *vxtu_debugger_create(vxt_allocator *alloc, const struct vxtu_debugger_interface *interface);
-extern void vxtu_debugger_interrupt(struct vxt_pirepheral *dbg);
-
 extern struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);
 extern void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p);
 extern bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size);

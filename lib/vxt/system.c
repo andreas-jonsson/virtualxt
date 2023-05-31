@@ -56,9 +56,6 @@ static vxt_error update_timers(CONSTP(vxt_system) s, int ticks) {
     return VXT_NO_ERROR;
 }
 
-static void no_breakpoint(void) {}
-void (*breakpoint)(void) = &no_breakpoint;
-
 const char *vxt_error_str(vxt_error err) {
     #define ERROR_TEXT(id, name, text) case id: return text;
     switch (err) {
@@ -76,10 +73,6 @@ int vxt_lib_version_patch(void) { return VXT_VERSION_PATCH; }
 
 void vxt_set_logger(int (*f)(const char*, ...)) {
     _vxt_logger = f;
-}
-
-void vxt_set_breakpoint(void (*f)(void)) {
-    breakpoint = f;
 }
 
 vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]) {

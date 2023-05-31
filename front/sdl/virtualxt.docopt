@@ -3,8 +3,6 @@ Usage: virtualxt [options]
 Options:
   -h --help               Show this screen.
   -v --version            Display version.
-  -d --debug              Enable CLI debugger.
-  --halt                  Debugger will stop after first instruction.
   --hdboot                Prefer booting from harddrive.
   --mute                  Disable audio.
   --no-mouse              Disable serial mouse.

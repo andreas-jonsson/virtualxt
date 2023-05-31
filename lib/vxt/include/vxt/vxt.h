@@ -294,7 +294,6 @@ extern vxt_error _vxt_system_initialize(vxt_system *s, unsigned reg_size, int v_
 extern const char *vxt_error_str(vxt_error err);
 extern const char *vxt_lib_version(void);
 extern void vxt_set_logger(int (*f)(const char*, ...));
-extern void vxt_set_breakpoint(void (*f)(void));
 extern int vxt_lib_version_major(void);
 extern int vxt_lib_version_minor(void);
 extern int vxt_lib_version_patch(void);

@@ -33,13 +33,11 @@
    #define UNLIKELY(x) __builtin_expect((x), 0)
 #endif
 
-extern void (*breakpoint)(void);
-
 #ifdef VXT_LIBC
    void abort(void);
-   #define ABORT() { breakpoint(); abort(); }
+   #define ABORT() { abort(); }
 #else
-   #define ABORT() { breakpoint(); static volatile int *_null = NULL; *_null = 0; for(;;); }
+   #define ABORT() { static volatile int *_null = NULL; *_null = 0; for(;;); }
 #endif
 
 // Host to 8088 endian conversion.

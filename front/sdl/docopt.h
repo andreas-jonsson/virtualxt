@@ -88,8 +88,6 @@ struct DocoptArgs {
     
     /* options without arguments */
     size_t clean;
-    size_t debug;
-    size_t halt;
     size_t hdboot;
     size_t help;
     size_t mute;
@@ -112,7 +110,7 @@ struct DocoptArgs {
     char *trace;
     /* special */
     const char *usage_pattern;
-    const char *help_message[25];
+    const char *help_message[23];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

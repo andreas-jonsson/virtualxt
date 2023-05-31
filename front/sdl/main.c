@@ -126,10 +126,6 @@ struct frontend_joystick_controller joystick_controller = {0};
 
 struct frontend_interface front_interface = {0};
 
-static void trigger_breakpoint(void) {
-	SDL_TriggerBreakpoint();
-}
-
 static int text_width(mu_Font font, const char *text, int len) {
 	(void)font;
 	if (len == -1)
@@ -157,52 +153,6 @@ static const char *sprint(const char *fmt, ...) {
 	vsnprintf(str_buffer, size, fmt, args);
 	va_end(args);
 	return str_buffer;
-}
-
-static const char *mgetline(void) {
-	static char buffer[1024] = {0};
-	char *str = fgets(buffer, sizeof(buffer), stdin);
-	for (char *p = str; *p; p++) {
-		if (*p == '\n') {
-			*p = 0;
-			break;
-		}
-	}
-	return str;
-}
-
-static _Bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) { // TODO: Change to vxt_bool type.
-	#ifdef __APPLE__
-		int fh;
-		char name[128] = {0};
-		strncpy(name, "disasm.XXXXXX", sizeof(name) - 1);
-		fh = mkstemp(name);
-		if (fh == -1)
-			return false;
-		FILE *tmpf = fdopen(fh, "wb");
-	#else
-		char *name = tmpnam(NULL);
-		if (!name)
-			return false;
-		FILE *tmpf = fopen(name, "wb");
-	#endif
-
-	if (!tmpf)
-		return false;
-
-	for (int i = 0; i < size; i++) {
-		vxt_byte v = vxt_system_read_byte(s, start + i);
-		if (fwrite(&v, 1, 1, tmpf) != 1) {
-			fclose(tmpf);
-			remove(name);
-			return false;
-		}
-	}
-	fclose(tmpf);
-
-	bool ret = system(sprint("ndisasm -i -b 16 -o %d \"%s\" | head -%d", start, name, lines)) == 0;
-	remove(name);
-	return ret;
 }
 
 static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
@@ -434,11 +384,7 @@ static int load_config(void *user, const char *section, const char *name, const 
 	(void)user; (void)section; (void)name; (void)value;
 	struct ini_config *config = (struct ini_config*)user;
 	if (!strcmp("args", section)) {
-		if (!strcmp("debug", name))
-			config->args->debug |= atoi(value);
-		else if (!strcmp("halt", name))
-			config->args->halt |= atoi(value);
-		else if (!strcmp("no-mouse", name))
+		if (!strcmp("no-mouse", name))
 			config->args->no_mouse |= atoi(value);
 		else if (!strcmp("no-cga", name))
 			config->args->no_cga |= atoi(value);
@@ -646,10 +592,6 @@ int main(int argc, char *argv[]) {
 		if (!args.harddrive) args.harddrive = "boot/freedos_hd.img";
 	}
 
-	args.debug |= args.halt;
-	if (args.debug)
-		printf("Internal debugger enabled!\n");
-
 	if (args.v20) {
 		cpu_type = VXT_CPU_V20;
 		#ifdef VXT_CPU_286
@@ -738,13 +680,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	vxt_set_logger(&printf);
-	vxt_set_breakpoint(&trigger_breakpoint);
-
-	struct vxt_pirepheral *dbg = NULL;
-	if (args.debug) {
-		struct vxtu_debugger_interface dbgif = {&pdisasm, &mgetline, &printf};
-		dbg = vxtu_debugger_create(&realloc, &dbgif);
-	}
 
 	struct vxt_pirepheral *rom = load_bios(args.bios, 0xFE000);
 	if (!rom) return -1;
@@ -821,8 +756,6 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	APPEND_DEVICE(dbg);
-
 	vxt_system *vxt = vxt_system_create(&realloc, cpu_type, (int)(cpu_frequency * 1000000.0), devices);
 	if (!vxt) {
 		printf("Could not create system!\n");
@@ -895,7 +828,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	vxt_system_reset(vxt);
-	vxt_system_registers(vxt)->debug = (bool)args.halt;
 
 	if (!(emu_mutex = SDL_CreateMutex())) {
 		printf("SDL_CreateMutex failed!\n");
@@ -1017,10 +949,12 @@ int main(int argc, char *argv[]) {
 						}
 						break;
 					} else if (e.key.keysym.sym == SDLK_F12) {
-						if (args.debug && (e.key.keysym.mod & KMOD_ALT)) {
+						if (e.key.keysym.mod & KMOD_ALT) {
 							SDL_SetWindowFullscreen(window, 0);
 							SDL_SetRelativeMouseMode(false);
-							SYNC(vxtu_debugger_interrupt(dbg));					
+
+							printf("Debug break!\n");
+							SYNC(vxt_system_registers(vxt)->debug = true);
 						} else if ((e.key.keysym.mod & KMOD_CTRL)) {
 							open_window(ctx, "Eject");
 						} else {

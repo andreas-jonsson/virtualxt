@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 25; j++)
+            for (j = 0; j < 23; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -235,10 +235,6 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             return EXIT_FAILURE;
         } else if (strcmp(option->olong, "--clean") == 0) {
             args->clean = option->value;
-        } else if (strcmp(option->olong, "--debug") == 0) {
-            args->debug = option->value;
-        } else if (strcmp(option->olong, "--halt") == 0) {
-            args->halt = option->value;
         } else if (strcmp(option->olong, "--hdboot") == 0) {
             args->hdboot = option->value;
         } else if (strcmp(option->olong, "--help") == 0) {
@@ -317,7 +313,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
         "4.772726", NULL, NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
@@ -325,8 +321,6 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "Options:",
               "  -h --help               Show this screen.",
               "  -v --version            Display version.",
-              "  -d --debug              Enable CLI debugger.",
-              "  --halt                  Debugger will stop after first instruction.",
               "  --hdboot                Prefer booting from harddrive.",
               "  --mute                  Disable audio.",
               "  --no-mouse              Disable serial mouse.",
@@ -352,8 +346,6 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
     };
     struct Option options[] = {
         {NULL, "--clean", 0, 0, NULL},
-        {"-d", "--debug", 0, 0, NULL},
-        {NULL, "--halt", 0, 0, NULL},
         {NULL, "--hdboot", 0, 0, NULL},
         {"-h", "--help", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
@@ -379,7 +371,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 22;
+    elements.n_options = 20;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;
