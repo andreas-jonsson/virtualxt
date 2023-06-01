@@ -67,7 +67,7 @@ void help_window(mu_Context *ctx) {
 		const char *text_r =
 			"Toggle fullscreen\n"
 			"Show this help screen\n"
-			"Debug break, if started with '--debug'\n"
+			"Debug break, if GDB module is loaded\n"
 			"Eject floppy disk image\n"
 			"Drop floppy image file on window to mount\n"
 			"Release or capture mouse";

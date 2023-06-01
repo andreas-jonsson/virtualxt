@@ -387,6 +387,8 @@ static int load_config(void *user, const char *section, const char *name, const 
 	if (!strcmp("args", section)) {
 		if (!strcmp("hdboot", name))
 			config->args->hdboot |= atoi(value);
+		else if (!strcmp("halt", name))
+			config->args->halt |= atoi(value);
 		else if (!strcmp("mute", name))
 			config->args->mute |= atoi(value);
 		else if (!strcmp("v20", name))
@@ -514,6 +516,7 @@ static void write_default_config(const char *path, bool clean) {
 		";gdb=1234\n"
 		"\n[args]\n"
 		";bios=bios/pcxtbios_640.bin\n"
+		";halt=1\n"
 		";v20=1\n"
 		";hdboot=1\n"
 		";harddrive=boot/freedos_hd.img\n"
@@ -787,6 +790,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	vxt_system_reset(vxt);
+	vxt_system_registers(vxt)->debug = args.halt != 0;
 
 	if (!(emu_mutex = SDL_CreateMutex())) {
 		printf("SDL_CreateMutex failed!\n");

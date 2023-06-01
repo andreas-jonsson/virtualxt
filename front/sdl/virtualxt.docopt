@@ -4,6 +4,7 @@ Options:
   -h --help               Show this screen.
   -v --version            Display version.
   --hdboot                Prefer booting from harddrive.
+  --halt                  Debug break on startup.
   --mute                  Disable audio.
   --no-modules            Disable all modules.
   --no-activity           Disable disk activity indicator.
