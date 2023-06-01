@@ -121,6 +121,7 @@ int num_audio_adapters = 0;
 struct frontend_audio_adapter audio_adapters[MAX_AUDIO_ADAPTERS] = {0};
 
 struct frontend_video_adapter video_adapter = {0};
+struct frontend_mouse_adapter mouse_adapter = {0};
 struct frontend_disk_controller disk_controller = {0};
 struct frontend_joystick_controller joystick_controller = {0};
 struct frontend_keyboard_controller keyboard_controller = {0};
@@ -305,8 +306,6 @@ static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
 static bool set_audio_adapter(const struct frontend_audio_adapter *adapter) {
 	if (num_audio_adapters >= MAX_AUDIO_ADAPTERS)
 		return false;
-
-	printf("Setup audio pirepheral: %s\n", vxt_pirepheral_name(adapter->device));
 	memcpy(&audio_adapters[num_audio_adapters++], adapter, sizeof(struct frontend_audio_adapter));
 	return true;
 }
@@ -314,17 +313,20 @@ static bool set_audio_adapter(const struct frontend_audio_adapter *adapter) {
 static bool set_video_adapter(const struct frontend_video_adapter *adapter) {
 	if (video_adapter.device)
 		return false;
-
-	printf("Setup video pirepheral: %s\n", vxt_pirepheral_name(adapter->device));
 	video_adapter = *adapter;
+	return true;
+}
+
+static bool set_mouse_adapter(const struct frontend_mouse_adapter *adapter) {
+	if (mouse_adapter.device)
+		return false;
+	mouse_adapter = *adapter;
 	return true;
 }
 
 static bool set_disk_controller(const struct frontend_disk_controller *controller) {
 	if (disk_controller.device)
 		return false;
-
-	printf("Setup disk controller: %s\n", vxt_pirepheral_name(controller->device));
 	disk_controller = *controller;
 	return true;
 }
@@ -332,8 +334,6 @@ static bool set_disk_controller(const struct frontend_disk_controller *controlle
 static bool set_joystick_controller(const struct frontend_joystick_controller *controller) {
 	if (joystick_controller.device)
 		return false;
-
-	printf("Setup joystick controller: %s\n", vxt_pirepheral_name(controller->device));
 	joystick_controller = *controller;
 	return true;
 }
@@ -341,8 +341,6 @@ static bool set_joystick_controller(const struct frontend_joystick_controller *c
 static bool set_keyboard_controller(const struct frontend_keyboard_controller *controller) {
 	if (keyboard_controller.device)
 		return false;
-
-	printf("Setup keyboard controller: %s\n", vxt_pirepheral_name(controller->device));
 	keyboard_controller = *controller;
 	return true;
 }
@@ -387,13 +385,7 @@ static int load_config(void *user, const char *section, const char *name, const 
 	(void)user; (void)section; (void)name; (void)value;
 	struct ini_config *config = (struct ini_config*)user;
 	if (!strcmp("args", section)) {
-		if (!strcmp("no-mouse", name))
-			config->args->no_mouse |= atoi(value);
-		else if (!strcmp("no-cga", name))
-			config->args->no_cga |= atoi(value);
-		else if (!strcmp("no-disk", name))
-			config->args->no_disk |= atoi(value);
-		else if (!strcmp("hdboot", name))
+		if (!strcmp("hdboot", name))
 			config->args->hdboot |= atoi(value);
 		else if (!strcmp("mute", name))
 			config->args->mute |= atoi(value);
@@ -474,8 +466,13 @@ static int load_modules(void *user, const char *section, const char *name, const
 					continue; // Assume the module chose not to be loaded.
 				APPEND_DEVICE(p);
 			}
+			
+			#ifdef VXTU_STATIC_MODULES
+				printf("%d - %s", i + 1, name);
+			#else
+				printf("- %s", name);
+			#endif
 
-			printf("%d - %s", i + 1, name);
 			if (*value) printf(" = %s\n", value);
 			else putc('\n', stdout);
 		}
@@ -503,11 +500,14 @@ static void write_default_config(const char *path, bool clean) {
 	fprintf(fp,
 		"[modules]\n"
 		"chipset=xt\n"
+		"cga=\n"
+		"disk=\n"
 		"adlib=\n"
 		"rifs=\n"
 		"ctrl=\n"
 		"joystick=0x201\n"
 		"ems=lotech_ems\n"
+		"mouse=0x3F8,4\n"
 		";vga=bios/et4000.bin\n"
 		";fdc=\n"
 		";rtc=\n"
@@ -520,9 +520,6 @@ static void write_default_config(const char *path, bool clean) {
 		";gdb=1234\n"
 		"\n[args]\n"
 		";bios=bios/pcxtbios_640.bin\n"
-		";no-cga=1\n"
-		";no-disk=1\n"
-		";no-mouse=1\n"
 		";v20=1\n"
 		";hdboot=1\n"
 		";harddrive=boot/freedos_hd.img\n"
@@ -590,11 +587,6 @@ int main(int argc, char *argv[]) {
 	if (!args.bios) {
 		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
 		if (!args.bios) args.bios = "bios/pcxtbios.bin";
-	}
-
-	if (!args.extension) {
-		args.extension = SDL_getenv("VXT_DEFAULT_VXTX_BIOS_PATH");
-		if (!args.extension) args.extension = "bios/vxtx.bin";
 	}
 
 	if (!args.harddrive && !args.floppy) {
@@ -694,8 +686,6 @@ int main(int argc, char *argv[]) {
 	struct vxt_pirepheral *rom = load_bios(args.bios, 0xFE000);
 	if (!rom) return -1;
 
-	struct vxt_pirepheral *mouse = args.no_mouse ? NULL : vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
-
 	APPEND_DEVICE(vxtu_memory_create(&realloc, 0x0, 0x100000, false));
 	APPEND_DEVICE(rom);
 
@@ -703,29 +693,10 @@ int main(int argc, char *argv[]) {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
 
-	if (!args.no_disk) {
-		struct vxt_pirepheral *rom = load_bios(args.extension, 0xE0000);
-		if (!rom)
-			return -1;
-
-		struct frontend_disk_controller c = {
-			.device = vxtu_disk_create(&realloc, &disk_interface),
-			.mount = &vxtu_disk_mount,
-			.unmount = &vxtu_disk_unmount,
-			.set_boot = &vxtu_disk_set_boot_drive
-		};
-		set_disk_controller(&c);
-
-		APPEND_DEVICE(rom);
-		APPEND_DEVICE(disk_controller.device);
-	}
-
-	if (!args.no_mouse)
-		APPEND_DEVICE(mouse);
-
 	front_interface.interface_version = FRONTEND_INTERFACE_VERSION;
 	front_interface.set_video_adapter = &set_video_adapter;
 	front_interface.set_audio_adapter = &set_audio_adapter;
+	front_interface.set_mouse_adapter = &set_mouse_adapter;
 	front_interface.set_disk_controller = &set_disk_controller;
 	front_interface.set_joystick_controller = &set_joystick_controller;
 	front_interface.set_keyboard_controller = &set_keyboard_controller;
@@ -736,17 +707,6 @@ int main(int argc, char *argv[]) {
 	if (!args.no_activity) {
 		front_interface.disk.activity_callback = &disk_activity_cb;
 		front_interface.disk.userdata = &icon_fade;
-	}
-
-	if (!args.no_cga) {
-		struct frontend_video_adapter a = {
-			vxtu_cga_create(&realloc),
-			&vxtu_cga_border_color,
-			&vxtu_cga_snapshot,
-			&vxtu_cga_render
-		};
-		set_video_adapter(&a);
-		APPEND_DEVICE(a.device);
 	}
 
 	#ifdef VXTU_STATIC_MODULES
@@ -808,6 +768,11 @@ int main(int argc, char *argv[]) {
 		struct vxt_pirepheral *device = vxt_system_pirepheral(vxt, (vxt_byte)i);
 		if (device)
 			printf("%d - %s\n", i, vxt_pirepheral_name(device));
+	}
+
+	if (!disk_controller.device) {
+		printf("No disk controller!\n");
+		return -1;
 	}
 
 	if (args.floppy) {
@@ -885,18 +850,18 @@ int main(int argc, char *argv[]) {
 					SDL_AtomicSet(&running, 0);
 					break;
 				case SDL_MOUSEMOTION:
-					if (mouse && SDL_GetRelativeMouseMode() && !has_open_windows) {
+					if (mouse_adapter.device && SDL_GetRelativeMouseMode() && !has_open_windows) {
 						Uint32 state = SDL_GetMouseState(NULL, NULL);
 						struct vxtu_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
 						if (state & SDL_BUTTON_LMASK)
 							ev.buttons |= VXTU_MOUSE_LEFT;
 						if (state & SDL_BUTTON_RMASK)
 							ev.buttons |= VXTU_MOUSE_RIGHT;
-						SYNC(vxtu_mouse_push_event(mouse, &ev));
+						SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
 					}
 					break;
 				case SDL_MOUSEBUTTONDOWN:
-					if (mouse && !has_open_windows) {
+					if (mouse_adapter.device && !has_open_windows) {
 						if (e.button.button == SDL_BUTTON_MIDDLE) {
 							SDL_SetRelativeMouseMode(false);
 							break;
@@ -908,7 +873,7 @@ int main(int argc, char *argv[]) {
 							ev.buttons |= VXTU_MOUSE_LEFT;
 						if (e.button.button == SDL_BUTTON_RIGHT)
 							ev.buttons |= VXTU_MOUSE_RIGHT;
-						SYNC(vxtu_mouse_push_event(mouse, &ev));
+						SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
 					}
 					break;
 				case SDL_DROPFILE:

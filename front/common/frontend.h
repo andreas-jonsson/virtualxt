@@ -39,6 +39,11 @@ struct frontend_audio_adapter {
 	vxt_int16 (*generate_sample)(struct vxt_pirepheral *p, int freq);
 };
 
+struct frontend_mouse_adapter {
+	struct vxt_pirepheral *device;
+	bool (*push_event)(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev);
+};
+
 struct frontend_disk_controller {
 	struct vxt_pirepheral *device;
 	vxt_error (*mount)(struct vxt_pirepheral *p, int num, void *fp);
@@ -93,6 +98,7 @@ struct frontend_interface {
 
     bool (*set_video_adapter)(const struct frontend_video_adapter *adapter);
     bool (*set_audio_adapter)(const struct frontend_audio_adapter *adapter);
+	bool (*set_mouse_adapter)(const struct frontend_mouse_adapter *adapter);
 	bool (*set_keyboard_controller)(const struct frontend_keyboard_controller *controller);
 	bool (*set_disk_controller)(const struct frontend_disk_controller *controller);
 	bool (*set_joystick_controller)(const struct frontend_joystick_controller *controller);

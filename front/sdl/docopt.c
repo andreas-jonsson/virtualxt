@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 23; j++)
+            for (j = 0; j < 19; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -243,14 +243,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->mute = option->value;
         } else if (strcmp(option->olong, "--no-activity") == 0) {
             args->no_activity = option->value;
-        } else if (strcmp(option->olong, "--no-cga") == 0) {
-            args->no_cga = option->value;
-        } else if (strcmp(option->olong, "--no-disk") == 0) {
-            args->no_disk = option->value;
         } else if (strcmp(option->olong, "--no-modules") == 0) {
             args->no_modules = option->value;
-        } else if (strcmp(option->olong, "--no-mouse") == 0) {
-            args->no_mouse = option->value;
         } else if (strcmp(option->olong, "--v20") == 0) {
             args->v20 = option->value;
         } else if (strcmp(option->olong, "--version") == 0) {
@@ -262,10 +256,6 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
         } else if (strcmp(option->olong, "--config") == 0) {
             if (option->argument) {
                 args->config = (char *) option->argument;
-            }
-        } else if (strcmp(option->olong, "--extension") == 0) {
-            if (option->argument) {
-                args->extension = (char *) option->argument;
             }
         } else if (strcmp(option->olong, "--floppy") == 0) {
             if (option->argument) {
@@ -313,8 +303,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, (char *)
-        "4.772726", NULL, NULL, NULL, NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, (char *) "4.772726", NULL,
+        NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -323,18 +313,14 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  -v --version            Display version.",
               "  --hdboot                Prefer booting from harddrive.",
               "  --mute                  Disable audio.",
-              "  --no-mouse              Disable serial mouse.",
               "  --no-modules            Disable all modules.",
               "  --no-activity           Disable disk activity indicator.",
-              "  --no-cga                Disable default CGA video adapter.",
-              "  --no-disk               Disable default disk controller.",
               "  --v20                   Enable NEC V20 CPU support.",
               "  --clean                 Remove config file and write a new default one.",
               "  --rifs=PATH             Enable experimental RIFS support. (Shared folders)",
               "  --config=PATH           Set config directory.",
               "  --modules=PATH          Set modules directory.",
               "  --bios=FILE             BIOS binary.",
-              "  --extension=FILE        VirtualXT BIOS extension binary.",
               "  --trace=FILE            Write CPU trace to file.",
               "  --frequency=MHZ         CPU frequency. [default: 4.772726]",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
@@ -350,15 +336,11 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {"-h", "--help", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
         {NULL, "--no-activity", 0, 0, NULL},
-        {NULL, "--no-cga", 0, 0, NULL},
-        {NULL, "--no-disk", 0, 0, NULL},
         {NULL, "--no-modules", 0, 0, NULL},
-        {NULL, "--no-mouse", 0, 0, NULL},
         {NULL, "--v20", 0, 0, NULL},
         {"-v", "--version", 0, 0, NULL},
         {NULL, "--bios", 1, 0, NULL},
         {NULL, "--config", 1, 0, NULL},
-        {NULL, "--extension", 1, 0, NULL},
         {"-a", "--floppy", 1, 0, NULL},
         {NULL, "--frequency", 1, 0, NULL},
         {"-c", "--harddrive", 1, 0, NULL},
@@ -371,7 +353,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 20;
+    elements.n_options = 16;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;

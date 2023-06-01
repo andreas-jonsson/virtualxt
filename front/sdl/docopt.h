@@ -92,16 +92,12 @@ struct DocoptArgs {
     size_t help;
     size_t mute;
     size_t no_activity;
-    size_t no_cga;
-    size_t no_disk;
     size_t no_modules;
-    size_t no_mouse;
     size_t v20;
     size_t version;
     /* options with arguments */
     char *bios;
     char *config;
-    char *extension;
     char *floppy;
     char *frequency;
     char *harddrive;
@@ -110,7 +106,7 @@ struct DocoptArgs {
     char *trace;
     /* special */
     const char *usage_pattern;
-    const char *help_message[23];
+    const char *help_message[19];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);
