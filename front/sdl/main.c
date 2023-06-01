@@ -123,6 +123,7 @@ struct frontend_audio_adapter audio_adapters[MAX_AUDIO_ADAPTERS] = {0};
 struct frontend_video_adapter video_adapter = {0};
 struct frontend_disk_controller disk_controller = {0};
 struct frontend_joystick_controller joystick_controller = {0};
+struct frontend_keyboard_controller keyboard_controller = {0};
 
 struct frontend_interface front_interface = {0};
 
@@ -166,13 +167,6 @@ static int emu_loop(void *ptr) {
 	Sint64 penalty = 0;
 	double frequency = cpu_frequency;
 	Uint64 start = SDL_GetPerformanceCounter();
-
-	struct vxt_pirepheral *ppi = NULL;
-	for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
-		ppi = vxt_system_pirepheral(vxt, i);
-		if (ppi && (vxt_pirepheral_class(ppi) == VXT_PCLASS_PPI))
-			break;
-	}
 
 	while (SDL_AtomicGet(&running)) {
 		struct vxt_step res;
@@ -344,6 +338,15 @@ static bool set_joystick_controller(const struct frontend_joystick_controller *c
 	return true;
 }
 
+static bool set_keyboard_controller(const struct frontend_keyboard_controller *controller) {
+	if (keyboard_controller.device)
+		return false;
+
+	printf("Setup keyboard controller: %s\n", vxt_pirepheral_name(controller->device));
+	keyboard_controller = *controller;
+	return true;
+}
+
 static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 	size_t path_len = strcspn(path, "@");
 	char *file_path = (char*)SDL_malloc(path_len + 1);
@@ -499,6 +502,7 @@ static void write_default_config(const char *path, bool clean) {
 
 	fprintf(fp,
 		"[modules]\n"
+		"chipset=xt\n"
 		"adlib=\n"
 		"rifs=\n"
 		"ctrl=\n"
@@ -522,6 +526,10 @@ static void write_default_config(const char *path, bool clean) {
 		";v20=1\n"
 		";hdboot=1\n"
 		";harddrive=boot/freedos_hd.img\n"
+		"\n[switch1]\n"
+		"ram=0x3\n"
+		"video=0x2\n"
+		"floppy=0x0\n"
 		"\n[sdbg1]\n"
 		"port=0x3F8\n"
 		"\n[ch36x_isa]\n"
@@ -686,7 +694,6 @@ int main(int argc, char *argv[]) {
 	struct vxt_pirepheral *rom = load_bios(args.bios, 0xFE000);
 	if (!rom) return -1;
 
-	struct vxt_pirepheral *ppi = vxtu_ppi_create(&realloc);
 	struct vxt_pirepheral *mouse = args.no_mouse ? NULL : vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
 
 	APPEND_DEVICE(vxtu_memory_create(&realloc, 0x0, 0x100000, false));
@@ -716,16 +723,12 @@ int main(int argc, char *argv[]) {
 	if (!args.no_mouse)
 		APPEND_DEVICE(mouse);
 
-	APPEND_DEVICE(vxtu_pic_create(&realloc));
-	APPEND_DEVICE(vxtu_dma_create(&realloc));
-	APPEND_DEVICE(vxtu_pit_create(&realloc));
-	APPEND_DEVICE(ppi);
-
 	front_interface.interface_version = FRONTEND_INTERFACE_VERSION;
 	front_interface.set_video_adapter = &set_video_adapter;
 	front_interface.set_audio_adapter = &set_audio_adapter;
 	front_interface.set_disk_controller = &set_disk_controller;
 	front_interface.set_joystick_controller = &set_joystick_controller;
+	front_interface.set_keyboard_controller = &set_keyboard_controller;
 	front_interface.ctrl.callback = &emu_control;
 	front_interface.disk.di = disk_interface;
 
@@ -735,9 +738,7 @@ int main(int argc, char *argv[]) {
 		front_interface.disk.userdata = &icon_fade;
 	}
 
-	if (args.no_cga) {
-		vxtu_ppi_set_xt_switches(ppi, 0);
-	} else {
+	if (!args.no_cga) {
 		struct frontend_video_adapter a = {
 			vxtu_cga_create(&realloc),
 			&vxtu_cga_border_color,
@@ -801,9 +802,6 @@ int main(int argc, char *argv[]) {
 		printf("vxt_system_initialize() failed with error %s\n", vxt_error_str(err));
 		return -1;
 	}
-
-	struct frontend_audio_adapter ppi_audio = { ppi, &vxtu_ppi_generate_sample };
-	set_audio_adapter(&ppi_audio);
 
 	printf("Installed pirepherals:\n");
 	for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
@@ -937,8 +935,8 @@ int main(int argc, char *argv[]) {
 					break;
 				}
 				case SDL_KEYDOWN:
-					if (!has_open_windows && (e.key.keysym.sym != SDLK_F11) && (e.key.keysym.sym != SDLK_F12))
-						SYNC(vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
+					if (!has_open_windows && keyboard_controller.device && (e.key.keysym.sym != SDLK_F11) && (e.key.keysym.sym != SDLK_F12))
+						SYNC(keyboard_controller.push_event(keyboard_controller.device, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
 					if (e.key.keysym.sym == SDLK_F11) {
@@ -965,8 +963,8 @@ int main(int argc, char *argv[]) {
 						break;
 					}
 
-					if (!has_open_windows)
-						SYNC(vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTU_KEY_UP_MASK, false));
+					if (!has_open_windows && keyboard_controller.device)
+						SYNC(keyboard_controller.push_event(keyboard_controller.device, sdl_to_xt_scan(e.key.keysym.scancode) | VXTU_KEY_UP_MASK, false));
 					break;
 			}
 		}

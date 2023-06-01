@@ -267,6 +267,7 @@ extern bool vxtu_ppi_turbo_enabled(struct vxt_pirepheral *p);
 extern vxt_int16 vxtu_ppi_generate_sample(struct vxt_pirepheral *p, int freq);
 extern void vxtu_ppi_set_speaker_callback(struct vxt_pirepheral *p, void (*f)(struct vxt_pirepheral*,double,void*), void *userdata);
 extern void vxtu_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data);
+extern vxt_byte vxtu_ppi_xt_switches(struct vxt_pirepheral *p);
 
 extern struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc);
 extern void vxtu_mda_invalidate(struct vxt_pirepheral *p);

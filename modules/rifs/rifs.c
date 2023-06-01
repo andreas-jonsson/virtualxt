@@ -505,7 +505,7 @@ static const char *name(struct vxt_pirepheral *p) {
 }
 
 static vxt_error config(struct vxt_pirepheral *p, const char *section, const char *key, const char *value) {
-   VXT_DEC_DEVICE(fs, rifs, p);
+    VXT_DEC_DEVICE(fs, rifs, p);
     if (!strcmp("rifs", section)) {
         if (!strcmp("port", key)) {
             sscanf(value, "%hx", &fs->base_port);

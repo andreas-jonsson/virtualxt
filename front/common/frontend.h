@@ -23,7 +23,7 @@
 #ifndef _FRONTEND_H_
 #define _FRONTEND_H_
 
-#include <vxt/vxt.h>
+#include <vxt/vxtu.h>
 
 #define FRONTEND_INTERFACE_VERSION 0
 
@@ -68,6 +68,11 @@ struct frontend_joystick_controller {
 	bool (*push_event)(struct vxt_pirepheral *p, const struct frontend_joystick_event *ev);
 };
 
+struct frontend_keyboard_controller {
+    struct vxt_pirepheral *device;
+	bool (*push_event)(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force);
+};
+
 enum frontend_ctrl_command {
 	FRONTEND_CTRL_SHUTDOWN = 0x1
 };
@@ -88,6 +93,7 @@ struct frontend_interface {
 
     bool (*set_video_adapter)(const struct frontend_video_adapter *adapter);
     bool (*set_audio_adapter)(const struct frontend_audio_adapter *adapter);
+	bool (*set_keyboard_controller)(const struct frontend_keyboard_controller *controller);
 	bool (*set_disk_controller)(const struct frontend_disk_controller *controller);
 	bool (*set_joystick_controller)(const struct frontend_joystick_controller *controller);
 

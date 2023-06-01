@@ -171,7 +171,7 @@ static const char *name(struct vxt_pirepheral *p) {
 struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, ppi, {
     // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
     //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
-    DEVICE->xt_switches = 0x2; // CGA video bits.
+    DEVICE->xt_switches = 0x2E; // 640K ram, 80 column CGA, 1 floppy drive, no fpu.
 
     PIREPHERAL->install = &install;
     PIREPHERAL->reset = &reset;
@@ -220,4 +220,8 @@ vxt_int16 vxtu_ppi_generate_sample(struct vxt_pirepheral *p, int freq) {
 
 void vxtu_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data) {
     (VXT_GET_DEVICE(ppi, p))->xt_switches = data;
+}
+
+vxt_byte vxtu_ppi_xt_switches(struct vxt_pirepheral *p) {
+    return (VXT_GET_DEVICE(ppi, p))->xt_switches;
 }
