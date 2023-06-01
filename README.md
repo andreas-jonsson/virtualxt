@@ -23,11 +23,11 @@ Browser version is avalible [here](https://realmode.games).
 * ISA passthrough​ using Arstech USB2ISA adapter
 * Direct file share with host
 * Flexible module system
+* Integerated GDB server
 * AdLib music synthesizer
 * EMS memory expansion
 * Ethernet adapter
-* Real Time Clock
-* PC speaker
+* and more...
 
 ## Screenshots
 
