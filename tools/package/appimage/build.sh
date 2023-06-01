@@ -27,7 +27,7 @@ cp $SRC/libgpg-error.so* $DST
 
 cp build/bin/virtualxt $APP_DIR/
 cp build/bin/libvxt.so $APP_DIR/lib64/
-cp modules/*-module.so $APP_DIR/modules/
+cp modules/*.vxt $APP_DIR/modules/
 cp bios/pcxtbios.bin $APP_DIR/bios/
 cp bios/pcxtbios_640.bin $APP_DIR/bios/
 cp bios/glabios.bin $APP_DIR/bios/

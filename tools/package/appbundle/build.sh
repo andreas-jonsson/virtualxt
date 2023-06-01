@@ -8,7 +8,7 @@ mkdir -p $APP_DIR/Contents/MacOS $APP_DIR/Contents/Resources/bios $APP_DIR/Conte
 
 cp build/bin/virtualxt $APP_DIR/Contents/MacOS/
 cp build/bin/libvxt.so $APP_DIR/Contents/MacOS/
-cp modules/*-module.so $APP_DIR/Contents/Resources/modules/
+cp modules/*.vxt $APP_DIR/Contents/Resources/modules/
 cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
 cp bios/pcxtbios_640.bin $APP_DIR/Contents/Resources/bios/
 cp bios/glabios.bin $APP_DIR/Contents/Resources/bios/

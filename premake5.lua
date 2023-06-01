@@ -95,7 +95,6 @@ workspace "virtualxt"
         buildoptions "-Wno-error"
 
     local modules = {}
-    local module_names = {}
     local module_opt = _OPTIONS["modules"]
 
     if module_opt then
@@ -123,12 +122,10 @@ workspace "virtualxt"
             end
         end
 
-        for _,module_name in ipairs(mod_list) do
-            local libname = module_name .. "-module"
-            table.insert(modules, libname)
-            table.insert(module_names, module_name)
+        for _,name in ipairs(mod_list) do
+            table.insert(modules, name)
 
-            project(libname)
+            project(name)
                 if _OPTIONS["static"] then
                     kind "StaticLib"
                     basedir "."
@@ -136,20 +133,21 @@ workspace "virtualxt"
                     kind "SharedLib"
                     targetdir "modules"
                     targetprefix ""
+                    targetextension ".vxt"
                     basedir "."
                     links "vxt"
                     pic "On"
                 end
 
                 includedirs { "lib/vxt/include", "front/common" }
-                defines { "VXTU_MODULE_NAME=" .. module_name }
+                defines { "VXTU_MODULE_NAME=" .. name }
 
                 cleancommands {
-                    "{RMFILE} modules/" .. libname .. ".*",
+                    "{RMFILE} modules/" .. name .. ".*",
                     "make clean %{cfg.buildcfg}"
                 }
     
-            dofile("modules/" .. module_name .. "/premake5.lua")
+            dofile("modules/" .. name .. "/premake5.lua")
         end
     end
 
@@ -384,13 +382,13 @@ io.writefile("modules/modules.h", (function()
     local is_static = _OPTIONS["static"]
     local str = "#include <vxt/vxtu.h>\n\nstruct vxtu_module_entry {\n\tconst char *name;\n\tvxtu_module_entry_func *(*entry)(int(*)(const char*, ...));\n};\n\n"
     if is_static then
-        for _,mod in ipairs(module_names) do
+        for _,mod in ipairs(modules) do
             str = string.format("%s#ifdef VXTU_MODULE_%s\n\textern vxtu_module_entry_func *_vxtu_module_%s_entry(int(*)(const char*, ...));\n#endif\n", str, string.upper(mod), mod)
         end
         str = str .. "\n"
     end
     str = string.format("%sconst struct vxtu_module_entry vxtu_module_table[] = {\n", str)
-    for _,mod in ipairs(module_names) do
+    for _,mod in ipairs(modules) do
         if is_static then
             str = string.format('%s\t#ifdef VXTU_MODULE_%s\n\t\t{ "%s", _vxtu_module_%s_entry },\n\t#endif\n', str, string.upper(mod), mod, mod)
         else

@@ -15,7 +15,7 @@ __pycache__
 
 /modules/modules.h
 /modules/dummy.c
-/modules/*-module.*
+/modules/*.vxt
 
 /tools/vxtdrv/vxtdrv.com
 /tools/shutdown/shutdown.com

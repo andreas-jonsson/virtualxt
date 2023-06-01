@@ -429,13 +429,7 @@ static int load_modules(void *user, const char *section, const char *name, const
 				constructors = e->entry;
 			#else
 				char buffer[FILENAME_MAX];
-				sprintf(buffer, "%s/%s-module."
-					#ifdef _WIN32
-						"dll"
-					#else
-						"so"
-					#endif
-					, modules_search_path, name);
+				sprintf(buffer, "%s/%s.vxt", modules_search_path, name);
 
 				void *lib = SDL_LoadObject(buffer);
 				if (!lib) {
@@ -466,7 +460,7 @@ static int load_modules(void *user, const char *section, const char *name, const
 					continue; // Assume the module chose not to be loaded.
 				APPEND_DEVICE(p);
 			}
-			
+
 			#ifdef VXTU_STATIC_MODULES
 				printf("%d - %s", i + 1, name);
 			#else
