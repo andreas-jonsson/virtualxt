@@ -26,13 +26,16 @@
 #include <stdio.h>
 
 #ifdef _WIN32
-    #include <windows.h>
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
 #else
     #include <unistd.h>
     #include <fcntl.h>
     #include <sys/socket.h>
     #include <netinet/in.h>
 #endif
+
+#define MAX_BREAKPOINTS 64
 
 typedef vxt_pointer address;
 typedef vxt_dword reg; // Expected to be 32bits.
@@ -57,9 +60,18 @@ enum GDB_REGISTER {
     GDB_CPU_NUM_REGISTERS
 };
 
+struct breakpoint {
+    vxt_pointer addr;
+    int ty;
+    int size;
+};
+
 struct gdb_state {
     int client;
     vxt_system *sys;
+
+    struct breakpoint bps[MAX_BREAKPOINTS];
+    int num_bps;
 
     int signum;
     reg registers[GDB_CPU_NUM_REGISTERS];
@@ -68,7 +80,6 @@ struct gdb_state {
 #include "gdbstub/gdbstub.h"
 
 VXT_PIREPHERAL(gdb, {
-	vxt_byte io_map[VXT_IO_MAP_SIZE];
 	vxt_byte mem_map[VXT_MEM_MAP_SIZE];
 
     vxt_word port;
@@ -79,13 +90,40 @@ VXT_PIREPHERAL(gdb, {
 
 static vxt_byte mem_read(struct vxt_pirepheral *p, vxt_pointer addr) {
     VXT_DEC_DEVICE(dbg, gdb, p);
-    struct vxt_pirepheral *dev = vxt_system_pirepheral(vxt_pirepheral_system(p), dbg->mem_map[addr]);
+    vxt_system *s = vxt_pirepheral_system(p);
+
+    if (dbg->state.client != -1) {
+        struct vxt_registers *vreg = vxt_system_registers(s);
+        for (int i = 0; i < dbg->state.num_bps; i++) {
+            struct breakpoint *bp = &dbg->state.bps[i];
+            if (VXT_POINTER(vreg->cs, vreg->ip) == bp->addr && bp->ty > 2) {
+                VXT_LOG("Trigger memory read watch: 0x%X", addr);
+                vreg->debug = true;
+                break;
+            }
+        }
+    }
+
+    struct vxt_pirepheral *dev = vxt_system_pirepheral(s, dbg->mem_map[addr]);
     return dev->io.read(dev, addr);
 }
 
 static void mem_write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     VXT_DEC_DEVICE(dbg, gdb, p);
     vxt_system *s = vxt_pirepheral_system(p);
+
+    if (dbg->state.client != -1) {
+        struct vxt_registers *vreg = vxt_system_registers(s);
+        for (int i = 0; i < dbg->state.num_bps; i++) {
+            struct breakpoint *bp = &dbg->state.bps[i];
+            if (VXT_POINTER(vreg->cs, vreg->ip) == bp->addr && (bp->ty == 2 || bp->ty == 4)) {
+                VXT_LOG("Trigger memory write watch: 0x%X", addr);
+                vreg->debug = true;
+                break;
+            }
+        }
+    }
+
     struct vxt_pirepheral *dev = vxt_system_pirepheral(s, dbg->mem_map[addr]);
     dev->io.write(dev, addr, data);
 }
@@ -124,6 +162,7 @@ static bool accept_client(struct gdb *dbg, vxt_system *sys) {
     if ((dbg->state.client = accept(dbg->server, (struct sockaddr*)&addr, &ln)) == -1)
         return false;
 
+    dbg->state.num_bps = 0;
     dbg->state.sys = sys;
     vxt_system_registers(dbg->state.sys)->debug = true;
     VXT_LOG("Client connected!");
@@ -133,12 +172,16 @@ static bool accept_client(struct gdb *dbg, vxt_system *sys) {
 static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(dbg, gdb, p);
 
-    if (!open_server_socket(dbg))
-        return VXT_USER_ERROR(0);
+    #ifdef _WIN32
+        WSADATA ws_data;
+        if (WSAStartup(MAKEWORD(2, 2), &ws_data)) {
+            VXT_LOG("ERROR: WSAStartup failed!");
+            return VXT_USER_ERROR(0);
+        }
+    #endif
 
-    const vxt_byte *io = vxt_system_io_map(s);
-    for (int i = 0; i < VXT_IO_MAP_SIZE; i++)
-        dbg->io_map[i] = io[i];
+    if (!open_server_socket(dbg))
+        return VXT_USER_ERROR(1);
 
     const vxt_byte *mem = vxt_system_mem_map(s);
     for (int i = 0; i < VXT_MEM_MAP_SIZE; i++)
@@ -162,8 +205,19 @@ static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
     }
 
     struct vxt_registers *vreg = vxt_system_registers(s);
-    if (vreg->debug && (dbg->state.client != -1)) {
+    for (int i = 0; i < dbg->state.num_bps; i++) {
+        struct breakpoint *bp = &dbg->state.bps[i];
+        if (VXT_POINTER(vreg->cs, vreg->ip) == bp->addr && bp->ty < 2) {
+            vreg->debug = true;
+            break;
+        }
+    }
+    
+    if (vreg->debug) {
         VXT_LOG("Debug trap!");
+
+        while (dbg->state.client == -1)
+            accept_client(dbg, s);
 
         dbg->state.signum = 5;
         reg *r = dbg->state.registers;
@@ -268,15 +322,31 @@ int gdb_sys_step(struct gdb_state *state) {
 }
 
 int gdb_sys_insert(struct gdb_state *state, unsigned int ty, address addr, unsigned int kind) {
-    (void)ty; (void)kind;
+    if (state->num_bps == MAX_BREAKPOINTS)
+        return -1;
+
+    struct breakpoint *bp = &state->bps[state->num_bps++];
+    bp->addr = (vxt_pointer)addr;
+    bp->ty = (int)ty;
+    bp->size = (int)kind;
+
+    if (kind > 1)
+        VXT_LOG("WARNING: GDB server only supports single byte watches!");
+    
     VXT_LOG("Insert breakpoint at: 0x%X", addr);
     return 0;
 }
 
 int gdb_sys_remove(struct gdb_state *state, unsigned int ty, address addr, unsigned int kind) {
-    (void)ty; (void)kind;
-    VXT_LOG("Remove breakpoint at: 0x%X", addr);
-    return 0;
+    for (int i = 0; i < state->num_bps; i++) {
+        struct breakpoint *bp = &state->bps[i];
+        if (bp->addr == (vxt_pointer)addr && bp->ty == (int)ty && bp->size == (int)kind) {
+            *bp = state->bps[--state->num_bps];
+            VXT_LOG("Remove breakpoint at: 0x%X", addr);
+            return 0;
+        }
+    }
+    return -1;
 }
 
 VXTU_MODULE_CREATE(gdb, {
