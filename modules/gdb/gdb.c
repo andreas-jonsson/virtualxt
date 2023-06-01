@@ -28,6 +28,7 @@
 #ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
+    #define close closesocket
 #else
     #include <unistd.h>
     #include <fcntl.h>
@@ -139,7 +140,13 @@ static bool open_server_socket(struct gdb *dbg) {
         VXT_LOG("ERROR: Could not open socket for GDB server!");
         return false;
     }
-    fcntl(dbg->server, F_SETFL, O_NONBLOCK);
+
+    #ifdef _WIN32
+        unsigned long mode = 1;
+        ioctlsocket(dbg->server, FIONBIO, &mode);
+    #else
+        fcntl(dbg->server, F_SETFL, O_NONBLOCK);
+    #endif
 
     if (bind(dbg->server, (struct sockaddr*)&addr, sizeof(addr))) {
         VXT_LOG("ERROR: Could not bind GDB server socket!");
