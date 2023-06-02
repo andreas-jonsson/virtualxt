@@ -2,7 +2,6 @@ var vxtu_8h =
 [
     [ "vxtu_mouse_event", "structvxtu__mouse__event.html", "structvxtu__mouse__event" ],
     [ "vxtu_disk_interface", "structvxtu__disk__interface.html", "structvxtu__disk__interface" ],
-    [ "vxtu_debugger_interface", "structvxtu__debugger__interface.html", "structvxtu__debugger__interface" ],
     [ "VXTU_CGA_ALPHA", "vxtu_8h.html#a6618054f81fdb665cc4a6850777d43a8", null ],
     [ "VXTU_CGA_ALPHA_FILL", "vxtu_8h.html#a2eaaf0d5dbab6593312e5e2c43cb43c0", null ],
     [ "VXTU_CGA_BLUE", "vxtu_8h.html#a79c379d5ca73232728cd37d3eb44c388", null ],
@@ -119,8 +118,6 @@ var vxtu_8h =
     [ "vxtu_cga_create", "vxtu_8h.html#a408a43231cb9faf7cfbc6b3665fab9ff", null ],
     [ "vxtu_cga_render", "vxtu_8h.html#a1fcb17c2b801eea293e25229995307d5", null ],
     [ "vxtu_cga_snapshot", "vxtu_8h.html#abd97301bb82648fcf5e216c7ab2b0d09", null ],
-    [ "vxtu_debugger_create", "vxtu_8h.html#a3dcb05f76f8025addc082ad1a9a0c8e8", null ],
-    [ "vxtu_debugger_interrupt", "vxtu_8h.html#a5101b920f9a48f0b72f4d8e5754f7570", null ],
     [ "vxtu_disk_create", "vxtu_8h.html#a710f1dfdecd7b8c5f732e2b769ea821e", null ],
     [ "vxtu_disk_mount", "vxtu_8h.html#a6ad6292ca0177dba79095f9062fd7584", null ],
     [ "vxtu_disk_set_activity_callback", "vxtu_8h.html#ac83bc3b6d4ff7407bbf98e291e26f09b", null ],
@@ -143,5 +140,6 @@ var vxtu_8h =
     [ "vxtu_ppi_key_event", "vxtu_8h.html#a8b17d0bc5ded492d3486b66db17019c7", null ],
     [ "vxtu_ppi_set_speaker_callback", "vxtu_8h.html#ac6909ee85b70b4f2e42037d302d0ddd4", null ],
     [ "vxtu_ppi_set_xt_switches", "vxtu_8h.html#a4b01a5c46b68b581caf84012071ddd72", null ],
-    [ "vxtu_ppi_turbo_enabled", "vxtu_8h.html#a1fd47f0cf6a03bc75ab4701f51e4aaca", null ]
+    [ "vxtu_ppi_turbo_enabled", "vxtu_8h.html#a1fd47f0cf6a03bc75ab4701f51e4aaca", null ],
+    [ "vxtu_ppi_xt_switches", "vxtu_8h.html#a2480d383444ff70ec4e4b2e71598afb7", null ]
 ];
