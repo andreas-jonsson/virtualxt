@@ -284,18 +284,17 @@ workspace "virtualxt"
         kind "ConsoleApp"
         targetname "virtualxt"
         targetdir "build/bin"
-
-        files { "front/sdl/*.h", "front/sdl/*.c" }
-
-        links { "vxt", "inih", "microui" }
-        includedirs { "lib/vxt/include", "lib/inih", "lib/microui/src", "front/common" }
-
+        
         files "modules/modules.h"
         includedirs "modules"
 
         if _OPTIONS["modules"] and _OPTIONS["static"] then
             links(modules)
         end
+
+        files { "front/sdl/*.h", "front/sdl/*.c" }
+        includedirs { "lib/vxt/include", "lib/inih", "lib/microui/src", "front/common" }
+        links { "vxt", "inih", "microui" }
 
         local sdl_cfg = path.join(_OPTIONS["sdl-config"], "sdl2-config")
         buildoptions { string.format("`%s --cflags`", sdl_cfg) }
