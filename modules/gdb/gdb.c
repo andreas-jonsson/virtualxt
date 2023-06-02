@@ -36,29 +36,30 @@
     #include <netinet/in.h>
 #endif
 
+#define ALL_FLAGS (VXT_CARRY|VXT_PARITY|VXT_AUXILIARY|VXT_ZERO|VXT_SIGN|VXT_TRAP|VXT_INTERRUPT|VXT_DIRECTION|VXT_OVERFLOW)
 #define MAX_BREAKPOINTS 64
 
 typedef vxt_pointer address;
-typedef vxt_dword reg; // Expected to be 32bits.
+typedef vxt_dword reg;
 
 enum GDB_REGISTER {
-    GDB_CPU_8086_REG_AX,
-    GDB_CPU_8086_REG_CX,
-    GDB_CPU_8086_REG_DX,
-    GDB_CPU_8086_REG_BX,
-    GDB_CPU_8086_REG_SP,
-    GDB_CPU_8086_REG_BP,
-    GDB_CPU_8086_REG_SI,
-    GDB_CPU_8086_REG_DI,
-    GDB_CPU_8086_REG_PC,
-    GDB_CPU_8086_REG_PS,
-    GDB_CPU_8086_REG_CS,
-    GDB_CPU_8086_REG_SS,
-    GDB_CPU_8086_REG_DS,
-    GDB_CPU_8086_REG_ES,
-    GDB_CPU_8086_REG_UNUSED0,
-    GDB_CPU_8086_REG_UNUSED1,
-    GDB_CPU_NUM_REGISTERS
+    GDB_CPU_I386_REG_EAX  = 0,
+    GDB_CPU_I386_REG_ECX  = 1,
+    GDB_CPU_I386_REG_EDX  = 2,
+    GDB_CPU_I386_REG_EBX  = 3,
+    GDB_CPU_I386_REG_ESP  = 4,
+    GDB_CPU_I386_REG_EBP  = 5,
+    GDB_CPU_I386_REG_ESI  = 6,
+    GDB_CPU_I386_REG_EDI  = 7,
+    GDB_CPU_I386_REG_PC   = 8,
+    GDB_CPU_I386_REG_PS   = 9,
+    GDB_CPU_I386_REG_CS   = 10,
+    GDB_CPU_I386_REG_SS   = 11,
+    GDB_CPU_I386_REG_DS   = 12,
+    GDB_CPU_I386_REG_ES   = 13,
+    GDB_CPU_I386_REG_FS   = 14,
+    GDB_CPU_I386_REG_GS   = 15,
+    GDB_CPU_NUM_REGISTERS = 16
 };
 
 struct breakpoint {
@@ -228,22 +229,27 @@ static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
 
         dbg->state.signum = 5;
         reg *r = dbg->state.registers;
-        vxt_memclear(r, sizeof(reg) * GDB_CPU_NUM_REGISTERS);
         
-        r[GDB_CPU_8086_REG_AX] = vreg->ax;
-        r[GDB_CPU_8086_REG_BX] = vreg->bx;
-        r[GDB_CPU_8086_REG_CX] = vreg->cx;
-        r[GDB_CPU_8086_REG_DX] = vreg->dx;
-        r[GDB_CPU_8086_REG_SP] = vreg->sp;
-        r[GDB_CPU_8086_REG_BP] = vreg->bp;
-        r[GDB_CPU_8086_REG_SI] = vreg->si;
-        r[GDB_CPU_8086_REG_DI] = vreg->di;
-        r[GDB_CPU_8086_REG_PC] = vreg->ip;
-        r[GDB_CPU_8086_REG_PS] = vreg->flags;
-        r[GDB_CPU_8086_REG_CS] = vreg->cs;
-        r[GDB_CPU_8086_REG_SS] = vreg->ss;
-        r[GDB_CPU_8086_REG_DS] = vreg->ds;
-        r[GDB_CPU_8086_REG_ES] = vreg->es;
+        r[GDB_CPU_I386_REG_EAX] = vreg->ax;
+        r[GDB_CPU_I386_REG_EBX] = vreg->bx;
+        r[GDB_CPU_I386_REG_ECX] = vreg->cx;
+        r[GDB_CPU_I386_REG_EDX] = vreg->dx;
+
+        r[GDB_CPU_I386_REG_EBP] = vreg->bp;
+        r[GDB_CPU_I386_REG_ESI] = vreg->si;
+        r[GDB_CPU_I386_REG_EDI] = vreg->di;
+        
+        r[GDB_CPU_I386_REG_CS] = vreg->cs;
+        r[GDB_CPU_I386_REG_SS] = vreg->ss;
+        r[GDB_CPU_I386_REG_DS] = vreg->ds;
+        r[GDB_CPU_I386_REG_ES] = vreg->es;
+
+        r[GDB_CPU_I386_REG_PS] = vreg->flags;
+        r[GDB_CPU_I386_REG_PC] = vreg->cs * 16 + vreg->ip;
+        r[GDB_CPU_I386_REG_ESP] = vreg->ss * 16 + vreg->sp;
+
+        r[GDB_CPU_I386_REG_FS] = vreg->ip;
+        r[GDB_CPU_I386_REG_GS] = vreg->sp;
 
         if (gdb_main(&dbg->state)) {
             VXT_LOG("Client disconnected!");
@@ -252,20 +258,23 @@ static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
             vreg->debug = false;
         }
 
-        vreg->ax = (vxt_word)r[GDB_CPU_8086_REG_AX];
-        vreg->bx = (vxt_word)r[GDB_CPU_8086_REG_BX];
-        vreg->cx = (vxt_word)r[GDB_CPU_8086_REG_CX];
-        vreg->dx = (vxt_word)r[GDB_CPU_8086_REG_DX];
-        vreg->sp = (vxt_word)r[GDB_CPU_8086_REG_SP];
-        vreg->bp = (vxt_word)r[GDB_CPU_8086_REG_BP];
-        vreg->si = (vxt_word)r[GDB_CPU_8086_REG_SI];
-        vreg->di = (vxt_word)r[GDB_CPU_8086_REG_DI];
-        vreg->ip = (vxt_word)r[GDB_CPU_8086_REG_PC];
-        vreg->flags = (vxt_word)r[GDB_CPU_8086_REG_PS];
-        vreg->cs = (vxt_word)r[GDB_CPU_8086_REG_CS];
-        vreg->ss = (vxt_word)r[GDB_CPU_8086_REG_SS];
-        vreg->ds = (vxt_word)r[GDB_CPU_8086_REG_DS];
-        vreg->es = (vxt_word)r[GDB_CPU_8086_REG_ES];
+        vreg->ax = (vxt_word)r[GDB_CPU_I386_REG_EAX];
+        vreg->bx = (vxt_word)r[GDB_CPU_I386_REG_EBX];
+        vreg->cx = (vxt_word)r[GDB_CPU_I386_REG_ECX];
+        vreg->dx = (vxt_word)r[GDB_CPU_I386_REG_EDX];
+        
+        vreg->bp = (vxt_word)r[GDB_CPU_I386_REG_EBP];
+        vreg->si = (vxt_word)r[GDB_CPU_I386_REG_ESI];
+        vreg->di = (vxt_word)r[GDB_CPU_I386_REG_EDI];
+        
+        vreg->cs = (vxt_word)r[GDB_CPU_I386_REG_CS];
+        vreg->ss = (vxt_word)r[GDB_CPU_I386_REG_SS];
+        vreg->ds = (vxt_word)r[GDB_CPU_I386_REG_DS];
+        vreg->es = (vxt_word)r[GDB_CPU_I386_REG_ES];
+
+        vreg->flags = (vxt_word)(r[GDB_CPU_I386_REG_PS] & ALL_FLAGS) | 0xF002;
+        vreg->ip = (vxt_word)(r[GDB_CPU_I386_REG_PC] - r[GDB_CPU_I386_REG_CS] * 16);
+        vreg->sp = (vxt_word)(r[GDB_CPU_I386_REG_ESP] - r[GDB_CPU_I386_REG_SS] * 16);
     }
     return VXT_NO_ERROR;
 }
@@ -304,6 +313,7 @@ int gdb_sys_putchar(struct gdb_state *state, int ch) {
     if (ret != 1) {
         close(state->client);
         state->client = -1;
+        return GDB_EOF;
     }
     return (int)ret;
 }

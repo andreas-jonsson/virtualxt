@@ -570,6 +570,25 @@ static int gdb_recv_packet(struct gdb_state *state, char *pkt_buf,
     return 0;
 }
 
+/*
+ * Check packet prefix.
+ *
+ * Returns 1 if true, 0 if not.
+ */
+static int gdb_pkt_prefix(const char *pkt, int len, const char *str)
+{
+    int sl = gdb_strlen(str);
+    if (sl > len)
+        return 0;
+    
+    do {
+        sl--;
+        if (pkt[sl] != str[sl])
+            return 0;
+    } while (sl);
+    return 1;
+}
+
 /*****************************************************************************
  * Data Encoding/Decoding
  ****************************************************************************/
@@ -1162,19 +1181,6 @@ int gdb_main(struct gdb_state *state)
             return -1;
 
         /*
-         * Kill
-         * Command Format: vKill
-         */
-        case 'v':
-            if (pkt_buf[1] == 'K' && pkt_buf[4] == 'l') {
-                gdb_send_ok_packet(state, pkt_buf, sizeof(pkt_buf));
-                return -1;
-            } else {
-                gdb_send_packet(state, NULL, 0);
-                break;
-            }
-
-        /*
          * Continue
          * Command Format: c [addr]
          */
@@ -1196,10 +1202,24 @@ int gdb_main(struct gdb_state *state)
             break;
 
         /*
-         * Unsupported Command
+         * Handle multi-letter commands
          */
         default:
-            gdb_send_packet(state, NULL, 0);
+            /*
+            * Kill
+            * Command Format: vKill
+            */
+            if (gdb_pkt_prefix(pkt_buf, pkt_len, "vKill")) {
+                gdb_send_ok_packet(state, pkt_buf, sizeof(pkt_buf));
+                return -1;
+            }
+
+            /*
+            * Unsupported Command
+            */
+            else {
+                gdb_send_packet(state, NULL, 0);
+            }
         }
 
         continue;
