@@ -311,7 +311,7 @@ extern struct vxt_registers *vxt_system_registers(vxt_system *s);
 extern int vxt_system_frequency(vxt_system *s);
 extern void vxt_system_set_frequency(vxt_system *s, int freq);
 extern void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte));
-extern void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *interface);
+extern void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *intrf);
 extern void vxt_system_set_userdata(vxt_system *s, void *data);
 extern void *vxt_system_userdata(vxt_system *s);
 extern vxt_allocator *vxt_system_allocator(vxt_system *s);

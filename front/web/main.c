@@ -199,10 +199,10 @@ double wasm_generate_sample(int freq) {
 void wasm_initialize_emulator(int v20, int freq) {
 	vxt_set_logger(&log_wrapper);
 
-	struct vxtu_disk_interface interface = {
+	struct vxtu_disk_interface intrf = {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
-	struct vxt_pirepheral *disk = vxtu_disk_create(&ALLOCATOR, &interface);
+	struct vxt_pirepheral *disk = vxtu_disk_create(&ALLOCATOR, &intrf);
 	vxtu_disk_set_activity_callback(disk, &js_disk_activity, NULL);
 	
 	ppi = vxtu_ppi_create(&ALLOCATOR);

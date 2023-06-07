@@ -40,7 +40,7 @@ struct drive {
 };
 
 VXT_PIREPHERAL(disk, {
-    struct vxtu_disk_interface interface;
+    struct vxtu_disk_interface intrf;
 
 	vxt_byte boot_drive;
     vxt_byte num_hd;
@@ -57,7 +57,7 @@ static vxt_byte execute_operation(vxt_system *s, struct disk *c, vxt_byte disk, 
     if (!sectors)
 	    return 0;
 
-    struct vxtu_disk_interface *di = &c->interface;
+    struct vxtu_disk_interface *di = &c->intrf;
     struct drive *dev = &c->disks[disk];
 
     int lba = ((int)cylinders * (int)dev->heads + (int)heads) * (int)dev->sectors + (int)sectors - 1;
@@ -217,11 +217,11 @@ vxt_error vxtu_disk_mount(struct vxt_pirepheral *p, int num, void *fp) {
         return c->disks[num & 0xFF].fp ? VXT_USER_ERROR(0) : VXT_NO_ERROR;
 
     int size = 0;
-    if (c->interface.seek(s, fp, 0, VXTU_SEEK_END))
+    if (c->intrf.seek(s, fp, 0, VXTU_SEEK_END))
         return VXT_USER_ERROR(1);
-    if ((size = c->interface.tell(s, fp)) < 0)
+    if ((size = c->intrf.tell(s, fp)) < 0)
         return VXT_USER_ERROR(2);
-    if (c->interface.seek(s, fp, 0, VXTU_SEEK_START))
+    if (c->intrf.seek(s, fp, 0, VXTU_SEEK_START))
         return VXT_USER_ERROR(3);
 
     if ((size > 1474560) && (num < 0x80)) {
@@ -289,8 +289,8 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "Disk Controller";
 }
 
-struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *interface) VXT_PIREPHERAL_CREATE(alloc, disk, {
-    DEVICE->interface = *interface;
+struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf) VXT_PIREPHERAL_CREATE(alloc, disk, {
+    DEVICE->intrf = *intrf;
 
     PIREPHERAL->install = &install;
     PIREPHERAL->reset = &reset;

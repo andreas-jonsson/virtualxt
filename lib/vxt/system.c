@@ -199,8 +199,8 @@ void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer
     s->cpu.tracer = tracer;
 }
 
-void vxt_system_set_validator(CONSTP(vxt_system) s, const struct vxt_validator *interface) {
-    s->cpu.validator = interface;
+void vxt_system_set_validator(CONSTP(vxt_system) s, const struct vxt_validator *intrf) {
+    s->cpu.validator = intrf;
 }
 
 void vxt_system_set_userdata(CONSTP(vxt_system) s, void *data) {

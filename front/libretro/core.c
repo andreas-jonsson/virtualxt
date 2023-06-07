@@ -334,11 +334,11 @@ void retro_init(void) {
     SYNC(
         vxt_set_logger(&log_wrapper);
 
-        struct vxtu_disk_interface interface = {
+        struct vxtu_disk_interface intrf = {
             &read_file, &write_file, &seek_file, &tell_file
         };
         
-        disk = vxtu_disk_create(&realloc, &interface);
+        disk = vxtu_disk_create(&realloc, &intrf);
         ppi = vxtu_ppi_create(&realloc);
         cga = vxtu_cga_create(&realloc);
         mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
