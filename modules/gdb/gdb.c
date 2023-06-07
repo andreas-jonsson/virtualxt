@@ -247,9 +247,7 @@ static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
         r[GDB_CPU_I386_REG_PS] = vreg->flags;
         r[GDB_CPU_I386_REG_PC] = vreg->cs * 16 + vreg->ip;
         r[GDB_CPU_I386_REG_ESP] = vreg->ss * 16 + vreg->sp;
-
-        r[GDB_CPU_I386_REG_FS] = vreg->ip;
-        r[GDB_CPU_I386_REG_GS] = vreg->sp;
+        r[GDB_CPU_I386_REG_FS] = r[GDB_CPU_I386_REG_GS] = 0;
 
         if (gdb_main(&dbg->state)) {
             VXT_LOG("Client disconnected!");
