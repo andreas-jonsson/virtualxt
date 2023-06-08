@@ -74,6 +74,8 @@ struct snapshot {
 
     bool cursor_blink;
     bool cursor_visible;
+    vxt_byte cursor_start;
+    vxt_byte cursor_end;
     int cursor_offset;
 
     bool hgc_mode;
@@ -94,6 +96,8 @@ VXT_PIREPHERAL(cga_video, {
 
     bool cursor_blink;
     bool cursor_visible;
+    vxt_byte cursor_start;
+    vxt_byte cursor_end;
     int cursor_offset;
 
     vxt_timer_id scanline_timer;
@@ -176,7 +180,11 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
         	c->crt_reg[c->crt_addr] = data;
             switch (c->crt_addr) {
                 case 0xA:
-                    c->cursor_visible = (data & 0x20) == 0;
+                    c->cursor_start = data & 0x1F;
+                    c->cursor_visible = !(data & 0x20) && (c->cursor_start < 8);
+                    break;
+                case 0xB:
+                    c->cursor_end = data;
                     break;
                 case 0xE:
                     c->cursor_offset = (c->cursor_offset & 0x00FF) | ((vxt_word)data << 8);
@@ -222,6 +230,8 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, cga_video, p);
 
     c->cursor_visible = true;
+    c->cursor_start = 6;
+    c->cursor_end = 7;
     c->cursor_offset = 0;
     c->is_dirty = true;
 
@@ -278,7 +288,7 @@ static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
     pixels[offset + VXTU_CGA_ALPHA] = VXTU_CGA_ALPHA_FILL;
 }
 
-static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int x, int y) {
+static void blit_char(struct vxt_pirepheral *p, int ch, vxt_byte attr, int x, int y) {
     VXT_DEC_DEVICE(c, cga_video, p);
     struct snapshot *snap = &c->snap;
 
@@ -298,16 +308,28 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 	vxt_dword bg_color = cga_palette[bg_color_index];
 	vxt_dword fg_color = cga_palette[fg_color_index];
     int width = (snap->mode_ctrl_reg & 1) ? 640 : 320;
+    int start = 0;
+    int end = 7;
 
-	for (int i = 0; i < 8; i++) {
-		vxt_byte glyph_line = cga_font[(int)ch * 8 + i];
+    if ((unsigned int)ch & 0xFFFFFF00) {
+        ch = 219;
+        start = (int)snap->cursor_start;
+        end = (int)snap->cursor_end;
+    }
+
+	for (int i = start; true; i++) {
+        int n = i % 8;
+        vxt_byte glyph_line = cga_font[ch * 8 + n];
+
 		for (int j = 0; j < 8; j++) {
-			vxt_byte mask = 0x80 >> j;
+            vxt_byte mask = 0x80 >> j;
 			vxt_dword color = (glyph_line & mask) ? fg_color : bg_color;
-		
-			int offset = (width * (y + i) + x + j) * 4;
+			int offset = (width * (y + n) + x + j) * 4;
             blit32(snap->rgba_surface, offset, color);
 		}
+
+        if (n == end)
+            break;
 	}
 }
 
@@ -340,6 +362,8 @@ bool vxtu_cga_snapshot(struct vxt_pirepheral *p) {
     c->snap.hgc_base = c->hgc_base;
     c->snap.cursor_blink = c->cursor_blink;
     c->snap.cursor_visible = c->cursor_visible;
+    c->snap.cursor_start = c->cursor_start;
+    c->snap.cursor_end = c->cursor_end;
     c->snap.cursor_offset = c->cursor_offset;
     c->snap.mode_ctrl_reg = c->mode_ctrl_reg;
     c->snap.color_ctrl_reg = c->color_ctrl_reg;
@@ -430,7 +454,7 @@ int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,v
             int y = snap->cursor_offset / num_col;
             if (x < num_col && y < 25) {
                 vxt_byte attr = (MEMORY(snap->mem, CGA_BASE + snap->video_page + (num_col * 2 * y + x * 2 + 1)) & 0x70) | 0xF;
-                blit_char(p, '_', attr, x * 8, y * 8);
+                blit_char(p, -1, attr, x * 8, y * 8);
             }
         }
         return f(num_col * 8, 200, snap->rgba_surface, userdata);
