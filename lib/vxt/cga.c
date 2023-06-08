@@ -311,8 +311,8 @@ static void blit_char(struct vxt_pirepheral *p, int ch, vxt_byte attr, int x, in
     int start = 0;
     int end = 7;
 
-    if ((unsigned int)ch & 0xFFFFFF00) {
-        ch = 219;
+    if (ch & ~0xFF) {
+        ch = 0xDB;
         start = (int)snap->cursor_start;
         end = (int)snap->cursor_end;
     }
