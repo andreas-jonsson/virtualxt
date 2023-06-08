@@ -309,7 +309,7 @@ workspace "virtualxt"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
 
         filter "toolset:clang or gcc"
-            buildoptions { "-Wno-unused-parameter", "-Wno-pedantic" } -- no-pedantic, bacause of a problem with conversion from funcion pointers.
+            buildoptions "-Wno-unused-parameter"
 
         filter "toolset:clang"
             buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }

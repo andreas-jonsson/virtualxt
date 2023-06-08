@@ -441,7 +441,7 @@ static int load_modules(void *user, const char *section, const char *name, const
 				}
 
 				sprintf(buffer, "_vxtu_module_%s_entry", name);
-				constructors = SDL_LoadFunction(lib, buffer);
+				*(void**)(&constructors) = SDL_LoadFunction(lib, buffer);
 
 				if (!constructors) {
 					printf("ERROR: Could not load module entry: %s\n", SDL_GetError());
@@ -457,7 +457,7 @@ static int load_modules(void *user, const char *section, const char *name, const
 			}
 
 			for (vxtu_module_entry_func *f = const_func; *f; f++) {
-				struct vxt_pirepheral *p = (*f)((vxt_allocator*)user, (void*)&front_interface, value);
+				struct vxt_pirepheral *p = (*f)(VXTU_CAST(user, void*, vxt_allocator*), (void*)&front_interface, value);
 				if (!p)
 					continue; // Assume the module chose not to be loaded.
 				APPEND_DEVICE(p);
@@ -711,7 +711,7 @@ int main(int argc, char *argv[]) {
 	#endif
 	printf("Loaded modules:\n");
 
-	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, (void*)&realloc)) {
+	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, VXTU_CAST(&realloc, vxt_allocator*, void*))) {
 		printf("ERROR: Could not load all modules!\n");
 		return -1;
 	}

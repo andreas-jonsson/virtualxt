@@ -45,6 +45,8 @@ extern "C" {
 	#define VXTU_CGA_ALPHA_FILL 0xFF
 #endif
 
+#define VXTU_CAST(in, tin, tout) ( ((VXT_PACK(union { tin from; tout to; })){ .from = (in) }).to )
+
 #define vxtu_randomize(ptr, size, seed) {					\
     int s = (int)(seed);									\
     for (int i = 0; i < (int)(size); i++) {					\
