@@ -30,7 +30,6 @@
 #include <stdint.h>
 #include <stdatomic.h>
 
-#define VXT_LIBC
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 

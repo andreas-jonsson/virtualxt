@@ -124,7 +124,7 @@ static const char *name(struct vxt_pirepheral *p) {
     (void)p; return "PIC (Intel 8259)";
 }
 
-struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pic, {
+VXT_API struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pic, {
     PIREPHERAL->install = &install;
     PIREPHERAL->reset = &reset;
     PIREPHERAL->name = &name;

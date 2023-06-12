@@ -102,7 +102,7 @@ static const char *name(struct vxt_pirepheral *p) {
     return "Microsoft Serial Mouse";
 }
 
-struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq) VXT_PIREPHERAL_CREATE(alloc, serial_mouse, {
+VXT_API struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq) VXT_PIREPHERAL_CREATE(alloc, serial_mouse, {
     DEVICE->base_port = base_port;
     DEVICE->irq = irq;
 
@@ -113,7 +113,7 @@ struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_por
     PIREPHERAL->io.out = &out;
 })
 
-bool vxtu_mouse_push_event(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev) {
+VXT_API bool vxtu_mouse_push_event(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev) {
     vxt_byte upper = 0;
     if (ev->xrel < 0)
         upper = 0x3;

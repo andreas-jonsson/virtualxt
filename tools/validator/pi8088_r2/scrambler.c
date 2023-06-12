@@ -25,7 +25,6 @@
 #include <time.h>
 #include <assert.h>
 
-#define VXT_LIBC
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 

@@ -27,7 +27,6 @@
 #include <string.h>
 #include <assert.h>
 
-#define VXT_LIBC
 #define VXTU_LIBC_IO
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
@@ -131,7 +130,7 @@ struct frontend_interface front_interface = {0};
 static int text_width(mu_Font font, const char *text, int len) {
 	(void)font;
 	if (len == -1)
-		len = strlen(text);
+		len = (int)strlen(text);
 	return mr_get_text_width(text, len);
 }
 

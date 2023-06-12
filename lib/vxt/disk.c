@@ -189,17 +189,41 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     }
 }
 
-void vxtu_disk_set_activity_callback(struct vxt_pirepheral *p, void (*cb)(int,void*), void *ud) {
+static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+    VXT_DEC_DEVICE(c, disk, p);
+
+    // IO 0xB0, 0xB1 to interrupt 0x19, 0x13
+    vxt_system_install_io(s, p, 0xB0, 0xB1);
+    c->boot_drive = 0;
+
+    return VXT_NO_ERROR;
+}
+
+static vxt_error reset(struct vxt_pirepheral *p) {
+    VXT_DEC_DEVICE(c, disk, p);
+    vxt_system_write_byte(VXT_GET_SYSTEM(disk, p), VXT_POINTER(0x40, 0x75), c->num_hd);
+    for (int i = 0; i < 0x100; i++) {
+        struct drive *d = &c->disks[i];
+        d->ah = 0; d->cf = 0;
+    }
+    return VXT_NO_ERROR;
+}
+
+static const char *name(struct vxt_pirepheral *p) {
+    (void)p; return "Disk Controller";
+}
+
+VXT_API void vxtu_disk_set_activity_callback(struct vxt_pirepheral *p, void (*cb)(int,void*), void *ud) {
     VXT_DEC_DEVICE(c, disk, p);
     c->activity_cb = cb;
     c->activity_cb_data = ud;
 }
 
-void vxtu_disk_set_boot_drive(struct vxt_pirepheral *p, int num) {
+VXT_API void vxtu_disk_set_boot_drive(struct vxt_pirepheral *p, int num) {
     (VXT_GET_DEVICE(disk, p))->boot_drive = num & 0xFF;
 }
 
-bool vxtu_disk_unmount(struct vxt_pirepheral *p, int num) {
+VXT_API bool vxtu_disk_unmount(struct vxt_pirepheral *p, int num) {
     VXT_DEC_DEVICE(c, disk, p);
     struct drive *d = &c->disks[num & 0xFF];
     bool has_disk = d->fp != NULL;
@@ -209,7 +233,7 @@ bool vxtu_disk_unmount(struct vxt_pirepheral *p, int num) {
     return has_disk;
 }
 
-vxt_error vxtu_disk_mount(struct vxt_pirepheral *p, int num, void *fp) {
+VXT_API vxt_error vxtu_disk_mount(struct vxt_pirepheral *p, int num, void *fp) {
     VXT_DEC_DEVICE(c, disk, p);
     vxt_system *s = VXT_GET_SYSTEM(disk, p);
 
@@ -261,35 +285,11 @@ vxt_error vxtu_disk_mount(struct vxt_pirepheral *p, int num, void *fp) {
 
 	d->fp = fp;
     d->size = size;
-    d->ah = d->cf = 0;
+    d->cf = d->ah = 0;
     return VXT_NO_ERROR;
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, disk, p);
-
-    // IO 0xB0, 0xB1 to interrupt 0x19, 0x13
-    vxt_system_install_io(s, p, 0xB0, 0xB1);
-    c->boot_drive = 0;
-
-    return VXT_NO_ERROR;
-}
-
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, disk, p);
-    vxt_system_write_byte(VXT_GET_SYSTEM(disk, p), VXT_POINTER(0x40, 0x75), c->num_hd);
-    for (int i = 0; i < 0x100; i++) {
-        struct drive *d = &c->disks[i];
-        d->ah = 0; d->cf = 0;
-    }
-    return VXT_NO_ERROR;
-}
-
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p; return "Disk Controller";
-}
-
-struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf) VXT_PIREPHERAL_CREATE(alloc, disk, {
+VXT_API struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf) VXT_PIREPHERAL_CREATE(alloc, disk, {
     DEVICE->intrf = *intrf;
 
     PIREPHERAL->install = &install;

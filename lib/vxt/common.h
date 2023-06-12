@@ -34,7 +34,6 @@
 #endif
 
 #ifdef VXT_LIBC
-   void abort(void);
    #define ABORT() { abort(); }
 #else
    #define ABORT() { static volatile int *_null = NULL; *_null = 0; for(;;); }

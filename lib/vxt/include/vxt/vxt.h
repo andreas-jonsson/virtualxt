@@ -35,71 +35,101 @@ extern "C" {
 #define _VXT_EVALUATOR(M, ...) M(__VA_ARGS__)
 #define VXT_VERSION _VXT_EVALUATOR(_VXT_STRINGIFY, VXT_VERSION_MAJOR) "." _VXT_EVALUATOR(_VXT_STRINGIFY, VXT_VERSION_MINOR) "." _VXT_EVALUATOR(_VXT_STRINGIFY, VXT_VERSION_PATCH)
 
-#if !defined(VXT_LIBC) && defined(TESTING)
-    #define VXT_LIBC
+#ifdef VXT_LIBC
+    #ifndef __STDC_HOSTED__
+        #error VXT_LIBC requires a hosted environment
+    #endif
+
+    #include <stdlib.h>
+    #include <stdint.h>
+    #include <stdbool.h>
+    #include <string.h>
+
+    typedef int8_t vxt_int8;
+    typedef int16_t vxt_int16;
+    typedef int32_t vxt_int32;
+
+    typedef uint8_t vxt_byte;
+    typedef uint16_t vxt_word;
+    typedef uint32_t vxt_dword;
+    typedef uint32_t vxt_pointer;
+#else
+    #ifdef TESTING
+        #error tests require VXT_LIBC
+    #endif
+
+    #ifndef bool
+        typedef _Bool bool;
+        #define true ((bool)1)
+        #define false ((bool)0)
+    #endif
+
+    #ifndef size_t
+        typedef __SIZE_TYPE__ size_t;
+    #endif
+
+    #ifndef intptr_t
+        #ifdef __INTPTR_TYPE__
+            typedef __INTPTR_TYPE__ intptr_t;
+        #else
+            typedef long long int intptr_t;
+        #endif
+    #endif
+
+    #ifndef uintptr_t
+        #ifdef __UINTPTR_TYPE__
+            typedef __UINTPTR_TYPE__ uintptr_t;
+        #else
+            typedef unsigned long long int uintptr_t;
+        #endif
+    #endif
+
+    #ifndef NULL
+        #define NULL ((void*)0)
+    #endif
+
+    #ifndef memmove
+        void *memmove(void*, const void*, size_t);
+    #endif
+
+    #ifndef memcpy
+        void *memcpy(void*, const void*, size_t);
+    #endif
+
+    #ifndef memset
+        void *memset(void*, int, size_t);
+    #endif
+
+    typedef char vxt_int8;
+    typedef short vxt_int16;
+    typedef int vxt_int32;
+
+    typedef unsigned char vxt_byte;
+    typedef unsigned short vxt_word;
+    typedef unsigned int vxt_dword;
+    typedef unsigned int vxt_pointer;
 #endif
 
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
     #error libvxt require C11 support
 #endif
 
-typedef char vxt_int8;
-typedef short vxt_int16;
-typedef int vxt_int32;
-
-typedef unsigned char vxt_byte;
-typedef unsigned short vxt_word;
-typedef unsigned int vxt_dword;
-typedef unsigned int vxt_pointer;
-
-#ifndef bool
-    typedef _Bool bool;
-    #define true ((bool)1)
-    #define false ((bool)0)
-#endif
-
-#ifndef size_t
-    typedef __SIZE_TYPE__ size_t;
-#endif
-
-#ifndef intptr_t
-    #ifdef __INTPTR_TYPE__
-        typedef __INTPTR_TYPE__ intptr_t;
-    #else
-        typedef long long int intptr_t;
-    #endif
-#endif
-
-#ifndef uintptr_t
-    #ifdef __UINTPTR_TYPE__
-        typedef __UINTPTR_TYPE__ uintptr_t;
-    #else
-        typedef unsigned long long int uintptr_t;
-    #endif
-#endif
-
-#ifndef NULL
-    #define NULL ((void*)0)
-#endif
-
-#ifndef memmove
-    void *memmove(void*, const void*, size_t);
-#endif
-
-#ifndef memcpy
-    void *memcpy(void*, const void*, size_t);
-#endif
-
-#ifndef memset
-    void *memset(void*, int, size_t);
-#endif
-
 #define vxt_memclear(p, s) ( memset((p), 0, (int)(s)) )
 
 #ifdef _MSC_VER
-   #define VXT_PACK(x) __pragma(pack(push, 1)) x __pragma(pack(pop))
+    #define VXT_PACK(x) __pragma(pack(push, 1)) x __pragma(pack(pop))
+
+    #define VXT_API_EXPORT __declspec(dllexport)
+    #ifdef VXT_EXPORT
+        #define VXT_API VXT_API_EXPORT
+    #else
+        #define VXT_API __declspec(dllimport)
+    #endif
 #else
-   #define VXT_PACK(x) x __attribute__((__packed__))
+    #define VXT_PACK(x) x __attribute__((__packed__))
+
+    #define VXT_API_EXPORT
+    #define VXT_API
 #endif
 
 #define VXT_POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
@@ -273,7 +303,7 @@ struct vxt_validator {
 #else
 
     /// @private
-    extern int (*_vxt_logger)(const char*, ...);
+    VXT_API extern int (*_vxt_logger)(const char*, ...);
 
     #define VXT_PRINT(...) { _vxt_logger(__VA_ARGS__); }
     #define VXT_LOG(...) {                                                              \
@@ -287,52 +317,52 @@ struct vxt_validator {
 #define vxt_logger() _vxt_logger
 
 /// @private
-extern vxt_error _vxt_system_initialize(vxt_system *s, unsigned reg_size, int v_major, int v_minor);
+VXT_API vxt_error _vxt_system_initialize(vxt_system *s, unsigned reg_size, int v_major, int v_minor);
 
 #define vxt_system_initialize(s) _vxt_system_initialize((s), sizeof(struct vxt_registers), VXT_VERSION_MAJOR, VXT_VERSION_MINOR)
 
-extern const char *vxt_error_str(vxt_error err);
-extern const char *vxt_lib_version(void);
-extern void vxt_set_logger(int (*f)(const char*, ...));
-extern int vxt_lib_version_major(void);
-extern int vxt_lib_version_minor(void);
-extern int vxt_lib_version_patch(void);
+VXT_API const char *vxt_error_str(vxt_error err);
+VXT_API const char *vxt_lib_version(void);
+VXT_API void vxt_set_logger(int (*f)(const char*, ...));
+VXT_API int vxt_lib_version_major(void);
+VXT_API int vxt_lib_version_minor(void);
+VXT_API int vxt_lib_version_patch(void);
 
-extern const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
-extern enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
+VXT_API const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
+VXT_API enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
 
-extern vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]);
-extern vxt_error vxt_system_configure(vxt_system *s, const char *section, const char *key, const char *value);
-extern vxt_error vxt_system_destroy(vxt_system *s);
-extern struct vxt_step vxt_system_step(vxt_system *s, int cycles);
-extern void vxt_system_reset(vxt_system *s);
-extern struct vxt_registers *vxt_system_registers(vxt_system *s);
+VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]);
+VXT_API vxt_error vxt_system_configure(vxt_system *s, const char *section, const char *key, const char *value);
+VXT_API vxt_error vxt_system_destroy(vxt_system *s);
+VXT_API struct vxt_step vxt_system_step(vxt_system *s, int cycles);
+VXT_API void vxt_system_reset(vxt_system *s);
+VXT_API struct vxt_registers *vxt_system_registers(vxt_system *s);
 
-extern int vxt_system_frequency(vxt_system *s);
-extern void vxt_system_set_frequency(vxt_system *s, int freq);
-extern void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte));
-extern void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *intrf);
-extern void vxt_system_set_userdata(vxt_system *s, void *data);
-extern void *vxt_system_userdata(vxt_system *s);
-extern vxt_allocator *vxt_system_allocator(vxt_system *s);
+VXT_API int vxt_system_frequency(vxt_system *s);
+VXT_API void vxt_system_set_frequency(vxt_system *s, int freq);
+VXT_API void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte));
+VXT_API void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *intrf);
+VXT_API void vxt_system_set_userdata(vxt_system *s, void *data);
+VXT_API void *vxt_system_userdata(vxt_system *s);
+VXT_API vxt_allocator *vxt_system_allocator(vxt_system *s);
 
-extern const vxt_byte *vxt_system_io_map(vxt_system *s);
-extern const vxt_byte *vxt_system_mem_map(vxt_system *s);
-extern struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx);
-extern vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p);
-extern vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p);
-extern void vxt_system_interrupt(vxt_system *s, int n);
+VXT_API const vxt_byte *vxt_system_io_map(vxt_system *s);
+VXT_API const vxt_byte *vxt_system_mem_map(vxt_system *s);
+VXT_API struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx);
+VXT_API vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p);
+VXT_API vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p);
+VXT_API void vxt_system_interrupt(vxt_system *s, int n);
 
-extern void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_word addr);
-extern void vxt_system_install_mem_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer addr);
-extern void vxt_system_install_io(vxt_system *s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to);
-extern void vxt_system_install_mem(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to);
-extern vxt_timer_id vxt_system_install_timer(vxt_system *s, struct vxt_pirepheral *dev, unsigned int us);
+VXT_API void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_word addr);
+VXT_API void vxt_system_install_mem_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer addr);
+VXT_API void vxt_system_install_io(vxt_system *s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to);
+VXT_API void vxt_system_install_mem(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to);
+VXT_API vxt_timer_id vxt_system_install_timer(vxt_system *s, struct vxt_pirepheral *dev, unsigned int us);
 
-extern vxt_byte vxt_system_read_byte(vxt_system *s, vxt_pointer addr);
-extern void vxt_system_write_byte(vxt_system *s, vxt_pointer addr, vxt_byte data);
-extern vxt_word vxt_system_read_word(vxt_system *s, vxt_pointer addr);
-extern void vxt_system_write_word(vxt_system *s, vxt_pointer addr, vxt_word data);
+VXT_API vxt_byte vxt_system_read_byte(vxt_system *s, vxt_pointer addr);
+VXT_API void vxt_system_write_byte(vxt_system *s, vxt_pointer addr, vxt_byte data);
+VXT_API vxt_word vxt_system_read_word(vxt_system *s, vxt_pointer addr);
+VXT_API void vxt_system_write_word(vxt_system *s, vxt_pointer addr, vxt_word data);
 
 /// @private
 _Static_assert(sizeof(vxt_pointer) == 4 && sizeof(vxt_int32) == 4, "invalid integer size");

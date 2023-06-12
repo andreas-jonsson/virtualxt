@@ -56,7 +56,7 @@ static const char *name(struct vxt_pirepheral *p) {
     return m->read_only ? "ROM" : "RAM";
 }
 
-struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
+VXT_API struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
     int size = VXT_PIREPHERAL_SIZE(memory) + amount;
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, size);
     vxt_memclear(p, size);
@@ -77,11 +77,11 @@ struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base
     return p;
 }
 
-void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p) {
+VXT_API void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p) {
     return VXT_GET_DEVICE_DATA(memory, p);
 }
 
-bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size) {
+VXT_API bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size) {
     VXT_DEC_DEVICE(m, memory, p);
     ENSURE(data);
     if (m->size < size)

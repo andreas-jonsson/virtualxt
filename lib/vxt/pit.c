@@ -146,7 +146,7 @@ static vxt_error step(struct vxt_pirepheral *p, INT64 ticks) {
         for (int i = 0; i < 3; i++) {
             ch = &c->channels[i];
 			if (ch->enabled)
-				ch->counter = (ch->counter < step) ? ch->data : (ch->counter - step);
+				ch->counter = (vxt_word)((ch->counter < step) ? ch->data : (ch->counter - step));
 		}
 		c->device_ticks = ticks;
 	}
@@ -168,7 +168,7 @@ static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
     (void)p; return VXT_PCLASS_PIT;
 }
 
-struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pit, {
+VXT_API struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pit, {
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;
@@ -178,7 +178,7 @@ struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREA
     PIREPHERAL->io.out = &out;
 })
 
-double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
+VXT_API double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
     if ((channel > 2) || (channel < 0))
         return 0.0;
     return (VXT_GET_DEVICE(pit, p))->channels[channel].frequency;

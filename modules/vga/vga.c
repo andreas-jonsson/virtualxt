@@ -22,7 +22,6 @@
 
 // Reference: https://www.scs.stanford.edu/10wi-cs140/pintos/specs/freevga/vga/vga.htm
 
-#define VXT_LIBC
 #define VXTU_LIBC_IO
 #include <vxt/vxtu.h>
 

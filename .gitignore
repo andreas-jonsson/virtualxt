@@ -9,14 +9,21 @@ __pycache__
 /gh-pages
 /test
 
-/*.trace
 /Makefile
 /*.make
+
+/*.vcxproj*
+/*.sln
+/.vs
 
 /modules/modules.h
 /modules/dummy.c
 /modules/*.vxt
+/modules/*.lib
+/modules/*.pdb
+/modules/*.exp
 
+/*.trace
 /tools/vxtdrv/vxtdrv.com
 /tools/shutdown/shutdown.com
 /__scrambler.tmp

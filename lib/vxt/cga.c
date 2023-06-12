@@ -333,7 +333,7 @@ static void blit_char(struct vxt_pirepheral *p, int ch, vxt_byte attr, int x, in
 	}
 }
 
-struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, cga_video, {
+VXT_API struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, cga_video, {
     vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PIREPHERAL);
 
     PIREPHERAL->install = &install;
@@ -347,11 +347,11 @@ struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREA
     PIREPHERAL->io.out = &out;
 })
 
-vxt_dword vxtu_cga_border_color(struct vxt_pirepheral *p) {
+VXT_API vxt_dword vxtu_cga_border_color(struct vxt_pirepheral *p) {
     return cga_palette[(VXT_GET_DEVICE(cga_video, p))->color_ctrl_reg & 0xF];
 }
 
-bool vxtu_cga_snapshot(struct vxt_pirepheral *p) {
+VXT_API bool vxtu_cga_snapshot(struct vxt_pirepheral *p) {
     VXT_DEC_DEVICE(c, cga_video, p);
     if (!c->is_dirty)
         return false;
@@ -373,7 +373,7 @@ bool vxtu_cga_snapshot(struct vxt_pirepheral *p) {
     return true;
 }
 
-int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
+VXT_API int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
     struct snapshot *snap = &(VXT_GET_DEVICE(cga_video, p))->snap;
 
     if (snap->hgc_mode) {

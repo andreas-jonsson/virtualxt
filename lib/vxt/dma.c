@@ -199,7 +199,7 @@ static void dma_write(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte data) {
     update_count(c, ch);
 }
 
-struct vxt_pirepheral *vxtu_dma_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, dma, {
+VXT_API struct vxt_pirepheral *vxtu_dma_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, dma, {
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;

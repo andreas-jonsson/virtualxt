@@ -45,7 +45,12 @@ extern "C" {
 	#define VXTU_CGA_ALPHA_FILL 0xFF
 #endif
 
-#define VXTU_CAST(in, tin, tout) ( ((VXT_PACK(union { tin from; tout to; })){ .from = (in) }).to )
+// TODO: Fix this!
+#ifdef _MSC_VER
+	#define VXTU_CAST(in, tin, tout) ((tout)in)
+#else
+	#define VXTU_CAST(in, tin, tout) ( ((VXT_PACK(union { tin from; tout to; })){ .from = (in) }).to )
+#endif
 
 #define vxtu_randomize(ptr, size, seed) {					\
     int s = (int)(seed);									\
@@ -60,7 +65,7 @@ extern "C" {
 typedef struct vxt_pirepheral *(*vxtu_module_entry_func)(vxt_allocator*,void*,const char*);
 
 #ifdef VXTU_MODULES
-    #define _VXTU_MODULE_ENTRIES(n, ...) vxtu_module_entry_func *_vxtu_module_ ## n ## _entry(int (*f)(const char*, ...)) {		\
+    #define _VXTU_MODULE_ENTRIES(n, ...) VXT_API_EXPORT vxtu_module_entry_func *_vxtu_module_ ## n ## _entry(int (*f)(const char*, ...)) {		\
 		vxt_set_logger(f);																										\
 		static vxtu_module_entry_func _vxtu_module_ ## n ## _entries[] = { __VA_ARGS__, NULL };									\
 		return _vxtu_module_ ## n ## _entries;																					\
@@ -252,45 +257,45 @@ struct vxtu_disk_interface {
 	int (*tell)(vxt_system *s, void *fp);
 };
 
-extern struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);
-extern void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p);
-extern bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size);
+VXT_API struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);
+VXT_API void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p);
+VXT_API bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size);
 
-extern struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc);
+VXT_API struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc);
 
-extern struct vxt_pirepheral *vxtu_dma_create(vxt_allocator *alloc);
+VXT_API struct vxt_pirepheral *vxtu_dma_create(vxt_allocator *alloc);
 
-extern struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc);
-extern double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel);
+VXT_API struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc);
+VXT_API double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel);
 
-extern struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc);
-extern bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force);
-extern bool vxtu_ppi_turbo_enabled(struct vxt_pirepheral *p);
-extern vxt_int16 vxtu_ppi_generate_sample(struct vxt_pirepheral *p, int freq);
-extern void vxtu_ppi_set_speaker_callback(struct vxt_pirepheral *p, void (*f)(struct vxt_pirepheral*,double,void*), void *userdata);
-extern void vxtu_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data);
-extern vxt_byte vxtu_ppi_xt_switches(struct vxt_pirepheral *p);
+VXT_API struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc);
+VXT_API bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force);
+VXT_API bool vxtu_ppi_turbo_enabled(struct vxt_pirepheral *p);
+VXT_API vxt_int16 vxtu_ppi_generate_sample(struct vxt_pirepheral *p, int freq);
+VXT_API void vxtu_ppi_set_speaker_callback(struct vxt_pirepheral *p, void (*f)(struct vxt_pirepheral*,double,void*), void *userdata);
+VXT_API void vxtu_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data);
+VXT_API vxt_byte vxtu_ppi_xt_switches(struct vxt_pirepheral *p);
 
-extern struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc);
-extern void vxtu_mda_invalidate(struct vxt_pirepheral *p);
-extern int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata);
+VXT_API struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc);
+VXT_API void vxtu_mda_invalidate(struct vxt_pirepheral *p);
+VXT_API int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata);
 
-extern struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc);
-extern vxt_dword vxtu_cga_border_color(struct vxt_pirepheral *p);
-extern bool vxtu_cga_snapshot(struct vxt_pirepheral *p);
+VXT_API struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc);
+VXT_API vxt_dword vxtu_cga_border_color(struct vxt_pirepheral *p);
+VXT_API bool vxtu_cga_snapshot(struct vxt_pirepheral *p);
 
 // This function only operates on snapshot data and is threadsafe.
 // The use of 'vxtu_cga_snapshot' and 'vxtu_cga_render' needs to be coordinated by the user.
-extern int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
+VXT_API int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 
-extern struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf);
-extern void vxtu_disk_set_activity_callback(struct vxt_pirepheral *p, void (*cb)(int,void*), void *ud);
-extern void vxtu_disk_set_boot_drive(struct vxt_pirepheral *p, int num);
-extern vxt_error vxtu_disk_mount(struct vxt_pirepheral *p, int num, void *fp);
-extern bool vxtu_disk_unmount(struct vxt_pirepheral *p, int num);
+VXT_API struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf);
+VXT_API void vxtu_disk_set_activity_callback(struct vxt_pirepheral *p, void (*cb)(int,void*), void *ud);
+VXT_API void vxtu_disk_set_boot_drive(struct vxt_pirepheral *p, int num);
+VXT_API vxt_error vxtu_disk_mount(struct vxt_pirepheral *p, int num, void *fp);
+VXT_API bool vxtu_disk_unmount(struct vxt_pirepheral *p, int num);
 
-extern struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq);
-extern bool vxtu_mouse_push_event(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev);
+VXT_API struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq);
+VXT_API bool vxtu_mouse_push_event(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev);
 
 #ifdef __cplusplus
 }

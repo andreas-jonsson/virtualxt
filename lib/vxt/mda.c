@@ -119,7 +119,7 @@ static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
     (void)p; return VXT_PCLASS_VIDEO;
 }
 
-struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, mda_video, {
+VXT_API struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, mda_video, {
     vxtu_randomize(DEVICE->mem, sizeof(DEVICE->mem), (intptr_t)PIREPHERAL);
 
     PIREPHERAL->install = &install;
@@ -132,11 +132,11 @@ struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREA
     PIREPHERAL->io.out = &out;
 })
 
-void vxtu_mda_invalidate(struct vxt_pirepheral *p) { 
+VXT_API void vxtu_mda_invalidate(struct vxt_pirepheral *p) { 
     (VXT_GET_DEVICE(mda_video, p))->is_dirty = true;
 }
 
-int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata) {
+VXT_API int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata) {
     VXT_DEC_DEVICE(m, mda_video, p);
     int cursor = m->cursor_visible ? (m->cursor_offset & 0x7FF) : -1;
 

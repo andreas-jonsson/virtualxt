@@ -65,7 +65,6 @@ workspace "virtualxt"
         symbols "On"
         optimize "Off"
         defines "VXT_DEBUG_PREFETCH"
-        sanitize { "Address", "Fuzzer" }
 
     filter "configurations:release"
         defines "NDEBUG"
@@ -87,12 +86,16 @@ workspace "virtualxt"
 
     filter "system:windows"
         defines "_CRT_SECURE_NO_WARNINGS"
+        
+    filter "action:vs*"
+        architecture "x86_64"
 
-    filter "toolset:clang or gcc"
+    filter { "toolset:clang or gcc", "not action:vs*" }
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
 
     filter { "toolset:clang or gcc", "configurations:debug" }
         buildoptions "-Wno-error"
+        sanitize { "Address", "Fuzzer" }
 
     local modules = {}
     local module_opt = _OPTIONS["modules"]
@@ -140,7 +143,7 @@ workspace "virtualxt"
                 end
 
                 includedirs { "lib/vxt/include", "front/common" }
-                defines { "VXTU_MODULE_NAME=" .. name }
+                defines { "VXT_LIBC", "VXTU_MODULE_NAME=" .. name }
 
                 cleancommands {
                     "{RMFILE} modules/" .. name .. ".*",
@@ -195,10 +198,8 @@ workspace "virtualxt"
 
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         includedirs "lib/vxt/include"
+        defines { "VXT_LIBC", "VXT_EXPORT" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
-        
-        filter "toolset:clang or gcc"
-            buildoptions { "-nostdinc" }
 
     project "libretro-frontend"
         kind "SharedLib"
@@ -210,7 +211,7 @@ workspace "virtualxt"
         includedirs { "lib/libretro", "front/common" }
         files { "front/libretro/*.h", "front/libretro/*.c" }
         
-        defines { "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
+        defines { "VXT_LIBC", "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
         includedirs "lib/vxt/include"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
@@ -295,15 +296,22 @@ workspace "virtualxt"
         files { "front/sdl/*.h", "front/sdl/*.c" }
         includedirs { "lib/vxt/include", "lib/inih", "lib/microui/src", "front/common" }
         links { "vxt", "inih", "microui" }
-
-        local sdl_cfg = path.join(_OPTIONS["sdl-config"], "sdl2-config")
-        buildoptions { string.format("`%s --cflags`", sdl_cfg) }
-        linkoptions { string.format("`%s --libs`", sdl_cfg) }
+        defines "VXT_LIBC"
 
         cleancommands {
             "{RMDIR} build/bin",
             "make clean %{cfg.buildcfg}"
         }
+
+        filter "action:vs*"
+            libdirs { path.join(_OPTIONS["sdl-config"], "lib", "x64") }
+            includedirs { path.join(_OPTIONS["sdl-config"], "include") }
+            links { "SDL2", "SDL2main" }
+
+        filter "not action:vs*"
+            local sdl_cfg = path.join(_OPTIONS["sdl-config"], "sdl2-config")
+            buildoptions { string.format("`%s --cflags`", sdl_cfg) }
+            linkoptions { string.format("`%s --libs`", sdl_cfg) }
 
         filter "options:validator"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
@@ -323,7 +331,7 @@ if _OPTIONS["scrambler"] then
         targetname "scrambler"
         targetdir "build/bin"
         links "gpiod"
-        defines { "PI8088", "VXT_CPU_286" }
+        defines { "PI8088", "VXT_CPU_286", "VXT_LIBC" }
 
         files { "tools/validator/pi8088/scrambler.c", "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
         
@@ -342,7 +350,7 @@ if _OPTIONS["test"] then
         kind "ConsoleApp"
         targetdir "test"
         includedirs "lib/vxt/include"
-        defines { "TESTING", "VXT_CPU_286", "VXTU_MEMCLEAR" }
+        defines { "TESTING", "VXT_LIBC", "VXT_CPU_286", "VXTU_MEMCLEAR" }
         files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
         optimize "Off"
         symbols "On"
