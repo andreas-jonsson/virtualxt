@@ -143,12 +143,17 @@ workspace "virtualxt"
                 end
 
                 includedirs { "lib/vxt/include", "front/common" }
-                defines { "VXT_LIBC", "VXTU_MODULE_NAME=" .. name }
+                defines { "VXTU_MODULE_NAME=" .. name }
 
                 cleancommands {
                     "{RMFILE} modules/" .. name .. ".*",
                     "make clean %{cfg.buildcfg}"
                 }
+
+                filter "not platforms:web"
+                    defines "VXT_LIBC"
+
+                filter {}
     
             dofile("modules/" .. name .. "/premake5.lua")
         end
