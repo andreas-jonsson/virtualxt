@@ -69,3 +69,12 @@ A hardware validator was developed to ensure proper CPU behaviour.
 Some additional information about that can be found [here](https://hackaday.io/project/184209-virtualxt-hardware-validator).
 
 ![validator screenshot](screenshots/validator.jpg)
+
+## Shout-out
+
+Friends, contributors and sources of inspiration!
+
+* **gloriouscow**
+* **homebrew8088**
+* **fmahnke**
+* **adriancable**
