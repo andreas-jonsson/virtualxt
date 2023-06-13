@@ -141,3 +141,24 @@ int mount_window(mu_Context *ctx, char *path) {
 	}
 	return mount;
 }
+
+int config_window(mu_Context *ctx) {
+	int open_cfg = 0;
+	if (mu_begin_window_ex(ctx, "Config Update", mu_rect(120, 40, 340, 120), MU_OPT_CLOSED|MU_OPT_NORESIZE)) {
+		has_open_windows = true;
+	
+		mu_layout_set_next(ctx, mu_rect(60, 5, 250, 25), 1);
+		mu_label(ctx, "Do you want to inspect the config file?");
+
+		mu_layout_set_next(ctx, mu_rect(80, 45, 60, 25), 1);
+		if ((open_cfg = mu_button_ex(ctx, "Yes", 0, MU_OPT_ALIGNCENTER)))
+			mu_get_current_container(ctx)->open = 0;
+
+		mu_layout_set_next(ctx, mu_rect(180, 45, 60, 25), 1);
+		if (mu_button_ex(ctx, "No", 0, MU_OPT_ALIGNCENTER))
+			mu_get_current_container(ctx)->open = 0;
+
+		mu_end_window(ctx);
+	}
+	return open_cfg;
+}

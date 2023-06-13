@@ -44,6 +44,14 @@
 #include "docopt.h"
 #include "icons.h"
 
+#if defined(_WIN32)
+	#define EDIT_CONFIG "notepad "
+#elif defined(__APPLE__)
+	#define EDIT_CONFIG "open -e "
+#else
+	#define EDIT_CONFIG "xdg-open "
+#endif
+
 #define CONFIG_FILE_NAME "config.ini"
 #define MIN_CLOCKS_PER_STEP 1
 #define MAX_PENALTY_USEC 1000
@@ -105,6 +113,7 @@ char floppy_image_path[FILENAME_MAX] = {0};
 char new_floppy_image_path[FILENAME_MAX] = {0};
 
 const char *modules_search_path = NULL;
+bool config_updated = false;
 
 int str_buffer_len = 0;
 char *str_buffer = NULL;
@@ -479,17 +488,17 @@ static int configure_pirepherals(void *user, const char *section, const char *na
 	return (vxt_system_configure(user, section, name, value) == VXT_NO_ERROR) ? 1 : 0;
 }
 
-static void write_default_config(const char *path, bool clean) {
+static bool write_default_config(const char *path, bool clean) {
 	FILE *fp;
 	if (!clean && (fp = fopen(path, "r"))) {
 		fclose(fp);
-		return;
+		return false;
 	}
 
 	printf("WARNING: No config file found. Creating new default: %s\n", path);
 	if (!(fp = fopen(path, "w"))) {
 		printf("ERROR: Could not create config file: %s\n", path);
-		return;
+		return false;
 	}
 
 	fprintf(fp,
@@ -535,7 +544,9 @@ static void write_default_config(const char *path, bool clean) {
 		"\n[rifs]\n"
 		"port=0x178\n"
 	);
+
 	fclose(fp);
+	return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -565,13 +576,18 @@ int main(int argc, char *argv[]) {
 
 	{
 		const char *path = sprint("%s/" CONFIG_FILE_NAME, args.config);
-		write_default_config(path, args.clean != 0);
+		config_updated = write_default_config(path, args.clean != 0);
 
 		config.args = &args;
 		if (ini_parse(path, &load_config, &config)) {
 			printf("Can't open, or parse: %s\n", path);
 			return -1;
 		}
+	}
+
+	if (args.edit) {
+		printf("Open config file!\n");
+		return system(sprint(EDIT_CONFIG "%s/" CONFIG_FILE_NAME, args.config));
 	}
 
 	if (!args.modules) {
@@ -967,6 +983,16 @@ int main(int argc, char *argv[]) {
 
 			help_window(ctx);
 			error_window(ctx);
+
+			if (config_updated) {
+				config_updated = false;
+				open_window(ctx, "Config Update");
+			}
+
+			if (config_window(ctx)) {
+				if (system(sprint(EDIT_CONFIG "%s/" CONFIG_FILE_NAME, args.config)))
+					return -1;
+			}
 
 			if (eject_window(ctx, (*floppy_image_path != 0) ? floppy_image_path: NULL)) {
 				SYNC(disk_controller.unmount(disk_controller.device, 0));

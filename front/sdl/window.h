@@ -35,6 +35,7 @@ void open_error_window(mu_Context *ctx, const char *msg);
 
 void help_window(mu_Context *ctx);
 void error_window(mu_Context *ctx);
+int config_window(mu_Context *ctx);
 int eject_window(mu_Context *ctx, const char *path);
 int mount_window(mu_Context *ctx, char *path);
 
