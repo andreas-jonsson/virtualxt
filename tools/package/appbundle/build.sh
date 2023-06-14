@@ -13,6 +13,7 @@ cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
 cp bios/pcxtbios_640.bin $APP_DIR/Contents/Resources/bios/
 cp bios/glabios.bin $APP_DIR/Contents/Resources/bios/
 cp bios/vxtx.bin $APP_DIR/Contents/Resources/bios/
+cp bios/vgabios.bin $APP_DIR/Contents/Resources/bios/
 cp boot/freedos_hd.img $APP_DIR/Contents/Resources/boot/
 cp tools/icon/icon.icns $APP_DIR/Contents/Resources/
 

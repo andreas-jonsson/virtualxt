@@ -32,6 +32,7 @@ cp bios/pcxtbios.bin $APP_DIR/bios/
 cp bios/pcxtbios_640.bin $APP_DIR/bios/
 cp bios/glabios.bin $APP_DIR/bios/
 cp bios/vxtx.bin $APP_DIR/bios/
+cp bios/vgabios.bin $APP_DIR/bios/
 cp boot/freedos_hd.img $APP_DIR/boot/
 cp tools/icon/icon.png $APP_DIR/virtualxt-icon.png
 
