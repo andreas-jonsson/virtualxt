@@ -92,6 +92,8 @@ struct snapshot {
 
     bool cursor_blink;
     bool cursor_visible;
+    vxt_byte cursor_start;
+    vxt_byte cursor_end;
     int cursor_offset;
 
     int video_page;
@@ -113,6 +115,8 @@ VXT_PIREPHERAL(vga_video, {
 
     bool cursor_blink;
     bool cursor_visible;
+    vxt_byte cursor_start;
+    vxt_byte cursor_end;
     int cursor_offset;
 
     vxt_byte video_mode;
@@ -369,7 +373,11 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
         	v->reg.crt_reg[v->reg.crt_addr] = data;
             switch (v->reg.crt_addr) {
                 case 0xA:
-                    v->cursor_visible = (data & 0x20) == 0;
+                    v->cursor_start = data & 0x1F;
+                    v->cursor_visible = !(data & 0x20) && (v->cursor_start < 16);
+                    break;
+                case 0xB:
+                    v->cursor_end = data;
                     break;
                 case 0xE:
                     v->cursor_offset = (v->cursor_offset & 0x00FF) | ((vxt_word)data << 8);
@@ -445,7 +453,7 @@ static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
     pixels[offset + VXTU_CGA_ALPHA] = VXTU_CGA_ALPHA_FILL;
 }
 
-static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int x, int y) {
+static void blit_char(struct vxt_pirepheral *p, int ch, vxt_byte attr, int x, int y) {
     VXT_DEC_DEVICE(v, vga_video, p);
     struct snapshot *snap = &v->snap;
 
@@ -465,16 +473,28 @@ static void blit_char(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte attr, int 
 	vxt_dword bg_color = cga_palette[bg_color_index];
 	vxt_dword fg_color = cga_palette[fg_color_index];
     int width = (snap->mode_ctrl_reg & 1) ? 640 : 320;
+    int start = 0;
+    int end = 15;
 
-	for (int i = 0; i < 16; i++) {
-		vxt_byte glyph_line = vga_font[(int)ch * 16 + i];
+    if (ch & ~0xFF) {
+        ch = 0xDB;
+        start = (int)snap->cursor_start;
+        end = (int)snap->cursor_end;
+    }
+
+	for (int i = start; true; i++) {
+        int n = i % 16;
+		vxt_byte glyph_line = vga_font[ch * 16 + n];
+
 		for (int j = 0; j < 8; j++) {
 			vxt_byte mask = 0x80 >> j;
 			vxt_dword color = (glyph_line & mask) ? fg_color : bg_color;
-		
-			int offset = (width * (y + i) + x + j) * 4;
+			int offset = (width * (y + n) + x + j) * 4;
             blit32(snap->rgba_surface, offset, color);
 		}
+
+        if (n == end)
+            break;
 	}
 }
 
@@ -497,6 +517,8 @@ static bool snapshot(struct vxt_pirepheral *p) {
 
     v->snap.cursor_offset = v->cursor_offset;
     v->snap.cursor_visible = v->cursor_visible;
+    v->snap.cursor_start = v->cursor_start;
+    v->snap.cursor_end = v->cursor_end;
     v->snap.cursor_blink = v->cursor_blink;
 
     v->snap.mode_ctrl_reg = v->reg.mode_ctrl_reg;
@@ -534,7 +556,7 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
                 int y = snap->cursor_offset / num_col;
                 if (x < num_col && y < 25) {
                     vxt_byte attr = (MEMORY(snap->mem, CGA_BASE + snap->video_page + (num_col * 2 * y + x * 2 + 1)) & 0x70) | 0xF;
-                    blit_char(p, '_', attr, x * 8, y * 16);
+                    blit_char(p, -1, attr, x * 8, y * 16);
                 }
             }
             return f(num_col * 8, 400, snap->rgba_surface, userdata);
@@ -688,7 +710,6 @@ static struct vxt_pirepheral *vga_create(vxt_allocator *alloc, void *frontend, c
     PIREPHERAL->io.out = &out;
 })
 
-// Tested with ET4000 VGA BIOS.
 static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)frontend;
 
