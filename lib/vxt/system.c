@@ -269,7 +269,9 @@ VXT_API void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirephera
 }
 
 VXT_API void vxt_system_install_mem_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_pointer addr) {
-    s->mem_map[addr & 0xFFFFF] = (vxt_byte)vxt_pirepheral_id(dev);
+    if (addr & 0xF)
+        VXT_LOG("ERROR: Trying to register unaligned address!");
+    s->mem_map[(addr >> 4) & 0xFFFF] = (vxt_byte)vxt_pirepheral_id(dev);
 }
 
 VXT_API void vxt_system_install_io(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to) {
@@ -279,21 +281,24 @@ VXT_API void vxt_system_install_io(CONSTP(vxt_system) s, struct vxt_pirepheral *
 }
 
 VXT_API void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to) {
-    int i = (int)(from & 0xFFFFF);
-    to &= 0xFFFFF;
-    while (i <= (int)to)
-        s->mem_map[i++] = (vxt_byte)vxt_pirepheral_id(dev);
+    if ((from | to) & 0xF)
+        VXT_LOG("ERROR: Trying to register unaligned address!");
+
+    from = (from >> 4) & 0xFFFF;
+    to = (to >> 4) & 0xFFFF;
+    while (from <= to)
+        s->mem_map[from++] = (vxt_byte)vxt_pirepheral_id(dev);
 }
 
 VXT_API vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
     addr &= 0xFFFFF;
-    CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
+    CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr >> 4]];
     return dev->io.read(dev, addr);
 }
 
 VXT_API void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
     addr &= 0xFFFFF;
-    CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr]];
+    CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr >> 4]];
     dev->io.write(dev, addr, data);
 }
 

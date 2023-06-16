@@ -106,7 +106,7 @@ static vxt_byte mem_read(struct vxt_pirepheral *p, vxt_pointer addr) {
         }
     }
 
-    struct vxt_pirepheral *dev = vxt_system_pirepheral(s, dbg->mem_map[addr]);
+    struct vxt_pirepheral *dev = vxt_system_pirepheral(s, dbg->mem_map[addr >> 4]);
     return dev->io.read(dev, addr);
 }
 
@@ -126,7 +126,7 @@ static void mem_write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data)
         }
     }
 
-    struct vxt_pirepheral *dev = vxt_system_pirepheral(s, dbg->mem_map[addr]);
+    struct vxt_pirepheral *dev = vxt_system_pirepheral(s, dbg->mem_map[addr >> 4]);
     dev->io.write(dev, addr, data);
 }
 
