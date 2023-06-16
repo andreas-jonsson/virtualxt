@@ -28,3 +28,4 @@ __pycache__
 /tools/shutdown/shutdown.com
 /__scrambler.tmp
 /boot/msdos*.img
+/boot/windows*.img

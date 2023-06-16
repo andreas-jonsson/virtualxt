@@ -38,7 +38,10 @@
 #define CGA_BASE 0x18000
 #define SCANLINE_TIMING 16
 #define CURSOR_TIMING 333333
+
 #define VIDEO_MODE_BDA_ADDRESS (VXT_POINTER(0x40, 0x49))
+#define VIDEO_MODE_BDA_START_ADDRESS (VIDEO_MODE_BDA_ADDRESS & 0xFFFF0)
+#define VIDEO_MODE_BDA_END_ADDRESS (VIDEO_MODE_BDA_START_ADDRESS + 0xF)
 
 #define MEMORY(p, i) ((p)[(i) & (MEMORY_SIZE - 1)])
 
@@ -119,6 +122,7 @@ VXT_PIREPHERAL(vga_video, {
     vxt_byte cursor_end;
     int cursor_offset;
 
+    vxt_byte bios_bda_memory[16];
     vxt_byte video_mode;
     vxt_byte mem_latch[4];
 
@@ -162,8 +166,11 @@ VXT_PIREPHERAL(vga_video, {
 
 static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
     VXT_DEC_DEVICE(v, vga_video, p);
-    if (addr == VIDEO_MODE_BDA_ADDRESS)
-        return v->video_mode;
+    if ((addr >= VIDEO_MODE_BDA_START_ADDRESS) && (addr <= VIDEO_MODE_BDA_END_ADDRESS)) {
+        if (addr == VIDEO_MODE_BDA_ADDRESS)
+            return v->video_mode;
+        return v->bios_bda_memory[addr - VIDEO_MODE_BDA_START_ADDRESS];
+    }
     addr -= MEMORY_START;
 
     if (v->reg.seq_reg[5] & 8) {
@@ -189,13 +196,16 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     VXT_DEC_DEVICE(v, vga_video, p);
     v->is_dirty = true;
 
-    if ((addr == VIDEO_MODE_BDA_ADDRESS) && (v->video_mode != data)) {
-        VXT_LOG("Switch video mode: 0x%X", data);
-        v->video_mode = data;
-        v->reg.seq_reg[4] = 0; // Set chained mode.
+    if ((addr >= VIDEO_MODE_BDA_START_ADDRESS) && (addr <= VIDEO_MODE_BDA_END_ADDRESS)) {
+        if ((addr == VIDEO_MODE_BDA_ADDRESS) && (v->video_mode != data)) {
+            VXT_LOG("Switch video mode: 0x%X", data);
+            v->video_mode = data;
+            v->reg.seq_reg[4] = 0; // Set chained mode.
+            return;
+        }
+        v->bios_bda_memory[addr - VIDEO_MODE_BDA_START_ADDRESS] = data;
         return;
     }
-
     addr -= MEMORY_START;
 
 	if (((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x10) && (v->video_mode != 0x12)) || !(v->reg.seq_reg[4] & 6)) {
@@ -460,7 +470,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     }
 
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + 0x20000) - 1);
-    vxt_system_install_mem_at(s, p, VIDEO_MODE_BDA_ADDRESS); // BDA video mode
+    vxt_system_install_mem(s, p, VIDEO_MODE_BDA_START_ADDRESS, VIDEO_MODE_BDA_END_ADDRESS); // BDA video mode
 
     vxt_system_install_timer(s, p, CURSOR_TIMING);
     v->scanline_timer = vxt_system_install_timer(s, p, SCANLINE_TIMING);

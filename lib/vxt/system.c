@@ -281,7 +281,7 @@ VXT_API void vxt_system_install_io(CONSTP(vxt_system) s, struct vxt_pirepheral *
 }
 
 VXT_API void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to) {
-    if ((from | to) & 0xF)
+    if ((from | (to + 1)) & 0xF)
         VXT_LOG("ERROR: Trying to register unaligned address!");
 
     from = (from >> 4) & 0xFFFF;
