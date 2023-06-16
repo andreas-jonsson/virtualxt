@@ -31,11 +31,7 @@ Browser version is avalible [here](https://realmode.games).
 
 ## Screenshots
 
-![bios screenshot](screenshots/bios.PNG)
-
 ![freedos screenshot](screenshots/freedos.PNG)
-
-![edit screenshot](screenshots/edit.PNG)
 
 ![win30setup screenshot](screenshots/win30setup.PNG)
 
