@@ -23,36 +23,33 @@
 #include "common.h"
 #include <vxt/vxtu.h>
 
-VXT_PIREPHERAL_WITH_DATA(memory, vxt_byte, {
+struct memory {
     vxt_pointer base;
     bool read_only;
     int size;
-})
+    vxt_byte data[];
+};
 
-static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    VXT_DEC_DEVICE(m, memory, p);
+static vxt_byte read(struct memory *m, vxt_pointer addr) {
     ENSURE((int)(addr - m->base) < m->size);
-    return VXT_GET_DEVICE_DATA(memory, p)[addr - m->base];
+    return m->data[addr - m->base];
 }
 
-static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
-    VXT_DEC_DEVICE(m, memory, p);
+static void write(struct memory *m, vxt_pointer addr, vxt_byte data) {
     ENSURE((int)(addr - m->base) < m->size);
     if (!m->read_only) {
-        VXT_GET_DEVICE_DATA(memory, p)[addr - m->base] = data;
+        m->data[addr - m->base] = data;
     } else {
         VXT_LOG("writing to read-only memory: [0x%X] = 0x%X", addr, data);
     }
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(m, memory, p);
-    vxt_system_install_mem(s, p, m->base, (m->base + (vxt_pointer)m->size) - 1);
+static vxt_error install(struct memory *m, vxt_system *s) {
+    vxt_system_install_mem(s, VXT_GET_PIREPHERAL(m), m->base, (m->base + (vxt_pointer)m->size) - 1);
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(m, memory, p);
+static const char *name(struct memory *m) {
     return m->read_only ? "ROM" : "RAM";
 }
 
@@ -60,33 +57,34 @@ VXT_API struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_poin
     int size = VXT_PIREPHERAL_SIZE(memory) + amount;
     struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, size);
     vxt_memclear(p, size);
-    VXT_DEC_DEVICE(m, memory, p);
+    struct memory *mem = VXT_GET_DEVICE(memory, p);
 
     #ifndef VXTU_MEMCLEAR
-        if (!read_only) vxtu_randomize(VXT_GET_DEVICE_DATA(memory, p), amount, (intptr_t)p);
+        if (!read_only) vxtu_randomize(mem->data, amount, (intptr_t)p);
     #endif
 
-    m->base = base;
-    m->read_only = read_only;
-    m->size = amount;   
+    mem->base = base;
+    mem->read_only = read_only;
+    mem->size = amount;   
 
-    p->install = &install;
-    p->name = &name;
-    p->io.read = &read;
-    p->io.write = &write;
+    struct vxt_pirepheral *PIREPHERAL = p;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(io.read, read);
+    VXT_PIREPHERAL_SET_CALLBACK(io.write, write);
     return p;
 }
 
 VXT_API void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p) {
-    return VXT_GET_DEVICE_DATA(memory, p);
+    return VXT_GET_DEVICE(memory, p)->data;
 }
 
 VXT_API bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size) {
-    VXT_DEC_DEVICE(m, memory, p);
+    struct memory *m = VXT_GET_DEVICE(memory, p);
     ENSURE(data);
     if (m->size < size)
         return false;
     for (int i = 0; i < size; i++)
-        VXT_GET_DEVICE_DATA(memory, p)[i] = data[i];
+        m->data[i] = data[i];
     return true;
 }

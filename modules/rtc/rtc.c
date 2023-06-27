@@ -26,17 +26,16 @@
 
 #define CMOS_SIZE 50
 
-VXT_PIREPHERAL(rtc, {
+struct rtc {
     vxt_byte addr;
  	vxt_byte cmos[CMOS_SIZE];
 
     bool enable_interrupt;
     vxt_byte update_progress;
     vxt_byte rate;
-})
+};
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(c, rtc, p);
+static vxt_byte in(struct rtc *c, vxt_word port) {
     if (!(port & 1))
         return c->addr;
 
@@ -86,8 +85,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     return data;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(c, rtc, p);
+static void out(struct rtc *c, vxt_word port, vxt_byte data) {
     if (!(port & 1)) {
         c->addr = data & 0x7F;
         if (c->addr >= CMOS_SIZE)
@@ -108,28 +106,26 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     c->addr = 0xD;
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io(s, p, 0x240, 0x241);
+static vxt_error install(struct rtc *c, vxt_system *s) {
+    vxt_system_install_io(s, VXT_GET_PIREPHERAL(c), 0x240, 0x241);
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, rtc, p);
+static vxt_error reset(struct rtc *c) {
     c->addr = 0xD;
     c->rate = 5; // 1024 Hz
     c->enable_interrupt = false;
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
-    return "Real Time Clock";
+static const char *name(struct rtc *c) {
+    (void)c; return "Real Time Clock";
 }
 
 VXTU_MODULE_CREATE(rtc, {
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
 })

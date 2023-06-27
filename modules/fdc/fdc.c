@@ -134,7 +134,7 @@ struct diskette {
     int size;
 };
 
-VXT_PIREPHERAL(fdc, {
+struct fdc {
     vxt_system *s;
     vxt_word base;
     int irq;
@@ -163,7 +163,7 @@ VXT_PIREPHERAL(fdc, {
     vxt_byte drive_num;
     vxt_byte dor_reg;
     bool is_busy;
-})
+};
 
 static vxt_byte fifo_read(struct fdc *c) {
     if (c->fifo_len) {
@@ -256,8 +256,7 @@ static void controller_reset(struct fdc *c) {
     vxt_system_interrupt(c->s, c->irq);
 }
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(c, fdc, p);
+static vxt_byte in(struct fdc *c, vxt_word port) {
     switch (port - c->base) {
         case 4: // Main Status Register (MSR)
         {
@@ -286,8 +285,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     }
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(c, fdc, p);
+static void out(struct fdc *c, vxt_word port, vxt_byte data) {
     switch (port - c->base) {
         case 2: // Digital Output Register (DOR)
         	c->drive_num = data & 0x3;
@@ -392,9 +390,8 @@ static void update_transfer(struct fdc *c) {
 	}
 }
 
-static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+static vxt_error timer(struct fdc *c, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
-    VXT_DEC_DEVICE(c, fdc, p);
     
     //INT64 t = c->ustics();
     //if ((t - c->last_seek) > 20000) {
@@ -410,7 +407,7 @@ static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
 }
 
 static bool unmount(struct vxt_pirepheral *p, int num) {
-    VXT_DEC_DEVICE(c, fdc, p);
+    struct fdc *c = VXT_GET_DEVICE(fdc, p);
     if (num > 3)
         return false;
 
@@ -421,8 +418,7 @@ static bool unmount(struct vxt_pirepheral *p, int num) {
 }
 
 static vxt_error mount(struct vxt_pirepheral *p, int num, void *fp) {
-    VXT_DEC_DEVICE(c, fdc, p);
-
+    struct fdc *c = VXT_GET_DEVICE(fdc, p);
     if (num > 3)
         return VXT_USER_ERROR(0);
 
@@ -473,8 +469,8 @@ static void set_boot_drive(struct vxt_pirepheral *p, int num) {
     (void)p; (void)num;
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, fdc, p);
+static vxt_error install(struct fdc *c, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
     c->s = s;
     if (c->set_disk_controller) {
         struct frontend_disk_controller ct = { p, &mount, &unmount, &set_boot_drive };
@@ -497,9 +493,8 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return c->dma_controller ? VXT_NO_ERROR : VXT_USER_ERROR(0);
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
-    return "FDC (NEC 765)";
+static const char *name(struct fdc *c) {
+    (void)c; return "FDC (NEC 765)";
 }
 
 VXTU_MODULE_CREATE(fdc, {
@@ -509,9 +504,9 @@ VXTU_MODULE_CREATE(fdc, {
     if (FRONTEND)
         DEVICE->set_disk_controller = ((struct frontend_interface*)FRONTEND)->set_disk_controller;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
 })

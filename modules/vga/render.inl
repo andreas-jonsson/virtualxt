@@ -28,8 +28,7 @@ static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
     pixels[offset + VXTU_CGA_ALPHA] = VXTU_CGA_ALPHA_FILL;
 }
 
-static void blit_char(struct vxt_pirepheral *p, int ch, vxt_byte attr, int x, int y) {
-    VXT_DEC_DEVICE(v, vga_video, p);
+static void blit_char(struct vga_video *v, int ch, vxt_byte attr, int x, int y) {
     struct snapshot *snap = &v->snap;
 
     int bg_color_index = (attr & 0x70) >> 4;
@@ -74,7 +73,7 @@ static void blit_char(struct vxt_pirepheral *p, int ch, vxt_byte attr, int x, in
 }
 
 static bool snapshot(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(v, vga_video, p);
+    struct vga_video *v = VXT_GET_DEVICE(vga_video, p);
     if (!v->is_dirty)
         return false;
 
@@ -100,7 +99,8 @@ static bool snapshot(struct vxt_pirepheral *p) {
 }
 
 static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
-    struct snapshot *snap = &(VXT_GET_DEVICE(vga_video, p))->snap;
+    struct vga_video *v = VXT_GET_DEVICE(vga_video, p);
+    struct snapshot *snap = &v->snap;
     int num_col = 80;
     int height = 480;
 
@@ -119,7 +119,7 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
                 int cell_offset = CGA_BASE + snap->video_page + i;
                 vxt_byte ch = MEMORY(snap->mem, cell_offset);
                 vxt_byte attr = MEMORY(snap->mem, cell_offset + 1);
-                blit_char(p, ch, attr, (idx % num_col) * 8, (idx / num_col) * 16);
+                blit_char(v, ch, attr, (idx % num_col) * 8, (idx / num_col) * 16);
             }
 
             if (snap->cursor_blink && snap->cursor_visible) {
@@ -127,7 +127,7 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
                 int y = snap->cursor_offset / num_col;
                 if (x < num_col && y < 25) {
                     vxt_byte attr = (MEMORY(snap->mem, CGA_BASE + snap->video_page + (num_col * 2 * y + x * 2 + 1)) & 0x70) | 0xF;
-                    blit_char(p, -1, attr, x * 8, y * 16);
+                    blit_char(v, -1, attr, x * 8, y * 16);
                 }
             }
             return f(num_col * 8, 400, snap->rgba_surface, userdata);

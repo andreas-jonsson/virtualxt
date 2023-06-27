@@ -22,7 +22,7 @@
 
 #include <vxt/vxtu.h>
 
-VXT_PIREPHERAL(dma, {
+struct dma {
     bool flip;
     bool mem_to_mem;
 
@@ -41,10 +41,16 @@ VXT_PIREPHERAL(dma, {
 		vxt_dword addr_inc;
         vxt_dword page;
 	} channel[4];
-})
+};
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(c, dma, p);
+static vxt_error reset(struct dma *c) {
+    vxt_memclear(c, sizeof(struct dma));
+    for (int i = 0; i < 4; i++)
+        c->channel[i].masked = true;
+    return VXT_NO_ERROR;
+}
+
+static vxt_byte in(struct dma *c, vxt_word port) {
     if (port >= 0x80) {
         vxt_byte ch;
         switch (port & 0xF) {
@@ -79,8 +85,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     }
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(c, dma, p);
+static void out(struct dma *c, vxt_word port, vxt_byte data) {
     if (port >= 0x80) {
         vxt_byte ch;
         switch (port & 0xF) {
@@ -141,7 +146,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
                 c->flip = false;
                 break;
             case 0xD: // Master reset
-                p->reset(p);
+                reset(c);
                 break;
             case 0xF: // Write mask register
                 for (int i = 0; i < 4; i++)
@@ -151,30 +156,23 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     }
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+static vxt_error install(struct dma *c, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
     vxt_system_install_io(s, p, 0x0, 0xF);
     vxt_system_install_io(s, p, 0x80, 0x8F);
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
-    return "DMA Controller (Intel 8237)";
+static const char *name(struct dma *c) {
+    (void)c;
+    return "DMA (Intel 8237)";
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, dma, p);
-    vxt_memclear(c, sizeof(struct dma));
-    for (int i = 0; i < 4; i++)
-        c->channel[i].masked = true;
-    return VXT_NO_ERROR;
+static enum vxt_pclass pclass(struct dma *c) {
+    (void)c; return VXT_PCLASS_DMA;
 }
 
-static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    (void)p; return VXT_PCLASS_DMA;
-}
-
-static void update_count(struct dma* const c, vxt_byte ch) {
+static void update_count(struct dma *c, vxt_byte ch) {
     c->channel[ch].addr += c->channel[ch].addr_inc;
     c->channel[ch].count--;
 
@@ -184,28 +182,26 @@ static void update_count(struct dma* const c, vxt_byte ch) {
     }
 }
 
-static vxt_byte dma_read(struct vxt_pirepheral *p, vxt_byte ch) {
-    VXT_DEC_DEVICE(c, dma, p);
+static vxt_byte dma_read(struct dma *c, vxt_byte ch) {
     ch &= 3;
-    vxt_byte res = vxt_system_read_byte(VXT_GET_SYSTEM(dma, p), c->channel[ch].page + c->channel[ch].addr);
+    vxt_byte res = vxt_system_read_byte(VXT_GET_SYSTEM(c), c->channel[ch].page + c->channel[ch].addr);
     update_count(c, ch);
     return res;
 }
 
-static void dma_write(struct vxt_pirepheral *p, vxt_byte ch, vxt_byte data) {
-    VXT_DEC_DEVICE(c, dma, p);
+static void dma_write(struct dma *c, vxt_byte ch, vxt_byte data) {
     ch &= 3;
-    vxt_system_write_byte(VXT_GET_SYSTEM(dma, p), c->channel[ch].page + c->channel[ch].addr, data);
+    vxt_system_write_byte(VXT_GET_SYSTEM(c), c->channel[ch].page + c->channel[ch].addr, data);
     update_count(c, ch);
 }
 
 VXT_API struct vxt_pirepheral *vxtu_dma_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, dma, {
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
-    PIREPHERAL->dma.read = &dma_read;
-    PIREPHERAL->dma.write = &dma_write;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(pclass, pclass);
+    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
+    VXT_PIREPHERAL_SET_CALLBACK(dma.read, dma_read);
+    VXT_PIREPHERAL_SET_CALLBACK(dma.write, dma_write);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
 })

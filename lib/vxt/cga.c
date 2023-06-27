@@ -85,7 +85,7 @@ struct snapshot {
     vxt_byte color_ctrl_reg;
 };
 
-VXT_PIREPHERAL(cga_video, {
+struct cga_video {
     vxt_byte mem[MEMORY_SIZE];
     bool is_dirty;
     struct snapshot snap;
@@ -109,20 +109,18 @@ VXT_PIREPHERAL(cga_video, {
     vxt_byte status_reg;
     vxt_byte crt_addr;
     vxt_byte crt_reg[0x100];
-})
+};
 
-static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    return MEMORY((VXT_GET_DEVICE(cga_video, p))->mem, addr - MEMORY_START);
+static vxt_byte read(struct cga_video *c, vxt_pointer addr) {
+    return MEMORY(c->mem, addr - MEMORY_START);
 }
 
-static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
-    VXT_DEC_DEVICE(c, cga_video, p);
+static void write(struct cga_video *c, vxt_pointer addr, vxt_byte data) {
     MEMORY(c->mem, addr - MEMORY_START) = data;
     c->is_dirty = true;
 }
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(c, cga_video, p);
+static vxt_byte in(struct cga_video *c, vxt_word port) {
     switch (port) {
         case 0x3B0:
         case 0x3B2:
@@ -154,9 +152,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     }
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(c, cga_video, p);
-
+static void out(struct cga_video *c, vxt_word port, vxt_byte data) {
     c->is_dirty = true;
     switch (port) {
         case 0x3B0:
@@ -216,8 +212,8 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
         }
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, cga_video, p);
+static vxt_error install(struct cga_video *c, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + MEMORY_SIZE) - 1);
     vxt_system_install_io(s, p, 0x3B0, 0x3BF);
     vxt_system_install_io(s, p, 0x3D0, 0x3DF);
@@ -226,9 +222,7 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, cga_video, p);
-
+static vxt_error reset(struct cga_video *c) {
     c->cursor_visible = true;
     c->cursor_start = 6;
     c->cursor_end = 7;
@@ -246,8 +240,8 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
+static const char *name(struct cga_video *c) {
+    (void)c;
     return "CGA"
         #ifndef VXTU_CGA_NO_HGC
             "/HGC"
@@ -255,13 +249,12 @@ static const char *name(struct vxt_pirepheral *p) {
         " Compatible Device";
 }
 
-static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    (void)p; return VXT_PCLASS_VIDEO;
+static enum vxt_pclass pclass(struct cga_video *c) {
+    (void)c; return VXT_PCLASS_VIDEO;
 }
 
-static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+static vxt_error timer(struct cga_video *c, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
-    VXT_DEC_DEVICE(c, cga_video, p);
 
     if (c->scanline_timer == id) {
         c->status_reg = 6;
@@ -288,8 +281,7 @@ static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
     pixels[offset + VXTU_CGA_ALPHA] = VXTU_CGA_ALPHA_FILL;
 }
 
-static void blit_char(struct vxt_pirepheral *p, int ch, vxt_byte attr, int x, int y) {
-    VXT_DEC_DEVICE(c, cga_video, p);
+static void blit_char(struct cga_video *c, int ch, vxt_byte attr, int x, int y) {
     struct snapshot *snap = &c->snap;
 
     int bg_color_index = (attr & 0x70) >> 4;
@@ -336,15 +328,15 @@ static void blit_char(struct vxt_pirepheral *p, int ch, vxt_byte attr, int x, in
 VXT_API struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, cga_video, {
     vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PIREPHERAL);
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(pclass, pclass);
+    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
+    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
+    VXT_PIREPHERAL_SET_CALLBACK(io.read, read);
+    VXT_PIREPHERAL_SET_CALLBACK(io.write, write);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
 })
 
 VXT_API vxt_dword vxtu_cga_border_color(struct vxt_pirepheral *p) {
@@ -352,7 +344,7 @@ VXT_API vxt_dword vxtu_cga_border_color(struct vxt_pirepheral *p) {
 }
 
 VXT_API bool vxtu_cga_snapshot(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, cga_video, p);
+    struct cga_video *c = VXT_GET_DEVICE(cga_video, p);
     if (!c->is_dirty)
         return false;
 
@@ -446,7 +438,7 @@ VXT_API int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt
             int cell_offset = CGA_BASE + snap->video_page + i;
             vxt_byte ch = MEMORY(snap->mem, cell_offset);
             vxt_byte attr = MEMORY(snap->mem, cell_offset + 1);
-            blit_char(p, ch, attr, (idx % num_col) * 8, (idx / num_col) * 8);
+            blit_char(VXT_GET_DEVICE(cga_video, p), ch, attr, (idx % num_col) * 8, (idx / num_col) * 8);
         }
 
         if (snap->cursor_blink && snap->cursor_visible) {
@@ -454,7 +446,7 @@ VXT_API int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt
             int y = snap->cursor_offset / num_col;
             if (x < num_col && y < 25) {
                 vxt_byte attr = (MEMORY(snap->mem, CGA_BASE + snap->video_page + (num_col * 2 * y + x * 2 + 1)) & 0x70) | 0xF;
-                blit_char(p, -1, attr, x * 8, y * 8);
+                blit_char(VXT_GET_DEVICE(cga_video, p), -1, attr, x * 8, y * 8);
             }
         }
         return f(num_col * 8, 200, snap->rgba_surface, userdata);

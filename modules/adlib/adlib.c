@@ -24,17 +24,16 @@
 #include <frontend.h>
 #include "nuked-opl3/opl3.h"
 
-VXT_PIREPHERAL(adlib, {
+struct adlib {
 	opl3_chip chip;
     int freq;
     vxt_byte index;
     vxt_byte reg4;
     
     bool (*set_audio_adapter)(const struct frontend_audio_adapter *adapter);
-})
+};
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(a, adlib, p);
+static vxt_byte in(struct adlib *a, vxt_word port) {
     if (port == 0x388) {
         vxt_byte status = ((a->reg4 & 2) << 4) | ((a->reg4 & 1) << 6);
         status |= status ? 0x80 : 0;
@@ -43,8 +42,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     return 0xFF;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(a, adlib, p);
+static void out(struct adlib *a, vxt_word port, vxt_byte data) {
     switch (port) {
         case 0x388:
             a->index = data;
@@ -58,7 +56,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 }
 
 static vxt_int16 generate_sample(struct vxt_pirepheral *p, int freq) {
-    VXT_DEC_DEVICE(a, adlib, p);
+    struct adlib *a = VXT_GET_DEVICE(adlib, p);
     if (a->freq != freq) {
         a->freq = freq;
         OPL3_Reset(&a->chip, freq);
@@ -69,8 +67,8 @@ static vxt_int16 generate_sample(struct vxt_pirepheral *p, int freq) {
     return sample[0];
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(a, adlib, p);
+static vxt_error install(struct adlib *a, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(a);
     if (a->set_audio_adapter) {
         struct frontend_audio_adapter adapter = { p, &generate_sample };
         a->set_audio_adapter(&adapter);
@@ -80,14 +78,13 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(a, adlib, p);
+static vxt_error reset(struct adlib *a) {
     OPL3_Reset(&a->chip, a->freq);
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p; return "AdLib Music Synthesizer";
+static const char *name(struct adlib *a) {
+    (void)a; return "AdLib Music Synthesizer";
 }
 
 VXTU_MODULE_CREATE(adlib, {
@@ -95,9 +92,9 @@ VXTU_MODULE_CREATE(adlib, {
     if (FRONTEND)
         DEVICE->set_audio_adapter = ((struct frontend_interface*)FRONTEND)->set_audio_adapter;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
 })

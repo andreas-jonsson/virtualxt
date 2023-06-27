@@ -105,7 +105,7 @@ static void time_and_data(time_t *mod_time, vxt_word *time_out, vxt_word *date_o
     #include "rifs_dummy.inl"
 #endif
 
-VXT_PIREPHERAL(rifs, {
+struct rifs {
     vxt_word base_port;
     vxt_byte registers[8];
     char root_path[MAX_PATH_LEN];
@@ -120,7 +120,7 @@ VXT_PIREPHERAL(rifs, {
 
     char path_scratchpad[MAX_PATH_LEN];
     struct dos_proc processes[MAX_DOS_PROC];
-})
+};
 
 // Expects the 'cmd' and 'process_id' to be set by caller.
 static void server_response(struct rifs *fs, const struct rifs_packet *pk, int payload_size) {
@@ -409,22 +409,20 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
     #undef BREAK_RO
 }
 
-static vxt_byte pop_data(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(fs, rifs, p);
+static vxt_byte pop_data(struct rifs *fs) {
     assert(fs->buffer_input_len > 0);
     vxt_byte data = *fs->buffer_input;
     memmove(fs->buffer_input, &fs->buffer_input[1], --fs->buffer_input_len);
     return data;
 }
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(fs, rifs, p);
+static vxt_byte in(struct rifs *fs, vxt_word port) {
 	vxt_word reg = port & 7;
 	switch (reg) {
         case 0: // Serial Data Register
             if (fs->dlab)
                 return fs->registers[reg];
-            return fs->buffer_input_len ? pop_data(p) : 0;
+            return fs->buffer_input_len ? pop_data(fs) : 0;
         case 5: // Line Status Register
         {
             vxt_byte res = 0x60; // Always assume transmition buffer is empty.
@@ -436,8 +434,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 	return fs->registers[reg];
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(fs, rifs, p);
+static void out(struct rifs *fs, vxt_word port, vxt_byte data) {
 	vxt_word reg = port & 7;
 	fs->registers[reg] = data;
 
@@ -475,16 +472,14 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     }
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(fs, rifs, p);
-    vxt_system_install_io(s, p, fs->base_port, fs->base_port + 7);
+static vxt_error install(struct rifs *fs, vxt_system *s) {
+    vxt_system_install_io(s, VXT_GET_PIREPHERAL(fs), fs->base_port, fs->base_port + 7);
     if (!fs->readonly)
         VXT_LOG("WARNING: '%s' is writable from guest!", fs->root_path);
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(fs, rifs, p);
+static vxt_error reset(struct rifs *fs) {
     for (int i = 0; i < MAX_DOS_PROC; i++) {
         struct dos_proc *proc = &fs->processes[i];
         if (proc->active) {
@@ -499,13 +494,11 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
-    return "RIFS Server";
+static const char *name(struct rifs *fs) {
+    (void)fs; return "RIFS Server";
 }
 
-static vxt_error config(struct vxt_pirepheral *p, const char *section, const char *key, const char *value) {
-    VXT_DEC_DEVICE(fs, rifs, p);
+static vxt_error config(struct rifs *fs, const char *section, const char *key, const char *value) {
     if (!strcmp("rifs", section)) {
         if (!strcmp("port", key)) {
             sscanf(value, "%hx", &fs->base_port);
@@ -523,10 +516,10 @@ VXTU_MODULE_CREATE(rifs, {
     DEVICE->base_port = 0x178;
     rifs_copy_root(DEVICE->root_path, ".");
     
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->config = &config;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(config, config);
+    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
 })

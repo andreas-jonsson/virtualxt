@@ -23,22 +23,20 @@
 #include <vxt/vxtu.h>
 #include <frontend.h>
 
-VXT_PIREPHERAL(ctrl, {
+struct ctrl {
  	vxt_byte ret;
     vxt_byte (*callback)(enum frontend_ctrl_command,void*);
     void *userdata;
-})
+};
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(c, ctrl, p);
+static vxt_byte in(struct ctrl *c, vxt_word port) {
     (void)port;
     vxt_byte r = c->ret;
     c->ret = 0;
 	return r;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(c, ctrl, p);
+static void out(struct ctrl *c, vxt_word port, vxt_byte data) {
     (void)port;
     if (!c->callback)
         return;
@@ -52,14 +50,13 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     }
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io_at(s, p, 0xB4);
+static vxt_error install(struct ctrl *c, vxt_system *s) {
+    vxt_system_install_io_at(s, VXT_GET_PIREPHERAL(c), 0xB4);
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
-    return "Emulator Control";
+static const char *name(struct ctrl *c) {
+    (void)c; return "Emulator Control";
 }
 
 VXTU_MODULE_CREATE(ctrl, {
@@ -69,8 +66,8 @@ VXTU_MODULE_CREATE(ctrl, {
         DEVICE->userdata = fi->ctrl.userdata;
     }
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
 })

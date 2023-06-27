@@ -24,33 +24,29 @@
 #include <stdio.h>
 #include <string.h>
 
-VXT_PIREPHERAL(serial_dbg, {
+struct serial_dbg {
     char section_name[32];
     vxt_word base_port;
-})
+};
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    (void)p; (void)port;
-    VXT_DEC_DEVICE(d, serial_dbg, p);
+static vxt_byte in(struct serial_dbg *d, vxt_word port) {
     vxt_word reg = port - d->base_port;
     if (reg == 5)
         return 0x20; // Set transmission holding register empty (THRE); data can be sent.
     return 0;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    (void)p; (void)port;
+static void out(struct serial_dbg *d, vxt_word port, vxt_byte data) {
+    (void)d; (void)port;
     VXT_PRINT("%c", data);
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(d, serial_dbg, p);
-    vxt_system_install_io(s, p, d->base_port, d->base_port + 7);
+static vxt_error install(struct serial_dbg *d, vxt_system *s) {
+    vxt_system_install_io(s, VXT_GET_PIREPHERAL(d), d->base_port, d->base_port + 7);
     return VXT_NO_ERROR;
 }
 
-static vxt_error config(struct vxt_pirepheral *p, const char *section, const char *key, const char *value) {
-    VXT_DEC_DEVICE(d, serial_dbg, p);
+static vxt_error config(struct serial_dbg *d, const char *section, const char *key, const char *value) {
     if (!strcmp(d->section_name, section)) {
         if (strcmp("port", key))
             return VXT_NO_ERROR;
@@ -59,16 +55,15 @@ static vxt_error config(struct vxt_pirepheral *p, const char *section, const cha
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
-    return "Serial Debug Printer";
+static const char *name(struct serial_dbg *d) {
+    (void)d; return "Serial Debug Printer";
 }
 
 VXTU_MODULE_CREATE(serial_dbg, {
     strncpy(DEVICE->section_name, ARGS, sizeof(DEVICE->section_name) - 1);
-    PIREPHERAL->install = &install;
-    PIREPHERAL->config = &config;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(config, config);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
 })

@@ -30,21 +30,20 @@
 // The Lo-tech EMS board driver is hardcoded to 2MB.
 #define MEMORY_SIZE 0x200000
 
-VXT_PIREPHERAL(ems, {
+struct ems {
  	vxt_byte mem[MEMORY_SIZE];
     vxt_pointer mem_base;
     vxt_word io_base;
     vxt_byte page_selectors[4];
-})
+};
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    (void)p; (void)port;
+static vxt_byte in(struct ems *m, vxt_word port) {
+    (void)m; (void)port;
     VXT_LOG("Register read is not supported!");
     return 0xFF;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(m, ems, p);
+static void out(struct ems *m, vxt_word port, vxt_byte data) {
     int sel = port - m->io_base;
     m->page_selectors[sel & 3] = data;
 }
@@ -56,33 +55,29 @@ static vxt_pointer physical_address(struct ems *m, vxt_pointer addr) {
     return selector * 0x4000 + page_addr;
 }
 
-static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    VXT_DEC_DEVICE(m, ems, p);
+static vxt_byte read(struct ems *m, vxt_pointer addr) {
     vxt_pointer phys_addr = physical_address(m, addr);
     return (phys_addr < MEMORY_SIZE) ? m->mem[phys_addr] : 0xFF;
 }
 
-static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
-    VXT_DEC_DEVICE(m, ems, p);
+static void write(struct ems *m, vxt_pointer addr, vxt_byte data) {
     vxt_pointer phys_addr = physical_address(m, addr);
     if (phys_addr < MEMORY_SIZE)
         m->mem[phys_addr] = data;
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(m, ems, p);
+static vxt_error install(struct ems *m, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(m);
     vxt_system_install_io(s, p, m->io_base, m->io_base + 3);
     vxt_system_install_mem(s, p, m->mem_base, m->mem_base + 0xFFFF);
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
-    return "Lo-tech 2MB EMS Board";
+static const char *name(struct ems *m) {
+    (void)m; return "Lo-tech 2MB EMS Board";
 }
 
-static vxt_error config(struct vxt_pirepheral *p, const char *section, const char *key, const char *value) {
-    VXT_DEC_DEVICE(m, ems, p);
+static vxt_error config(struct ems *m, const char *section, const char *key, const char *value) {
     if (!strcmp("lotech_ems", section)) {
         if (!strcmp("memory", key)) sscanf(value, "%x", &m->mem_base);
         else if (!strcmp("port", key)) sscanf(value, "%hx", &m->io_base);
@@ -99,11 +94,11 @@ VXTU_MODULE_CREATE(ems, {
     DEVICE->mem_base = 0xE0000;
     DEVICE->io_base = 0x260;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->config = &config;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(config, config);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+    VXT_PIREPHERAL_SET_CALLBACK(io.read, read);
+    VXT_PIREPHERAL_SET_CALLBACK(io.write, write);
 })

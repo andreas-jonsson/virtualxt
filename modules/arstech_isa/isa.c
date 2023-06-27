@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-VXT_PIREPHERAL(arstech_isa, {
+struct arstech_isa {
     struct {
         unsigned char (*in)(unsigned short port);
         void (*out)(unsigned short port, unsigned char data);
@@ -44,26 +44,26 @@ VXT_PIREPHERAL(arstech_isa, {
         vxt_pointer mem_end;
         int irq_poll;
     } config;
-})
+};
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    return (VXT_GET_DEVICE(arstech_isa, p))->api.in(port);
+static vxt_byte in(struct arstech_isa *d, vxt_word port) {
+    return d->api.in(port);
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    (VXT_GET_DEVICE(arstech_isa, p))->api.out(port, data);
+static void out(struct arstech_isa *d, vxt_word port, vxt_byte data) {
+    d->api.out(port, data);
 }
 
-static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    return (VXT_GET_DEVICE(arstech_isa, p))->api.read(addr);
+static vxt_byte read(struct arstech_isa *d, vxt_pointer addr) {
+    return d->api.read(addr);
 }
 
-static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
-    (VXT_GET_DEVICE(arstech_isa, p))->api.write(addr, data);
+static void write(struct arstech_isa *d, vxt_pointer addr, vxt_byte data) {
+    d->api.write(addr, data);
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(d, arstech_isa, p);
+static vxt_error install(struct arstech_isa *d, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(d);
     if (d->config.io_start || d->config.io_end)
         vxt_system_install_io(s, p, d->config.io_start, d->config.io_end);
     if (d->config.mem_start || d->config.mem_end)
@@ -78,36 +78,32 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(d, arstech_isa, p);
+static vxt_error reset(struct arstech_isa *d) {
     d->api.shutdown();
     return d->api.initialize() ? VXT_NO_ERROR : VXT_USER_ERROR(0);
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(d, arstech_isa, p);
+static vxt_error destroy(struct arstech_isa *d) {
     d->api.shutdown();
-    vxt_system_allocator(VXT_GET_SYSTEM(arstech_isa, p))(p, 0);
+    vxt_system_allocator(VXT_GET_SYSTEM(d))(VXT_GET_PIREPHERAL(d), 0);
     return VXT_NO_ERROR;
 }
 
-static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+static vxt_error timer(struct arstech_isa *d, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
-    VXT_DEC_DEVICE(d, arstech_isa, p);
     unsigned long irq = d->api.get_irq_dma();
     for (int i = 0; i < 8; i++) {
         if (irq & (1 << i))
-            vxt_system_interrupt(VXT_GET_SYSTEM(arstech_isa, p), i);
+            vxt_system_interrupt(VXT_GET_SYSTEM(d), i);
     }
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p; return "ISA Passthrough (Arstech USB)";
+static const char *name(struct arstech_isa *d) {
+    (void)d; return "ISA Passthrough (Arstech USB)";
 }
 
-static vxt_error config(struct vxt_pirepheral *p, const char *section, const char *key, const char *value) {
-    VXT_DEC_DEVICE(d, arstech_isa, p);
+static vxt_error config(struct arstech_isa *d, const char *section, const char *key, const char *value) {
     if (!strcmp("arstech_isa", section)) {
         if (!strcmp("memory", key)) {
             if (sscanf(value, "%x,%x", &d->config.mem_start, &d->config.mem_end) < 2)
@@ -161,14 +157,14 @@ VXTU_MODULE_CREATE(arstech_isa, {
 
     DEVICE->config.irq_poll = -1;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->config = &config;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(destroy, destroy);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(config, config);
+    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
+    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+    VXT_PIREPHERAL_SET_CALLBACK(io.read, read);
+    VXT_PIREPHERAL_SET_CALLBACK(io.write, write);
 })

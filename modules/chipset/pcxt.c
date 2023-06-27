@@ -42,7 +42,8 @@ static struct vxt_pirepheral *pit_create(vxt_allocator *alloc, void *frontend, c
     return vxtu_pit_create(alloc);
 }
 
-static vxt_error ppi_config(struct vxt_pirepheral *p, const char *section, const char *key, const char *value) {
+static vxt_error ppi_config(void *pi, const char *section, const char *key, const char *value) {
+    struct vxt_pirepheral *p = (struct vxt_pirepheral*)pi;
     vxt_byte v = 0;
     vxt_byte sw = vxtu_ppi_xt_switches(p);
 

@@ -48,17 +48,16 @@ struct channel {
 
 #define INT64 long long
 
-VXT_PIREPHERAL(pit, {
+struct pit {
  	struct channel channels[3];
     INT64 ticks;
     INT64 device_ticks;
     
     // TODO: This is part of the transition code.
     INT64 ticker;
-})
+};
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(c, pit, p);
+static vxt_byte in(struct pit *c, vxt_word port) {
 	if (port == 0x43)
 		return 0;
 
@@ -76,8 +75,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 	return (vxt_byte)ret;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(c, pit, p);
+static void out(struct pit *c, vxt_word port, vxt_byte data) {
     if (port == 0x43) { // Mode/Command register.
         struct channel *ch = &c->channels[(data >> 6) & 3];
         ch->mode = (data >> 4) & 3;
@@ -107,23 +105,21 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
         ch->toggle = !ch->toggle;
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+static vxt_error install(struct pit *c, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
     vxt_system_install_io(s, p, 0x40, 0x43);
     vxt_system_install_timer(s, p, 0);
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, pit, p);
+static vxt_error reset(struct pit *c) {
     vxt_memclear(c->channels, sizeof(c->channels));
     c->ticker = c->device_ticks = c->ticks = 0;
     return VXT_NO_ERROR;
 }
 
-static vxt_error step(struct vxt_pirepheral *p, INT64 ticks) {
-    VXT_DEC_DEVICE(c, pit, p);
-
-    if (vxt_system_registers(VXT_GET_SYSTEM(pit, p))->debug) {
+static vxt_error step(struct pit *c, INT64 ticks) {
+    if (vxt_system_registers(VXT_GET_SYSTEM(c))->debug) {
         c->ticks = c->device_ticks = ticks;
         return VXT_NO_ERROR;
     }
@@ -134,7 +130,7 @@ static vxt_error step(struct vxt_pirepheral *p, INT64 ticks) {
 		if (ticks >= (c->ticks + next)) {
 			c->ticks = ticks;
             #ifndef PI8088
-                vxt_system_interrupt(VXT_GET_SYSTEM(pit, p), 0);
+                vxt_system_interrupt(VXT_GET_SYSTEM(c), 0);
             #endif
 		}
 	}
@@ -153,29 +149,28 @@ static vxt_error step(struct vxt_pirepheral *p, INT64 ticks) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+static vxt_error timer(struct pit *c, vxt_timer_id id, int cycles) {
     (void)id;
-    VXT_DEC_DEVICE(c, pit, p);
-    c->ticker += (INT64)((double)cycles / ((double)vxt_system_frequency(VXT_GET_SYSTEM(pit, p)) / 1000000000.0));
-    return step(p, c->ticker);
+    c->ticker += (INT64)((double)cycles / ((double)vxt_system_frequency(VXT_GET_SYSTEM(c)) / 1000000000.0));
+    return step(c, c->ticker);
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p; return "PIT (Intel 8253)";
+static const char *name(struct pit *c) {
+    (void)c; return "PIT (Intel 8253)";
 }
 
-static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    (void)p; return VXT_PCLASS_PIT;
+static enum vxt_pclass pclass(struct pit *c) {
+    (void)c; return VXT_PCLASS_PIT;
 }
 
 VXT_API struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pit, {
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(pclass, pclass);
+    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
+    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
 })
 
 VXT_API double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel) {

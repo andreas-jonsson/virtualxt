@@ -24,42 +24,39 @@
 
 #define BUFFER_SIZE 128
 
-VXT_PIREPHERAL(serial_mouse, {
+struct serial_mouse {
     int irq;
     vxt_word base_port;
     vxt_byte registers[8];
 
     vxt_byte buffer[BUFFER_SIZE];
     int buffer_len;
-})
+};
 
-static bool push_data(struct vxt_pirepheral *p, vxt_byte data) {
-    VXT_DEC_DEVICE(m, serial_mouse, p);
+static bool push_data(struct serial_mouse *m, vxt_byte data) {
     if (m->buffer_len == BUFFER_SIZE)
         return false;
     else if (!m->buffer_len)
-        vxt_system_interrupt(VXT_GET_SYSTEM(serial_mouse, p), m->irq);
+        vxt_system_interrupt(VXT_GET_SYSTEM(m), m->irq);
     m->buffer[m->buffer_len++] = data;
     return true;
 }
 
-static vxt_byte pop_data(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(m, serial_mouse, p);
+static vxt_byte pop_data(struct serial_mouse *m) {
     vxt_byte data = *m->buffer;
     memmove(m->buffer, &m->buffer[1], --m->buffer_len);
     return data;
 }
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(m, serial_mouse, p);
+static vxt_byte in(struct serial_mouse *m, vxt_word port) {
 	vxt_word reg = port & 7;
 	switch (reg) {
         case 0: // Serial Data Register
         {
             vxt_byte data = 0;
             if (m->buffer_len) {
-                data = pop_data(p);
-                vxt_system_interrupt(VXT_GET_SYSTEM(serial_mouse, p), m->irq);
+                data = pop_data(m);
+                vxt_system_interrupt(VXT_GET_SYSTEM(m), m->irq);
             }
             return data;
         }
@@ -71,8 +68,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 	return m->registers[reg];
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(m, serial_mouse, p);
+static void out(struct serial_mouse *m, vxt_word port, vxt_byte data) {
 	vxt_word reg = port & 7;
 	vxt_byte rval = m->registers[reg];
 	m->registers[reg] = data;
@@ -80,25 +76,23 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 	if (reg == 4) { // Modem Control Register
 		if ((data & 1) != (rval & 1)) {
 			m->buffer_len = 0;
-			push_data(p, 'M');
+			push_data(m, 'M');
 		}
 	}
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(m, serial_mouse, p);
-    vxt_system_install_io(s, p, m->base_port, m->base_port + 7);
+static vxt_error install(struct serial_mouse *m, vxt_system *s) {
+    vxt_system_install_io(s, VXT_GET_PIREPHERAL(m), m->base_port, m->base_port + 7);
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(m, serial_mouse, p);
+static vxt_error reset(struct serial_mouse *m) {
     vxt_memclear(m->registers, sizeof(m->registers));
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
+static const char *name(struct serial_mouse *m) {
+    (void)m;
     return "Microsoft Serial Mouse";
 }
 
@@ -106,21 +100,22 @@ VXT_API struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word 
     DEVICE->base_port = base_port;
     DEVICE->irq = irq;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
 })
 
 VXT_API bool vxtu_mouse_push_event(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev) {
+    struct serial_mouse *m = VXT_GET_DEVICE(serial_mouse, p);
     vxt_byte upper = 0;
     if (ev->xrel < 0)
         upper = 0x3;
     if (ev->yrel < 0)
         upper |= 0xC;
 
-    return push_data(p, 0x40 | ((ev->buttons & 3) << 4) | upper) &&
-        push_data(p, (vxt_byte)(ev->xrel & 0x3F)) &&
-        push_data(p, (vxt_byte)(ev->yrel & 0x3F));
+    return push_data(m, 0x40 | ((ev->buttons & 3) << 4) | upper) &&
+        push_data(m, (vxt_byte)(ev->xrel & 0x3F)) &&
+        push_data(m, (vxt_byte)(ev->yrel & 0x3F));
 }

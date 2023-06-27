@@ -26,7 +26,7 @@
 
 #ifdef VXTU_STATIC_MODULES
 
-    VXT_PIREPHERAL(network, { int _; })
+    struct network { int _; };
     VXTU_MODULE_CREATE(network, { return NULL; })
 
 #else
@@ -35,20 +35,20 @@
     #include <stdlib.h>
     #include <pcap/pcap.h>
 
-    VXT_PIREPHERAL(network, {
+    struct network {
         pcap_t *handle;
         bool can_recv;
         int pkg_len;
         char nif[128];
         vxt_byte buffer[0x10000];
-    })
+    };
 
-    static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-        (void)p; (void)port;
+    static vxt_byte in(struct network *n, vxt_word port) {
+        (void)n; (void)port;
         return 0; // Return 0 to indicate that we have a network card.
     }
 
-    static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
+    static void out(struct network *n, vxt_word port, vxt_byte data) {
         /*
             This is the API of Fake86's packet driver.
 
@@ -58,8 +58,7 @@
         */
 
         (void)port; (void)data;
-        VXT_DEC_DEVICE(n, network, p);
-        vxt_system *s = VXT_GET_SYSTEM(network, p);
+        vxt_system *s = VXT_GET_SYSTEM(n);
         struct vxt_registers *r = vxt_system_registers(s);
 
         switch (r->ah) {
@@ -88,22 +87,19 @@
         }
     }
 
-    static vxt_error reset(struct vxt_pirepheral *p) {
-        VXT_DEC_DEVICE(n, network, p);
+    static vxt_error reset(struct network *n) {
         n->can_recv = false;
         n->pkg_len = 0;
         return VXT_NO_ERROR;
     }
 
-    static const char *name(struct vxt_pirepheral *p) {
-        (void)p;
-        return "Network Adapter (Fake86 Interface)";
+    static const char *name(struct network *n) {
+        (void)n; return "Network Adapter (Fake86 Interface)";
     }
 
-    static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+    static vxt_error timer(struct network *n, vxt_timer_id id, int cycles) {
         (void)id; (void)cycles;
-        VXT_DEC_DEVICE(n, network, p);
-        vxt_system *s = VXT_GET_SYSTEM(network, p);
+        vxt_system *s = VXT_GET_SYSTEM(n);
 
         if (!n->can_recv)
             return VXT_NO_ERROR;
@@ -202,8 +198,8 @@
         return true;
     }
 
-    static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-        VXT_DEC_DEVICE(n, network, p);
+    static vxt_error install(struct network *n, vxt_system *s) {
+        struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(n);
         if (!list_devices(NULL))
             return VXT_USER_ERROR(0);
 
@@ -217,12 +213,12 @@
 
     VXTU_MODULE_CREATE(network, {
         strncpy(DEVICE->nif, ARGS, sizeof(DEVICE->nif) - 1);
-        PIREPHERAL->install = &install;
-        PIREPHERAL->name = &name;
-        PIREPHERAL->reset = &reset;
-        PIREPHERAL->timer = &timer;
-        PIREPHERAL->io.in = &in;
-        PIREPHERAL->io.out = &out;
+        VXT_PIREPHERAL_SET_CALLBACK(install, install);
+        VXT_PIREPHERAL_SET_CALLBACK(name, name);
+        VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
+        VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
+        VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+        VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
     })
 
 #endif

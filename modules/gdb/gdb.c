@@ -81,18 +81,17 @@ struct gdb_state {
 
 #include "gdbstub/gdbstub.h"
 
-VXT_PIREPHERAL(gdb, {
+struct gdb {
 	vxt_byte mem_map[VXT_MEM_MAP_SIZE];
 
     vxt_word port;
     int server;
     vxt_timer_id reconnect_timer;
     struct gdb_state state;
-})
+};
 
-static vxt_byte mem_read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    VXT_DEC_DEVICE(dbg, gdb, p);
-    vxt_system *s = vxt_pirepheral_system(p);
+static vxt_byte mem_read(struct gdb *dbg, vxt_pointer addr) {
+    vxt_system *s = vxt_pirepheral_system(VXT_GET_PIREPHERAL(dbg));
 
     if (dbg->state.client != -1) {
         struct vxt_registers *vreg = vxt_system_registers(s);
@@ -106,13 +105,12 @@ static vxt_byte mem_read(struct vxt_pirepheral *p, vxt_pointer addr) {
         }
     }
 
-    struct vxt_pirepheral *dev = vxt_system_pirepheral(s, dbg->mem_map[addr >> 4]);
-    return dev->io.read(dev, addr);
+    struct vxt_pirepheral *p = vxt_system_pirepheral(s, dbg->mem_map[addr >> 4]);
+    return p->io.read(VXT_GET_DEVICE_PTR(p), addr);
 }
 
-static void mem_write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
-    VXT_DEC_DEVICE(dbg, gdb, p);
-    vxt_system *s = vxt_pirepheral_system(p);
+static void mem_write(struct gdb *dbg, vxt_pointer addr, vxt_byte data) {
+    vxt_system *s = vxt_pirepheral_system(VXT_GET_PIREPHERAL(dbg));
 
     if (dbg->state.client != -1) {
         struct vxt_registers *vreg = vxt_system_registers(s);
@@ -126,8 +124,8 @@ static void mem_write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data)
         }
     }
 
-    struct vxt_pirepheral *dev = vxt_system_pirepheral(s, dbg->mem_map[addr >> 4]);
-    dev->io.write(dev, addr, data);
+    struct vxt_pirepheral *p = vxt_system_pirepheral(s, dbg->mem_map[addr >> 4]);
+    p->io.write(VXT_GET_DEVICE_PTR(p), addr, data);
 }
 
 static bool open_server_socket(struct gdb *dbg) {
@@ -177,8 +175,8 @@ static bool accept_client(struct gdb *dbg, vxt_system *sys) {
     return true;
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(dbg, gdb, p);
+static vxt_error install(struct gdb *dbg, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(dbg);
 
     #ifdef _WIN32
         WSADATA ws_data;
@@ -202,11 +200,9 @@ static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
     (void)cycles;
-    VXT_DEC_DEVICE(dbg, gdb, p);
-
-    vxt_system *s = vxt_pirepheral_system(p);
+    vxt_system *s = vxt_pirepheral_system(VXT_GET_PIREPHERAL(dbg));
     if (id == dbg->reconnect_timer) {
         accept_client(dbg, s);
         return VXT_NO_ERROR;
@@ -277,21 +273,20 @@ static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
     return VXT_NO_ERROR;
 }
 
-static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    (void)p; return VXT_PCLASS_DEBUGGER;
+static enum vxt_pclass pclass(struct gdb *dbg) {
+    (void)dbg; return VXT_PCLASS_DEBUGGER;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p; return "GDB Server";
+static const char *name(struct gdb *dbg) {
+    (void)dbg; return "GDB Server";
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(dbg, gdb, p);
+static vxt_error destroy(struct gdb *dbg) {
     if (dbg->state.client != -1)
         close(dbg->state.client);
     if (dbg->server != -1)
         close(dbg->server);
-    vxt_system_allocator(VXT_GET_SYSTEM(gdb, p))(p, 0);
+    vxt_system_allocator(VXT_GET_SYSTEM(dbg))(VXT_GET_PIREPHERAL(dbg), 0);
     return VXT_NO_ERROR;
 }
 
@@ -368,11 +363,11 @@ VXTU_MODULE_CREATE(gdb, {
     DEVICE->port = (vxt_word)atoi(ARGS);
     DEVICE->server = DEVICE->state.client = -1; 
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->destroy = &destroy;
-    PIREPHERAL->io.read = &mem_read;
-    PIREPHERAL->io.write = &mem_write;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(destroy, destroy);
+    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(pclass, pclass);
+    VXT_PIREPHERAL_SET_CALLBACK(io.read, mem_read);
+    VXT_PIREPHERAL_SET_CALLBACK(io.write, mem_write);
 })

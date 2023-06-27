@@ -48,7 +48,7 @@ static vxt_error update_timers(CONSTP(vxt_system) s, int ticks) {
         struct timer *t = &s->timers[i];
         t->ticks += ticks;
         if (t->ticks >= (INT64)(t->interval * (double)s->frequency)) {
-            vxt_error err = t->dev->timer(t->dev, t->id, (int)t->ticks);
+            vxt_error err = t->dev->timer(VXT_GET_DEVICE_PTR(t->dev), t->id, (int)t->ticks);
             if (err != VXT_NO_ERROR)
                 return err;
             t->ticks = 0;
@@ -102,7 +102,7 @@ VXT_API vxt_error vxt_system_configure(vxt_system *s, const char *section, const
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_pirepheral) d = s->devices[i];
         if (d->config) {
-            vxt_error err = d->config((struct vxt_pirepheral*)d, section, key, value);
+            vxt_error err = d->config(VXT_GET_DEVICE_PTR(d), section, key, value);
             if (err) return err;
         }
     }
@@ -120,7 +120,7 @@ VXT_API vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, unsigned reg_size
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_pirepheral) d = s->devices[i];
         if (d->install) {
-            vxt_error err = d->install(s, (struct vxt_pirepheral*)d);
+            vxt_error err = d->install(VXT_GET_DEVICE_PTR(d), s);
             if (err) return err;
         }
         if (vxt_pirepheral_class(d) == VXT_PCLASS_PIC)
@@ -148,8 +148,8 @@ VXT_API vxt_error vxt_system_destroy(CONSTP(vxt_system) s) {
     for (int i = 0; i < s->num_devices; i++) {
         struct vxt_pirepheral *d = s->devices[i];
         if (d->destroy) {
-            vxt_error (*destroy)(struct vxt_pirepheral*) = d->destroy;
-            vxt_error err = destroy(d);
+            vxt_error (*destroy)(void*) = d->destroy;
+            vxt_error err = destroy(VXT_GET_DEVICE_PTR(d));
             if (err) return err;
         } else {
             s->alloc(d, 0);
@@ -172,7 +172,7 @@ VXT_API void vxt_system_reset(CONSTP(vxt_system) s) {
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_pirepheral) d = s->devices[i];
         if (d->reset)
-            d->reset(d);
+            d->reset(VXT_GET_DEVICE_PTR(d));
     }
 }
 
@@ -233,16 +233,16 @@ VXT_API vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p) {
 }
 
 VXT_API const char *vxt_pirepheral_name(struct vxt_pirepheral *p) {
-    return p->name ? p->name(p) : "unknown device";
+    return p->name ? p->name(VXT_GET_DEVICE_PTR(p)) : "unknown device";
 }
 
 VXT_API enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p) {
-    return p->pclass ? p->pclass(p) : VXT_PCLASS_GENERIC;
+    return p->pclass ? p->pclass(VXT_GET_DEVICE_PTR(p)) : VXT_PCLASS_GENERIC;
 }
 
 VXT_API void vxt_system_interrupt(CONSTP(vxt_system) s, int n) {
     if (s->cpu.pic)
-        s->cpu.pic->pic.irq(s->cpu.pic, n);
+        s->cpu.pic->pic.irq(VXT_GET_DEVICE_PTR(s->cpu.pic), n);
 }
 
 VXT_API int vxt_system_frequency(CONSTP(vxt_system) s) {
@@ -293,13 +293,13 @@ VXT_API void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_pirepheral 
 VXT_API vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr >> 4]];
-    return dev->io.read(dev, addr);
+    return dev->io.read(VXT_GET_DEVICE_PTR(dev), addr);
 }
 
 VXT_API void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
     addr &= 0xFFFFF;
     CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr >> 4]];
-    dev->io.write(dev, addr, data);
+    dev->io.write(VXT_GET_DEVICE_PTR(dev), addr, data);
 }
 
 VXT_API vxt_word vxt_system_read_word(CONSTP(vxt_system) s, vxt_pointer addr) {
@@ -315,12 +315,12 @@ vxt_byte system_in(CONSTP(vxt_system) s, vxt_word port) {
     CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
     s->cpu.bus_transfers++;
     VALIDATOR_DISCARD(&s->cpu);
-    return dev->io.in(dev, port);
+    return dev->io.in(VXT_GET_DEVICE_PTR(dev), port);
 }
 
 void system_out(CONSTP(vxt_system) s, vxt_word port, vxt_byte data) {
     CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
     s->cpu.bus_transfers++;
     VALIDATOR_DISCARD(&s->cpu);
-    dev->io.out(dev, port, data);
+    dev->io.out(VXT_GET_DEVICE_PTR(dev), port, data);
 }

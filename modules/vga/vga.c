@@ -107,7 +107,7 @@ struct snapshot {
     vxt_byte color_ctrl_reg;
 };
 
-VXT_PIREPHERAL(vga_video, {
+struct vga_video {
     vxt_byte mem[MEMORY_SIZE];
     bool is_dirty;
     struct snapshot snap;
@@ -160,12 +160,11 @@ VXT_PIREPHERAL(vga_video, {
         vxt_byte gfx_addr;
         vxt_byte gfx_reg[0x100];
     } reg;
-})
+};
 
 #include "render.inl"
 
-static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    VXT_DEC_DEVICE(v, vga_video, p);
+static vxt_byte read(struct vga_video *v, vxt_pointer addr) {
     if ((addr >= VIDEO_MODE_BDA_START_ADDRESS) && (addr <= VIDEO_MODE_BDA_END_ADDRESS)) {
         if (addr == VIDEO_MODE_BDA_ADDRESS)
             return v->video_mode;
@@ -192,8 +191,7 @@ static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
     return v->mem_latch[v->reg.gfx_reg[4] & 3];
 }
 
-static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
-    VXT_DEC_DEVICE(v, vga_video, p);
+static void write(struct vga_video *v, vxt_pointer addr, vxt_byte data) {
     v->is_dirty = true;
 
     if ((addr >= VIDEO_MODE_BDA_START_ADDRESS) && (addr <= VIDEO_MODE_BDA_END_ADDRESS)) {
@@ -253,8 +251,7 @@ static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
     }
 }
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(v, vga_video, p);
+static vxt_byte in(struct vga_video *v, vxt_word port) {
     switch (port) {
         case 0x3C0:
             return v->reg.attr_addr;
@@ -316,8 +313,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
     return v->reg.status_reg;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(v, vga_video, p);
+static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
     v->is_dirty = true;
     switch (port) {
         case 0x3C0:
@@ -414,9 +410,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
     }
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(v, vga_video, p);
-
+static vxt_error reset(struct vga_video *v) {
     v->reg.mode_ctrl_reg = 1;
     v->reg.color_ctrl_reg = 0x20;
     v->reg.status_reg = 0;
@@ -426,18 +420,16 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
-    return "VGA Compatible Device";
+static const char *name(struct vga_video *v) {
+    (void)v; return "VGA Compatible Device";
 }
 
-static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    (void)p; return VXT_PCLASS_VIDEO;
+static enum vxt_pclass pclass(struct vga_video *v) {
+    (void)v; return VXT_PCLASS_VIDEO;
 }
 
-static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+static vxt_error timer(struct vga_video *v, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
-    VXT_DEC_DEVICE(v, vga_video, p);
 
     if (v->scanline_timer == id) {
         v->reg.status_reg = 6;
@@ -461,9 +453,8 @@ static vxt_dword border_color(struct vxt_pirepheral *p) {
     return cga_palette[(VXT_GET_DEVICE(vga_video, p))->reg.color_ctrl_reg & 0xF];
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(v, vga_video, p);
-
+static vxt_error install(struct vga_video *v, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(v);
     if (v->set_video_adapter) {
         struct frontend_video_adapter a = { p, &border_color, &snapshot, &render };
         v->set_video_adapter(&a);
@@ -511,15 +502,15 @@ static struct vxt_pirepheral *vga_create(vxt_allocator *alloc, void *frontend, c
     if (frontend)
         DEVICE->set_video_adapter = ((struct frontend_interface*)frontend)->set_video_adapter;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    VXT_PIREPHERAL_SET_CALLBACK(install, install);
+    VXT_PIREPHERAL_SET_CALLBACK(name, name);
+    VXT_PIREPHERAL_SET_CALLBACK(pclass, pclass);
+    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
+    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
+    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
+    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+    VXT_PIREPHERAL_SET_CALLBACK(io.read, read);
+    VXT_PIREPHERAL_SET_CALLBACK(io.write, write);
 })
 
 static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {

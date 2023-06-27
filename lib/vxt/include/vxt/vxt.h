@@ -43,6 +43,7 @@ extern "C" {
     #include <stdlib.h>
     #include <stdint.h>
     #include <stdbool.h>
+    #include <stddef.h>
     #include <string.h>
 
     typedef int8_t vxt_int8;
@@ -181,37 +182,22 @@ enum {
 #define VXT_MAX_PIREPHERALS 0xFF
 #define VXT_DEFAULT_FREQUENCY 4772726
 
-#define VXT_PIREPHERAL_SIZE(type) sizeof(struct _ ## type)
-#define VXT_GET_DEVICE_DATA(type, pir) ((struct _ ## type*)(void*)(pir))->d
-#define VXT_GET_SYSTEM(type, pir) ((struct _ ## type*)(void*)(pir))->p.s
-#define VXT_GET_DEVICE(type, pir) &((struct _ ## type*)(void*)(pir))->u
-#define VXT_DEC_DEVICE(var, type, pir) struct type* const var = VXT_GET_DEVICE(type, pir)
+#define VXT_PIREPHERAL_SIZE(type) ( sizeof(struct _vxt_pirepheral) + sizeof(struct type) )
+#define VXT_PIREPHERAL_SET_CALLBACK(f, cb) ( ((void(**)(void))PIREPHERAL)[offsetof(struct vxt_pirepheral, f) / sizeof(void(*)(void))] = (void(*)(void))&cb )
 
-#define VXT_PIREPHERAL_CREATE(alloc, type, body) {              \
-        struct vxt_pirepheral *PIREPHERAL = (struct vxt_pirepheral*)(alloc)(NULL, VXT_PIREPHERAL_SIZE(type)); \
-        vxt_memclear(PIREPHERAL, VXT_PIREPHERAL_SIZE(type));    \
-        VXT_DEC_DEVICE(DEVICE, type, PIREPHERAL);               \
-        { body ; }                                              \
-        (void)DEVICE;                                           \
-        return PIREPHERAL;                                      \
-    }                                                           \
+#define VXT_GET_DEVICE_PTR(pir) ( (void*)((char*)(pir) + sizeof(struct _vxt_pirepheral)) )
+#define VXT_GET_DEVICE(type, pir) ( (struct type*)VXT_GET_DEVICE_PTR(pir) )
+#define VXT_GET_PIREPHERAL(dev) ( (struct vxt_pirepheral*)((char*)(dev) - sizeof(struct _vxt_pirepheral)) )
+#define VXT_GET_SYSTEM(dev) ((struct _vxt_pirepheral*)VXT_GET_PIREPHERAL(dev))->s
 
-#define VXT_PIREPHERAL(name, body)                      \
-    struct name                                         \
-        body;                                           \
-    struct _ ## name {                                  \
-        struct _vxt_pirepheral p;                       \
-        struct name u;                                  \
-    };                                                  \
-
-#define VXT_PIREPHERAL_WITH_DATA(name, type, body)      \
-    struct name                                         \
-        body;                                           \
-    struct _ ## name {                                  \
-        struct _vxt_pirepheral p;                       \
-        struct name u;                                  \
-        type d[];                                       \
-    };                                                  \
+#define VXT_PIREPHERAL_CREATE(alloc, type, body) {                                                              \
+        struct vxt_pirepheral *PIREPHERAL = (struct vxt_pirepheral*)(alloc)(NULL, VXT_PIREPHERAL_SIZE(type));   \
+        vxt_memclear(PIREPHERAL, VXT_PIREPHERAL_SIZE(type));                                                    \
+        struct type *DEVICE = VXT_GET_DEVICE(type, PIREPHERAL);                                                 \
+        { body ; }                                                                                              \
+        (void)DEVICE;                                                                                           \
+        return PIREPHERAL;                                                                                      \
+    }                                                                                                           \
 
 #define _VXT_REG(r) VXT_PACK(union {VXT_PACK(struct {vxt_byte r ## l; vxt_byte r ## h;}); vxt_word r ## x;})
 struct vxt_registers {
@@ -248,30 +234,30 @@ struct vxt_pirepheral;
 
 /// Interface for ISA bus devices.
 struct vxt_pirepheral {
-	vxt_error (*install)(vxt_system*,struct vxt_pirepheral*);
-    vxt_error (*config)(struct vxt_pirepheral*,const char*,const char*,const char*);
-    vxt_error (*destroy)(struct vxt_pirepheral*);
-    vxt_error (*reset)(struct vxt_pirepheral*);
-    vxt_error (*timer)(struct vxt_pirepheral*,vxt_timer_id,int);
-    const char* (*name)(struct vxt_pirepheral*);
-    enum vxt_pclass (*pclass)(struct vxt_pirepheral*);
+	vxt_error (*install)(void*, vxt_system*);
+    vxt_error (*config)(void*,const char*,const char*,const char*);
+    vxt_error (*destroy)(void*);
+    vxt_error (*reset)(void*);
+    vxt_error (*timer)(void*,vxt_timer_id,int);
+    const char* (*name)(void*);
+    enum vxt_pclass (*pclass)(void*);
 
     struct {
-        vxt_byte (*in)(struct vxt_pirepheral*,vxt_word);
-        void (*out)(struct vxt_pirepheral*,vxt_word,vxt_byte);
+        vxt_byte (*in)(void*,vxt_word);
+        void (*out)(void*,vxt_word,vxt_byte);
 
-        vxt_byte (*read)(struct vxt_pirepheral*,vxt_pointer);
-        void (*write)(struct vxt_pirepheral*,vxt_pointer,vxt_byte);
+        vxt_byte (*read)(void*,vxt_pointer);
+        void (*write)(void*,vxt_pointer,vxt_byte);
     } io;
 
     struct {
-        void (*irq)(struct vxt_pirepheral*,int);
-        int (*next)(struct vxt_pirepheral*);
+        void (*irq)(void*,int);
+        int (*next)(void*);
     } pic;
 
     struct {
-        vxt_byte (*read)(struct vxt_pirepheral*,vxt_byte);
-        void (*write)(struct vxt_pirepheral*,vxt_byte,vxt_byte);
+        vxt_byte (*read)(void*,vxt_byte);
+        void (*write)(void*,vxt_byte,vxt_byte);
     } dma;
 };
 
