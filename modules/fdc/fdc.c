@@ -348,7 +348,7 @@ static void update_transfer(struct fdc *c) {
 		if (drive->is_transfer) {
 			if (c->sector_read_index < SECTOR_SIZE) {
 				if (c->use_dma) {
-					c->dma_controller->dma.write(c->dma_controller, 2, c->sector_buffer[c->sector_read_index++]);
+					c->dma_controller->dma.write(VXT_GET_DEVICE_PTR(c->dma_controller), 2, c->sector_buffer[c->sector_read_index++]);
 				} else {
 					if (c->fifo_len < FIFO_SIZE) {
 						fifo_write(c, c->sector_buffer[c->sector_read_index++]);
