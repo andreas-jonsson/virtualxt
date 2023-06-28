@@ -166,16 +166,19 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
             return f(320, 200, snap->rgba_surface, userdata);
         }
         case 0x6: // CGA 640x200x2
+        {
+            int bg_color_index = snap->color_ctrl_reg & 0xF;
             for (int y = 0; y < 200; y++) {
                 for (int x = 0; x < 640; x++) {
                     int addr = (y >> 1) * 80 + (y & 1) * 8192 + (x >> 3);
                     vxt_byte pixel = (MEMORY(snap->mem, CGA_BASE + addr) >> (7 - (x & 7))) & 1;
-                    vxt_dword color = cga_palette[pixel * 15];
+                    vxt_dword color = cga_palette[pixel * bg_color_index];
                     int offset = (y * 640 + x) * 4;
                     blit32(snap->rgba_surface, offset, color);
                 }
             }
             return f(640, 200, snap->rgba_surface, userdata);
+        }
         case 0xD: // EGA 320x200x16
             num_col = 40;
             snap->mode_ctrl_reg &= ~1;
