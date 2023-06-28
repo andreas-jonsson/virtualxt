@@ -72,7 +72,8 @@ workspace "virtualxt"
 
     filter "platforms:web"
         toolset "clang"
-        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }
+        defines "VXT_NO_LIBC"
+        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }       
 
     filter "options:memclear"
         defines "VXTU_MEMCLEAR"
@@ -149,9 +150,6 @@ workspace "virtualxt"
                     "{RMFILE} modules/" .. name .. ".*",
                     "make clean %{cfg.buildcfg}"
                 }
-
-                filter "platforms:web"
-                    defines "VXT_NO_LIBC"
 
                 filter {}
     
