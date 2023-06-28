@@ -66,8 +66,8 @@ VXTU_MODULE_CREATE(ctrl, {
         DEVICE->userdata = fi->ctrl.userdata;
     }
 
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
 })

@@ -121,10 +121,10 @@ static struct vxt_pirepheral *create(vxt_allocator *alloc, void *frontend, const
     if (frontend)
         DEVICE->set_joystick_controller = ((struct frontend_interface*)frontend)->set_joystick_controller;
 
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
-    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
 })
 VXTU_MODULE_ENTRIES(&create)

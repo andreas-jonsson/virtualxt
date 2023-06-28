@@ -120,12 +120,12 @@ static const char *name(struct pic *c) {
 }
 
 VXT_API struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pic, {
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(pclass, pclass);
-    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
-    VXT_PIREPHERAL_SET_CALLBACK(pic.next, next);
-    VXT_PIREPHERAL_SET_CALLBACK(pic.irq, irq);
-    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+    PIREPHERAL->pic.next = &next;
+    PIREPHERAL->pic.irq = &irq;
 })

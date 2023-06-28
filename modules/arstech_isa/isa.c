@@ -157,14 +157,14 @@ VXTU_MODULE_CREATE(arstech_isa, {
 
     DEVICE->config.irq_poll = -1;
 
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(destroy, destroy);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(config, config);
-    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
-    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
-    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
-    VXT_PIREPHERAL_SET_CALLBACK(io.read, read);
-    VXT_PIREPHERAL_SET_CALLBACK(io.write, write);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->config = &config;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+    PIREPHERAL->io.read = &read;
+    PIREPHERAL->io.write = &write;
 })

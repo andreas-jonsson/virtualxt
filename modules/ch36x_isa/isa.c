@@ -165,8 +165,8 @@ static vxt_error timer(struct ch36x_isa *d, vxt_timer_id id, int cycles) {
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p; return "ISA Passthrough (CH367)";
+static const char *name(struct ch36x_isa *d) {
+    (void)d; return "ISA Passthrough (CH367)";
 }
 
 static vxt_error config(struct ch36x_isa *d, const char *section, const char *key, const char *value) {
@@ -191,16 +191,16 @@ VXTU_MODULE_CREATE(ch36x_isa, {
     DEVICE->config.irq = -1;
     strcpy(DEVICE->config.device, ARGS);
 
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(destroy, destroy);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(config, config);
-    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
-    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
-    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
-    VXT_PIREPHERAL_SET_CALLBACK(io.read, read);
-    VXT_PIREPHERAL_SET_CALLBACK(io.write, write);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->config = &config;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
+    PIREPHERAL->io.read = &read;
+    PIREPHERAL->io.write = &write;
 })
 
 #else

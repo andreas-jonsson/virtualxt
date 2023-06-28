@@ -169,13 +169,13 @@ VXT_API struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc) VXT_PIREPHE
     //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
     DEVICE->xt_switches = 0x2E; // 640K ram, 80 column CGA, 1 floppy drive, no fpu.
 
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(pclass, pclass);
-    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
-    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
-    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
 })
 
 VXT_API bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force) {

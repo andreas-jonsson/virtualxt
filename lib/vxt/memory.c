@@ -55,24 +55,26 @@ static const char *name(struct memory *m) {
 
 VXT_API struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
     int size = VXT_PIREPHERAL_SIZE(memory) + amount;
-    struct vxt_pirepheral *p = (struct vxt_pirepheral*)alloc(NULL, size);
-    vxt_memclear(p, size);
-    struct memory *mem = VXT_GET_DEVICE(memory, p);
+    struct VXT_PIREPHERAL(struct memory) *PIREPHERAL;
+    *(void**)&PIREPHERAL = alloc(NULL, size);
+
+    vxt_memclear(PIREPHERAL, size);
+    struct memory *mem = VXT_GET_DEVICE(memory, PIREPHERAL);
 
     #ifndef VXTU_MEMCLEAR
-        if (!read_only) vxtu_randomize(mem->data, amount, (intptr_t)p);
+        if (!read_only) vxtu_randomize(mem->data, amount, (intptr_t)PIREPHERAL);
     #endif
 
     mem->base = base;
     mem->read_only = read_only;
     mem->size = amount;   
 
-    struct vxt_pirepheral *PIREPHERAL = p;
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(io.read, read);
-    VXT_PIREPHERAL_SET_CALLBACK(io.write, write);
-    return p;
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.read = &read;
+    PIREPHERAL->io.write = &write;
+
+    return (struct vxt_pirepheral*)PIREPHERAL;
 }
 
 VXT_API void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p) {

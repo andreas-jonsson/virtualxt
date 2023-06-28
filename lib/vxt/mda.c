@@ -118,14 +118,14 @@ static enum vxt_pclass pclass(struct mda_video *m) {
 VXT_API struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, mda_video, {
     vxtu_randomize(DEVICE->mem, sizeof(DEVICE->mem), (intptr_t)PIREPHERAL);
 
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(pclass, pclass);
-    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
-    VXT_PIREPHERAL_SET_CALLBACK(io.read, read);
-    VXT_PIREPHERAL_SET_CALLBACK(io.write, write);
-    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->io.read = &read;
+    PIREPHERAL->io.write = &write;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
 })
 
 VXT_API void vxtu_mda_invalidate(struct vxt_pirepheral *p) { 

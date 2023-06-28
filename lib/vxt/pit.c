@@ -164,13 +164,13 @@ static enum vxt_pclass pclass(struct pit *c) {
 }
 
 VXT_API struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pit, {
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(pclass, pclass);
-    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
-    VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
-    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->reset = &reset;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
 })
 
 VXT_API double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel) {

@@ -61,9 +61,10 @@ static const char *name(struct serial_dbg *d) {
 
 VXTU_MODULE_CREATE(serial_dbg, {
     strncpy(DEVICE->section_name, ARGS, sizeof(DEVICE->section_name) - 1);
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(config, config);
-    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+
+    PIREPHERAL->install = &install;
+    PIREPHERAL->config = &config;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
 })

@@ -94,11 +94,11 @@ VXTU_MODULE_CREATE(ems, {
     DEVICE->mem_base = 0xE0000;
     DEVICE->io_base = 0x260;
 
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(config, config);
-    VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-    VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
-    VXT_PIREPHERAL_SET_CALLBACK(io.read, read);
-    VXT_PIREPHERAL_SET_CALLBACK(io.write, write);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->config = &config;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->io.read = &read;
+    PIREPHERAL->io.write = &write;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
 })

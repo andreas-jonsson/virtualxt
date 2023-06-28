@@ -213,12 +213,13 @@
 
     VXTU_MODULE_CREATE(network, {
         strncpy(DEVICE->nif, ARGS, sizeof(DEVICE->nif) - 1);
-        VXT_PIREPHERAL_SET_CALLBACK(install, install);
-        VXT_PIREPHERAL_SET_CALLBACK(name, name);
-        VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
-        VXT_PIREPHERAL_SET_CALLBACK(reset, reset);
-        VXT_PIREPHERAL_SET_CALLBACK(io.in, in);
-        VXT_PIREPHERAL_SET_CALLBACK(io.out, out);
+
+        PIREPHERAL->install = &install;
+        PIREPHERAL->name = &name;
+        PIREPHERAL->reset = &reset;
+        PIREPHERAL->timer = &timer;
+        PIREPHERAL->io.in = &in;
+        PIREPHERAL->io.out = &out;
     })
 
 #endif

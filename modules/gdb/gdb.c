@@ -363,11 +363,11 @@ VXTU_MODULE_CREATE(gdb, {
     DEVICE->port = (vxt_word)atoi(ARGS);
     DEVICE->server = DEVICE->state.client = -1; 
 
-    VXT_PIREPHERAL_SET_CALLBACK(install, install);
-    VXT_PIREPHERAL_SET_CALLBACK(destroy, destroy);
-    VXT_PIREPHERAL_SET_CALLBACK(timer, timer);
-    VXT_PIREPHERAL_SET_CALLBACK(name, name);
-    VXT_PIREPHERAL_SET_CALLBACK(pclass, pclass);
-    VXT_PIREPHERAL_SET_CALLBACK(io.read, mem_read);
-    VXT_PIREPHERAL_SET_CALLBACK(io.write, mem_write);
+    PIREPHERAL->install = &install;
+    PIREPHERAL->timer = &timer;
+    PIREPHERAL->pclass = &pclass;
+    PIREPHERAL->name = &name;
+    PIREPHERAL->destroy = &destroy;
+    PIREPHERAL->io.read = &mem_read;
+    PIREPHERAL->io.write = &mem_write;
 })
