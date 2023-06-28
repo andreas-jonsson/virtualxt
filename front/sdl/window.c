@@ -52,7 +52,7 @@ void help_window(mu_Context *ctx) {
 
 		mu_layout_row(ctx, 1, (int[]){-1}, 80);
 		mu_text(ctx,
-			"VirtualXT is an IBM PC/XT emulator that runs on modern hardware and\n"
+			"VirtualXT is a Turbo PC/XT emulator that runs on modern hardware and\n"
 			"operating systems. It is designed to be simple and lightweight yet\n"
 			"still capable enough to run a large library of old application and games.");
 

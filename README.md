@@ -5,7 +5,7 @@
 [![Forum](https://img.shields.io/badge/forum-itch.io-blue)](https://phix.itch.io/virtualxt/community)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)
 
-VirtualXT is a IBM PC/XT (8088/V20) emulator that runs on modern hardware and operating systems.
+VirtualXT is a Turbo PC/XT (8088/V20) emulator that runs on modern hardware and operating systems.
 It is designed to be simple and lightweight yet still capable enough to run a large
 library of old application and games.
 
