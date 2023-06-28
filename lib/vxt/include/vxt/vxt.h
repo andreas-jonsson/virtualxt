@@ -112,7 +112,7 @@ extern "C" {
 #endif
 
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
-    #error libvxt require C11 support
+    #error "libvxt require C11 support!"
 #endif
 
 #define vxt_memclear(p, s) ( memset((p), 0, (int)(s)) )
@@ -341,7 +341,6 @@ VXT_API vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p);
 VXT_API void vxt_system_interrupt(vxt_system *s, int n);
 
 VXT_API void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_word addr);
-VXT_API void vxt_system_install_mem_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer addr);
 VXT_API void vxt_system_install_io(vxt_system *s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to);
 VXT_API void vxt_system_install_mem(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to);
 VXT_API vxt_timer_id vxt_system_install_timer(vxt_system *s, struct vxt_pirepheral *dev, unsigned int us);

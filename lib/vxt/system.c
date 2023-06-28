@@ -268,12 +268,6 @@ VXT_API void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirephera
     s->io_map[addr] = (vxt_byte)vxt_pirepheral_id(dev);
 }
 
-VXT_API void vxt_system_install_mem_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_pointer addr) {
-    if (addr & 0xF)
-        VXT_LOG("ERROR: Trying to register unaligned address!");
-    s->mem_map[(addr >> 4) & 0xFFFF] = (vxt_byte)vxt_pirepheral_id(dev);
-}
-
 VXT_API void vxt_system_install_io(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to) {
     int i = (int)from;
     while (i <= (int)to)
