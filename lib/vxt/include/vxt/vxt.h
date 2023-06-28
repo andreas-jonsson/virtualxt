@@ -95,10 +95,11 @@ extern "C" {
         #error "Use VXT_NO_LIBC for builds without hosted environment."
     #endif
 
+    #include <stddef.h>
     #include <stdlib.h>
+    #include <stdio.h>
     #include <stdint.h>
     #include <stdbool.h>
-    #include <stddef.h>
     #include <string.h>
 
     typedef int8_t vxt_int8;

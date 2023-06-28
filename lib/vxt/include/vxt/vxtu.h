@@ -101,42 +101,6 @@ typedef struct vxt_pirepheral *(*vxtu_module_entry_func)(vxt_allocator*,void*,co
         return p;                                                       \
     }                                                                   \
 
-#if !defined(VXT_NO_LIBC) && defined(VXTU_LIBC_IO)
-    #include <stdio.h>
-    #include <string.h>
-
-    static vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size) {
-        vxt_byte *data = NULL;
-        FILE *fp = fopen(file, "rb");
-        if (!fp)
-            return data;
-
-        if (fseek(fp, 0, SEEK_END))
-            goto error;
-
-        int sz = (int)ftell(fp);
-        if (size)
-            *size = sz;
-
-        if (fseek(fp, 0, SEEK_SET))
-            goto error;
-
-        data = (vxt_byte*)alloc(NULL, sz);
-        if (!data)
-            goto error;
-
-        memset(data, 0, sz);
-        if (fread(data, 1, sz, fp) != (size_t)sz) {
-            alloc(data, 0);
-            goto error;
-        }
-
-    error:
-        fclose(fp);
-        return data;
-    }
-#endif
-
 enum vxtu_scancode {
 	VXTU_SCAN_INVALID,
 	VXTU_SCAN_ESCAPE,
@@ -256,6 +220,8 @@ struct vxtu_disk_interface {
 	int (*seek)(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence);
 	int (*tell)(vxt_system *s, void *fp);
 };
+
+VXT_API vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size);
 
 VXT_API struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);
 VXT_API void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p);

@@ -20,7 +20,6 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#define VXTU_LIBC_IO
 #include <vxt/vxtu.h>
 #include <frontend.h>
 

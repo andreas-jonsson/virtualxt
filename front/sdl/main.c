@@ -27,7 +27,6 @@
 #include <string.h>
 #include <assert.h>
 
-#define VXTU_LIBC_IO
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 
