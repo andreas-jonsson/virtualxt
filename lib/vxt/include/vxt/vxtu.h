@@ -101,7 +101,7 @@ typedef struct vxt_pirepheral *(*vxtu_module_entry_func)(vxt_allocator*,void*,co
         return p;                                                       \
     }                                                                   \
 
-#if defined(VXT_LIBC) && defined(VXTU_LIBC_IO)
+#if !defined(VXT_NO_LIBC) && defined(VXTU_LIBC_IO)
     #include <stdio.h>
     #include <string.h>
 

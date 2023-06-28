@@ -24,7 +24,7 @@
 #include "system.h"
 #include "testing.h"
 
-#if defined(VXT_LIBC) && !defined(VXT_NO_LOGGING)
+#if !defined(VXT_NO_LIBC) && !defined(VXT_NO_LOGGING)
    #include <stdarg.h>
    #include <stdio.h>
    static int libc_print(const char *fmt, ...) {

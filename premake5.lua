@@ -150,8 +150,8 @@ workspace "virtualxt"
                     "make clean %{cfg.buildcfg}"
                 }
 
-                filter "not platforms:web"
-                    defines "VXT_LIBC"
+                filter "platforms:web"
+                    defines "VXT_NO_LIBC"
 
                 filter {}
     
@@ -203,7 +203,7 @@ workspace "virtualxt"
 
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         includedirs "lib/vxt/include"
-        defines { "VXT_LIBC", "VXT_EXPORT" }
+        defines "VXT_EXPORT"
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
     project "libretro-frontend"
@@ -216,7 +216,7 @@ workspace "virtualxt"
         includedirs { "lib/libretro", "front/common" }
         files { "front/libretro/*.h", "front/libretro/*.c" }
         
-        defines { "VXT_LIBC", "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
+        defines { "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
         includedirs "lib/vxt/include"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
@@ -301,7 +301,6 @@ workspace "virtualxt"
         files { "front/sdl/*.h", "front/sdl/*.c" }
         includedirs { "lib/vxt/include", "lib/inih", "lib/microui/src", "front/common" }
         links { "vxt", "inih", "microui" }
-        defines "VXT_LIBC"
 
         cleancommands {
             "{RMDIR} build/bin",
@@ -336,7 +335,7 @@ if _OPTIONS["scrambler"] then
         targetname "scrambler"
         targetdir "build/bin"
         links "gpiod"
-        defines { "PI8088", "VXT_CPU_286", "VXT_LIBC" }
+        defines { "PI8088", "VXT_CPU_286" }
 
         files { "tools/validator/pi8088/scrambler.c", "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
         
@@ -355,7 +354,7 @@ if _OPTIONS["test"] then
         kind "ConsoleApp"
         targetdir "test"
         includedirs "lib/vxt/include"
-        defines { "TESTING", "VXT_LIBC", "VXT_CPU_286", "VXTU_MEMCLEAR" }
+        defines { "TESTING", "VXT_CPU_286", "VXTU_MEMCLEAR" }
         files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
         optimize "Off"
         symbols "On"

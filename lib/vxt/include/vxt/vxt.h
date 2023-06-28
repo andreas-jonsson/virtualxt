@@ -35,28 +35,9 @@ extern "C" {
 #define _VXT_EVALUATOR(M, ...) M(__VA_ARGS__)
 #define VXT_VERSION _VXT_EVALUATOR(_VXT_STRINGIFY, VXT_VERSION_MAJOR) "." _VXT_EVALUATOR(_VXT_STRINGIFY, VXT_VERSION_MINOR) "." _VXT_EVALUATOR(_VXT_STRINGIFY, VXT_VERSION_PATCH)
 
-#ifdef VXT_LIBC
-    #ifndef __STDC_HOSTED__
-        #error VXT_LIBC requires a hosted environment
-    #endif
-
-    #include <stdlib.h>
-    #include <stdint.h>
-    #include <stdbool.h>
-    #include <stddef.h>
-    #include <string.h>
-
-    typedef int8_t vxt_int8;
-    typedef int16_t vxt_int16;
-    typedef int32_t vxt_int32;
-
-    typedef uint8_t vxt_byte;
-    typedef uint16_t vxt_word;
-    typedef uint32_t vxt_dword;
-    typedef uint32_t vxt_pointer;
-#else
+#ifdef VXT_NO_LIBC
     #ifdef TESTING
-        #error tests require VXT_LIBC
+        #error "Don't use VXT_NO_LIBC for tests!"
     #endif
 
     #ifndef bool
@@ -109,6 +90,25 @@ extern "C" {
     typedef unsigned short vxt_word;
     typedef unsigned int vxt_dword;
     typedef unsigned int vxt_pointer;
+#else
+    #ifndef __STDC_HOSTED__
+        #error "Use VXT_NO_LIBC for builds without hosted environment."
+    #endif
+
+    #include <stdlib.h>
+    #include <stdint.h>
+    #include <stdbool.h>
+    #include <stddef.h>
+    #include <string.h>
+
+    typedef int8_t vxt_int8;
+    typedef int16_t vxt_int16;
+    typedef int32_t vxt_int32;
+
+    typedef uint8_t vxt_byte;
+    typedef uint16_t vxt_word;
+    typedef uint32_t vxt_dword;
+    typedef uint32_t vxt_pointer;
 #endif
 
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
