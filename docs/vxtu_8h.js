@@ -142,5 +142,6 @@ var vxtu_8h =
     [ "vxtu_ppi_set_speaker_callback", "vxtu_8h.html#a2292fe9fd43b675ba12ced6b4b765ded", null ],
     [ "vxtu_ppi_set_xt_switches", "vxtu_8h.html#a3e11812fdb1a9bb05f9f6d6f829c21ae", null ],
     [ "vxtu_ppi_turbo_enabled", "vxtu_8h.html#a01be0210c83692ea12ac225e908c5cfe", null ],
-    [ "vxtu_ppi_xt_switches", "vxtu_8h.html#a0feb537b23b2876b7192718ad60cb02a", null ]
+    [ "vxtu_ppi_xt_switches", "vxtu_8h.html#a0feb537b23b2876b7192718ad60cb02a", null ],
+    [ "vxtu_read_file", "vxtu_8h.html#a527e59321e6858de8d4aca71ddf6498b", null ]
 ];
