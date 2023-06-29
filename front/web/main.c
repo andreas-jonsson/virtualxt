@@ -29,7 +29,7 @@
 #include <frontend.h>
 #include <modules.h>
 
-#include "../../bios/pcxtbios.h"
+#include "../../bios/glabios.h"
 #include "../../bios/vxtx.h"
 
 #include "js.h"
@@ -210,7 +210,7 @@ void wasm_initialize_emulator(int v20, int freq) {
 	mouse = vxtu_mouse_create(&ALLOCATOR, 0x3F8, 4); // COM1
 
 	APPEND_DEVICE(vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false));
-	APPEND_DEVICE(load_bios(pcxtbios_bin, (int)pcxtbios_bin_len, 0xFE000));
+	APPEND_DEVICE(load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000));
 	APPEND_DEVICE(load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000))
 	APPEND_DEVICE(vxtu_pic_create(&ALLOCATOR));
 	APPEND_DEVICE(vxtu_dma_create(&ALLOCATOR))

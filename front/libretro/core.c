@@ -37,7 +37,7 @@
 
 #include "keys.h"
 
-#include "../../bios/pcxtbios.h"
+#include "../../bios/glabios.h"
 #include "../../bios/vxtx.h"
 
 #ifdef ZIP2IMG
@@ -345,7 +345,7 @@ void retro_init(void) {
 
         struct vxt_pirepheral *devices[] = {
             vxtu_memory_create(&realloc, 0x0, 0x100000, false),
-            load_bios(pcxtbios_bin, (int)pcxtbios_bin_len, 0xFE000),
+            load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000),
             load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000),
             vxtu_pic_create(&realloc),
             vxtu_dma_create(&realloc),

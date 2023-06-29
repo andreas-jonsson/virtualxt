@@ -523,7 +523,7 @@ static bool write_default_config(const char *path, bool clean) {
 		"; Otherwise you might have trouble with hardware breakpoints.\n"
 		";gdb=1234\n"
 		"\n[args]\n"
-		";bios=bios/pcxtbios_640.bin\n"
+		";bios=bios/GLABIOS640.ROM\n"
 		";halt=1\n"
 		";v20=1\n"
 		";hdboot=1\n"
@@ -598,7 +598,7 @@ int main(int argc, char *argv[]) {
 
 	if (!args.bios) {
 		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
-		if (!args.bios) args.bios = "bios/pcxtbios.bin";
+		if (!args.bios) args.bios = "bios/GLABIOS.ROM";
 	}
 
 	if (!args.harddrive && !args.floppy) {
