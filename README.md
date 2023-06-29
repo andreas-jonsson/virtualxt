@@ -76,3 +76,4 @@ Friends, contributors and sources of inspiration!
 * **fmahnke**
 * **adriancable**
 * **mikechambers84**
+* **trylle**
