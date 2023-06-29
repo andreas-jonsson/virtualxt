@@ -113,6 +113,7 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
         case 0x3:
         case 0x7:
         {
+            snap->mode_ctrl_reg |= 1;
             int num_char = num_col * 25;
             for (int i = 0; i < num_char * 2; i += 2) {
                 int idx = i / 2;
