@@ -30,6 +30,7 @@ cp build/bin/libvxt.so $APP_DIR/lib64/
 cp modules/*.vxt $APP_DIR/modules/
 cp bios/pcxtbios.bin $APP_DIR/bios/
 cp bios/GLABIOS.ROM $APP_DIR/bios/
+cp bios/GLABIOS640.ROM $APP_DIR/bios/
 cp bios/vxtx.bin $APP_DIR/bios/
 cp bios/vgabios.bin $APP_DIR/bios/
 cp boot/freedos_hd.img $APP_DIR/boot/
