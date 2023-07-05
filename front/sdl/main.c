@@ -512,7 +512,7 @@ static bool write_default_config(const char *path, bool clean) {
 		"ems=lotech_ems\n"
 		"mouse=0x3F8,4\n"
 		";fdc=\n"
-		";rtc=\n"
+		";rtc=bios/GLaTICK_0.8.4_AT.ROM\n"
 		";network=eth0\n"
 		";arstech_isa=libarsusb4.so\n"
 		";ch36x_isa=/dev/ch36xpci0\n"
