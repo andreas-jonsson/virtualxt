@@ -110,13 +110,20 @@ workspace "virtualxt"
         end
 
         local mod_list = {}
+        local inclusive = true;
+ 
+        if string.sub(module_opt, 1, 1) == "-" then
+            inclusive = false
+            module_opt = string.sub(module_opt, 2)
+        end
+
         for _,f in ipairs(os.matchfiles("modules/**/premake5.lua")) do
-            local enable = module_opt == ""
+            local enable = module_opt == "" or not inclusive
             local name = path.getname(path.getdirectory(f))
 
             for mod in string.gmatch(module_opt, "[%w%-]+") do
                 if mod == name then
-                    enable = true
+                    enable = inclusive
                     break
                 end
             end
