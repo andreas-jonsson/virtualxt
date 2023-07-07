@@ -22,13 +22,9 @@
 
 #include <vxt/vxtu.h>
 
-// Single step the counter for maximum BIOS compatibility.
-#ifndef VXTU_PIT_COUNTER_STEP
-    #define VXTU_PIT_COUNTER_STEP 1
-#endif
-
-#define TOGGLE_HIGH(ch) ( ((ch)->mode == MODE_TOGGLE) && (ch)->toggle )
-#define TOGGLE_LOW(ch) ( ((ch)->mode == MODE_TOGGLE) && !(ch)->toggle )
+#define PIT_FREQUENCY 1.193182
+#define TOGGLE_HIGH(ch) ( ((ch)->mode == MODE_LATCH_COUNT || (ch)->mode == MODE_TOGGLE) && (ch)->toggle )
+#define TOGGLE_LOW(ch) ( ((ch)->mode == MODE_LATCH_COUNT || (ch)->mode == MODE_TOGGLE) && !(ch)->toggle )
 
 enum chmode {
     MODE_LATCH_COUNT,
@@ -40,35 +36,33 @@ enum chmode {
 struct channel {
 	bool enabled;
     bool toggle;
-	double frequency;
+
 	vxt_word counter;
+    vxt_word latch;
     vxt_word data;
 	vxt_byte mode;
 };
 
-#define INT64 long long
-
-VXT_PIREPHERAL(pit, {
+struct pit {
  	struct channel channels[3];
-    INT64 ticks;
-    INT64 device_ticks;
-    
-    // TODO: This is part of the transition code.
-    INT64 ticker;
-})
+    double ticker;
+};
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(c, pit, p);
+static vxt_byte in(struct pit *c, vxt_word port) {
 	if (port == 0x43)
 		return 0;
 
     vxt_word ret = 0;
 	struct channel *ch = &c->channels[port & 3];
 
-	if ((ch->mode == MODE_LATCH_COUNT) || (ch->mode == MODE_LOW_BYTE) || TOGGLE_LOW(ch))
-		ret = ch->counter & 0xFF;
+    if (ch->mode != MODE_LATCH_COUNT) {
+        ch->latch = ch->counter;
+    }
+
+	if ((ch->mode == MODE_LOW_BYTE) || TOGGLE_LOW(ch))
+		ret = ch->latch & 0xFF;
 	else if ((ch->mode == MODE_HIGH_BYTE) || TOGGLE_HIGH(ch))
-		ret = ch->counter >> 8;
+		ret = ch->latch >> 8;
 
 	if ((ch->mode == MODE_LATCH_COUNT) || (ch->mode == MODE_TOGGLE))
 		ch->toggle = !ch->toggle;
@@ -76,99 +70,79 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 	return (vxt_byte)ret;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(c, pit, p);
-    if (port == 0x43) { // Mode/Command register.
+static void out(struct pit *c, vxt_word port, vxt_byte data) {
+    // Mode/Command register.
+    if (port == 0x43) {
         struct channel *ch = &c->channels[(data >> 6) & 3];
+        
+        ch->toggle = false;
         ch->mode = (data >> 4) & 3;
-        if (ch->mode == MODE_TOGGLE)
-            ch->toggle = false;
+        if (ch->mode == MODE_LATCH_COUNT)
+            ch->latch = ch->counter;
+        
         return;
     }
 
     struct channel *ch = &c->channels[port & 3];
-    ch->enabled = true;
-
-    if ((ch->mode == MODE_LOW_BYTE) || TOGGLE_LOW(ch))
+    if ((ch->mode == MODE_LOW_BYTE) || TOGGLE_LOW(ch)) {
         ch->data = (ch->data & 0xFF00) | ((vxt_word)data);
-    else if ((ch->mode == MODE_HIGH_BYTE) || TOGGLE_HIGH(ch))
+        ch->enabled = false;
+    } else if ((ch->mode == MODE_HIGH_BYTE) || TOGGLE_HIGH(ch)) {
         ch->data = (ch->data & 0x00FF) | (((vxt_word)data) << 8);
-
-    vxt_dword effective = (vxt_dword)ch->data;
-    if (!ch->data && TOGGLE_HIGH(ch)) {
-        ch->data = 0xFFFF;
-        effective = 0x10000;
+        ch->enabled = true;
+        if (!ch->data)
+            ch->data = 0xFFFF;
     }
-    
-    if (effective)
-        ch->frequency = 1193182.0 / (double)effective;
 
-    if (ch->mode == MODE_TOGGLE)
+    if ((ch->mode == MODE_TOGGLE) || (ch->mode == MODE_LATCH_COUNT))
         ch->toggle = !ch->toggle;
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+static vxt_error install(struct pit *c, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
     vxt_system_install_io(s, p, 0x40, 0x43);
     vxt_system_install_timer(s, p, 0);
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, pit, p);
-    vxt_memclear(c->channels, sizeof(c->channels));
-    c->ticker = c->device_ticks = c->ticks = 0;
+static vxt_error reset(struct pit *c) {
+    vxt_memclear(c, sizeof(struct pit));
     return VXT_NO_ERROR;
 }
 
-static vxt_error step(struct vxt_pirepheral *p, INT64 ticks) {
-    VXT_DEC_DEVICE(c, pit, p);
-
-    if (vxt_system_registers(VXT_GET_SYSTEM(pit, p))->debug) {
-        c->ticks = c->device_ticks = ticks;
-        return VXT_NO_ERROR;
-    }
-
-    struct channel *ch = c->channels;
-	if (ch->enabled && (ch->frequency > 0.0)) {
-		INT64 next = 1000000000ll / (INT64)ch->frequency;
-		if (ticks >= (c->ticks + next)) {
-			c->ticks = ticks;
-            #ifndef PI8088
-                vxt_system_interrupt(VXT_GET_SYSTEM(pit, p), 0);
-            #endif
-		}
-	}
-
-	const INT64 step = VXTU_PIT_COUNTER_STEP;
-	const INT64 next = 1000000000ll / (1193182ll / step);
-
-	if (ticks >= (c->device_ticks + next)) {
-        for (int i = 0; i < 3; i++) {
-            ch = &c->channels[i];
-			if (ch->enabled)
-				ch->counter = (ch->counter < step) ? ch->data : (ch->counter - step);
-		}
-		c->device_ticks = ticks;
-	}
-    return VXT_NO_ERROR;
-}
-
-static vxt_error timer(struct vxt_pirepheral *p, vxt_timer_id id, int cycles) {
+static vxt_error timer(struct pit *c, vxt_timer_id id, int cycles) {
     (void)id;
-    VXT_DEC_DEVICE(c, pit, p);
-    c->ticker += (INT64)((double)cycles / ((double)vxt_system_frequency(VXT_GET_SYSTEM(pit, p)) / 1000000000.0));
-    return step(p, c->ticker);
+
+    // Elapsed time in microseconds.
+    c->ticker += (double)cycles * (1000000.0 / (double)vxt_system_frequency(VXT_GET_SYSTEM(c)));
+
+    const double interval = 1.0 / PIT_FREQUENCY;
+    while (c->ticker >= interval) {
+        for (int i = 0; i < 3; i++) {
+            struct channel *ch = &c->channels[i];
+            if (!ch->enabled)
+                continue;
+
+            if (ch->counter-- == 0) {
+                ch->counter = ch->data;
+                if (i == 0)
+                    vxt_system_interrupt(VXT_GET_SYSTEM(c), 0);
+            }
+        }
+        c->ticker -= interval;
+    }
+    return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p; return "PIT (Intel 8253)";
+static const char *name(struct pit *c) {
+    (void)c; return "PIT (Intel 8253)";
 }
 
-static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    (void)p; return VXT_PCLASS_PIT;
+static enum vxt_pclass pclass(struct pit *c) {
+    (void)c; return VXT_PCLASS_PIT;
 }
 
-struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pit, {
+VXT_API struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pit, {
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;
@@ -178,8 +152,11 @@ struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREA
     PIREPHERAL->io.out = &out;
 })
 
-double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
+VXT_API double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
     if ((channel > 2) || (channel < 0))
         return 0.0;
-    return (VXT_GET_DEVICE(pit, p))->channels[channel].frequency;
+
+    double fd = (double)(VXT_GET_DEVICE(pit, p))->channels[channel].data;
+    if (fd == 0.0) fd = (double)0x10000;
+    return (PIT_FREQUENCY * 1000000.0) / (double)fd;
 }

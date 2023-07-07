@@ -28763,9 +28763,9 @@ TURBO_HOTKEY	= 1		; Define to enable "CTRL ALT -" hotkey to toggle turbo mode
 ;TEST_VIDEO	= 1		; Define to test video memory at power on (Mono/Herc/CGA only)
 				;   If enabled, CLEAR_UMA must be disabled due to memory limits
 
-;MAX_MEMORY	= 640		; Maximum conventional memory allowed in KB (with EGA/VGA)
+MAX_MEMORY	= 640		; Maximum conventional memory allowed in KB (with EGA/VGA)
 ;MAX_MEMORY	= 704		; (with Mono/Hercules)
-MAX_MEMORY	= 736		; (with CGA)
+;MAX_MEMORY	= 736		; (with CGA)
 
 ;FAST_MEM_CHECK	= 1		; Define to use faster but less thorough memory check
 ;NO_MEM_CHECK	= 1		; Define to clear memory only
@@ -29381,7 +29381,7 @@ E0D6  80 C7 04				add		bh,0x04
 
 ifdef	MAX_MEMORY
 	cmp	bh, MAX_MEMORY shr 2		; Found max legal user ram?
-E0D9  80 FF B8				cmp		bh,0xb8
+E0D9  80 FF A0				cmp		bh,0xa0
 
 else
 	cmp	bh, 0A0h			; Found max legal IBM ram?

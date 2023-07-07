@@ -29,7 +29,7 @@
 #include "flags.h"
 
 #define TRACE(p, ip, data) { if ((p)->tracer) (p)->tracer((p)->s, VXT_POINTER((p)->regs.cs, (ip)), (data)); }
-#define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq((p)->pic, (n)); }
+#define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq(VXT_GET_DEVICE_PTR((p)->pic), (n)); }
 #define INST(n) const struct instruction * const n
 #define MOD_TARGET_MEM(mode) ((mode).mod < 3)
 #define ADD_CYCLE_MOD_MEM(p, n) { if (MOD_TARGET_MEM((p->mode))) (p)->cycles += (n); }
@@ -437,7 +437,7 @@ static void prep_exec(CONSTSP(cpu) p) {
 
    p->trap = (p->regs.flags & VXT_TRAP) != 0;
    if (p->pic && !p->trap && (p->regs.flags & VXT_INTERRUPT)) {
-      int n = p->pic->pic.next(p->pic);
+      int n = p->pic->pic.next(VXT_GET_DEVICE_PTR(p->pic));
       if (n >= 0) {
          p->halt = false;
          call_int(p, n);

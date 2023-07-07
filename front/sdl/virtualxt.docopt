@@ -3,24 +3,19 @@ Usage: virtualxt [options]
 Options:
   -h --help               Show this screen.
   -v --version            Display version.
-  -d --debug              Enable CLI debugger.
-  --halt                  Debugger will stop after first instruction.
   --hdboot                Prefer booting from harddrive.
+  --halt                  Debug break on startup.
   --mute                  Disable audio.
-  --no-adlib              Disable AdLib emulation.
+  --no-modules            Disable all modules.
   --no-activity           Disable disk activity indicator.
-  --list                  List network devices and IDs.
-  --fdc                   Enable experimental floppy disk controller.
   --v20                   Enable NEC V20 CPU support.
-  --network=ID            Select network adapter.
-  --joystick              Enable joystick support.
+  --clean                 Remove config file and write a new default one.
+  --edit                  Open config file in system text editor.
   --rifs=PATH             Enable experimental RIFS support. (Shared folders)
   --config=PATH           Set config directory.
+  --modules=PATH          Set modules directory.
   --bios=FILE             BIOS binary.
-  --extension=FILE        VirtualXT BIOS extension binary.
   --trace=FILE            Write CPU trace to file.
-  --vga=FILE              Load VGA BIOS.
-  --serial-debug=PORT     Enable debug print on serial port.
   --frequency=MHZ         CPU frequency. [default: 4.772726]
   -a --floppy=FILE        Mount floppy image as drive A.
   -c --harddrive=FILE     Mount harddrive image as drive C.

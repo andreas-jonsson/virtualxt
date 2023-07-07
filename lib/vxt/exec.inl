@@ -765,7 +765,7 @@ static void shl_C0(CONSTSP(cpu) p, INST(inst)) {
 
 static void shl_C1(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   rm_write16(p, bitshift_16(p, rm_read16(p), read_opcode16(p)));
+   rm_write16(p, bitshift_16(p, rm_read16(p), (vxt_byte)read_opcode16(p)));
 }
 
 static void ret_C2(CONSTSP(cpu) p, INST(inst)) {

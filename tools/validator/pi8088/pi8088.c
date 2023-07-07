@@ -27,8 +27,6 @@
 #include <stdarg.h>
 #include <errno.h>
 
-#define VXT_LIBC
-#define VXTU_LIBC_IO
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 

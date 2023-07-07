@@ -87,33 +87,28 @@ typedef size_t bool;
 struct DocoptArgs {
     
     /* options without arguments */
-    size_t debug;
-    size_t fdc;
+    size_t clean;
+    size_t edit;
     size_t halt;
     size_t hdboot;
     size_t help;
-    size_t joystick;
-    size_t list;
     size_t mute;
     size_t no_activity;
-    size_t no_adlib;
+    size_t no_modules;
     size_t v20;
     size_t version;
     /* options with arguments */
     char *bios;
     char *config;
-    char *extension;
     char *floppy;
     char *frequency;
     char *harddrive;
-    char *network;
+    char *modules;
     char *rifs;
-    char *serial_debug;
     char *trace;
-    char *vga;
     /* special */
     const char *usage_pattern;
-    const char *help_message[26];
+    const char *help_message[21];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

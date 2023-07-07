@@ -31,8 +31,8 @@ jobs:
 
       - name: Build
         run: |
-          premake5 gmake
-          make clean web-frontend
+          premake5 --modules=ctrl --static gmake
+          make config=release_web clean web-frontend
 
       - name: Docs
         run: premake5 doc

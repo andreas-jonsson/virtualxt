@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2016-2022 Matt Borgerson
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#ifndef INCLUDE_DEMO
+#define INCLUDE_DEMO 0
+#endif
+
+#define ENTRYPOINT _start
+
+#define MULTIBOOT_MAGIC 0x1badb002
+#define MULTIBOOT_FLAGS 0x10000
+#define MULTIBOOT_CSUM  (0 - (MULTIBOOT_MAGIC + MULTIBOOT_FLAGS))
+
+ENTRY(ENTRYPOINT)
+
+MEMORY
+{
+	RAM (WX) : ORIGIN = BASE_ADDRESS, LENGTH = 0x10000
+}
+
+SECTIONS
+{
+	.text : {
+		*(.text._start)
+
+#if INCLUDE_DEMO
+		. = ALIGN(16);
+		/* Include a multiboot header to boot in QEMU */
+		multiboot_hdr = .;
+		LONG(MULTIBOOT_MAGIC)
+		LONG(MULTIBOOT_FLAGS)
+		LONG(MULTIBOOT_CSUM)
+		LONG(multiboot_hdr)
+		LONG(BASE_ADDRESS)
+		LONG(_load_end_addr)
+		LONG(_bss_end_addr)
+		LONG(ENTRYPOINT)
+#endif
+
+		*(.text)
+		*(.rodata)
+	} > RAM
+
+	.data : {
+		*(.data)
+		*(.bss)
+		_load_end_addr = .;
+		_bss_end_addr = .;
+	} > RAM
+
+	/DISCARD/ : {
+		*(.comment)
+		*(.note.GNU-stack)
+		*(.eh_frame)
+		*(.rela.eh_frame)
+		*(.shstrtab)
+		*(.symtab)
+		*(.strtab)
+	}
+}

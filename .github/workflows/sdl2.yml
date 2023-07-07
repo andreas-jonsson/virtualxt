@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  VXT_VERSION: 0.8.0
+  VXT_VERSION: 0.9.0
   SDL2_VERSION: 2.24.1
 
 jobs:
@@ -54,16 +54,16 @@ jobs:
         
       - name: Build
         run: |
-          premake5 --pcap --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
-          make clean sdl2-frontend
+          premake5 --modules --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
+          make clean sdl2-frontend modules
 
-      - name: Package
-        run: ./tools/package/itch/package.linux.sh
+      #- name: Package
+      #  run: ./tools/package/itch/package.linux.sh
 
-      - name: Deploy
-        env:
-          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
+      #- name: Deploy
+      #  env:
+      #    BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+      #  run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
 
   windows-build:
     name: Build (Windows AMD64)
@@ -106,12 +106,8 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="${GITHUB_WORKSPACE}/premake5":"${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32/bin":"$PATH"
-          premake5 --cc=gcc --pcap gmake
-          make clean sdl2-frontend
-          mv build/bin/virtualxt.exe virtualxt-net.exe
-          premake5 --cc=gcc gmake
-          make clean sdl2-frontend
-          mv virtualxt-net.exe build/bin
+          premake5 --cc=gcc --modules gmake
+          make clean sdl2-frontend modules
 
       - name: Package
         run: ./tools/package/itch/package.bat
@@ -134,13 +130,13 @@ jobs:
         uses: rlespinasse/github-slug-action@v3.x
 
       - name: Setup
+        #run: |
+        #  brew update
+        #  brew install rpl
+        #  curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip -d butler
+        #  echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
         run: |
-          brew update
-          brew install rpl
-          
-          curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip -d butler
           curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-macosx.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
-          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
 
           curl -L -o sdl.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-${SDL2_VERSION}.tar.gz && tar -xf sdl.tar.gz
@@ -155,13 +151,13 @@ jobs:
 
       - name: Build
         run: |
-          premake5 --pcap --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
-          make clean sdl2-frontend
+          premake5 --modules --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
+          make clean sdl2-frontend modules
 
-      - name: Package
-        run: ./tools/package/itch/package.osx.sh
+      #- name: Package
+      #  run: ./tools/package/itch/package.osx.sh
 
-      - name: Deploy
-        env:
-          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
+      #- name: Deploy
+      #  env:
+      #    BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+      #  run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi

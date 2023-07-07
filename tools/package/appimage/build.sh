@@ -4,7 +4,7 @@ APP_DIR="$GITHUB_WORKSPACE/tools/package/appimage/virtualxt-appimage-build"
 rm -rf $APP_DIR VirtualXT-x86_64.AppImage
 
 cp -r "$GITHUB_WORKSPACE/tools/package/appimage/virtualxt-appimage" $APP_DIR
-mkdir -p $APP_DIR/usr/lib/x86_64-linux-gnu $APP_DIR/lib64 $APP_DIR/bios $APP_DIR/boot
+mkdir -p $APP_DIR/usr/lib/x86_64-linux-gnu $APP_DIR/lib64 $APP_DIR/bios $APP_DIR/boot $APP_DIR/modules
 
 # Expect this to be on an Ubuntu system!
 DST="$APP_DIR/usr/lib/x86_64-linux-gnu"
@@ -26,10 +26,13 @@ cp $SRC/libgcrypt.so* $DST
 cp $SRC/libgpg-error.so* $DST
 
 cp build/bin/virtualxt $APP_DIR/
+cp build/bin/libvxt.so $APP_DIR/lib64/
+cp modules/*.vxt $APP_DIR/modules/
 cp bios/pcxtbios.bin $APP_DIR/bios/
-cp bios/pcxtbios_640.bin $APP_DIR/bios/
-cp bios/glabios.bin $APP_DIR/bios/
+cp bios/GLABIOS.ROM $APP_DIR/bios/
+cp bios/GLABIOS640.ROM $APP_DIR/bios/
 cp bios/vxtx.bin $APP_DIR/bios/
+cp bios/vgabios.bin $APP_DIR/bios/
 cp boot/freedos_hd.img $APP_DIR/boot/
 cp tools/icon/icon.png $APP_DIR/virtualxt-icon.png
 

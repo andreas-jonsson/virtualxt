@@ -52,7 +52,7 @@ void help_window(mu_Context *ctx) {
 
 		mu_layout_row(ctx, 1, (int[]){-1}, 80);
 		mu_text(ctx,
-			"VirtualXT is an IBM PC/XT emulator that runs on modern hardware and\n"
+			"VirtualXT is a Turbo PC/XT emulator that runs on modern hardware and\n"
 			"operating systems. It is designed to be simple and lightweight yet\n"
 			"still capable enough to run a large library of old application and games.");
 
@@ -67,7 +67,7 @@ void help_window(mu_Context *ctx) {
 		const char *text_r =
 			"Toggle fullscreen\n"
 			"Show this help screen\n"
-			"Debug break, if started with '--debug'\n"
+			"Debug break, if GDB module is loaded\n"
 			"Eject floppy disk image\n"
 			"Drop floppy image file on window to mount\n"
 			"Release or capture mouse";
@@ -140,4 +140,25 @@ int mount_window(mu_Context *ctx, char *path) {
 		mu_end_window(ctx);
 	}
 	return mount;
+}
+
+int config_window(mu_Context *ctx) {
+	int open_cfg = 0;
+	if (mu_begin_window_ex(ctx, "Config Update", mu_rect(120, 40, 340, 120), MU_OPT_CLOSED|MU_OPT_NORESIZE)) {
+		has_open_windows = true;
+	
+		mu_layout_set_next(ctx, mu_rect(60, 5, 250, 25), 1);
+		mu_label(ctx, "Do you want to inspect the config file?");
+
+		mu_layout_set_next(ctx, mu_rect(80, 45, 60, 25), 1);
+		if ((open_cfg = mu_button_ex(ctx, "Yes", 0, MU_OPT_ALIGNCENTER)))
+			mu_get_current_container(ctx)->open = 0;
+
+		mu_layout_set_next(ctx, mu_rect(180, 45, 60, 25), 1);
+		if (mu_button_ex(ctx, "No", 0, MU_OPT_ALIGNCENTER))
+			mu_get_current_container(ctx)->open = 0;
+
+		mu_end_window(ctx);
+	}
+	return open_cfg;
 }

@@ -30,14 +30,14 @@
 #include <stdint.h>
 #include <stdatomic.h>
 
-#define VXT_LIBC
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
-#include <vxtp.h>
+
+#include <frontend.h>
 
 #include "keys.h"
 
-#include "../../bios/pcxtbios.h"
+#include "../../bios/glabios.h"
 #include "../../bios/vxtx.h"
 
 #ifdef ZIP2IMG
@@ -88,6 +88,10 @@ struct vxt_pirepheral *ppi = NULL;
 struct vxt_pirepheral *cga = NULL;
 struct vxt_pirepheral *mouse = NULL;
 struct vxt_pirepheral *joystick = NULL;
+
+// From joystick.c
+bool joystick_push_event(struct vxt_pirepheral *p, const struct frontend_joystick_event *ev);
+struct vxt_pirepheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args);
 
 static void no_log(enum retro_log_level level, const char *fmt, ...) {
     (void)level; (void)fmt;
@@ -164,14 +168,14 @@ static void keyboard_event(bool down, unsigned keycode, uint32_t character, uint
 static void joystick_event(unsigned port) {
     vxt_int16 x = (input_state_cb(port, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X) / 256) + 128;
     vxt_int16 y = (input_state_cb(port, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y) / 256) + 128;
-    enum vxtp_joystick_button btn = (input_state_cb(port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A ) ? VXTP_JOYSTICK_A : 0)
-        | (input_state_cb(port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B ) ? VXTP_JOYSTICK_B : 0);
+    enum frontend_joystick_button btn = (input_state_cb(port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A ) ? FRONTEND_JOYSTICK_A : 0)
+        | (input_state_cb(port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B ) ? FRONTEND_JOYSTICK_B : 0);
 
-    struct vxtp_joystick_event ev = {
-        (void*)(uintptr_t)port,
+    struct frontend_joystick_event ev = {
+        port ? FRONTEND_JOYSTICK_2 : FRONTEND_JOYSTICK_1,
         btn, x, y
     };
-    SYNC(vxtp_joystick_push_event(joystick, &ev));
+    SYNC(joystick_push_event(joystick, &ev));
 }
 
 static void mouse_event(void) {
@@ -294,17 +298,23 @@ static void check_variables(void) {
         if (sscanf(var.value, "%lf", &freq) != 1)
             log_cb(RETRO_LOG_ERROR, "Invalid frequency: %s\n", var.value);
         cpu_frequency = (int)(freq * 1000000.0);
-        if (sys)
-            SYNC(vxt_system_set_frequency(sys, cpu_frequency));
+        if (sys) SYNC(
+            vxt_system_set_frequency(sys, cpu_frequency);
+            vxt_system_configure(sys, "libretro", var.key, var.value);
+        )
     }
 
     var = (struct retro_variable){ .key = "virtualxt_v20" };
-    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
         cpu_type = strcmp(var.value, "false") ? VXT_CPU_V20 : VXT_CPU_8088;
+        if (sys) SYNC(vxt_system_configure(sys, "libretro", var.key, var.value));
+    }
 
     var = (struct retro_variable){ .key = "virtualxt_led" };
-    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
         use_led_interface = strcmp(var.value, "false") != 0;
+        if (sys) SYNC(vxt_system_configure(sys, "libretro", var.key, var.value));
+    }
 }
 
 static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
@@ -323,19 +333,19 @@ void retro_init(void) {
     SYNC(
         vxt_set_logger(&log_wrapper);
 
-        struct vxtu_disk_interface interface = {
+        struct vxtu_disk_interface intrf = {
             &read_file, &write_file, &seek_file, &tell_file
         };
         
-        disk = vxtu_disk_create(&realloc, &interface);
+        disk = vxtu_disk_create(&realloc, &intrf);
         ppi = vxtu_ppi_create(&realloc);
         cga = vxtu_cga_create(&realloc);
         mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
-        joystick = vxtp_joystick_create(&realloc, (void*)0, (void*)1);
+        joystick = joystick_create(&realloc, NULL, "0x201");
 
         struct vxt_pirepheral *devices[] = {
             vxtu_memory_create(&realloc, 0x0, 0x100000, false),
-            load_bios(pcxtbios_bin, (int)pcxtbios_bin_len, 0xFE000),
+            load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000),
             load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000),
             vxtu_pic_create(&realloc),
             vxtu_dma_create(&realloc),

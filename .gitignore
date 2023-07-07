@@ -9,12 +9,23 @@ __pycache__
 /gh-pages
 /test
 
-/*.trace
 /Makefile
 /*.make
 
-tools/vxtdrv/vxtdrv.com
-tools/shutdown/shutdown.com
-__scrambler.tmp
-bios/et4000.bin
-boot/msdos*.img
+/*.vcxproj*
+/*.sln
+/.vs
+
+/modules/modules.h
+/modules/dummy.c
+/modules/*.vxt
+/modules/*.lib
+/modules/*.pdb
+/modules/*.exp
+
+/*.trace
+/tools/vxtdrv/vxtdrv.com
+/tools/shutdown/shutdown.com
+/__scrambler.tmp
+/boot/msdos*.img
+/boot/windows*.img

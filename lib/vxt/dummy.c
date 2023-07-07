@@ -23,38 +23,39 @@
 #include "common.h"
 #include "system.h"
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
+static vxt_byte in(void *p, vxt_word port) {
     UNUSED(p);
     VXT_PRINT("reading unmapped IO port: %X\n", port);
     return 0xFF;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
+static void out(void *p, vxt_word port, vxt_byte data) {
     UNUSED(p); UNUSED(data);
     VXT_PRINT("writing unmapped IO port: %X\n", port);
 }
 
-static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
+static vxt_byte read(void *p, vxt_pointer addr) {
     UNUSED(p);
     VXT_PRINT("reading unmapped memory: %X\n", addr);
     return 0xFF;
 }
 
-static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
+static void write(void *p, vxt_pointer addr, vxt_byte data) {
     UNUSED(p); UNUSED(data);
     VXT_PRINT("writing unmapped memory: %X\n", addr);
 }
 
-static vxt_error destroy(struct vxt_pirepheral *p) {
+static vxt_error destroy(void *p) {
     (void)p;
     // Prevent the use of freeing memory with default
     // allocator, by setting up a empty destroy function.
     return VXT_NO_ERROR;
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io(s, p, 0x0, 0xFFFF);
-    vxt_system_install_mem(s, p, 0x0, 0xFFFFF);
+static vxt_error install(void *p, vxt_system *s) {
+    struct vxt_pirepheral *pi = VXT_GET_PIREPHERAL(p);
+    vxt_system_install_io(s, pi, 0x0, 0xFFFF);
+    vxt_system_install_mem(s, pi, 0x0, 0xFFFFF);
     return VXT_NO_ERROR;
 }
 
@@ -63,6 +64,7 @@ void init_dummy_device(vxt_system *s) {
     dummy->s = s;
 
     struct vxt_pirepheral *d = &dummy->p;
+
     d->install = &install;
     d->destroy = &destroy;
     d->io.in = &in;

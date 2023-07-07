@@ -15,18 +15,23 @@ newoption {
 }
 
 newoption {
-    trigger = "pcap",
-    description = "Enable network support by linking with pcap"
+    trigger = "modules",
+    description = "Generate make files for all modules"
+}
+
+newoption {
+    trigger = "static",
+    description = "Use static modules"
+}
+
+newoption {
+    trigger = "memclear",
+    description = "Clear main memory when initializing"
 }
 
 newoption {
     trigger = "validator",
     description = "Enable the PI8088 hardware validator"
-}
-
-newoption {
-    trigger = "isa-passthrough",
-    description = "Enable CH36x ISA passthrough"
 }
 
 newoption {
@@ -58,10 +63,20 @@ workspace "virtualxt"
 
     filter "configurations:debug"
         symbols "On"
+        optimize "Off"
+        defines "VXT_DEBUG_PREFETCH"
 
     filter "configurations:release"
         defines "NDEBUG"
         optimize "On"
+
+    filter "platforms:web"
+        toolset "clang"
+        defines "VXT_NO_LIBC"
+        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }       
+
+    filter "options:memclear"
+        defines "VXTU_MEMCLEAR"
 
     filter "options:i286"
         defines "VXT_CPU_286"
@@ -70,20 +85,91 @@ workspace "virtualxt"
         defines "PI8088"
         links "gpiod"
 
-    filter { "options:pcap", "not system:windows" }
-        defines "VXTP_NETWORK"
-        links "pcap"
-
-    filter { "options:pcap", "system:windows" }
-        defines { "VXTP_NETWORK", "_WINSOCK_DEPRECATED_NO_WARNINGS" }
-        includedirs "tools/npcap/sdk/Include"
-        links { "Ws2_32", "tools/npcap/sdk/Lib/x64/wpcap" }
-
     filter "system:windows"
         defines "_CRT_SECURE_NO_WARNINGS"
+        
+    filter "action:vs*"
+        architecture "x86_64"
 
-    filter "toolset:clang or gcc"
+    filter { "toolset:clang or gcc", "not action:vs*" }
         buildoptions { "-pedantic", "-Wall", "-Wextra", "-Werror", "-Wno-implicit-fallthrough", "-Wno-unused-result" }
+
+    filter { "toolset:clang or gcc", "configurations:debug" }
+        buildoptions "-Wno-error"
+        sanitize { "Address", "Fuzzer" }
+
+    local modules = {}
+    local module_opt = _OPTIONS["modules"]
+
+    if module_opt then
+        filter {}
+
+        defines "VXTU_MODULES"
+        if _OPTIONS["static"] then
+            defines "VXTU_STATIC_MODULES"
+        end
+
+        local mod_list = {}
+        local inclusive = true;
+ 
+        if string.sub(module_opt, 1, 1) == "-" then
+            inclusive = false
+            module_opt = string.sub(module_opt, 2)
+        end
+
+        for _,f in ipairs(os.matchfiles("modules/**/premake5.lua")) do
+            local enable = module_opt == "" or not inclusive
+            local name = path.getname(path.getdirectory(f))
+
+            for mod in string.gmatch(module_opt, "[%w%-]+") do
+                if mod == name then
+                    enable = inclusive
+                    break
+                end
+            end
+            if enable then
+                table.insert(mod_list, name)
+                defines { "VXTU_MODULE_" .. string.upper(name) }
+            end
+        end
+
+        for _,name in ipairs(mod_list) do
+            table.insert(modules, name)
+
+            project(name)
+                if _OPTIONS["static"] then
+                    kind "StaticLib"
+                    basedir "."
+                else
+                    kind "SharedLib"
+                    targetdir "modules"
+                    targetprefix ""
+                    targetextension ".vxt"
+                    basedir "."
+                    links "vxt"
+                    pic "On"
+                end
+
+                includedirs { "lib/vxt/include", "front/common" }
+                defines { "VXTU_MODULE_NAME=" .. name }
+
+                cleancommands {
+                    "{RMFILE} modules/" .. name .. ".*",
+                    "make clean %{cfg.buildcfg}"
+                }
+
+                filter {}
+    
+            dofile("modules/" .. name .. "/premake5.lua")
+        end
+    end
+
+    -- This is just a dummy project.
+    project "modules"
+        kind "StaticLib"
+        files "modules/dummy.c"
+        links(modules)
+        io.writefile("modules/dummy.c", "int dummy;\n")
 
     project "inih"
         kind "StaticLib"
@@ -111,39 +197,19 @@ workspace "virtualxt"
             "lib/fat16/fat16.c"
         }
 
-    project "nuked-opl3"
-        kind "StaticLib"
-        files { "lib/nuked-opl3/opl3.h", "lib/nuked-opl3/opl3.c" }
-
-    project "ch36x"
-        kind "StaticLib"
-        defines { "_POSIX_C_SOURCE=200809L", "FASYNC=O_ASYNC" }
-        files { "lib/ch36x/ch36x_lib.h", "lib/ch36x/ch36x_lib.c" }
-        buildoptions { "-Wno-unused-parameter", "-Wno-unused-variable", "-Wno-type-limits" }
-
     project "vxt"
-        kind "StaticLib"
+        if _OPTIONS["modules"] and not _OPTIONS["static"] then
+            kind "SharedLib"
+            targetdir "build/bin"
+            pic "On"
+        else
+            kind "StaticLib"
+        end
 
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         includedirs "lib/vxt/include"
+        defines "VXT_EXPORT"
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
-        
-        filter "toolset:clang or gcc"
-            buildoptions { "-nostdinc" }
-
-    project "vxtp"
-        kind "StaticLib"
-
-        defines "VXTP_NUKED_OPL3"
-
-        files { "lib/vxtp/*.h", "lib/vxtp/*.c" }
-        includedirs { "lib/vxtp", "lib/vxt/include", "lib/nuked-opl3", "lib/ch36x" }
-
-        filter "not options:pcap"
-            removefiles "lib/vxtp/network.c"
-
-        filter "toolset:gcc"
-            buildoptions { "-Wno-format-truncation", "-Wno-stringop-truncation", "-Wno-stringop-overflow" }
 
     project "libretro-frontend"
         kind "SharedLib"
@@ -152,16 +218,13 @@ workspace "virtualxt"
         targetdir "build/lib"
         pic "On"
 
-        includedirs "lib/libretro"
+        includedirs { "lib/libretro", "front/common" }
         files { "front/libretro/*.h", "front/libretro/*.c" }
         
         defines { "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
         includedirs "lib/vxt/include"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
-
-        includedirs "lib/vxtp"
-        files { "lib/vxtp/**.h", "lib/vxtp/joystick.c" }
 
         links { "miniz", "fat16" }
         includedirs { "lib/miniz", "lib/fat16" }
@@ -181,21 +244,27 @@ workspace "virtualxt"
 
     project "web-frontend"
         kind "ConsoleApp"
-        toolset "clang"
         targetname "virtualxt"
         targetprefix ""
         targetextension ".wasm"
         targetdir "build/web"
 
-        includedirs { "lib/vxt/include", "lib/vxtp", "lib/printf" }
+        includedirs "front/common"
         files { "front/web/*.h", "front/web/*.c" }
 
+        includedirs "lib/vxt/include"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
-        files { "lib/vxtp/ctrl.c", "lib/vxtp/serial_dbg.c" }
-
+        includedirs "lib/printf"
         files { "lib/printf/printf.h", "lib/printf/printf.c" }
+
+        files "modules/modules.h"
+        includedirs "modules"
+
+        if _OPTIONS["modules"] and _OPTIONS["static"] then
+            links(modules)
+        end
 
         -- Perhaps move this to options?
         local page_size = 0x10000
@@ -205,7 +274,6 @@ workspace "virtualxt"
             base = 6560                  -- Offset in linear memory to place global data
         }
 
-        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }
         linkoptions { "--target=wasm32", "-nostdlib", "-Wl,--allow-undefined", "-Wl,--lto-O3", "-Wl,--no-entry", "-Wl,--export-all", "-Wl,--import-memory" }
         linkoptions { "-Wl,--initial-memory=" .. tostring(memory.initial), "-Wl,--max-memory=" .. tostring(memory.max), "-Wl,--global-base=" .. tostring(memory.base) }
 
@@ -227,31 +295,35 @@ workspace "virtualxt"
         kind "ConsoleApp"
         targetname "virtualxt"
         targetdir "build/bin"
+        
+        files "modules/modules.h"
+        includedirs "modules"
 
-        defines "VXTP_NUKED_OPL3"
+        if _OPTIONS["modules"] and _OPTIONS["static"] then
+            links(modules)
+        end
 
         files { "front/sdl/*.h", "front/sdl/*.c" }
-
-        links { "vxt", "vxtp", "inih", "microui", "nuked-opl3" }
-        includedirs { "lib/vxt/include", "lib/vxtp", "lib/inih", "lib/microui/src", "lib/nuked-opl3" }
-
-        local sdl_cfg = path.join(_OPTIONS["sdl-config"], "sdl2-config")
-        buildoptions { string.format("`%s --cflags`", sdl_cfg) }
-        linkoptions { string.format("`%s --libs`", sdl_cfg) }
+        includedirs { "lib/vxt/include", "lib/inih", "lib/microui/src", "front/common" }
+        links { "vxt", "inih", "microui" }
 
         cleancommands {
             "{RMDIR} build/bin",
             "make clean %{cfg.buildcfg}"
         }
 
+        filter "action:vs*"
+            libdirs { path.join(_OPTIONS["sdl-config"], "lib", "x64") }
+            includedirs { path.join(_OPTIONS["sdl-config"], "include") }
+            links { "SDL2", "SDL2main" }
+
+        filter "not action:vs*"
+            local sdl_cfg = path.join(_OPTIONS["sdl-config"], "sdl2-config")
+            buildoptions { string.format("`%s --cflags`", sdl_cfg) }
+            linkoptions { string.format("`%s --libs`", sdl_cfg) }
+
         filter "options:validator"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
-
-        filter "options:isa-passthrough"
-            links "ch36x"
-
-        filter "system:windows"
-            links { "Shlwapi", "Shell32" }
 
         filter "toolset:clang or gcc"
             buildoptions "-Wno-unused-parameter"
@@ -287,10 +359,11 @@ if _OPTIONS["test"] then
         kind "ConsoleApp"
         targetdir "test"
         includedirs "lib/vxt/include"
-        defines { "TESTING", "VXT_CPU_286" }
+        defines { "TESTING", "VXT_CPU_286", "VXTU_MEMCLEAR" }
         files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
         optimize "Off"
         symbols "On"
+        sanitize { "Address", "Fuzzer" }
 
         postbuildcommands "./test/test"
         cleancommands "{RMDIR} test"
@@ -320,3 +393,23 @@ if _OPTIONS["test"] then
         return string.format("%s\nint main(int argc, char *argv[]) {\n%s}\n", head, body)
     end)())
 end
+
+io.writefile("modules/modules.h", (function()
+    local is_static = _OPTIONS["static"]
+    local str = "#include <vxt/vxtu.h>\n\nstruct vxtu_module_entry {\n\tconst char *name;\n\tvxtu_module_entry_func *(*entry)(int(*)(const char*, ...));\n};\n\n"
+    if is_static then
+        for _,mod in ipairs(modules) do
+            str = string.format("%s#ifdef VXTU_MODULE_%s\n\textern vxtu_module_entry_func *_vxtu_module_%s_entry(int(*)(const char*, ...));\n#endif\n", str, string.upper(mod), mod)
+        end
+        str = str .. "\n"
+    end
+    str = string.format("%sconst struct vxtu_module_entry vxtu_module_table[] = {\n", str)
+    for _,mod in ipairs(modules) do
+        if is_static then
+            str = string.format('%s\t#ifdef VXTU_MODULE_%s\n\t\t{ "%s", _vxtu_module_%s_entry },\n\t#endif\n', str, string.upper(mod), mod, mod)
+        else
+            str = string.format('%s\t{ "%s", NULL },\n', str, mod)  
+        end
+    end
+    return str .. "\t{ NULL, NULL }\n};\n"
+end)())

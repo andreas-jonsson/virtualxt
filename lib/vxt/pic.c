@@ -22,17 +22,16 @@
 
 #include <vxt/vxtu.h>
 
-VXT_PIREPHERAL(pic, {
+struct pic {
 	vxt_byte mask_reg;
     vxt_byte request_reg;
     vxt_byte service_reg;
     vxt_byte icw_step;
     vxt_byte read_mode;
 	vxt_byte icw[5];
-})
+};
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(c, pic, p);
+static vxt_byte in(struct pic *c, vxt_word port) {
 	switch (port) {
         case 0x20:
             return c->read_mode ? c->service_reg : c->request_reg;
@@ -42,8 +41,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 	return 0;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(c, pic, p);
+static void out(struct pic *c, vxt_word port, vxt_byte data) {
 	switch (port) {
         case 0x20:
             if (data & 0x10) {
@@ -79,8 +77,7 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 	}
 }
 
-static int next(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, pic, p);
+static int next(struct pic *c) {
     vxt_byte has = c->request_reg & (~c->mask_reg);
 
     for (vxt_byte i = 0; i < 8; i++) {
@@ -100,31 +97,29 @@ static int next(struct vxt_pirepheral *p) {
     return -1;
 }
 
-static void irq(struct vxt_pirepheral *p, int n) {
-    VXT_DEC_DEVICE(c, pic, p);
+static void irq(struct pic *c, int n) {
     c->request_reg |= (vxt_byte)(1 << n);
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
-    vxt_system_install_io(s, p, 0x20, 0x21);
+static vxt_error install(struct pic *c, vxt_system *s) {
+    vxt_system_install_io(s, VXT_GET_PIREPHERAL(c), 0x20, 0x21);
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(c, pic, p);
+static vxt_error reset(struct pic *c) {
     vxt_memclear(c, sizeof(struct pic));
     return VXT_NO_ERROR;
 }
 
-static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    (void)p; return VXT_PCLASS_PIC;
+static enum vxt_pclass pclass(struct pic *c) {
+    (void)c; return VXT_PCLASS_PIC;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p; return "PIC (Intel 8259)";
+static const char *name(struct pic *c) {
+    (void)c; return "PIC (Intel 8259)";
 }
 
-struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pic, {
+VXT_API struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pic, {
     PIREPHERAL->install = &install;
     PIREPHERAL->reset = &reset;
     PIREPHERAL->name = &name;

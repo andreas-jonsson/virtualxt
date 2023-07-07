@@ -122,14 +122,14 @@ static void push_quad(mr_renderer *r, mu_Rect dst, mu_Rect src, mu_Color color) 
 	r->tex_buf[texvert_idx + 7] = y + h;
 
 	/* update vertex buffer */
-	r->vert_buf[texvert_idx + 0] = dst.x;
-	r->vert_buf[texvert_idx + 1] = dst.y;
-	r->vert_buf[texvert_idx + 2] = dst.x + dst.w;
-	r->vert_buf[texvert_idx + 3] = dst.y;
-	r->vert_buf[texvert_idx + 4] = dst.x;
-	r->vert_buf[texvert_idx + 5] = dst.y + dst.h;
-	r->vert_buf[texvert_idx + 6] = dst.x + dst.w;
-	r->vert_buf[texvert_idx + 7] = dst.y + dst.h;
+	r->vert_buf[texvert_idx + 0] = (float)dst.x;
+	r->vert_buf[texvert_idx + 1] = (float)dst.y;
+	r->vert_buf[texvert_idx + 2] = (float)dst.x + dst.w;
+	r->vert_buf[texvert_idx + 3] = (float)dst.y;
+	r->vert_buf[texvert_idx + 4] = (float)dst.x;
+	r->vert_buf[texvert_idx + 5] = (float)dst.y + dst.h;
+	r->vert_buf[texvert_idx + 6] = (float)dst.x + dst.w;
+	r->vert_buf[texvert_idx + 7] = (float)dst.y + dst.h;
 
 	/* update color buffer */
 	memcpy(r->color_buf + color_idx +  0, &color, 4);

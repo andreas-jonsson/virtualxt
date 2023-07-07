@@ -27,11 +27,11 @@
 #include <string.h>
 #include <assert.h>
 
-#define VXT_LIBC
-#define VXTU_LIBC_IO
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
-#include <vxtp.h>
+
+#include <modules.h>
+#include <frontend.h>
 
 #include <SDL.h>
 #include <ini.h>
@@ -43,15 +43,17 @@
 #include "docopt.h"
 #include "icons.h"
 
+#if defined(_WIN32)
+	#define EDIT_CONFIG "notepad "
+#elif defined(__APPLE__)
+	#define EDIT_CONFIG "open -e "
+#else
+	#define EDIT_CONFIG "xdg-open "
+#endif
+
+#define CONFIG_FILE_NAME "config.ini"
 #define MIN_CLOCKS_PER_STEP 1
 #define MAX_PENALTY_USEC 1000
-
-struct video_adapter {
-	struct vxt_pirepheral *device;
-	vxt_dword (*border_color)(struct vxt_pirepheral *p);
-	_Bool (*snapshot)(struct vxt_pirepheral *p); // TODO: Add vxt_bool type.
-	int (*render)(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
-};
 
 struct ini_config {
 	struct DocoptArgs *args;
@@ -95,6 +97,10 @@ int num_cycles = 0;
 double cpu_frequency = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
 enum vxt_cpu_type cpu_type = VXT_CPU_8088;
 
+int num_devices = 0;
+struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = { NULL };
+#define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
+
 SDL_atomic_t running = {1};
 SDL_mutex *emu_mutex = NULL;
 SDL_Thread *emu_thread = NULL;
@@ -105,6 +111,9 @@ SDL_Point framebuffer_size = {640, 200};
 char floppy_image_path[FILENAME_MAX] = {0};
 char new_floppy_image_path[FILENAME_MAX] = {0};
 
+const char *modules_search_path = NULL;
+bool config_updated = false;
+
 int str_buffer_len = 0;
 char *str_buffer = NULL;
 
@@ -114,14 +123,22 @@ char *str_buffer = NULL;
 SDL_AudioDeviceID audio_device = 0;
 SDL_AudioSpec audio_spec = {0};
 
-static void trigger_breakpoint(void) {
-	SDL_TriggerBreakpoint();
-}
+#define MAX_AUDIO_ADAPTERS 8
+int num_audio_adapters = 0;
+struct frontend_audio_adapter audio_adapters[MAX_AUDIO_ADAPTERS] = {0};
+
+struct frontend_video_adapter video_adapter = {0};
+struct frontend_mouse_adapter mouse_adapter = {0};
+struct frontend_disk_controller disk_controller = {0};
+struct frontend_joystick_controller joystick_controller = {0};
+struct frontend_keyboard_controller keyboard_controller = {0};
+
+struct frontend_interface front_interface = {0};
 
 static int text_width(mu_Font font, const char *text, int len) {
 	(void)font;
 	if (len == -1)
-		len = strlen(text);
+		len = (int)strlen(text);
 	return mr_get_text_width(text, len);
 }
 
@@ -147,52 +164,6 @@ static const char *sprint(const char *fmt, ...) {
 	return str_buffer;
 }
 
-static const char *mgetline(void) {
-	static char buffer[1024] = {0};
-	char *str = fgets(buffer, sizeof(buffer), stdin);
-	for (char *p = str; *p; p++) {
-		if (*p == '\n') {
-			*p = 0;
-			break;
-		}
-	}
-	return str;
-}
-
-static _Bool pdisasm(vxt_system *s, vxt_pointer start, int size, int lines) { // TODO: Change to vxt_bool type.
-	#ifdef __APPLE__
-		int fh;
-		char name[128] = {0};
-		strncpy(name, "disasm.XXXXXX", sizeof(name) - 1);
-		fh = mkstemp(name);
-		if (fh == -1)
-			return false;
-		FILE *tmpf = fdopen(fh, "wb");
-	#else
-		char *name = tmpnam(NULL);
-		if (!name)
-			return false;
-		FILE *tmpf = fopen(name, "wb");
-	#endif
-
-	if (!tmpf)
-		return false;
-
-	for (int i = 0; i < size; i++) {
-		vxt_byte v = vxt_system_read_byte(s, start + i);
-		if (fwrite(&v, 1, 1, tmpf) != 1) {
-			fclose(tmpf);
-			remove(name);
-			return false;
-		}
-	}
-	fclose(tmpf);
-
-	bool ret = system(sprint("ndisasm -i -b 16 -o %d \"%s\" | head -%d", start, name, lines)) == 0;
-	remove(name);
-	return ret;
-}
-
 static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
 	(void)s; (void)addr;
 	fwrite(&data, 1, 1, trace_op_output);
@@ -205,13 +176,6 @@ static int emu_loop(void *ptr) {
 	double frequency = cpu_frequency;
 	Uint64 start = SDL_GetPerformanceCounter();
 
-	struct vxt_pirepheral *ppi = NULL;
-	for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
-		ppi = vxt_system_pirepheral(vxt, i);
-		if (ppi && (vxt_pirepheral_class(ppi) == VXT_PCLASS_PPI))
-			break;
-	}
-
 	while (SDL_AtomicGet(&running)) {
 		struct vxt_step res;
 		SYNC(
@@ -223,7 +187,6 @@ static int emu_loop(void *ptr) {
 					printf("step error: %s", vxt_error_str(res.err));
 			}
 			num_cycles += res.cycles;
-			//frequency = vxtu_ppi_turbo_enabled(ppi) ? (cpu_frequency * 3.0) : cpu_frequency;
 		);
 
 		for (;;) {
@@ -280,22 +243,17 @@ static int render_callback(int width, int height, const vxt_byte *rgba, void *us
 	return status;
 }
 
-#ifdef VXTP_NETWORK
-	static Uint32 network_callback(Uint32 interval, void *param) {
-		SYNC(vxtp_network_poll(param));
-		return interval;
-	}
-#endif
-
 static void audio_callback(void *udata, uint8_t *stream, int len) {
-	struct vxt_pirepheral **audio_sources = (struct vxt_pirepheral**)udata;
+	(void)udata;
 	len /= 2;
 	
 	SYNC(
 		for (int i = 0; i < len; i++) {
-			vxt_word sample = vxtu_ppi_generate_sample(audio_sources[0], audio_spec.freq);
-			if (audio_sources[1])
-				sample += vxtp_adlib_generate_sample(audio_sources[1], audio_spec.freq);
+			vxt_word sample = 0;
+			for (int j = 0; j < num_audio_adapters; j++) {
+				struct frontend_audio_adapter *a = &audio_adapters[j];
+				sample += a->generate_sample(a->device, audio_spec.freq);
+			}
 
 			((vxt_int16*)stream)[i] = sample;
 			if (audio_spec.channels > 1)
@@ -343,13 +301,55 @@ static int tell_file(vxt_system *s, void *fp) {
 	return (int)ftell((FILE*)fp);
 }
 
-static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
+static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
 	(void)userdata;
-	if (cmd == VXTP_CTRL_SHUTDOWN) {
+	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
 		printf("Guest OS shutdown!\n");
 		SDL_AtomicSet(&running, 0);
 	}
 	return 0;
+}
+
+static bool set_audio_adapter(const struct frontend_audio_adapter *adapter) {
+	if (num_audio_adapters >= MAX_AUDIO_ADAPTERS)
+		return false;
+	memcpy(&audio_adapters[num_audio_adapters++], adapter, sizeof(struct frontend_audio_adapter));
+	return true;
+}
+
+static bool set_video_adapter(const struct frontend_video_adapter *adapter) {
+	if (video_adapter.device)
+		return false;
+	video_adapter = *adapter;
+	return true;
+}
+
+static bool set_mouse_adapter(const struct frontend_mouse_adapter *adapter) {
+	if (mouse_adapter.device)
+		return false;
+	mouse_adapter = *adapter;
+	return true;
+}
+
+static bool set_disk_controller(const struct frontend_disk_controller *controller) {
+	if (disk_controller.device)
+		return false;
+	disk_controller = *controller;
+	return true;
+}
+
+static bool set_joystick_controller(const struct frontend_joystick_controller *controller) {
+	if (joystick_controller.device)
+		return false;
+	joystick_controller = *controller;
+	return true;
+}
+
+static bool set_keyboard_controller(const struct frontend_keyboard_controller *controller) {
+	if (keyboard_controller.device)
+		return false;
+	keyboard_controller = *controller;
+	return true;
 }
 
 static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
@@ -391,16 +391,162 @@ static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
 static int load_config(void *user, const char *section, const char *name, const char *value) {
 	(void)user; (void)section; (void)name; (void)value;
 	struct ini_config *config = (struct ini_config*)user;
-	if (!strcmp("debug", section)) {
-		if (!strcmp("debugger", name))
-			config->args->debug = atoi(value);
+	if (!strcmp("args", section)) {
+		if (!strcmp("hdboot", name))
+			config->args->hdboot |= atoi(value);
 		else if (!strcmp("halt", name))
-			config->args->halt = atoi(value);
-	} else if (!strcmp("rifs", section)) {
-		if (!strcmp("detatch", name) && (atoi(value) != 0))
-			config->args->rifs = NULL;
+			config->args->halt |= atoi(value);
+		else if (!strcmp("mute", name))
+			config->args->mute |= atoi(value);
+		else if (!strcmp("v20", name))
+			config->args->v20 |= atoi(value);
+		else if (!strcmp("no-activity", name))
+			config->args->no_activity |= atoi(value);
+		else if (!strcmp("bios", name) && !config->args->bios) {
+			static char bios_image_path[FILENAME_MAX] = {0};
+			strncpy(bios_image_path, value, FILENAME_MAX - 1);
+			config->args->bios = bios_image_path;
+		} else if (!strcmp("harddrive", name) && !config->args->harddrive) {
+			static char harddrive_image_path[FILENAME_MAX] = {0};
+			strncpy(harddrive_image_path, value, FILENAME_MAX - 1);
+			config->args->harddrive = harddrive_image_path;
+		}
 	}
-	return 0;
+	return 1;
+}
+
+static int load_modules(void *user, const char *section, const char *name, const char *value) {
+	if (!strcmp("modules", section)) {
+		for (
+			int i = 0;
+			#ifdef VXTU_STATIC_MODULES
+				true;
+			#else
+				i < 1;
+			#endif
+			i++
+		) {
+			vxtu_module_entry_func *(*constructors)(int(*)(const char*, ...)) = NULL;
+
+			#ifdef VXTU_STATIC_MODULES
+				const struct vxtu_module_entry *e = &vxtu_module_table[i];
+				if (!e->name)
+					break;
+				else if (strcmp(e->name, name))
+					continue;
+
+				constructors = e->entry;
+			#else
+				char buffer[FILENAME_MAX];
+				sprintf(buffer, "%s/%s.vxt", modules_search_path, name);
+
+				void *lib = SDL_LoadObject(buffer);
+				if (!lib) {
+					printf("ERROR: Could not load module: %s\n", name);
+					printf("ERROR: %s\n", SDL_GetError());
+					continue;
+				}
+
+				sprintf(buffer, "_vxtu_module_%s_entry", name);
+				*(void**)(&constructors) = SDL_LoadFunction(lib, buffer);
+
+				if (!constructors) {
+					printf("ERROR: Could not load module entry: %s\n", SDL_GetError());
+					SDL_UnloadObject(lib);
+					continue;
+				}
+			#endif
+
+			vxtu_module_entry_func *const_func = constructors(vxt_logger());
+			if (!const_func) {
+				printf("ERROR: Module '%s' does not return entries!\n", name);
+				continue;
+			}
+
+			for (vxtu_module_entry_func *f = const_func; *f; f++) {
+				struct vxt_pirepheral *p = (*f)(VXTU_CAST(user, void*, vxt_allocator*), (void*)&front_interface, value);
+				if (!p)
+					continue; // Assume the module chose not to be loaded.
+				APPEND_DEVICE(p);
+			}
+
+			#ifdef VXTU_STATIC_MODULES
+				printf("%d - %s", i + 1, name);
+			#else
+				printf("- %s", name);
+			#endif
+
+			if (*value) printf(" = %s\n", value);
+			else putc('\n', stdout);
+		}
+	}
+	return 1;
+}
+
+static int configure_pirepherals(void *user, const char *section, const char *name, const char *value) {
+	return (vxt_system_configure(user, section, name, value) == VXT_NO_ERROR) ? 1 : 0;
+}
+
+static bool write_default_config(const char *path, bool clean) {
+	FILE *fp;
+	if (!clean && (fp = fopen(path, "r"))) {
+		fclose(fp);
+		return false;
+	}
+
+	printf("WARNING: No config file found. Creating new default: %s\n", path);
+	if (!(fp = fopen(path, "w"))) {
+		printf("ERROR: Could not create config file: %s\n", path);
+		return false;
+	}
+
+	fprintf(fp,
+		"[modules]\n"
+		"chipset=xt\n"
+		"cga=\n"
+		"disk=\n"
+		"adlib=\n"
+		"rifs=\n"
+		"ctrl=\n"
+		"joystick=0x201\n"
+		"ems=lotech_ems\n"
+		"mouse=0x3F8,4\n"
+		";fdc=\n"
+		";rtc=bios/GLaTICK_0.8.4_AT.ROM\n"
+		";network=eth0\n"
+		";arstech_isa=libarsusb4.so\n"
+		";ch36x_isa=/dev/ch36xpci0\n"
+		";serial_dbg=sdbg1\n"
+		"\n; VGA module requires a 640K BIOS and CGA module to be disabled.\n"
+		";vga=bios/vgabios.bin\n"
+		"\n; GDB server module should always be loadad after the others.\n"
+		"; Otherwise you might have trouble with hardware breakpoints.\n"
+		";gdb=1234\n"
+		"\n[args]\n"
+		";bios=bios/GLABIOS640.ROM\n"
+		";halt=1\n"
+		";v20=1\n"
+		";hdboot=1\n"
+		";harddrive=boot/freedos_hd.img\n"
+		"\n[switch1]\n"
+		"ram=0x3\n"
+		"video=0x2\n"
+		"floppy=0x0\n"
+		"\n[sdbg1]\n"
+		"port=0x3F8\n"
+		"\n[ch36x_isa]\n"
+		"port=0x201\n"
+		"\n[arstech_isa]\n"
+		"port=0x201\n"
+		"\n[lotech_ems]\n"
+		"memory=0xD0000\n"
+		"port=0x260\n"
+		"\n[rifs]\n"
+		"port=0x178\n"
+	);
+
+	fclose(fp);
+	return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -415,15 +561,8 @@ int main(int argc, char *argv[]) {
 	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
 	args.rifs = rifs_path ? rifs_path : args.rifs;
 
-	#ifdef VXTP_NETWORK
-		if (args.list) {
-			vxtp_network_list(NULL);
-			return 0;
-		}
-	#endif
-
 	if (!args.config) {
-		args.config = SDL_GetPrefPath("virtualxt", "VirtualXT-SDL");
+		args.config = SDL_GetPrefPath("virtualxt", "VirtualXT-SDL2-" VXT_VERSION);
 		if (!args.config) {
 			printf("No config path!\n");
 			return -1;
@@ -436,39 +575,36 @@ int main(int argc, char *argv[]) {
 	printf("Base path: %s\n", base_path);
 
 	{
-		const char *path = sprint("%s/config.ini", args.config);
-		FILE *fp = fopen(path, "a");
-		if (fp) fclose(fp);
+		const char *path = sprint("%s/" CONFIG_FILE_NAME, args.config);
+		config_updated = write_default_config(path, args.clean != 0);
 
 		config.args = &args;
-		if (ini_parse(path, &load_config, &config) < 0) {
-			printf("Can't open: %s\n", path);
+		if (ini_parse(path, &load_config, &config)) {
+			printf("Can't open, or parse: %s\n", path);
 			return -1;
 		}
 	}
 
-	if (!args.bios) {
-		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
-		if (!args.bios)
-			args.bios = args.vga ? "bios/pcxtbios_640.bin" : "bios/pcxtbios.bin";
+	if (args.edit) {
+		printf("Open config file!\n");
+		return system(sprint(EDIT_CONFIG "%s/" CONFIG_FILE_NAME, args.config));
 	}
 
-	if (!args.extension) {
-		args.extension = SDL_getenv("VXT_DEFAULT_VXTX_BIOS_PATH");
-		if (!args.extension) args.extension = "bios/vxtx.bin";
+	if (!args.modules) {
+		args.modules = SDL_getenv("VXT_DEFAULT_MODULES_PATH");
+		if (!args.modules) args.modules = "modules";
+	}
+	modules_search_path = args.modules;
+
+	if (!args.bios) {
+		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
+		if (!args.bios) args.bios = "bios/GLABIOS.ROM";
 	}
 
 	if (!args.harddrive && !args.floppy) {
 		args.harddrive = SDL_getenv("VXT_DEFAULT_HD_IMAGE");
 		if (!args.harddrive) args.harddrive = "boot/freedos_hd.img";
 	}
-	
-	if (!args.rifs)
-		args.rifs = ".";
-
-	args.debug |= args.halt;
-	if (args.debug)
-		printf("Internal debugger enabled!\n");
 
 	if (args.v20) {
 		cpu_type = VXT_CPU_V20;
@@ -540,125 +676,80 @@ int main(int argc, char *argv[]) {
 
 	int num_sticks = 0;
 	SDL_Joystick *sticks[2] = {NULL};
+	
+	printf("Initialize joysticks:\n");
+	if (!(num_sticks = SDL_NumJoysticks())) {
+		printf("No joystick found!\n");
+	} else {
+		for (int i = 0; i < num_sticks; i++) {
+			const char *name = SDL_JoystickNameForIndex(i);
+			if (!name) name = "Unknown Joystick";
 
-	if (args.joystick) {
-		printf("Initialize joysticks:\n");
-		if (!(num_sticks = SDL_NumJoysticks())) {
-			printf("No joystick found!\n");
-		} else {
-			for (int i = 0; i < num_sticks; i++) {
-				const char *name = SDL_JoystickNameForIndex(i);
-				if (!name) name = "Unknown Joystick";
-
-				if ((i < 2) && (sticks[i] = SDL_JoystickOpen(i))) {
-					printf("%d - *%s\n", i + 1, name);
-					continue;
-				}
-				printf("%d - %s\n", i + 1, name);
+			if ((i < 2) && (sticks[i] = SDL_JoystickOpen(i))) {
+				printf("%d - *%s\n", i + 1, name);
+				continue;
 			}
+			printf("%d - %s\n", i + 1, name);
 		}
 	}
 
 	vxt_set_logger(&printf);
-	vxt_set_breakpoint(&trigger_breakpoint);
-
-	struct vxt_pirepheral *dbg = NULL;
-	if (args.debug) {
-		struct vxtu_debugger_interface dbgif = {&pdisasm, &mgetline, &printf};
-		dbg = vxtu_debugger_create(&realloc, &dbgif);
-	}
 
 	struct vxt_pirepheral *rom = load_bios(args.bios, 0xFE000);
 	if (!rom) return -1;
 
-	struct vxt_pirepheral *rom_ext = load_bios(args.extension, 0xE0000);
-	if (!rom_ext) return -1;
+	APPEND_DEVICE(vxtu_memory_create(&realloc, 0x0, 0x100000, false));
+	APPEND_DEVICE(rom);
 
-	struct vxtu_disk_interface interface = {
+	struct vxtu_disk_interface disk_interface = {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
 
-	struct vxt_pirepheral *disk = vxtu_disk_create(&realloc, &interface);
-	struct vxt_pirepheral *fdc = vxtp_fdc_create(&realloc, 0x3F0, 6);
-	struct vxt_pirepheral *ppi = vxtu_ppi_create(&realloc);
-	struct vxt_pirepheral *mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
-	struct vxt_pirepheral *adlib = args.no_adlib ? NULL : vxtp_adlib_create(&realloc);
-	struct vxt_pirepheral *joystick = NULL;
+	front_interface.interface_version = FRONTEND_INTERFACE_VERSION;
+	front_interface.set_video_adapter = &set_video_adapter;
+	front_interface.set_audio_adapter = &set_audio_adapter;
+	front_interface.set_mouse_adapter = &set_mouse_adapter;
+	front_interface.set_disk_controller = &set_disk_controller;
+	front_interface.set_joystick_controller = &set_joystick_controller;
+	front_interface.set_keyboard_controller = &set_keyboard_controller;
+	front_interface.ctrl.callback = &emu_control;
+	front_interface.disk.di = disk_interface;
 
-	int i = 2;
-	struct vxt_pirepheral *devices[32] = {vxtu_memory_create(&realloc, 0x0, 0x100000, false), rom};
-
-	struct video_adapter video = {0};
-	if (args.vga) {
-		video.device = vxtp_vga_create(&realloc);
-		video.border_color = &vxtp_vga_border_color;
-		video.snapshot = &vxtp_vga_snapshot;
-		video.render = &vxtp_vga_render;
-
-		vxtu_ppi_set_xt_switches(ppi, 0);
-		struct vxt_pirepheral *rom = load_bios(args.vga, 0xC0000); // Tested with ET4000 VGA BIOS.
-		if (!rom) return -1;
-
-		devices[i++] = rom;
-	} else {
-		video.device = vxtu_cga_create(&realloc);
-		video.border_color = &vxtu_cga_border_color;
-		video.snapshot = &vxtu_cga_snapshot;
-		video.render = &vxtu_cga_render;
+	SDL_atomic_t icon_fade = {0};
+	if (!args.no_activity) {
+		front_interface.disk.activity_callback = &disk_activity_cb;
+		front_interface.disk.userdata = &icon_fade;
 	}
 
-	if (num_sticks)
-		devices[i++] = joystick = vxtp_joystick_create(&realloc, sticks[0], sticks[1]);
+	#ifdef VXTU_STATIC_MODULES
+		printf("Modules are staticlly linked!\n");
+	#endif
+	printf("Loaded modules:\n");
 
-	if (!args.no_adlib)
-		devices[i++] = adlib;
-
-	if (args.fdc) {
-		devices[i++] = fdc;
-	} else {
-		devices[i++] = disk;
-		devices[i++] = rom_ext;
+	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, VXTU_CAST(&realloc, vxt_allocator*, void*))) {
+		printf("ERROR: Could not load all modules!\n");
+		return -1;
 	}
-
-	if (args.rifs) {
-		bool ro = *args.rifs != '*';
-		const char *root = ro ? args.rifs : &args.rifs[1];
-		devices[i++] = vxtp_rifs_create(&realloc, 0x178, root, ro);
-	}
-
-	devices[i++] = vxtu_pic_create(&realloc);
-	devices[i++] = vxtu_dma_create(&realloc);
-	devices[i++] = vxtp_rtc_create(&realloc);
-	devices[i++] = vxtu_pit_create(&realloc);
-	devices[i++] = vxtp_ctrl_create(&realloc, &emu_control, NULL);
-	devices[i++] = mouse;
-	devices[i++] = ppi;
-	devices[i++] = video.device;
-
-	if (args.serial_debug)
-		devices[i++] = vxtp_serial_dbg_create(&realloc, atoi(args.serial_debug));
-
-	SDL_TimerID network_timer = 0;
-	if (args.network) {
-		#ifdef VXTP_NETWORK
-			struct vxt_pirepheral *net = vxtp_network_create(&realloc, atoi(args.network));
-			if (net) {
-				devices[i++] = net;
-				if (!(network_timer = SDL_AddTimer(10, &network_callback, net))) {
-					printf("SDL_AddTimer failed!\n");
-					return -1;
-				}
-			}
-		#else
-			printf("No network support in this build!\n");
-			return -1;
-		#endif
-	}
-
-	devices[i++] = dbg;
-	devices[i] = NULL;
 
 	vxt_system *vxt = vxt_system_create(&realloc, cpu_type, (int)(cpu_frequency * 1000000.0), devices);
+	if (!vxt) {
+		printf("Could not create system!\n");
+		return -1;
+	}
+
+	if (ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &configure_pirepherals, vxt)) {
+		printf("ERROR: Could not configure all pirepherals!\n");
+		return -1;
+	}
+
+	#ifdef VXTU_MODULE_RIFS
+		if (args.rifs) {
+			bool wr = *args.rifs == '*';
+			const char *root = wr ? &args.rifs[1] : args.rifs;
+			vxt_system_configure(vxt, "rifs", "writable", wr ? "1" : "0");
+			vxt_system_configure(vxt, "rifs", "root", root);
+		}
+	#endif
 
 	if (args.trace) {
 		if (!(trace_op_output = fopen(args.trace, "wb"))) {
@@ -673,10 +764,6 @@ int main(int argc, char *argv[]) {
 		}
 		vxt_system_set_tracer(vxt, &tracer);
 	}
-
-	SDL_atomic_t icon_fade = {0};
-	if (!args.no_activity)
-		vxtu_disk_set_activity_callback(disk, &disk_activity_cb, &icon_fade);
 
 	#ifdef PI8088
 		vxt_system_set_validator(vxt, pi8088_validator());
@@ -695,26 +782,30 @@ int main(int argc, char *argv[]) {
 			printf("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
 
+	if (!disk_controller.device) {
+		printf("No disk controller!\n");
+		return -1;
+	}
+
 	if (args.floppy) {
 		strncpy(floppy_image_path, args.floppy, sizeof(floppy_image_path) - 1);
 
 		FILE *fp = fopen(floppy_image_path, "rb+");
-		vxt_error (*mnt)(struct vxt_pirepheral*,int,void*) = args.fdc ? vxtp_fdc_mount : vxtu_disk_mount;
-		if (fp && (mnt(args.fdc ? fdc : disk, 0, fp) == VXT_NO_ERROR))
+		if (fp && (disk_controller.mount(disk_controller.device, 0, fp) == VXT_NO_ERROR))
 			printf("Floppy image: %s\n", floppy_image_path);
 	}
 
-	if (args.harddrive && !args.fdc) {
+	if (args.harddrive) {
 		FILE *fp = fopen(args.harddrive, "rb+");
-		if (fp && (vxtu_disk_mount(disk, 128, fp) == VXT_NO_ERROR)) {
+		if (fp && (disk_controller.mount(disk_controller.device, 128, fp) == VXT_NO_ERROR)) {
 			printf("Harddrive image: %s\n", args.harddrive);
 			if (args.hdboot || !args.floppy)
-				vxtu_disk_set_boot_drive(disk, 128);
+				disk_controller.set_boot(disk_controller.device, 128);
 		}
 	}
 
 	vxt_system_reset(vxt);
-	vxt_system_registers(vxt)->debug = (bool)args.halt;
+	vxt_system_registers(vxt)->debug = args.halt != 0;
 
 	if (!(emu_mutex = SDL_CreateMutex())) {
 		printf("SDL_CreateMutex failed!\n");
@@ -726,8 +817,6 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	struct vxt_pirepheral *audio_sources[2] = {ppi, adlib};
-
 	if (args.mute) {
 		printf("Audio is muted!\n");
 	} else {
@@ -736,7 +825,6 @@ int main(int argc, char *argv[]) {
 		spec.format = AUDIO_S16;
 		spec.channels = 1;
 		spec.samples = pow2((AUDIO_FREQUENCY / 1000) * AUDIO_LATENCY);
-		spec.userdata = audio_sources;
 		spec.callback = &audio_callback;
 
 		int allowed_changes = SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE;
@@ -775,18 +863,18 @@ int main(int argc, char *argv[]) {
 					SDL_AtomicSet(&running, 0);
 					break;
 				case SDL_MOUSEMOTION:
-					if (mouse && SDL_GetRelativeMouseMode() && !has_open_windows) {
+					if (mouse_adapter.device && SDL_GetRelativeMouseMode() && !has_open_windows) {
 						Uint32 state = SDL_GetMouseState(NULL, NULL);
 						struct vxtu_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
 						if (state & SDL_BUTTON_LMASK)
 							ev.buttons |= VXTU_MOUSE_LEFT;
 						if (state & SDL_BUTTON_RMASK)
 							ev.buttons |= VXTU_MOUSE_RIGHT;
-						SYNC(vxtu_mouse_push_event(mouse, &ev));
+						SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
 					}
 					break;
 				case SDL_MOUSEBUTTONDOWN:
-					if (mouse && !has_open_windows) {
+					if (mouse_adapter.device && !has_open_windows) {
 						if (e.button.button == SDL_BUTTON_MIDDLE) {
 							SDL_SetRelativeMouseMode(false);
 							break;
@@ -798,7 +886,7 @@ int main(int argc, char *argv[]) {
 							ev.buttons |= VXTU_MOUSE_LEFT;
 						if (e.button.button == SDL_BUTTON_RIGHT)
 							ev.buttons |= VXTU_MOUSE_RIGHT;
-						SYNC(vxtu_mouse_push_event(mouse, &ev));
+						SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
 					}
 					break;
 				case SDL_DROPFILE:
@@ -811,20 +899,22 @@ int main(int argc, char *argv[]) {
 				{
 					assert(e.jaxis.which == e.jbutton.which);
 					SDL_Joystick *js = SDL_JoystickFromInstanceID(e.jaxis.which);
-					if (js && ((sticks[0] == js) || (sticks[0] == js))) {
-						struct vxtp_joystick_event ev = {
-							js,
-							(SDL_JoystickGetButton(js, 0) ? VXTP_JOYSTICK_A : 0) | (SDL_JoystickGetButton(js, 1) ? VXTP_JOYSTICK_B : 0),
+					if (js && ((sticks[0] == js) || (sticks[1] == js))) {
+						struct frontend_joystick_event ev = {
+							(sticks[0] == js) ? FRONTEND_JOYSTICK_1 : FRONTEND_JOYSTICK_2,
+							(SDL_JoystickGetButton(js, 0) ? FRONTEND_JOYSTICK_A : 0) | (SDL_JoystickGetButton(js, 1) ? FRONTEND_JOYSTICK_B : 0),
 							SDL_JoystickGetAxis(js, 0),
 							SDL_JoystickGetAxis(js, 1)
 						};
-						SYNC(vxtp_joystick_push_event(joystick, &ev));
+						if (joystick_controller.device) SYNC(
+							joystick_controller.push_event(joystick_controller.device, &ev)
+						)
 					}
 					break;
 				}
 				case SDL_KEYDOWN:
-					if (!has_open_windows && (e.key.keysym.sym != SDLK_F11) && (e.key.keysym.sym != SDLK_F12))
-						SYNC(vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode), false));
+					if (!has_open_windows && keyboard_controller.device && (e.key.keysym.sym != SDLK_F11) && (e.key.keysym.sym != SDLK_F12))
+						SYNC(keyboard_controller.push_event(keyboard_controller.device, sdl_to_xt_scan(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
 					if (e.key.keysym.sym == SDLK_F11) {
@@ -837,10 +927,12 @@ int main(int argc, char *argv[]) {
 						}
 						break;
 					} else if (e.key.keysym.sym == SDLK_F12) {
-						if (args.debug && (e.key.keysym.mod & KMOD_ALT)) {
+						if (e.key.keysym.mod & KMOD_ALT) {
 							SDL_SetWindowFullscreen(window, 0);
 							SDL_SetRelativeMouseMode(false);
-							SYNC(vxtu_debugger_interrupt(dbg));					
+
+							printf("Debug break!\n");
+							SYNC(vxt_system_registers(vxt)->debug = true);
 						} else if ((e.key.keysym.mod & KMOD_CTRL)) {
 							open_window(ctx, "Eject");
 						} else {
@@ -849,8 +941,8 @@ int main(int argc, char *argv[]) {
 						break;
 					}
 
-					if (!has_open_windows)
-						SYNC(vxtu_ppi_key_event(ppi, sdl_to_xt_scan(e.key.keysym.scancode) | VXTU_KEY_UP_MASK, false));
+					if (!has_open_windows && keyboard_controller.device)
+						SYNC(keyboard_controller.push_event(keyboard_controller.device, sdl_to_xt_scan(e.key.keysym.scancode) | VXTU_KEY_UP_MASK, false));
 					break;
 			}
 		}
@@ -892,8 +984,18 @@ int main(int argc, char *argv[]) {
 			help_window(ctx);
 			error_window(ctx);
 
+			if (config_updated) {
+				config_updated = false;
+				open_window(ctx, "Config Update");
+			}
+
+			if (config_window(ctx)) {
+				if (system(sprint(EDIT_CONFIG "%s/" CONFIG_FILE_NAME, args.config)))
+					return -1;
+			}
+
 			if (eject_window(ctx, (*floppy_image_path != 0) ? floppy_image_path: NULL)) {
-				SYNC(vxtu_disk_unmount(disk, 0));
+				SYNC(disk_controller.unmount(disk_controller.device, 0));
 				*floppy_image_path = 0;
 			}
 
@@ -903,7 +1005,7 @@ int main(int argc, char *argv[]) {
 					open_error_window(ctx, "Could not open floppy image file!");
 				} else {
 					vxt_error err = VXT_NO_ERROR;
-					SYNC(err = vxtu_disk_mount(disk, 0, fp));
+					SYNC(err = disk_controller.mount(disk_controller.device, 0, fp));
 					if (err != VXT_NO_ERROR) {
 						open_error_window(ctx, "Could not mount floppy image file!");
 						fclose(fp);
@@ -922,11 +1024,13 @@ int main(int argc, char *argv[]) {
 			vxt_dword bg = 0;
 			SDL_Rect rect = {0};
 
-			SYNC(
-				bg = video.border_color(video.device);
-				video.snapshot(video.device);
-			);
-			video.render(video.device, &render_callback, renderer);
+			if (video_adapter.device) {
+				SYNC(
+					bg = video_adapter.border_color(video_adapter.device);
+					video_adapter.snapshot(video_adapter.device);
+				);
+				video_adapter.render(video_adapter.device, &render_callback, renderer);
+			}
 
 			mr_clear(mr, mu_color(bg & 0x0000FF, (bg & 0x00FF00) >> 8, (bg & 0xFF0000) >> 16, 0xFF));
 			if (SDL_RenderCopy(renderer, framebuffer, NULL, target_rect(window, &rect)) != 0)
@@ -954,9 +1058,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	SDL_WaitThread(emu_thread, NULL);
-
-	if (network_timer)
-		SDL_RemoveTimer(network_timer);
 
 	if (audio_device)
 		SDL_CloseAudioDevice(audio_device);

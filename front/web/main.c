@@ -24,11 +24,12 @@
 
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
-#include <vxtp.h>
 
 #include <printf.h>
+#include <frontend.h>
+#include <modules.h>
 
-#include "../../bios/pcxtbios.h"
+#include "../../bios/glabios.h"
 #include "../../bios/vxtx.h"
 
 #include "js.h"
@@ -37,6 +38,10 @@
 vxtu_static_allocator(ALLOCATOR, ALLOCATOR_SIZE)
 
 #define LOG(...) ( log_wrapper(__VA_ARGS__) )
+
+int num_devices = 0;
+struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = { NULL };
+#define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
 
 int disk_head = 0;
 
@@ -131,9 +136,9 @@ static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_poin
 	return rom;
 }
 
-static vxt_byte emu_control(enum vxtp_ctrl_command cmd, void *userdata) {
+static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
 	(void)userdata;
-	if (cmd == VXTP_CTRL_SHUTDOWN) {
+	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
 		LOG("Guest OS shutdown!");
 		js_shutdown();
 	}
@@ -194,30 +199,38 @@ double wasm_generate_sample(int freq) {
 void wasm_initialize_emulator(int v20, int freq) {
 	vxt_set_logger(&log_wrapper);
 
-	struct vxtu_disk_interface interface = {
+	struct vxtu_disk_interface intrf = {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
-	struct vxt_pirepheral *disk = vxtu_disk_create(&ALLOCATOR, &interface);
+	struct vxt_pirepheral *disk = vxtu_disk_create(&ALLOCATOR, &intrf);
 	vxtu_disk_set_activity_callback(disk, &js_disk_activity, NULL);
 	
 	ppi = vxtu_ppi_create(&ALLOCATOR);
     cga = vxtu_cga_create(&ALLOCATOR);
 	mouse = vxtu_mouse_create(&ALLOCATOR, 0x3F8, 4); // COM1
 
-	struct vxt_pirepheral *devices[] = {
-		vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false),
-        load_bios(pcxtbios_bin, (int)pcxtbios_bin_len, 0xFE000),
-        load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000),
-        vxtu_pic_create(&ALLOCATOR),
-	    vxtu_dma_create(&ALLOCATOR),
-		vxtu_pit_create(&ALLOCATOR),
-		vxtp_ctrl_create(&ALLOCATOR, &emu_control, NULL),
-        ppi,
-		cga,
-        disk,
-		mouse,
-		NULL
-	};
+	APPEND_DEVICE(vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false));
+	APPEND_DEVICE(load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000));
+	APPEND_DEVICE(load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000))
+	APPEND_DEVICE(vxtu_pic_create(&ALLOCATOR));
+	APPEND_DEVICE(vxtu_dma_create(&ALLOCATOR))
+	APPEND_DEVICE(vxtu_pit_create(&ALLOCATOR))
+	APPEND_DEVICE(ppi);
+	APPEND_DEVICE(cga);
+	APPEND_DEVICE(disk);
+	APPEND_DEVICE(mouse);
+
+	#ifdef VXTU_MODULE_CTRL
+		#ifndef VXTU_STATIC_MODULES
+			#error The web frontend requires all modules to be staticlly linked!
+		#endif
+		vxtu_module_entry_func *e = _vxtu_module_ctrl_entry(&log_wrapper);
+		if (e) {
+			static struct frontend_interface fi = {0};
+			fi.ctrl.callback = &emu_control;
+			APPEND_DEVICE((*e)(&ALLOCATOR, &fi, ""));
+		}
+	#endif
 
 	sys = vxt_system_create(&ALLOCATOR, v20 ? VXT_CPU_V20 : VXT_CPU_8088, freq, devices);
 	vxt_system_initialize(sys);
@@ -228,6 +241,8 @@ void wasm_initialize_emulator(int v20, int freq) {
 		if (device)
 			LOG("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
+
+	vxtu_ppi_set_xt_switches(ppi, 46);
 
 	int drive_num = (js_disk_size() > 1474560) ? 128 : 0;
 	LOG("Disk num: %d", drive_num);

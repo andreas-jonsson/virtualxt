@@ -40,7 +40,6 @@ endif
 
 CORE_DIR    += ../../../
 VXT_DIR		:= $(CORE_DIR)/lib/vxt
-VXTP_DIR	   := $(CORE_DIR)/lib/vxtp
 TARGET_NAME := virtualxt
 LIBM		    = -lm
 

@@ -22,7 +22,7 @@
 
 #include <vxt/vxtu.h>
 
-VXT_PIREPHERAL(mda_video, {
+struct mda_video {
     vxt_byte mem[0x1000];
     bool dirty_cell[0x800];
     bool is_dirty;
@@ -34,21 +34,19 @@ VXT_PIREPHERAL(mda_video, {
     vxt_byte mode_ctrl_reg;
     vxt_byte crt_addr;
     vxt_byte crt_reg[0x100];
-})
+};
 
-static vxt_byte read(struct vxt_pirepheral *p, vxt_pointer addr) {
-    return (VXT_GET_DEVICE(mda_video, p))->mem[(addr - 0xB0000) & 0xFFF];
+static vxt_byte read(struct mda_video *m, vxt_pointer addr) {
+    return m->mem[(addr - 0xB0000) & 0xFFF];
 }
 
-static void write(struct vxt_pirepheral *p, vxt_pointer addr, vxt_byte data) {
-    VXT_DEC_DEVICE(m, mda_video, p);
+static void write(struct mda_video *m, vxt_pointer addr, vxt_byte data) {
     addr = (addr - 0xB0000) & 0xFFF;
     m->mem[addr] = data;
     m->dirty_cell[addr / 2] = true;
 }
 
-static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
-    VXT_DEC_DEVICE(m, mda_video, p);
+static vxt_byte in(struct mda_video *m, vxt_word port) {
     if (port == 0x3BA) {
 		m->refresh ^= 0x9;
 		return m->refresh;
@@ -58,8 +56,7 @@ static vxt_byte in(struct vxt_pirepheral *p, vxt_word port) {
 	return 0;
 }
 
-static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
-    VXT_DEC_DEVICE(m, mda_video, p);
+static void out(struct mda_video *m, vxt_word port, vxt_byte data) {
     m->is_dirty = true;
     if (port == 0x3B8) {
         m->mode_ctrl_reg = data;
@@ -91,15 +88,14 @@ static void out(struct vxt_pirepheral *p, vxt_word port, vxt_byte data) {
 	m->crt_addr = data;
 }
 
-static vxt_error install(vxt_system *s, struct vxt_pirepheral *p) {
+static vxt_error install(struct mda_video *m, vxt_system *s) {
+    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(m);
     vxt_system_install_mem(s, p, 0xB0000, 0xB7FFF);
     vxt_system_install_io(s, p, 0x3B0, 0x3BF);
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct vxt_pirepheral *p) {
-    VXT_DEC_DEVICE(m, mda_video, p);
-
+static vxt_error reset(struct mda_video *m) {
     m->cursor_visible = true;
     m->cursor_offset = 0;
     m->is_dirty = true;
@@ -110,16 +106,18 @@ static vxt_error reset(struct vxt_pirepheral *p) {
     return VXT_NO_ERROR;
 }
 
-static const char *name(struct vxt_pirepheral *p) {
-    (void)p;
+static const char *name(struct mda_video *m) {
+    (void)m;
     return "MDA Compatible Video Adapter";
 }
 
-static enum vxt_pclass pclass(struct vxt_pirepheral *p) {
-    (void)p; return VXT_PCLASS_VIDEO;
+static enum vxt_pclass pclass(struct mda_video *m) {
+    (void)m; return VXT_PCLASS_VIDEO;
 }
 
-struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, mda_video, {
+VXT_API struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, mda_video, {
+    vxtu_randomize(DEVICE->mem, sizeof(DEVICE->mem), (intptr_t)PIREPHERAL);
+
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
     PIREPHERAL->pclass = &pclass;
@@ -130,12 +128,12 @@ struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREA
     PIREPHERAL->io.out = &out;
 })
 
-void vxtu_mda_invalidate(struct vxt_pirepheral *p) { 
+VXT_API void vxtu_mda_invalidate(struct vxt_pirepheral *p) { 
     (VXT_GET_DEVICE(mda_video, p))->is_dirty = true;
 }
 
-int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata) {
-    VXT_DEC_DEVICE(m, mda_video, p);
+VXT_API int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata) {
+    struct mda_video *m = VXT_GET_DEVICE(mda_video, p);
     int cursor = m->cursor_visible ? (m->cursor_offset & 0x7FF) : -1;
 
     for (int i = 0; i < 0x800; i++) {

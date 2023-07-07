@@ -225,7 +225,7 @@ var invalidateWindowSize = false;
 var halted = false;
 var dbQueue = null;
 var diskActivityImage = null;
-var activity_opacity = 0;
+var activityOpacity = 0;
 
 var memory = new WebAssembly.Memory({
     initial: 350, // Pages
@@ -270,21 +270,21 @@ function diskActivity(disk_id, user_data) {
     if (diskActivityImage == null)
         return;
 
-    if (activity_opacity <= 0) {
-        activity_opacity = 1;
-        diskActivityImage.style.opacity = activity_opacity;
+    if (activityOpacity <= 0) {
+        activityOpacity = 1;
+        diskActivityImage.style.opacity = activityOpacity;
         diskActivityImage.style.display = "block";
         var timer = setInterval(() => {
-            activity_opacity -= 0.1;
-            if (activity_opacity <= 0) {
+            activityOpacity -= 0.1;
+            if (activityOpacity <= 0) {
                 clearInterval(timer);
                 diskActivityImage.style.display = "none";
                 return;
             }
-            diskActivityImage.style.opacity = activity_opacity;
+            diskActivityImage.style.opacity = activityOpacity;
         }, 50);
     } else {
-        activity_opacity = 1;
+        activityOpacity = 1;
     }
 }
 

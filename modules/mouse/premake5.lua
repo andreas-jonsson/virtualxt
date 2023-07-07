@@ -1,0 +1,3 @@
+files {
+    "mouse.c"
+}

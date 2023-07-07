@@ -28,62 +28,110 @@ extern "C" {
 #endif
 
 #define VXT_VERSION_MAJOR 0
-#define VXT_VERSION_MINOR 8
+#define VXT_VERSION_MINOR 9
 #define VXT_VERSION_PATCH 0
 
 #define _VXT_STRINGIFY(x) #x
-#define _VXT_VERSION(A, B, C) _VXT_STRINGIFY(A) "." _VXT_STRINGIFY(B) "." _VXT_STRINGIFY(C)
-#define VXT_VERSION _VXT_VERSION(VXT_VERSION_MAJOR, VXT_VERSION_MINOR, VXT_VERSION_PATCH)
+#define _VXT_EVALUATOR(M, ...) M(__VA_ARGS__)
+#define VXT_VERSION _VXT_EVALUATOR(_VXT_STRINGIFY, VXT_VERSION_MAJOR) "." _VXT_EVALUATOR(_VXT_STRINGIFY, VXT_VERSION_MINOR) "." _VXT_EVALUATOR(_VXT_STRINGIFY, VXT_VERSION_PATCH)
 
-#if !defined(VXT_LIBC) && defined(TESTING)
-    #define VXT_LIBC
+#ifdef VXT_NO_LIBC
+    #ifdef TESTING
+        #error "Don't use VXT_NO_LIBC for tests!"
+    #endif
+
+    #ifndef bool
+        typedef _Bool bool;
+        #define true ((bool)1)
+        #define false ((bool)0)
+    #endif
+
+    #ifndef size_t
+        typedef __SIZE_TYPE__ size_t;
+    #endif
+
+    #ifndef intptr_t
+        #ifdef __INTPTR_TYPE__
+            typedef __INTPTR_TYPE__ intptr_t;
+        #else
+            typedef long long int intptr_t;
+        #endif
+    #endif
+
+    #ifndef uintptr_t
+        #ifdef __UINTPTR_TYPE__
+            typedef __UINTPTR_TYPE__ uintptr_t;
+        #else
+            typedef unsigned long long int uintptr_t;
+        #endif
+    #endif
+
+    #ifndef NULL
+        #define NULL ((void*)0)
+    #endif
+
+    #ifndef memmove
+        void *memmove(void*, const void*, size_t);
+    #endif
+
+    #ifndef memcpy
+        void *memcpy(void*, const void*, size_t);
+    #endif
+
+    #ifndef memset
+        void *memset(void*, int, size_t);
+    #endif
+
+    typedef char vxt_int8;
+    typedef short vxt_int16;
+    typedef int vxt_int32;
+
+    typedef unsigned char vxt_byte;
+    typedef unsigned short vxt_word;
+    typedef unsigned int vxt_dword;
+    typedef unsigned int vxt_pointer;
+#else
+    #ifndef __STDC_HOSTED__
+        #error "Use VXT_NO_LIBC for builds without hosted environment."
+    #endif
+
+    #include <stddef.h>
+    #include <stdlib.h>
+    #include <stdio.h>
+    #include <stdint.h>
+    #include <stdbool.h>
+    #include <string.h>
+
+    typedef int8_t vxt_int8;
+    typedef int16_t vxt_int16;
+    typedef int32_t vxt_int32;
+
+    typedef uint8_t vxt_byte;
+    typedef uint16_t vxt_word;
+    typedef uint32_t vxt_dword;
+    typedef uint32_t vxt_pointer;
 #endif
 
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
-    #error libvxt require C11 support
-#endif
-
-typedef char vxt_int8;
-typedef short vxt_int16;
-typedef int vxt_int32;
-
-typedef unsigned char vxt_byte;
-typedef unsigned short vxt_word;
-typedef unsigned int vxt_dword;
-typedef unsigned int vxt_pointer;
-
-#ifndef bool
-    typedef _Bool bool;
-    #define true ((bool)1)
-    #define false ((bool)0)
-#endif
-
-#ifndef size_t
-    typedef __SIZE_TYPE__ size_t;
-#endif
-
-#ifndef NULL
-    #define NULL ((void*)0)
-#endif
-
-#ifndef memmove
-    void *memmove(void*, const void*, size_t);
-#endif
-
-#ifndef memcpy
-    void *memcpy(void*, const void*, size_t);
-#endif
-
-#ifndef memset
-    void *memset(void*, int, size_t);
+    #error "libvxt require C11 support!"
 #endif
 
 #define vxt_memclear(p, s) ( memset((p), 0, (int)(s)) )
 
 #ifdef _MSC_VER
-   #define VXT_PACK(x) __pragma(pack(push, 1)) x __pragma(pack(pop))
+    #define VXT_PACK(x) __pragma(pack(push, 1)) x __pragma(pack(pop))
+
+    #define VXT_API_EXPORT __declspec(dllexport)
+    #ifdef VXT_EXPORT
+        #define VXT_API VXT_API_EXPORT
+    #else
+        #define VXT_API __declspec(dllimport)
+    #endif
 #else
-   #define VXT_PACK(x) x __attribute__((__packed__))
+    #define VXT_PACK(x) x __attribute__((__packed__))
+
+    #define VXT_API_EXPORT
+    #define VXT_API
 #endif
 
 #define VXT_POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
@@ -131,41 +179,9 @@ enum {
 };
 
 #define VXT_IO_MAP_SIZE 0x10000
-#define VXT_MEM_MAP_SIZE 0x100000
+#define VXT_MEM_MAP_SIZE 0x10000
 #define VXT_MAX_PIREPHERALS 0xFF
 #define VXT_DEFAULT_FREQUENCY 4772726
-
-#define VXT_PIREPHERAL_SIZE(type) sizeof(struct _ ## type)
-#define VXT_GET_DEVICE_DATA(type, pir) ((struct _ ## type*)(void*)(pir))->d
-#define VXT_GET_SYSTEM(type, pir) ((struct _ ## type*)(void*)(pir))->p.s
-#define VXT_GET_DEVICE(type, pir) &((struct _ ## type*)(void*)(pir))->u
-#define VXT_DEC_DEVICE(var, type, pir) struct type* const var = VXT_GET_DEVICE(type, pir)
-
-#define VXT_PIREPHERAL_CREATE(alloc, type, body) {              \
-        struct vxt_pirepheral *PIREPHERAL = (struct vxt_pirepheral*)(alloc)(NULL, VXT_PIREPHERAL_SIZE(type)); \
-        vxt_memclear(PIREPHERAL, VXT_PIREPHERAL_SIZE(type));    \
-        VXT_DEC_DEVICE(DEVICE, type, PIREPHERAL);               \
-        { body ; }                                              \
-        (void)DEVICE;                                           \
-        return PIREPHERAL;                                      \
-    }                                                           \
-
-#define VXT_PIREPHERAL(name, body)                      \
-    struct name                                         \
-        body;                                           \
-    struct _ ## name {                                  \
-        struct _vxt_pirepheral p;                       \
-        struct name u;                                  \
-    };                                                  \
-
-#define VXT_PIREPHERAL_WITH_DATA(name, type, body)      \
-    struct name                                         \
-        body;                                           \
-    struct _ ## name {                                  \
-        struct _vxt_pirepheral p;                       \
-        struct name u;                                  \
-        type d[];                                       \
-    };                                                  \
 
 #define _VXT_REG(r) VXT_PACK(union {VXT_PACK(struct {vxt_byte r ## l; vxt_byte r ## h;}); vxt_word r ## x;})
 struct vxt_registers {
@@ -198,41 +214,60 @@ enum vxt_pclass {
     VXT_PCLASS_VIDEO    = 0x40
 };
 
-struct vxt_pirepheral;
+#define VXT_GET_DEVICE_PTR(pir) ( (void*)((char*)(pir) + sizeof(struct _vxt_pirepheral)) )
+#define VXT_GET_DEVICE(type, pir) ( (struct type*)VXT_GET_DEVICE_PTR(pir) )
+#define VXT_GET_PIREPHERAL(dev) ( (struct vxt_pirepheral*)((char*)(dev) - sizeof(struct _vxt_pirepheral)) )
+#define VXT_GET_SYSTEM(dev) ((struct _vxt_pirepheral*)VXT_GET_PIREPHERAL(dev))->s
+
+#define VXT_PIREPHERAL_SIZE(type) ( sizeof(struct _vxt_pirepheral) + sizeof(struct type) )
+
+#define VXT_PIREPHERAL_CREATE(alloc, type, body) {                          \
+        struct VXT_PIREPHERAL(struct type) *PIREPHERAL;                     \
+        *(void**)&PIREPHERAL = (alloc)(NULL, VXT_PIREPHERAL_SIZE(type));    \
+        vxt_memclear(PIREPHERAL, VXT_PIREPHERAL_SIZE(type));                \
+        struct type *DEVICE = VXT_GET_DEVICE(type, PIREPHERAL);             \
+        { body ; }                                                          \
+        (void)DEVICE;                                                       \
+        return (struct vxt_pirepheral*)PIREPHERAL;                          \
+    }                                                                       \
+
+#define VXT_PIREPHERAL(ty) {                                        \
+	vxt_error (*install)(ty*, vxt_system*);                         \
+    vxt_error (*config)(ty*,const char*,const char*,const char*);   \
+    vxt_error (*destroy)(ty*);                                      \
+    vxt_error (*reset)(ty*);                                        \
+    vxt_error (*timer)(ty*,vxt_timer_id,int);                       \
+    const char* (*name)(ty*);                                       \
+    enum vxt_pclass (*pclass)(ty*);                                 \
+                                                                    \
+    struct {                                                        \
+        vxt_byte (*in)(ty*,vxt_word);                               \
+        void (*out)(ty*,vxt_word,vxt_byte);                         \
+                                                                    \
+        vxt_byte (*read)(ty*,vxt_pointer);                          \
+        void (*write)(ty*,vxt_pointer,vxt_byte);                    \
+    } io;                                                           \
+                                                                    \
+    struct {                                                        \
+        void (*irq)(ty*,int);                                       \
+        int (*next)(ty*);                                           \
+    } pic;                                                          \
+                                                                    \
+    struct {                                                        \
+        vxt_byte (*read)(ty*,vxt_byte);                             \
+        void (*write)(ty*,vxt_byte,vxt_byte);                       \
+    } dma;                                                          \
+}                                                                   \
 
 /// Interface for ISA bus devices.
-struct vxt_pirepheral {
-	vxt_error (*install)(vxt_system*,struct vxt_pirepheral*);
-    vxt_error (*destroy)(struct vxt_pirepheral*);
-    vxt_error (*reset)(struct vxt_pirepheral*);
-    vxt_error (*timer)(struct vxt_pirepheral*,vxt_timer_id,int);
-    const char* (*name)(struct vxt_pirepheral*);
-    enum vxt_pclass (*pclass)(struct vxt_pirepheral*);
-
-    struct {
-        vxt_byte (*in)(struct vxt_pirepheral*,vxt_word);
-        void (*out)(struct vxt_pirepheral*,vxt_word,vxt_byte);
-
-        vxt_byte (*read)(struct vxt_pirepheral*,vxt_pointer);
-        void (*write)(struct vxt_pirepheral*,vxt_pointer,vxt_byte);
-    } io;
-
-    struct {
-        void (*irq)(struct vxt_pirepheral*,int);
-        int (*next)(struct vxt_pirepheral*);
-    } pic;
-
-    struct {
-        vxt_byte (*read)(struct vxt_pirepheral*,vxt_byte);
-        void (*write)(struct vxt_pirepheral*,vxt_byte,vxt_byte);
-    } dma;
-};
+struct vxt_pirepheral VXT_PIREPHERAL(void);
 
 /// @private
 struct _vxt_pirepheral {
     struct vxt_pirepheral p;
     vxt_device_id id;
     vxt_system *s;
+    // User device data is located at the end of this struct.
 };
 
 struct vxt_validator {
@@ -256,7 +291,7 @@ struct vxt_validator {
 #else
 
     /// @private
-    extern int (*_vxt_logger)(const char*, ...);
+    VXT_API extern int (*_vxt_logger)(const char*, ...);
 
     #define VXT_PRINT(...) { _vxt_logger(__VA_ARGS__); }
     #define VXT_LOG(...) {                                                              \
@@ -267,53 +302,54 @@ struct vxt_validator {
 
 #endif
 
+#define vxt_logger() _vxt_logger
+
 /// @private
-extern vxt_error _vxt_system_initialize(vxt_system *s, unsigned reg_size, int v_major, int v_minor);
+VXT_API vxt_error _vxt_system_initialize(vxt_system *s, unsigned reg_size, int v_major, int v_minor);
 
 #define vxt_system_initialize(s) _vxt_system_initialize((s), sizeof(struct vxt_registers), VXT_VERSION_MAJOR, VXT_VERSION_MINOR)
 
-extern const char *vxt_error_str(vxt_error err);
-extern const char *vxt_lib_version(void);
-extern void vxt_set_logger(int (*f)(const char*, ...));
-extern void vxt_set_breakpoint(void (*f)(void));
-extern int vxt_lib_version_major(void);
-extern int vxt_lib_version_minor(void);
-extern int vxt_lib_version_patch(void);
+VXT_API const char *vxt_error_str(vxt_error err);
+VXT_API const char *vxt_lib_version(void);
+VXT_API void vxt_set_logger(int (*f)(const char*, ...));
+VXT_API int vxt_lib_version_major(void);
+VXT_API int vxt_lib_version_minor(void);
+VXT_API int vxt_lib_version_patch(void);
 
-extern const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
-extern enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
+VXT_API const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
+VXT_API enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
 
-extern vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]);
-extern vxt_error vxt_system_destroy(vxt_system *s);
-extern struct vxt_step vxt_system_step(vxt_system *s, int cycles);
-extern void vxt_system_reset(vxt_system *s);
-extern struct vxt_registers *vxt_system_registers(vxt_system *s);
+VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]);
+VXT_API vxt_error vxt_system_configure(vxt_system *s, const char *section, const char *key, const char *value);
+VXT_API vxt_error vxt_system_destroy(vxt_system *s);
+VXT_API struct vxt_step vxt_system_step(vxt_system *s, int cycles);
+VXT_API void vxt_system_reset(vxt_system *s);
+VXT_API struct vxt_registers *vxt_system_registers(vxt_system *s);
 
-extern int vxt_system_frequency(vxt_system *s);
-extern void vxt_system_set_frequency(vxt_system *s, int freq);
-extern void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte));
-extern void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *interface);
-extern void vxt_system_set_userdata(vxt_system *s, void *data);
-extern void *vxt_system_userdata(vxt_system *s);
-extern vxt_allocator *vxt_system_allocator(vxt_system *s);
+VXT_API int vxt_system_frequency(vxt_system *s);
+VXT_API void vxt_system_set_frequency(vxt_system *s, int freq);
+VXT_API void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte));
+VXT_API void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *intrf);
+VXT_API void vxt_system_set_userdata(vxt_system *s, void *data);
+VXT_API void *vxt_system_userdata(vxt_system *s);
+VXT_API vxt_allocator *vxt_system_allocator(vxt_system *s);
 
-extern const vxt_byte *vxt_system_io_map(vxt_system *s);
-extern const vxt_byte *vxt_system_mem_map(vxt_system *s);
-extern struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx);
-extern vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p);
-extern vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p);
-extern void vxt_system_interrupt(vxt_system *s, int n);
+VXT_API const vxt_byte *vxt_system_io_map(vxt_system *s);
+VXT_API const vxt_byte *vxt_system_mem_map(vxt_system *s);
+VXT_API struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx);
+VXT_API vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p);
+VXT_API vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p);
+VXT_API void vxt_system_interrupt(vxt_system *s, int n);
 
-extern void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_word addr);
-extern void vxt_system_install_mem_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer addr);
-extern void vxt_system_install_io(vxt_system *s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to);
-extern void vxt_system_install_mem(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to);
-extern vxt_timer_id vxt_system_install_timer(vxt_system *s, struct vxt_pirepheral *dev, unsigned int us);
+VXT_API void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_word addr);
+VXT_API void vxt_system_install_io(vxt_system *s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to);
+VXT_API void vxt_system_install_mem(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to);
+VXT_API vxt_timer_id vxt_system_install_timer(vxt_system *s, struct vxt_pirepheral *dev, unsigned int us);
 
-extern vxt_byte vxt_system_read_byte(vxt_system *s, vxt_pointer addr);
-extern void vxt_system_write_byte(vxt_system *s, vxt_pointer addr, vxt_byte data);
-extern vxt_word vxt_system_read_word(vxt_system *s, vxt_pointer addr);
-extern void vxt_system_write_word(vxt_system *s, vxt_pointer addr, vxt_word data);
+VXT_API vxt_byte vxt_system_read_byte(vxt_system *s, vxt_pointer addr);
+VXT_API void vxt_system_write_byte(vxt_system *s, vxt_pointer addr, vxt_byte data);
+VXT_API vxt_word vxt_system_read_word(vxt_system *s, vxt_pointer addr);
+VXT_API void vxt_system_write_word(vxt_system *s, vxt_pointer addr, vxt_word data);
 
 /// @private
 _Static_assert(sizeof(vxt_pointer) == 4 && sizeof(vxt_int32) == 4, "invalid integer size");
@@ -323,6 +359,12 @@ _Static_assert(sizeof(long long) == 8, "invalid size of 'long long'");
 
 /// @private
 _Static_assert(sizeof(vxt_word) == 2, "invalid size of 'short'");
+
+/// @private
+_Static_assert(sizeof(intptr_t) == sizeof(void*), "invalid intptr_t size");
+
+/// @private
+_Static_assert(sizeof(uintptr_t) == sizeof(void*), "invalid uintptr_t size");
 
 #ifdef __cplusplus
 }
