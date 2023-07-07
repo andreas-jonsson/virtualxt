@@ -70,14 +70,13 @@ static vxt_byte in(struct serial_mouse *m, vxt_word port) {
 
 static void out(struct serial_mouse *m, vxt_word port, vxt_byte data) {
 	vxt_word reg = port & 7;
-	vxt_byte rval = m->registers[reg];
 	m->registers[reg] = data;
 
-	if (reg == 4) { // Modem Control Register
-		if ((data & 1) != (rval & 1)) {
-			m->buffer_len = 0;
-			push_data(m, 'M');
-		}
+    // Modem Control Register
+	if ((reg == 4) && (data & 2)) {
+        m->buffer_len = 0;
+        push_data(m, 'M');
+        VXT_LOG("Reset!");
 	}
 }
 
