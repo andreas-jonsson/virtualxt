@@ -23,6 +23,8 @@
 #include <vxt/vxtu.h>
 #include <frontend.h>
 
+#include "reenigne_composite.inl"
+
 static struct vxt_pirepheral *cga_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)args;
     struct vxt_pirepheral *p = vxtu_cga_create(alloc);
@@ -39,6 +41,8 @@ static struct vxt_pirepheral *cga_create(vxt_allocator *alloc, void *frontend, c
 		};
 		fi->set_video_adapter(&a);
     }
+
+	cga_comp_init(0);
     return p;
 }
 
