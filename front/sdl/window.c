@@ -29,7 +29,7 @@
 #include "window.h"
 #include "mu_renderer.h"
 
-#include <SDL2/SDL_stdinc.h>
+#include <SDL_stdinc.h>
 
 bool has_open_windows = false;
 char window_error_message[1024] = {0};
