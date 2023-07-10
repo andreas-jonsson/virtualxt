@@ -220,6 +220,11 @@ VXT_API const vxt_byte *vxt_system_mem_map(vxt_system *s) {
     return s->mem_map;
 }
 
+VXT_API const struct vxt_monitor *vxt_system_monitor(vxt_system *s, vxt_byte idx) {
+    struct vxt_monitor *m = &s->monitors[idx];
+    return m->flags ? m : NULL;
+}
+
 VXT_API struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx) {
     return s->devices[idx];
 }
@@ -251,6 +256,11 @@ VXT_API int vxt_system_frequency(CONSTP(vxt_system) s) {
 
 VXT_API void vxt_system_set_frequency(CONSTP(vxt_system) s, int freq) {
     s->frequency = freq;
+}
+
+VXT_API void vxt_system_install_monitor(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, const char *name, void *reg, enum vxt_monitor_flag flags) {
+    if (s->num_monitors < VXT_MAX_MONITORS)
+        s->monitors[s->num_monitors++] = (struct vxt_monitor){ vxt_pirepheral_name(dev), name, reg, flags };
 }
 
 VXT_API vxt_timer_id vxt_system_install_timer(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, unsigned int us) {

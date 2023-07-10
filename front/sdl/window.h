@@ -26,6 +26,8 @@
 #include <stdbool.h>
 #include <microui.h>
 
+#include <vxt/vxt.h>
+
 // This is used to prevent the emulator to
 // capture the mouse when windows are open.
 extern bool has_open_windows;
@@ -38,5 +40,6 @@ void error_window(mu_Context *ctx);
 int config_window(mu_Context *ctx);
 int eject_window(mu_Context *ctx, const char *path);
 int mount_window(mu_Context *ctx, char *path);
+void monitors_window(mu_Context *ctx, vxt_system *s);
 
 #endif

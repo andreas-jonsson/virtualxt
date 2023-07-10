@@ -181,6 +181,7 @@ enum {
 #define VXT_IO_MAP_SIZE 0x10000
 #define VXT_MEM_MAP_SIZE 0x10000
 #define VXT_MAX_PIREPHERALS 0xFF
+#define VXT_MAX_MONITORS 0xFF
 #define VXT_DEFAULT_FREQUENCY 4772726
 
 #define _VXT_REG(r) VXT_PACK(union {VXT_PACK(struct {vxt_byte r ## l; vxt_byte r ## h;}); vxt_word r ## x;})
@@ -212,6 +213,24 @@ enum vxt_pclass {
     VXT_PCLASS_PPI      = 0x10,
     VXT_PCLASS_PIT      = 0x20,
     VXT_PCLASS_VIDEO    = 0x40
+};
+
+enum vxt_monitor_flag {
+    VXT_MONITOR_SIZE_BYTE       = 0x1,
+    VXT_MONITOR_SIZE_WORD       = 0x2,
+    VXT_MONITOR_SIZE_DWORD      = 0x4,
+    VXT_MONITOR_SIZE_QWORD      = 0x8,
+    VXT_MONITOR_FORMAT_HEX      = 0x10,
+    VXT_MONITOR_FORMAT_DECIMAL  = 0x20,
+    VXT_MONITOR_FORMAT_BINARY   = 0x40,
+    VXT_MONITOR_FORMAT_REAL     = 0x80
+};
+
+struct vxt_monitor {
+    const char *dev;
+    const char *name;
+    const void *reg;
+    enum vxt_monitor_flag flags;
 };
 
 #define VXT_GET_DEVICE_PTR(pir) ( (void*)((char*)(pir) + sizeof(struct _vxt_pirepheral)) )
@@ -336,6 +355,7 @@ VXT_API vxt_allocator *vxt_system_allocator(vxt_system *s);
 
 VXT_API const vxt_byte *vxt_system_io_map(vxt_system *s);
 VXT_API const vxt_byte *vxt_system_mem_map(vxt_system *s);
+VXT_API const struct vxt_monitor *vxt_system_monitor(vxt_system *s, vxt_byte idx);
 VXT_API struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx);
 VXT_API vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p);
 VXT_API vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p);
@@ -345,6 +365,7 @@ VXT_API void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev,
 VXT_API void vxt_system_install_io(vxt_system *s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to);
 VXT_API void vxt_system_install_mem(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to);
 VXT_API vxt_timer_id vxt_system_install_timer(vxt_system *s, struct vxt_pirepheral *dev, unsigned int us);
+VXT_API void vxt_system_install_monitor(vxt_system *s, struct vxt_pirepheral *dev, const char *name, void *reg, enum vxt_monitor_flag flags);
 
 VXT_API vxt_byte vxt_system_read_byte(vxt_system *s, vxt_pointer addr);
 VXT_API void vxt_system_write_byte(vxt_system *s, vxt_pointer addr, vxt_byte data);

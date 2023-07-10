@@ -459,6 +459,8 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
         v->set_video_adapter(&a);
     }
 
+    vxt_system_install_monitor(s, p, "Video Mode", &v->video_mode, VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
+
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + 0x20000) - 1);
     vxt_system_install_mem(s, p, VIDEO_MODE_BDA_START_ADDRESS, VIDEO_MODE_BDA_END_ADDRESS); // BDA video mode
 

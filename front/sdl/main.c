@@ -918,12 +918,16 @@ int main(int argc, char *argv[]) {
 					break;
 				case SDL_KEYUP:
 					if (e.key.keysym.sym == SDLK_F11) {
-						if (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) {
-							SDL_SetWindowFullscreen(window, 0);
-							SDL_SetRelativeMouseMode(false);
+						if ((e.key.keysym.mod & KMOD_CTRL)) {
+							open_window(ctx, "Eject");
 						} else {
-							SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-							SDL_SetRelativeMouseMode(true);
+							if (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) {
+								SDL_SetWindowFullscreen(window, 0);
+								SDL_SetRelativeMouseMode(false);
+							} else {
+								SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+								SDL_SetRelativeMouseMode(true);
+							}
 						}
 						break;
 					} else if (e.key.keysym.sym == SDLK_F12) {
@@ -934,7 +938,7 @@ int main(int argc, char *argv[]) {
 							printf("Debug break!\n");
 							SYNC(vxt_system_registers(vxt)->debug = true);
 						} else if ((e.key.keysym.mod & KMOD_CTRL)) {
-							open_window(ctx, "Eject");
+							open_window(ctx, "Monitors");
 						} else {
 							open_window(ctx, "Help");
 						}
@@ -983,6 +987,7 @@ int main(int argc, char *argv[]) {
 
 			help_window(ctx);
 			error_window(ctx);
+			monitors_window(ctx, vxt);
 
 			if (config_updated) {
 				config_updated = false;
