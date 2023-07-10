@@ -194,8 +194,8 @@ void monitors_window(mu_Context *ctx, vxt_system *s) {
 					else if (m->flags & VXT_MONITOR_SIZE_DWORD) reg = *(vxt_dword*)m->reg;
 					else if (m->flags & VXT_MONITOR_SIZE_QWORD) reg = *(uint64_t*)m->reg;
 
-					if (m->flags & VXT_MONITOR_FORMAT_DECIMAL) snprintf(buf, sizeof(buf), "%ld", reg);
-					else if (m->flags & VXT_MONITOR_FORMAT_HEX) snprintf(buf, sizeof(buf), "0x%lX", reg);
+					if (m->flags & VXT_MONITOR_FORMAT_DECIMAL) SDL_ulltoa(reg, buf, 10);
+					else if (m->flags & VXT_MONITOR_FORMAT_HEX) { buf[0] = '0'; buf[1] = 'x'; SDL_ulltoa(reg, &buf[2], 16); }
 					else if (m->flags & VXT_MONITOR_FORMAT_BINARY) { buf[0] = '0'; buf[1] = 'b'; SDL_ulltoa(reg, &buf[2], 2); }
 
 					mu_textbox_ex(ctx, buf, sizeof(buf), MU_OPT_NOINTERACT);
