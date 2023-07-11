@@ -2,6 +2,7 @@ var vxt_8h =
 [
     [ "vxt_registers", "structvxt__registers.html", "structvxt__registers" ],
     [ "vxt_step", "structvxt__step.html", "structvxt__step" ],
+    [ "vxt_monitor", "structvxt__monitor.html", "structvxt__monitor" ],
     [ "vxt_validator", "structvxt__validator.html", "structvxt__validator" ],
     [ "VXT_API", "vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0", null ],
     [ "VXT_API_EXPORT", "vxt_8h.html#a66932d49659649f41b6c95feadab353e", null ],
@@ -17,6 +18,7 @@ var vxt_8h =
     [ "VXT_IO_MAP_SIZE", "vxt_8h.html#a0805f80bc96947fff1919912df1e8d5e", null ],
     [ "VXT_LOG", "vxt_8h.html#af9aee7044c7743909456cb3c36774270", null ],
     [ "vxt_logger", "vxt_8h.html#a6ea9641cc8d820a0432c1e7d78ad9de7", null ],
+    [ "VXT_MAX_MONITORS", "vxt_8h.html#a42d43892b331b13eeb87cbf8fb1cff94", null ],
     [ "VXT_MAX_PIREPHERALS", "vxt_8h.html#ab740cb9791821ffb26bf633c05c0cf50", null ],
     [ "VXT_MEM_MAP_SIZE", "vxt_8h.html#a4cdd4ee72c72a2d4a86a9fafa8eb4a25", null ],
     [ "vxt_memclear", "vxt_8h.html#a28eea7dc46eb2990dadd367616f94b32", null ],
@@ -56,6 +58,16 @@ var vxt_8h =
       [ "VXT_NO_DMA", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a3d4155ce6f53a99a61ec44ee7ff74c11", null ],
       [ "_______VXT_NUM_ERRORS", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047abdefb94c83d862989a3f4bc64289d83f", null ]
     ] ],
+    [ "vxt_monitor_flag", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471", [
+      [ "VXT_MONITOR_SIZE_BYTE", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471a3f3672802400005b4f41427fb9c246e7", null ],
+      [ "VXT_MONITOR_SIZE_WORD", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471a4bbf89053fcd4fb91da9cb49ffd484dd", null ],
+      [ "VXT_MONITOR_SIZE_DWORD", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471ad23eb8e889e02cd3b77ab401db2126e2", null ],
+      [ "VXT_MONITOR_SIZE_QWORD", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471ad79bfea95ad4a2927864a8adf07e28cc", null ],
+      [ "VXT_MONITOR_FORMAT_HEX", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471a65c6e03e2737e7cc8c2bad7ccb2655db", null ],
+      [ "VXT_MONITOR_FORMAT_DECIMAL", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471a796f6e38f777083e95f5d77ffc9178f5", null ],
+      [ "VXT_MONITOR_FORMAT_BINARY", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471a4a1f97ee3c23e5c09c0017e8089f508e", null ],
+      [ "VXT_MONITOR_FORMAT_REAL", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471a55c2e47ae74208734e0d4c7aa8f0ee56", null ]
+    ] ],
     [ "vxt_pclass", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7", [
       [ "VXT_PCLASS_GENERIC", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7a77eada4e490e3da25d6a21f419528a09", null ],
       [ "VXT_PCLASS_DEBUGGER", "vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7ab3ba639f46a039cff1d5573ec2bd30c2", null ],
@@ -90,10 +102,12 @@ var vxt_8h =
     [ "vxt_system_install_io", "vxt_8h.html#af36fe4cffa814bd3f3b8543eb11a33c8", null ],
     [ "vxt_system_install_io_at", "vxt_8h.html#a9a219beaee58a2f943100c3fc3c1d97f", null ],
     [ "vxt_system_install_mem", "vxt_8h.html#a8d263c29de823f73f7c4bce773bd5f12", null ],
+    [ "vxt_system_install_monitor", "vxt_8h.html#a8776c5c98fe8c88e35984c39f8565fb6", null ],
     [ "vxt_system_install_timer", "vxt_8h.html#a8cb5523cfd5bc8061dc64af3fe108831", null ],
     [ "vxt_system_interrupt", "vxt_8h.html#a37d73682fb6a44acd39dbd44258127fe", null ],
     [ "vxt_system_io_map", "vxt_8h.html#a87196999e4df4c22dff2f77afeb9ef60", null ],
     [ "vxt_system_mem_map", "vxt_8h.html#a1ada570e79259b112fa7678bdb3832ac", null ],
+    [ "vxt_system_monitor", "vxt_8h.html#a22e145b51fb53d96aa106810caa39059", null ],
     [ "vxt_system_pirepheral", "vxt_8h.html#afb8b165740d3704b999d716958cc2199", null ],
     [ "vxt_system_read_byte", "vxt_8h.html#ad72e866fe07a7e17d0ce563c8941fd86", null ],
     [ "vxt_system_read_word", "vxt_8h.html#ad0ae0e8d17a2f823b3ce21e60ca597ee", null ],
