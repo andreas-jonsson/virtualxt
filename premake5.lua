@@ -61,6 +61,16 @@ workspace "virtualxt"
     language "C"
     cdialect "C11"
 
+    local handle = io.popen("git branch --show-current")
+    if handle then
+        local branch = handle:read("l") or "?"
+        print("Branch: " .. branch)
+        if branch == "release" then
+            defines "VXT_VERSION_RELEASE"
+        end
+        handle:close()
+    end
+
     filter "configurations:debug"
         symbols "On"
         optimize "Off"
