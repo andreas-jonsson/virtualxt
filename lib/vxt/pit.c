@@ -102,6 +102,11 @@ static vxt_error install(struct pit *c, vxt_system *s) {
     struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
     vxt_system_install_io(s, p, 0x40, 0x43);
     vxt_system_install_timer(s, p, 0);
+
+    enum vxt_monitor_flag flags = VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_DECIMAL;
+    vxt_system_install_monitor(s, p, "Channel 0", &c->channels[0].counter, flags);
+    vxt_system_install_monitor(s, p, "Channel 1", &c->channels[1].counter, flags);
+    vxt_system_install_monitor(s, p, "Channel 1", &c->channels[2].counter, flags);
     return VXT_NO_ERROR;
 }
 

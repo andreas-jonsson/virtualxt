@@ -29,8 +29,6 @@
 #include "window.h"
 #include "mu_renderer.h"
 
-#include <SDL_stdinc.h>
-
 bool has_open_windows = false;
 char window_error_message[1024] = {0};
 
@@ -165,43 +163,4 @@ int config_window(mu_Context *ctx) {
 		mu_end_window(ctx);
 	}
 	return open_cfg;
-}
-
-void monitors_window(mu_Context *ctx, vxt_system *s) {
-	if (mu_begin_window_ex(ctx, "Monitors", mu_rect(20, 20, 340, 440), MU_OPT_CLOSED)) {
-		has_open_windows = true;
-
-		for (vxt_byte i = 0; i < VXT_MAX_MONITORS; i++) {
-			const struct vxt_monitor *d = vxt_system_monitor(s, i);
-			if (!d) break;
-
-			if (mu_header_ex(ctx, d->dev, 0)) {
-				for (vxt_byte j = i; j < VXT_MAX_MONITORS; j++) {
-					const struct vxt_monitor *m = vxt_system_monitor(s, j);
-					if (!m || strcmp(m->dev, d->dev)) {
-						i = j;
-						break;
-					}
-		
-					mu_layout_row(ctx, 2, (int[]){ mr_get_text_width(m->name, (int)strlen(m->name)) + 10, -1 }, 0);
-					mu_label(ctx, m->name);
-
-					uint64_t reg = 0;
-					char buf[128] = {0};
-
-					if (m->flags & VXT_MONITOR_SIZE_BYTE) reg = *(vxt_byte*)m->reg;
-					else if (m->flags & VXT_MONITOR_SIZE_WORD) reg = *(vxt_word*)m->reg;
-					else if (m->flags & VXT_MONITOR_SIZE_DWORD) reg = *(vxt_dword*)m->reg;
-					else if (m->flags & VXT_MONITOR_SIZE_QWORD) reg = *(uint64_t*)m->reg;
-
-					if (m->flags & VXT_MONITOR_FORMAT_DECIMAL) SDL_ulltoa(reg, buf, 10);
-					else if (m->flags & VXT_MONITOR_FORMAT_HEX) { buf[0] = '0'; buf[1] = 'x'; SDL_ulltoa(reg, &buf[2], 16); }
-					else if (m->flags & VXT_MONITOR_FORMAT_BINARY) { buf[0] = '0'; buf[1] = 'b'; SDL_ulltoa(reg, &buf[2], 2); }
-
-					mu_textbox_ex(ctx, buf, sizeof(buf), MU_OPT_NOINTERACT);
-				}
-			}
-		}
-		mu_end_window(ctx);
-	}
 }
