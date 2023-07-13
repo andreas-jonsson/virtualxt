@@ -565,7 +565,7 @@ static bool write_default_config(const char *path, bool clean) {
 		";network=eth0\n"
 		";arstech_isa=libarsusb4.so\n"
 		";ch36x_isa=/dev/ch36xpci0\n"
-		";lua=modules/lua/serial_debug.lua,0x3F8\n",
+		";lua=modules/lua/serial_debug.lua,0x3F8\n"
 		"\n; VGA module requires a 640K BIOS and CGA module to be disabled.\n"
 		";vga=bios/vgabios.bin\n"
 		"\n; GDB server module should always be loadad after the others.\n"
