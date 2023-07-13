@@ -365,7 +365,9 @@ VXT_API const struct vxt_monitor *vxt_system_monitor(vxt_system *s, vxt_byte idx
 VXT_API struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx);
 VXT_API vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p);
 VXT_API vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p);
+
 VXT_API void vxt_system_interrupt(vxt_system *s, int n);
+VXT_API void vxt_system_wait(vxt_system *s, int cycles);
 
 VXT_API void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_word addr);
 VXT_API void vxt_system_install_io(vxt_system *s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to);

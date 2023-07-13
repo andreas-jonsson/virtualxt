@@ -262,6 +262,10 @@ VXT_API enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p) {
     return p->pclass ? p->pclass(VXT_GET_DEVICE_PTR(p)) : VXT_PCLASS_GENERIC;
 }
 
+VXT_API void vxt_system_wait(CONSTP(vxt_system) s, int cycles) {
+    s->cpu.cycles += cycles;
+}
+
 VXT_API void vxt_system_interrupt(CONSTP(vxt_system) s, int n) {
     if (s->cpu.pic)
         s->cpu.pic->pic.irq(VXT_GET_DEVICE_PTR(s->cpu.pic), n);
