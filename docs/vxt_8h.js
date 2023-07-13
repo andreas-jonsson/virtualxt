@@ -119,6 +119,7 @@ var vxt_8h =
     [ "vxt_system_set_validator", "vxt_8h.html#af775d105a3e3694a1c979483016ee71d", null ],
     [ "vxt_system_step", "vxt_8h.html#a8df80ec0415a7ffe98b62f708caf3a70", null ],
     [ "vxt_system_userdata", "vxt_8h.html#a6457471783135038cb6bfcf467d6c106", null ],
+    [ "vxt_system_wait", "vxt_8h.html#a3826d7c38b05e5c819237e34036ea96c", null ],
     [ "vxt_system_write_byte", "vxt_8h.html#a29ac63a4908ad5ca36e16521db7acb7d", null ],
     [ "vxt_system_write_word", "vxt_8h.html#a32e1735c9199c74cecf660748e4cd6c8", null ],
     [ "_vxt_logger", "vxt_8h.html#ac8d6b4e1743b578ef9b57ec5095d6ca1", null ]
