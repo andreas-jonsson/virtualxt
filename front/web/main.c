@@ -242,8 +242,6 @@ void wasm_initialize_emulator(int v20, int freq) {
 			LOG("%d - %s\n", i, vxt_pirepheral_name(device));
 	}
 
-	vxtu_ppi_set_xt_switches(ppi, 46);
-
 	int drive_num = (js_disk_size() > 1474560) ? 128 : 0;
 	LOG("Disk num: %d", drive_num);
 

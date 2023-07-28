@@ -71,7 +71,7 @@ static vxt_byte in(struct ppi *c, vxt_word port) {
         case 0x61:
             return (c->port_61 & 0xEF) | c->refresh_request;
         case 0x62:
-            return c->xt_switches;
+            return (c->port_61 & 8) ? (c->xt_switches >> 4) : (c->xt_switches & 0xF);
         case 0x64:
             return c->command_port;
 	}
