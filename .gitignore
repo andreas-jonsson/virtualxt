@@ -23,7 +23,7 @@ __pycache__
 /modules/*.pdb
 /modules/*.exp
 
-/*.trace
+/*.trace*
 /tools/vxtdrv/vxtdrv.com
 /tools/shutdown/shutdown.com
 /__scrambler.tmp
