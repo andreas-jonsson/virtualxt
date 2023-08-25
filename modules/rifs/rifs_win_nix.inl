@@ -22,10 +22,12 @@
 
 #include <vxt/vxtu.h>
 
-#ifdef _WIN32
+#if defined(_WIN32)
     #include <windows.h>
-#else
+#elif defined(__linux__)
     #include <alloca.h>
+#elif defined(__NetBSD__)
+	#define alloca __builtin_alloca
 #endif
 
 #include <dirent.h>
