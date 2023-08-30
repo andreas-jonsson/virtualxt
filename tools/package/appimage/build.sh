@@ -32,7 +32,9 @@ cp bios/pcxtbios.bin $APP_DIR/bios/
 cp bios/GLABIOS.ROM $APP_DIR/bios/
 cp bios/vxtx.bin $APP_DIR/bios/
 cp bios/vgabios.bin $APP_DIR/bios/
+cp boot/freedos.img $APP_DIR/boot/
 cp boot/freedos_hd.img $APP_DIR/boot/
+cp boot/elks.img $APP_DIR/boot/
 cp tools/icon/icon.png $APP_DIR/virtualxt-icon.png
 
 curl -L -o apptool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
