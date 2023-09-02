@@ -208,6 +208,31 @@ struct vxtu_mouse_event {
     int yrel;
 };
 
+enum vxtu_uart_parity {
+	VXTU_UART_PARITY_NONE,
+	VXTU_UART_PARITY_ODD,
+	VXTU_UART_PARITY_EVEN,
+	VXTU_UART_PARITY_MARK,
+	VXTU_UART_PARITY_SPACE
+};
+
+struct vxtu_uart_registers {
+	vxt_word divisor; // Baud Rate Divisor
+	vxt_byte ien; // Interrupt Enable
+	vxt_byte iir; // Interrupt Identification
+	vxt_byte lcr; // Line Control
+	vxt_byte mcr; // Modem Control
+	vxt_byte lsr; // Line Status
+	vxt_byte msr; // Modem Status
+};
+
+struct vxtu_uart_interface {
+    void (*config)(struct vxt_pirepheral *p, const struct vxtu_uart_registers *regs, int idx, void *udata);
+	void (*data)(struct vxt_pirepheral *p, vxt_byte data, void *udata);
+	void (*ready)(struct vxt_pirepheral *p, void *udata);
+	void *udata;
+};
+
 enum vxtu_disk_seek {
     VXTU_SEEK_START		= 0x0,
 	VXTU_SEEK_CURRENT 	= 0x1,
@@ -260,8 +285,18 @@ VXT_API void vxtu_disk_set_boot_drive(struct vxt_pirepheral *p, int num);
 VXT_API vxt_error vxtu_disk_mount(struct vxt_pirepheral *p, int num, void *fp);
 VXT_API bool vxtu_disk_unmount(struct vxt_pirepheral *p, int num);
 
-VXT_API struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq);
+VXT_API struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_port);
 VXT_API bool vxtu_mouse_push_event(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev);
+
+VXT_API struct vxt_pirepheral *vxtu_uart_create(vxt_allocator *alloc, vxt_word base_port, int irq);
+VXT_API const struct vxtu_uart_registers *vxtu_uart_internal_registers(struct vxt_pirepheral *p);
+VXT_API void vxtu_uart_set_callbacks(struct vxt_pirepheral *p, struct vxtu_uart_interface *intrf);
+VXT_API void vxtu_uart_write(struct vxt_pirepheral *p, vxt_byte data);
+VXT_API enum vxtu_uart_parity vxtu_uart_parity_bit(struct vxt_pirepheral *p);
+VXT_API bool vxtu_uart_ready(struct vxt_pirepheral *p);
+VXT_API int vxtu_uart_stop_bits(struct vxt_pirepheral *p);
+VXT_API int vxtu_uart_data_size(struct vxt_pirepheral *p);
+VXT_API vxt_word vxtu_uart_address(struct vxt_pirepheral *p);
 
 #ifdef __cplusplus
 }

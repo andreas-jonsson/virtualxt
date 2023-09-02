@@ -218,7 +218,8 @@ enum vxt_pclass {
     VXT_PCLASS_DMA      = 0x08,
     VXT_PCLASS_PPI      = 0x10,
     VXT_PCLASS_PIT      = 0x20,
-    VXT_PCLASS_VIDEO    = 0x40
+    VXT_PCLASS_UART     = 0x40,
+    VXT_PCLASS_VIDEO    = 0x80
 };
 
 enum vxt_monitor_flag {

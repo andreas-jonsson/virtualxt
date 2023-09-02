@@ -207,14 +207,15 @@ void wasm_initialize_emulator(int v20, int freq) {
 	
 	ppi = vxtu_ppi_create(&ALLOCATOR);
     cga = vxtu_cga_create(&ALLOCATOR);
-	mouse = vxtu_mouse_create(&ALLOCATOR, 0x3F8, 4); // COM1
+	mouse = vxtu_mouse_create(&ALLOCATOR, 0x3F8); // COM1
 
 	APPEND_DEVICE(vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false));
 	APPEND_DEVICE(load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000));
-	APPEND_DEVICE(load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000))
+	APPEND_DEVICE(load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000));
+	APPEND_DEVICE(vxtu_uart_create(&realloc, 0x3F8, 4));
 	APPEND_DEVICE(vxtu_pic_create(&ALLOCATOR));
-	APPEND_DEVICE(vxtu_dma_create(&ALLOCATOR))
-	APPEND_DEVICE(vxtu_pit_create(&ALLOCATOR))
+	APPEND_DEVICE(vxtu_dma_create(&ALLOCATOR));
+	APPEND_DEVICE(vxtu_pit_create(&ALLOCATOR));
 	APPEND_DEVICE(ppi);
 	APPEND_DEVICE(cga);
 	APPEND_DEVICE(disk);

@@ -115,7 +115,7 @@ static vxt_error install(struct ppi *c, vxt_system *s) {
 
     for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
         struct vxt_pirepheral *ip = vxt_system_pirepheral(s, (vxt_byte)i);
-        if (vxt_pirepheral_class(ip) == VXT_PCLASS_PIT) {
+        if (ip && (vxt_pirepheral_class(ip) == VXT_PCLASS_PIT)) {
             c->pit = ip;
             break;
         }

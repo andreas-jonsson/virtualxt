@@ -21,33 +21,11 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include <vxt/vxtu.h>
-#include <frontend.h>
-
 #include <stdio.h>
 
-static struct vxt_pirepheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args) {
-    vxt_word addr;
-    if (sscanf(args, "%hx", &addr) != 1) {
-		VXT_LOG("Invalid UART address: %s", args);
-		return NULL;
-    }
-
-    struct vxt_pirepheral *p = vxtu_mouse_create(alloc, addr);
-    if (!p)
-        return NULL;
-
-    struct frontend_interface *fi = (struct frontend_interface*)frontend;
-    if (fi->set_mouse_adapter) {
-		struct frontend_mouse_adapter a = { p, &vxtu_mouse_push_event };
-		fi->set_mouse_adapter(&a);
-    }
-    return p;
-}
-
 static struct vxt_pirepheral *uart_create(vxt_allocator *alloc, void *frontend, const char *args) {
-	(void)frontend;
-	
-	vxt_word addr; int irq;
+	vxt_word addr;
+	int irq;
 	if (sscanf(args, "%hx,%d", &addr, &irq) != 2) {
 		VXT_LOG("Invalid UART configuration: %s", args);
 		return NULL;
@@ -55,4 +33,4 @@ static struct vxt_pirepheral *uart_create(vxt_allocator *alloc, void *frontend, 
 	return vxtu_uart_create(alloc, addr, irq);
 }
 
-VXTU_MODULE_ENTRIES(&mouse_create, &uart_create)
+VXTU_MODULE_ENTRIES(&uart_create)
