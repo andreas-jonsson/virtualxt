@@ -1,6 +1,8 @@
 var vxtu_8h =
 [
     [ "vxtu_mouse_event", "structvxtu__mouse__event.html", "structvxtu__mouse__event" ],
+    [ "vxtu_uart_registers", "structvxtu__uart__registers.html", "structvxtu__uart__registers" ],
+    [ "vxtu_uart_interface", "structvxtu__uart__interface.html", "structvxtu__uart__interface" ],
     [ "vxtu_disk_interface", "structvxtu__disk__interface.html", "structvxtu__disk__interface" ],
     [ "VXTU_CAST", "vxtu_8h.html#a2642d0e1cf35d53d2ebc086ff230ba21", null ],
     [ "VXTU_CGA_ALPHA", "vxtu_8h.html#a6618054f81fdb665cc4a6850777d43a8", null ],
@@ -115,6 +117,13 @@ var vxtu_8h =
       [ "VXTU_SCAN_KP_INSERT", "vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fae5f9f8a4576a47f46d06ce3c2ef6aaad", null ],
       [ "VXTU_SCAN_KP_DELETE", "vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa02dc620b739049ec3cc84d4aa6dc6b2", null ]
     ] ],
+    [ "vxtu_uart_parity", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154", [
+      [ "VXTU_UART_PARITY_NONE", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154ac6f78c24beee8a1581f7fd6b2c7a7bcc", null ],
+      [ "VXTU_UART_PARITY_ODD", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154a11c2665e8ab967e8faf0ba7117e6054d", null ],
+      [ "VXTU_UART_PARITY_EVEN", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154a8d2565d1894b9e62124da4b08e1bf57e", null ],
+      [ "VXTU_UART_PARITY_MARK", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154a7fbd04d3ece797b9c086ac0477779249", null ],
+      [ "VXTU_UART_PARITY_SPACE", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154a086644878b35f9749dfae3b2911657fc", null ]
+    ] ],
     [ "vxtu_cga_border_color", "vxtu_8h.html#adcb44145d327ae2c88d41377ab4ab457", null ],
     [ "vxtu_cga_create", "vxtu_8h.html#a125caedc8b5c9d15745c2470b5ad7b94", null ],
     [ "vxtu_cga_render", "vxtu_8h.html#ad3da9f20e55995a2a05b024bc4d697b2", null ],
@@ -131,7 +140,7 @@ var vxtu_8h =
     [ "vxtu_memory_create", "vxtu_8h.html#a0fffdf4d6c2ed8839749173aaeac8d4c", null ],
     [ "vxtu_memory_device_fill", "vxtu_8h.html#a72fff4298e56a83cb0d94a1a79ae118b", null ],
     [ "vxtu_memory_internal_pointer", "vxtu_8h.html#ad358a03586ff8a196211b9217297e122", null ],
-    [ "vxtu_mouse_create", "vxtu_8h.html#ab012307b54ef7e0a9df19ac703527bef", null ],
+    [ "vxtu_mouse_create", "vxtu_8h.html#af5a9545193eea57cf937c428835211cd", null ],
     [ "vxtu_mouse_push_event", "vxtu_8h.html#ad343341f66aa1a2cbf83ace95f0e7152", null ],
     [ "vxtu_pic_create", "vxtu_8h.html#a51a5b5e613b6328a5be8615c5228faaf", null ],
     [ "vxtu_pit_create", "vxtu_8h.html#af25c39e8d43da19c657599c5d457ba55", null ],
@@ -143,5 +152,14 @@ var vxtu_8h =
     [ "vxtu_ppi_set_xt_switches", "vxtu_8h.html#a3e11812fdb1a9bb05f9f6d6f829c21ae", null ],
     [ "vxtu_ppi_turbo_enabled", "vxtu_8h.html#a01be0210c83692ea12ac225e908c5cfe", null ],
     [ "vxtu_ppi_xt_switches", "vxtu_8h.html#a0feb537b23b2876b7192718ad60cb02a", null ],
-    [ "vxtu_read_file", "vxtu_8h.html#a527e59321e6858de8d4aca71ddf6498b", null ]
+    [ "vxtu_read_file", "vxtu_8h.html#a527e59321e6858de8d4aca71ddf6498b", null ],
+    [ "vxtu_uart_address", "vxtu_8h.html#a190de906fecd25a60daa3bb3ff27d1b0", null ],
+    [ "vxtu_uart_create", "vxtu_8h.html#a308bdb7dd9d675c989d1c9dd7b55d5ba", null ],
+    [ "vxtu_uart_data_size", "vxtu_8h.html#a7af8250d996303091ed8f61d40de14fd", null ],
+    [ "vxtu_uart_internal_registers", "vxtu_8h.html#a5bf010707f20a3dd576fb995223c8062", null ],
+    [ "vxtu_uart_parity_bit", "vxtu_8h.html#ac0dfe1834b174df54ba78794e687aa0c", null ],
+    [ "vxtu_uart_ready", "vxtu_8h.html#a5b07a2788d064ef7c3b03610d64f2a35", null ],
+    [ "vxtu_uart_set_callbacks", "vxtu_8h.html#addf27180d249f3b8345fff844c458cd6", null ],
+    [ "vxtu_uart_stop_bits", "vxtu_8h.html#ad892c1e7f64ac856040c953ddb5a565d", null ],
+    [ "vxtu_uart_write", "vxtu_8h.html#ac1cbbe83eb4081fc4b196c9a87623d1d", null ]
 ];
