@@ -117,13 +117,6 @@ var vxtu_8h =
       [ "VXTU_SCAN_KP_INSERT", "vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fae5f9f8a4576a47f46d06ce3c2ef6aaad", null ],
       [ "VXTU_SCAN_KP_DELETE", "vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa02dc620b739049ec3cc84d4aa6dc6b2", null ]
     ] ],
-    [ "vxtu_uart_parity", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154", [
-      [ "VXTU_UART_PARITY_NONE", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154ac6f78c24beee8a1581f7fd6b2c7a7bcc", null ],
-      [ "VXTU_UART_PARITY_ODD", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154a11c2665e8ab967e8faf0ba7117e6054d", null ],
-      [ "VXTU_UART_PARITY_EVEN", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154a8d2565d1894b9e62124da4b08e1bf57e", null ],
-      [ "VXTU_UART_PARITY_MARK", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154a7fbd04d3ece797b9c086ac0477779249", null ],
-      [ "VXTU_UART_PARITY_SPACE", "vxtu_8h.html#aabf5ba42742cf43117d4491f48815154a086644878b35f9749dfae3b2911657fc", null ]
-    ] ],
     [ "vxtu_cga_border_color", "vxtu_8h.html#adcb44145d327ae2c88d41377ab4ab457", null ],
     [ "vxtu_cga_create", "vxtu_8h.html#a125caedc8b5c9d15745c2470b5ad7b94", null ],
     [ "vxtu_cga_render", "vxtu_8h.html#ad3da9f20e55995a2a05b024bc4d697b2", null ],
@@ -155,11 +148,8 @@ var vxtu_8h =
     [ "vxtu_read_file", "vxtu_8h.html#a527e59321e6858de8d4aca71ddf6498b", null ],
     [ "vxtu_uart_address", "vxtu_8h.html#a190de906fecd25a60daa3bb3ff27d1b0", null ],
     [ "vxtu_uart_create", "vxtu_8h.html#a308bdb7dd9d675c989d1c9dd7b55d5ba", null ],
-    [ "vxtu_uart_data_size", "vxtu_8h.html#a7af8250d996303091ed8f61d40de14fd", null ],
     [ "vxtu_uart_internal_registers", "vxtu_8h.html#a5bf010707f20a3dd576fb995223c8062", null ],
-    [ "vxtu_uart_parity_bit", "vxtu_8h.html#ac0dfe1834b174df54ba78794e687aa0c", null ],
     [ "vxtu_uart_ready", "vxtu_8h.html#a5b07a2788d064ef7c3b03610d64f2a35", null ],
     [ "vxtu_uart_set_callbacks", "vxtu_8h.html#addf27180d249f3b8345fff844c458cd6", null ],
-    [ "vxtu_uart_stop_bits", "vxtu_8h.html#ad892c1e7f64ac856040c953ddb5a565d", null ],
     [ "vxtu_uart_write", "vxtu_8h.html#ac1cbbe83eb4081fc4b196c9a87623d1d", null ]
 ];
