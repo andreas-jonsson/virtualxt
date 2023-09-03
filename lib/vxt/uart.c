@@ -34,11 +34,11 @@ enum pendig_irq {
     PENDING_LSR = 0x8
 };
 
-enum enable_irq {
-    ENABLE_RX = 0x1,
-    ENABLE_TX = 0x2,
-    ENABLE_LSR = 0x4,
-    ENABLE_MSR = 0x8
+enum {
+    IEN_ENABLE_RX = 0x1,
+    IEN_ENABLE_TX = 0x2,
+    IEN_ENABLE_LSR = 0x4,
+    IEN_ENABLE_MSR = 0x8
 };
 
 struct uart {
@@ -48,7 +48,6 @@ struct uart {
     vxt_word base;
     int irq;
 
-    enum enable_irq enable;
     enum pendig_irq pending;
     vxt_byte prev_msr;
 
@@ -69,7 +68,7 @@ static vxt_byte in(struct uart *u, vxt_word port) {
                 u->has_rx_data = false;
                 u->pending &= ~PENDING_RX;
 
-                if (u->regs.ien & ENABLE_LSR) {
+                if (u->regs.ien & IEN_ENABLE_LSR) {
                     u->pending |= PENDING_LSR;
                     vxt_system_interrupt(VXT_GET_SYSTEM(u), u->irq);
                 }
@@ -137,12 +136,12 @@ static void out(struct uart *u, vxt_word port, vxt_byte data) {
                 return;
             }
 
-            if (u->regs.ien & ENABLE_TX) {
+            if (u->regs.ien & IEN_ENABLE_TX) {
                 u->pending |= PENDING_TX;
                 vxt_system_interrupt(VXT_GET_SYSTEM(u), u->irq);
             }
 
-            if (u->regs.ien & ENABLE_LSR) {
+            if (u->regs.ien & IEN_ENABLE_LSR) {
                 u->pending |= PENDING_LSR;
                 vxt_system_interrupt(VXT_GET_SYSTEM(u), u->irq);
             }
@@ -236,22 +235,10 @@ VXT_API void vxtu_uart_write(struct vxt_pirepheral *p, vxt_byte data) {
     struct uart *u = VXT_GET_DEVICE(uart, p);
     u->rx_data = data;
     u->has_rx_data = true;
-    if (u->enable & ENABLE_RX) {
+    if (u->regs.ien & IEN_ENABLE_RX) {
         u->pending |= PENDING_RX;
         vxt_system_interrupt(vxt_pirepheral_system(p), u->irq);
     }
-}
-
-VXT_API enum vxtu_uart_parity vxtu_uart_parity_bit(struct vxt_pirepheral *p) {
-    return (enum vxtu_uart_parity)((VXT_GET_DEVICE(uart, p)->regs.lcr >> 3) & 7);
-}
-
-VXT_API int vxtu_uart_stop_bits(struct vxt_pirepheral *p) {
-    return (VXT_GET_DEVICE(uart, p)->regs.lcr & 4) ? 1 : 2;
-}
-
-VXT_API int vxtu_uart_data_size(struct vxt_pirepheral *p) {
-    return data_bits_size[VXT_GET_DEVICE(uart, p)->regs.lcr & 3];
 }
 
 VXT_API vxt_word vxtu_uart_address(struct vxt_pirepheral *p) {

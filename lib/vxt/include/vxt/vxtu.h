@@ -208,14 +208,6 @@ struct vxtu_mouse_event {
     int yrel;
 };
 
-enum vxtu_uart_parity {
-	VXTU_UART_PARITY_NONE,
-	VXTU_UART_PARITY_ODD,
-	VXTU_UART_PARITY_EVEN,
-	VXTU_UART_PARITY_MARK,
-	VXTU_UART_PARITY_SPACE
-};
-
 struct vxtu_uart_registers {
 	vxt_word divisor; // Baud Rate Divisor
 	vxt_byte ien; // Interrupt Enable
@@ -292,10 +284,7 @@ VXT_API struct vxt_pirepheral *vxtu_uart_create(vxt_allocator *alloc, vxt_word b
 VXT_API const struct vxtu_uart_registers *vxtu_uart_internal_registers(struct vxt_pirepheral *p);
 VXT_API void vxtu_uart_set_callbacks(struct vxt_pirepheral *p, struct vxtu_uart_interface *intrf);
 VXT_API void vxtu_uart_write(struct vxt_pirepheral *p, vxt_byte data);
-VXT_API enum vxtu_uart_parity vxtu_uart_parity_bit(struct vxt_pirepheral *p);
 VXT_API bool vxtu_uart_ready(struct vxt_pirepheral *p);
-VXT_API int vxtu_uart_stop_bits(struct vxt_pirepheral *p);
-VXT_API int vxtu_uart_data_size(struct vxt_pirepheral *p);
 VXT_API vxt_word vxtu_uart_address(struct vxt_pirepheral *p);
 
 #ifdef __cplusplus
