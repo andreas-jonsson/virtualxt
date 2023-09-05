@@ -552,6 +552,8 @@ static bool write_default_config(const char *path, bool clean) {
 	fprintf(fp,
 		"[modules]\n"
 		"chipset=xt\n"
+		"uart=0x3F8,4 \t;COM1\n"
+		"uart=0x2F8,3 \t;COM2\n"
 		"cga=\n"
 		"disk=\n"
 		"adlib=\n"
@@ -559,7 +561,8 @@ static bool write_default_config(const char *path, bool clean) {
 		"ctrl=\n"
 		"joystick=0x201\n"
 		"ems=lotech_ems\n"
-		"mouse=0x3F8,4\n"
+		"mouse=0x3F8\n"
+		";serial=0x2F8,/dev/ttyUSB0\n"
 		";fdc=\n"
 		";rtc=bios/GLaTICK_0.8.4_AT.ROM\n"
 		";network=eth0\n"

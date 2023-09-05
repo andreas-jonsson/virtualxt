@@ -283,6 +283,7 @@ VXT_API bool vxtu_mouse_push_event(struct vxt_pirepheral *p, const struct vxtu_m
 VXT_API struct vxt_pirepheral *vxtu_uart_create(vxt_allocator *alloc, vxt_word base_port, int irq);
 VXT_API const struct vxtu_uart_registers *vxtu_uart_internal_registers(struct vxt_pirepheral *p);
 VXT_API void vxtu_uart_set_callbacks(struct vxt_pirepheral *p, struct vxtu_uart_interface *intrf);
+VXT_API void vxtu_uart_set_error(struct vxt_pirepheral *p, vxt_byte err);
 VXT_API void vxtu_uart_write(struct vxt_pirepheral *p, vxt_byte data);
 VXT_API bool vxtu_uart_ready(struct vxt_pirepheral *p);
 VXT_API vxt_word vxtu_uart_address(struct vxt_pirepheral *p);

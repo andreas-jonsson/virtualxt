@@ -75,6 +75,7 @@ static vxt_error install(struct serial_mouse *m, vxt_system *s) {
             struct vxtu_uart_interface intrf = {
                 .config = &uart_config_cb,
                 .ready = &uart_ready_cb,
+                .data = NULL,
                 .udata = (void*)m
             };
             vxtu_uart_set_callbacks(ip, &intrf);

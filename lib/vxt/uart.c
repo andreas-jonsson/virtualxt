@@ -20,6 +20,8 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
+// Referense: https://wiki.osdev.org/Serial_Ports
+
 #include <vxt/vxtu.h>
 
 #define DLAB ( (u->regs.lcr >> 7) != 0 )
@@ -100,8 +102,12 @@ static vxt_byte in(struct uart *u, vxt_word port) {
         case 0x4: // MCR
             return u->regs.mcr;
         case 0x5: // LSR
+        {
+            vxt_byte ret = u->regs.lsr | (u->has_rx_data ? 1 : 0);
+            u->regs.lsr = 0x60;
             u->pending &= ~PENDING_LSR;
-            return u->has_rx_data ? 0x61 : 0x60;
+            return ret;
+        }
         case 0x6: // MSR
         {
             vxt_byte ret = u->regs.msr & 0xF0;
@@ -192,7 +198,9 @@ static vxt_error install(struct uart *u, vxt_system *s) {
 static vxt_error reset(struct uart *u) {
     vxt_memclear(&u->regs, sizeof(struct vxtu_uart_registers));
     u->regs.divisor = 12;
-    u->regs.msr = 0x30;    
+    u->regs.msr = 0x30;
+    u->regs.lsr = 0x60;
+
     u->pending = 0;
     u->has_rx_data = false;
     u->prev_msr = 0;
@@ -225,6 +233,16 @@ VXT_API const struct vxtu_uart_registers *vxtu_uart_internal_registers(struct vx
 
 VXT_API void vxtu_uart_set_callbacks(struct vxt_pirepheral *p, struct vxtu_uart_interface *intrf) {
     VXT_GET_DEVICE(uart, p)->callbacks = *intrf;
+}
+
+VXT_API void vxtu_uart_set_error(struct vxt_pirepheral *p, vxt_byte err) {
+    struct uart *u = VXT_GET_DEVICE(uart, p);
+    u->regs.lsr |= err & 0x9E;
+
+    if (u->regs.ien & IEN_ENABLE_LSR) {
+        u->pending |= IEN_ENABLE_LSR;
+        vxt_system_interrupt(vxt_pirepheral_system(p), u->irq);
+    }
 }
 
 VXT_API bool vxtu_uart_ready(struct vxt_pirepheral *p) {
