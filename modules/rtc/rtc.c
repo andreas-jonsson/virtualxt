@@ -34,6 +34,16 @@ struct rtc {
  	vxt_byte cmos[CMOS_SIZE];
 };
 
+static vxt_byte to_bcd(struct rtc *c, vxt_byte data) {
+    if (!(c->cmos[0xB] & 4)) {
+		vxt_byte rh, rl;
+		rh = (data / 10) % 10;
+		rl = data % 10;
+		data = (rh << 4) | rl;
+    }
+    return data;
+}
+
 static vxt_byte in(struct rtc *c, vxt_word port) {
     if (!(port & 1))
         return c->addr;
@@ -41,43 +51,39 @@ static vxt_byte in(struct rtc *c, vxt_word port) {
     vxt_byte data = 0;    
     switch (c->addr) {
         case 0x0:
-            data = c->lt.tm_sec;
+            data = to_bcd(c, (vxt_byte)c->lt.tm_sec);
             break;
         case 0x2:
-            data = c->lt.tm_min;
+            data = to_bcd(c, (vxt_byte)c->lt.tm_min);
             break;
         case 0x4:
-            data = c->lt.tm_hour;
+            data = to_bcd(c, (vxt_byte)c->lt.tm_hour);
             break;
         case 0x6:
-            data = c->lt.tm_wday + 1;
+            data = to_bcd(c, (vxt_byte)c->lt.tm_wday + 1);
             break;
         case 0x7:
-            data = c->lt.tm_mday;
+            data = to_bcd(c, (vxt_byte)c->lt.tm_mday);
             break;
         case 0x8:
-            data = c->lt.tm_mon + 1;
+            data = to_bcd(c, (vxt_byte)c->lt.tm_mon + 1);
             break;
         case 0x9:
-            data = c->lt.tm_year - 10;
+            data = to_bcd(c, (vxt_byte)(c->lt.tm_year - 100));
             break;
         case 0xA: // Status A
-        {
-            vxt_byte busy = c->busy;
+            data = c->busy | (c->cmos[c->addr] & 0x7F);
             c->busy = 0;
-            data = busy | (c->cmos[c->addr] & 0x7F);
             break;
-        }
         case 0xB: // Status B
-            // 24h format in binary
-            data = 0x6;
-            break;
-        case 0xC: // Status C
-            // Cause of interrupt
+            data = c->cmos[c->addr] & 0xFD; // 24h format only.
             break;
         case 0xD: // Status D
             // CMOS battery power good
             data = 0x80;
+            break;
+        case 0x32:
+            data = to_bcd(c, 20);
             break;
         default:
             data = c->cmos[c->addr];
@@ -89,12 +95,10 @@ static vxt_byte in(struct rtc *c, vxt_word port) {
 
 static void out(struct rtc *c, vxt_word port, vxt_byte data) {
     if (!(port & 1)) {
-        c->addr = data & 0x7F;
-        if (c->addr >= CMOS_SIZE)
-            c->addr = 0xD;
+        c->addr = (c->addr >= CMOS_SIZE) ? 0xD : data;
         return;
     }
-    
+
     c->cmos[c->addr] = data;
     c->addr = 0xD;
 }
