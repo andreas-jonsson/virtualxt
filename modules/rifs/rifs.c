@@ -229,7 +229,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
         case IFS_CLOSEFILE:
         {
             vxt_word idx = *(vxt_word*)pk->data;
-            if (idx >= MAX_OPEN_FILES) {
+            if (idx >= MAX_OPEN_FILES || !proc->files[idx]) {
                 pk->cmd = 6; // Invalid handle
             } else {
                 pk->cmd = 0;
