@@ -151,5 +151,6 @@ var vxtu_8h =
     [ "vxtu_uart_internal_registers", "vxtu_8h.html#a5bf010707f20a3dd576fb995223c8062", null ],
     [ "vxtu_uart_ready", "vxtu_8h.html#a5b07a2788d064ef7c3b03610d64f2a35", null ],
     [ "vxtu_uart_set_callbacks", "vxtu_8h.html#addf27180d249f3b8345fff844c458cd6", null ],
+    [ "vxtu_uart_set_error", "vxtu_8h.html#a5cf11ba24b3e690afd3fe78d0da5c88c", null ],
     [ "vxtu_uart_write", "vxtu_8h.html#ac1cbbe83eb4081fc4b196c9a87623d1d", null ]
 ];
