@@ -656,8 +656,8 @@ int main(int argc, char *argv[]) {
 	if (!args.harddrive && !args.floppy) {
 		args.harddrive = SDL_getenv("VXT_DEFAULT_HD_IMAGE");
 		if (!args.harddrive) {
-			static char harddrive_image_path_buffer[FILENAME_MAX];
-			strncpy(harddrive_image_path_buffer, resolve_path(FRONTEND_ANY_PATH, "boot/freedos_hd.img"), FILENAME_MAX - 1);
+			static char harddrive_image_path_buffer[FILENAME_MAX + 1];
+			strncpy(harddrive_image_path_buffer, resolve_path(FRONTEND_ANY_PATH, "boot/freedos_hd.img"), FILENAME_MAX);
 			args.harddrive = harddrive_image_path_buffer;
 		}
 	}
