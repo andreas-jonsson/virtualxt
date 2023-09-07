@@ -628,7 +628,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (args.locate) {
-		printf(args.config);
+		puts(args.config);
 		return -1;
 	}
 
