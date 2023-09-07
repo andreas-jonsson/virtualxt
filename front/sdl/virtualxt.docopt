@@ -11,10 +11,9 @@ Options:
   --v20                   Enable NEC V20 CPU support.
   --clean                 Remove config file and write a new default one.
   --edit                  Open config file in system text editor.
+  --locate                Locate the configuration directory.
   --rifs=PATH             Enable experimental RIFS support. (Shared folders)
   --config=PATH           Set config directory.
-  --modules=PATH          Set modules directory.
-  --bios=FILE             BIOS binary.
   --trace=FILE            Write CPU trace to file.
   --frequency=MHZ         CPU frequency. [default: 4.772726]
   -a --floppy=FILE        Mount floppy image as drive A.

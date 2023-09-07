@@ -23,6 +23,7 @@
 #include <vxt/vxtu.h>
 
 #include <time.h>
+#include <stdio.h>
 
 #define CMOS_SIZE 50
 
@@ -32,6 +33,7 @@ struct rtc {
 
     struct tm lt;
  	vxt_byte cmos[CMOS_SIZE];
+    vxt_word base_port;
 };
 
 static vxt_byte to_bcd(struct rtc *c, vxt_byte data) {
@@ -113,7 +115,7 @@ static vxt_error timer(struct rtc *c, vxt_timer_id id, int cycles) {
 
 static vxt_error install(struct rtc *c, vxt_system *s) {
     struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
-    vxt_system_install_io(s, p, 0x240, 0x241);
+    vxt_system_install_io(s, p, c->base_port, c->base_port + 1);
     vxt_system_install_timer(s, p, 1000000);
     return VXT_NO_ERROR;
 }
@@ -122,8 +124,9 @@ static const char *name(struct rtc *c) {
     (void)c; return "RTC (Motorola MC146818)";
 }
 
-static struct vxt_pirepheral *rtc_create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PIREPHERAL_CREATE(alloc, rtc, {
-    (void)args; (void)frontend;
+VXTU_MODULE_CREATE(rtc, {
+    if (sscanf(ARGS, "%hx", &DEVICE->base_port) != 1)
+        DEVICE->base_port = 0x240;
 
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
@@ -131,23 +134,3 @@ static struct vxt_pirepheral *rtc_create(vxt_allocator *alloc, void *frontend, c
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;
 })
-
-static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {
-    (void)frontend;
-    if (!args[0])
-        return NULL;
-
-    int size = 0;
-    vxt_byte *data = vxtu_read_file(alloc, args, &size);
-    if (!data) {
-        VXT_LOG("Could not load RTC BIOS: %s", args);
-        return NULL;
-    }
-
-    struct vxt_pirepheral *p = vxtu_memory_create(alloc, 0xC8000, size, true);
-    vxtu_memory_device_fill(p, data, size);
-    alloc(data, 0);
-    return p;
-}
-
-VXTU_MODULE_ENTRIES(&rtc_create, &bios_create)

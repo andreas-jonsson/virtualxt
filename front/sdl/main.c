@@ -55,11 +55,6 @@
 #define MIN_CLOCKS_PER_STEP 1
 #define MAX_PENALTY_USEC 1000
 
-struct ini_config {
-	struct DocoptArgs *args;
-};
-struct ini_config config = {0};
-
 FILE *trace_op_output = NULL;
 FILE *trace_offset_output = NULL;
 
@@ -92,6 +87,8 @@ static const char key_map[256] = {
 	[ SDLK_BACKSPACE    & 0xFF ] = MU_KEY_BACKSPACE,
 };
 
+struct DocoptArgs args = {0};
+
 Uint32 last_title_update = 0;
 int num_cycles = 0;
 double cpu_frequency = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
@@ -112,7 +109,6 @@ SDL_Point framebuffer_size = {640, 200};
 char floppy_image_path[FILENAME_MAX] = {0};
 char new_floppy_image_path[FILENAME_MAX] = {0};
 
-const char *modules_search_path = NULL;
 bool config_updated = false;
 
 int str_buffer_len = 0;
@@ -350,6 +346,58 @@ static int tell_file(vxt_system *s, void *fp) {
 	return (int)ftell((FILE*)fp);
 }
 
+static bool file_exist(const char *path) {
+	FILE *fp = fopen(path, "rb");
+	if (!fp)
+		return false;
+	fclose(fp);
+	return true;
+}
+
+// Note that this fuction uses static memory. Only call this from the
+// frontend interface or before the emulator thread is started.
+static const char *resolve_path(enum frontend_path_type type, const char *path) {
+	static char buffer[FILENAME_MAX + 1] = {0};
+	strncpy(buffer, path, FILENAME_MAX);
+
+	if (file_exist(buffer))
+		return buffer;
+	
+	const char *bp = SDL_GetBasePath();
+	bp = bp ? bp : ".";
+
+	static char unix_path[FILENAME_MAX];
+	sprintf(unix_path, "%s/../share/virtualxt", bp);
+
+	static char dev_path[FILENAME_MAX];
+	sprintf(dev_path, "%s/../../", bp);
+
+	const char *env = SDL_getenv("VXT_SEARCH_PATH");
+	env = env ? env : ".";
+
+	const char *search_paths[] = { env, bp, args.config, unix_path, dev_path, NULL };
+
+	for (int i = 0; search_paths[i]; i++) {
+		const char *sp = search_paths[i];
+
+		sprintf(buffer, "%s/%s", sp, path);
+		if (file_exist(buffer))
+			return buffer;
+
+		switch (type) {
+			case FRONTEND_BIOS_PATH: sprintf(buffer, "%s/bios/%s", sp, path); break;
+			case FRONTEND_MODULE_PATH: sprintf(buffer, "%s/modules/%s", sp, path); break;
+			default: break;
+		};
+		
+		if (file_exist(buffer))
+			return buffer;
+	}
+
+	strncpy(buffer, path, FILENAME_MAX);
+	return buffer;
+}
+
 static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
 	(void)userdata;
 	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
@@ -401,64 +449,23 @@ static bool set_keyboard_controller(const struct frontend_keyboard_controller *c
 	return true;
 }
 
-static struct vxt_pirepheral *load_bios(const char *path, vxt_pointer base) {
-	size_t path_len = strcspn(path, "@");
-	char *file_path = (char*)SDL_malloc(path_len + 1);
-	memcpy(file_path, path, path_len);
-	file_path[path_len] = 0;
-	
-	int size = 0;
-	vxt_byte *data = vxtu_read_file(&realloc, file_path, &size);
-	SDL_free(file_path);
-
-	if (!data) {
-		printf("vxtu_read_file() failed!\n");
-		return NULL;
-	}
-
-	if (path_len != strlen(path)) {
-		unsigned int addr = 0;
-		if (sscanf(path + path_len + 1, "%x", &addr) == 1) {
-			base = (vxt_pointer)addr;
-		} else {
-			printf("Invalid address format!\n");
-			return NULL;
-		}
-	}
-	
-	struct vxt_pirepheral *rom = vxtu_memory_create(&realloc, base, size, true);
-	if (!vxtu_memory_device_fill(rom, data, size)) {
-		printf("vxtu_memory_device_fill() failed!\n");
-		return NULL;
-	}
-	(void)realloc(data, 0);
-
-	printf("Loaded BIOS @ 0x%X-0x%X: %s\n", base, base + size - 1, path);
-	return rom;
-}
-
 static int load_config(void *user, const char *section, const char *name, const char *value) {
 	(void)user; (void)section; (void)name; (void)value;
-	struct ini_config *config = (struct ini_config*)user;
 	if (!strcmp("args", section)) {
 		if (!strcmp("hdboot", name))
-			config->args->hdboot |= atoi(value);
+			args.hdboot |= atoi(value);
 		else if (!strcmp("halt", name))
-			config->args->halt |= atoi(value);
+			args.halt |= atoi(value);
 		else if (!strcmp("mute", name))
-			config->args->mute |= atoi(value);
+			args.mute |= atoi(value);
 		else if (!strcmp("v20", name))
-			config->args->v20 |= atoi(value);
+			args.v20 |= atoi(value);
 		else if (!strcmp("no-activity", name))
-			config->args->no_activity |= atoi(value);
-		else if (!strcmp("bios", name) && !config->args->bios) {
-			static char bios_image_path[FILENAME_MAX] = {0};
-			strncpy(bios_image_path, value, FILENAME_MAX - 1);
-			config->args->bios = bios_image_path;
-		} else if (!strcmp("harddrive", name) && !config->args->harddrive) {
-			static char harddrive_image_path[FILENAME_MAX] = {0};
-			strncpy(harddrive_image_path, value, FILENAME_MAX - 1);
-			config->args->harddrive = harddrive_image_path;
+			args.no_activity |= atoi(value);
+		else if (!strcmp("harddrive", name) && !args.harddrive) {
+			static char harddrive_image_path[FILENAME_MAX + 2] = {0};
+			strncpy(harddrive_image_path, resolve_path(FRONTEND_ANY_PATH, value), FILENAME_MAX + 1);
+			args.harddrive = harddrive_image_path;
 		}
 	}
 	return 1;
@@ -487,7 +494,8 @@ static int load_modules(void *user, const char *section, const char *name, const
 				constructors = e->entry;
 			#else
 				char buffer[FILENAME_MAX];
-				sprintf(buffer, "%s/%s.vxt", modules_search_path, name);
+				sprintf(buffer, "%s.vxt", name);
+				strcpy(buffer, resolve_path(FRONTEND_MODULE_PATH, buffer));
 
 				void *lib = SDL_LoadObject(buffer);
 				if (!lib) {
@@ -552,10 +560,14 @@ static bool write_default_config(const char *path, bool clean) {
 	fprintf(fp,
 		"[modules]\n"
 		"chipset=xt\n"
+		"bios=0xFE000,GLABIOS.ROM\n"
 		"uart=0x3F8,4 \t;COM1\n"
 		"uart=0x2F8,3 \t;COM2\n"
 		"cga=\n"
 		"disk=\n"
+		"bios=0xE0000,vxtx.bin \t;DISK\n"
+		"rtc=0x240\n"
+		"bios=0xC8000,GLaTICK_0.8.4_AT.ROM \t;RTC\n"
 		"adlib=\n"
 		"rifs=\n"
 		"ctrl=\n"
@@ -565,7 +577,6 @@ static bool write_default_config(const char *path, bool clean) {
 		";serial=0x2F8,/dev/ttyUSB0\n"
 		";covox=0x378,disney\n"
 		";fdc=\n"
-		";rtc=bios/GLaTICK_0.8.4_AT.ROM\n"
 		";network=eth0\n"
 		";arstech_isa=libarsusb4.so\n"
 		";ch36x_isa=/dev/ch36xpci0\n"
@@ -605,7 +616,7 @@ int main(int argc, char *argv[]) {
 		argc = 1;
 	}
 
-	struct DocoptArgs args = docopt(argc, argv, true, vxt_lib_version());
+	args = docopt(argc, argv, true, vxt_lib_version());
 	args.rifs = rifs_path ? rifs_path : args.rifs;
 
 	if (!args.config) {
@@ -615,6 +626,12 @@ int main(int argc, char *argv[]) {
 			return -1;
 		}
 	}
+
+	if (args.locate) {
+		printf(args.config);
+		return -1;
+	}
+
 	printf("Config path: %s\n", args.config);
 
 	const char *base_path = SDL_GetBasePath();
@@ -625,8 +642,7 @@ int main(int argc, char *argv[]) {
 		const char *path = sprint("%s/" CONFIG_FILE_NAME, args.config);
 		config_updated = write_default_config(path, args.clean != 0);
 
-		config.args = &args;
-		if (ini_parse(path, &load_config, &config)) {
+		if (ini_parse(path, &load_config, NULL)) {
 			printf("Can't open, or parse: %s\n", path);
 			return -1;
 		}
@@ -637,20 +653,13 @@ int main(int argc, char *argv[]) {
 		return system(sprint(EDIT_CONFIG "%s/" CONFIG_FILE_NAME, args.config));
 	}
 
-	if (!args.modules) {
-		args.modules = SDL_getenv("VXT_DEFAULT_MODULES_PATH");
-		if (!args.modules) args.modules = "modules";
-	}
-	modules_search_path = args.modules;
-
-	if (!args.bios) {
-		args.bios = SDL_getenv("VXT_DEFAULT_BIOS_PATH");
-		if (!args.bios) args.bios = "bios/GLABIOS.ROM";
-	}
-
 	if (!args.harddrive && !args.floppy) {
 		args.harddrive = SDL_getenv("VXT_DEFAULT_HD_IMAGE");
-		if (!args.harddrive) args.harddrive = "boot/freedos_hd.img";
+		if (!args.harddrive) {
+			static char harddrive_image_path_buffer[FILENAME_MAX];
+			strncpy(harddrive_image_path_buffer, resolve_path(FRONTEND_ANY_PATH, "boot/freedos_hd.img"), FILENAME_MAX - 1);
+			args.harddrive = harddrive_image_path_buffer;
+		}
 	}
 
 	if (args.v20) {
@@ -742,11 +751,7 @@ int main(int argc, char *argv[]) {
 
 	vxt_set_logger(&printf);
 
-	struct vxt_pirepheral *rom = load_bios(args.bios, 0xFE000);
-	if (!rom) return -1;
-
 	APPEND_DEVICE(vxtu_memory_create(&realloc, 0x0, 0x100000, false));
-	APPEND_DEVICE(rom);
 
 	struct vxtu_disk_interface disk_interface = {
 		&read_file, &write_file, &seek_file, &tell_file
@@ -759,9 +764,10 @@ int main(int argc, char *argv[]) {
 	front_interface.set_disk_controller = &set_disk_controller;
 	front_interface.set_joystick_controller = &set_joystick_controller;
 	front_interface.set_keyboard_controller = &set_keyboard_controller;
+	front_interface.resolve_path = &resolve_path;
 	front_interface.ctrl.callback = &emu_control;
 	front_interface.disk.di = disk_interface;
-
+	
 	SDL_atomic_t icon_fade = {0};
 	if (!args.no_activity) {
 		front_interface.disk.activity_callback = &disk_activity_cb;

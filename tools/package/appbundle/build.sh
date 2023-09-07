@@ -11,6 +11,7 @@ cp build/bin/libvxt.so $APP_DIR/Contents/MacOS/
 cp modules/*.vxt $APP_DIR/Contents/Resources/modules/
 cp bios/pcxtbios.bin $APP_DIR/Contents/Resources/bios/
 cp bios/GLABIOS.ROM $APP_DIR/Contents/Resources/bios/
+cp bios/GLaTICK_0.8.4_AT.ROM $APP_DIR/Contents/Resources/bios/
 cp bios/vxtx.bin $APP_DIR/Contents/Resources/bios/
 cp bios/vgabios.bin $APP_DIR/Contents/Resources/bios/
 cp boot/freedos.img $APP_DIR/Contents/Resources/boot/

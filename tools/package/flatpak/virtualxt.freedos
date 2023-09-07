@@ -6,9 +6,6 @@ DATA=$HERE/../share/virtualxt
 mkdir -p $XDG_DATA_HOME/boot
 cp -n $DATA/freedos_hd.img $XDG_DATA_HOME/boot/
 
-export VXT_DEFAULT_MODULES_PATH=$DATA/modules
-export VXT_DEFAULT_BIOS_PATH=$DATA/GLABIOS.ROM
-export VXT_DEFAULT_VXTX_BIOS_PATH=$DATA/vxtx.bin
 export VXT_DEFAULT_HD_IMAGE=$XDG_DATA_HOME/boot/freedos_hd.img
 
 exec "$HERE/virtualxt" "$@"

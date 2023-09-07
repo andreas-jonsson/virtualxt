@@ -2,13 +2,11 @@
 
 HERE="$(cd "$(dirname "$0")" && pwd -P)"
 DATA=$HERE/../share/virtualxt
+CONFIG=$($HERE/virtualxt --locate)
 
-mkdir -p $HOME/.virtualxt/boot
-cp -n $DATA/freedos_hd.img $HOME/.virtualxt/boot/
+mkdir -p $CONFIG/boot
+cp -n $DATA/freedos_hd.img $CONFIG/boot/
 
-export VXT_DEFAULT_MODULES_PATH=$DATA/modules
-export VXT_DEFAULT_BIOS_PATH=$DATA/vxtbios.bin
-export VXT_DEFAULT_VXTX_BIOS_PATH=$DATA/vxtx.bin
-export VXT_DEFAULT_HD_IMAGE=$HOME/.virtualxt/boot/freedos_hd.img
+export VXT_DEFAULT_HD_IMAGE=$CONFIG/boot/freedos_hd.img
 
 exec "$HERE/virtualxt" "$@"
