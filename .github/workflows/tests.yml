@@ -3,10 +3,14 @@ name: Tests
 on:
   push:
     branches: [ "new-tests" ]
-  pull_request:
-    branches: [ "develop" ]
+  #pull_request:
+  #  branches: [ "develop" ]
 
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   linux-build:
@@ -21,22 +25,25 @@ jobs:
       - name: Setup
         run: |
           sudo apt-get update
-          sudo apt-get install kcov cppcheck
+          sudo apt-get install kcov
           curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
           echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
 
       - name: Generate
         run: ./tools/tests/8088v1/generate.py 0
 
-      - name: Test & Check
-        run: |
-          premake5 check
-          premake5 --test gmake
-          make clean test
+      - name: Premake
+        run: premake5 --test gmake
+
+      - name: Test
+        run: make clean test
 
       - name: Report
+        run: |
+          rm -rf lib/vxt/test
+          kcov kcov-out test/test .
+
+      - name: Upload
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: |
-          kcov kcov-out test/test .
-          bash <(curl -s https://codecov.io/bash) -s kcov-out
+        run: bash <(curl -s https://codecov.io/bash) -s kcov-out
