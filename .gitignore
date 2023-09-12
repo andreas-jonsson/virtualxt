@@ -23,6 +23,9 @@ __pycache__
 /modules/*.pdb
 /modules/*.exp
 
+/tools/tests/8088v1/*.json.gz
+/lib/vxt/test/
+
 /*.trace*
 /tools/vxtdrv/vxtdrv.com
 /tools/shutdown/shutdown.com

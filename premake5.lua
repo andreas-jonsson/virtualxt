@@ -10,11 +10,6 @@ newoption {
 }
 
 newoption {
-    trigger = "scrambler",
-    description = "Generate make files for scrambler"
-}
-
-newoption {
     trigger = "modules",
     description = "Generate make files for all modules"
 }
@@ -344,33 +339,14 @@ workspace "virtualxt"
         filter "toolset:gcc"
             buildoptions "-Wno-maybe-uninitialized"
 
-if _OPTIONS["scrambler"] then
-    project "scrambler"
-        kind "ConsoleApp"
-        targetname "scrambler"
-        targetdir "build/bin"
-        links "gpiod"
-        defines { "PI8088", "VXT_CPU_286" }
-
-        files { "tools/validator/pi8088/scrambler.c", "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
-        
-        includedirs "lib/vxt/include"
-        files { "lib/vxt/**.h", "lib/vxt/*.c" }
-        removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
-
-        cleancommands {
-            "{RMDIR} build/bin",
-            "make clean %{cfg.buildcfg}"
-        }
-end
-
 if _OPTIONS["test"] then
     project "test"
         kind "ConsoleApp"
         targetdir "test"
         includedirs "lib/vxt/include"
-        defines { "TESTING", "VXT_CPU_286", "VXTU_MEMCLEAR" }
+        defines { "TESTING", "VXTU_MEMCLEAR" }
         files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
+
         optimize "Off"
         symbols "On"
         sanitize { "Address", "Fuzzer" }
@@ -383,22 +359,35 @@ if _OPTIONS["test"] then
             linkoptions "--coverage"
     
     io.writefile("test/test.c", (function()
+        print("Searching for tests:")
+
+        local pattern = _OPTIONS["test"]
         local test_names = {}
-        for _,file in pairs(os.matchfiles("lib/vxt/*.c")) do
-            for line in io.lines(file) do
-                if string.startswith(line, "TEST(") then
-                    table.insert(test_names, string.sub(line, 6, -2))
+
+        for _,file in pairs(os.matchfiles("lib/vxt/**.c")) do
+            if not pattern or string.find(file, pattern, 1, true) then
+                print(file)
+                files { file } -- Ensure any files in recursive directories are added.
+                for line in io.lines(file) do
+                    if string.startswith(line, "TEST(") then
+                        table.insert(test_names, string.sub(line, 6, -2))
+                    end
                 end
             end
         end
 
+        print("Generating test code:")
+
         local head = '#include <stdio.h>\n#include "../lib/vxt/testing.h"\n\n'
         head = head .. '#define RUN_TEST(t) { ok += run_test(t) ? 1 : 0; num++; }\n\n'
         local body = "\t(void)argc; (void)argv;\n\tint ok = 0, num = 0;\n\n"
+        
         for _,name in ipairs(test_names) do
+            print(name)
             head = string.format("%sextern int test_%s(struct Test T);\n", head, name)
             body = string.format("%s\tRUN_TEST(test_%s);\n", body, name)
         end
+
         body = string.format('%s\n\tprintf("%%d/%%d tests passed!\\n", ok, num);\n\treturn (num - ok) ? -1 : 0;\n', body)
         return string.format("%s\nint main(int argc, char *argv[]) {\n%s}\n", head, body)
     end)())
