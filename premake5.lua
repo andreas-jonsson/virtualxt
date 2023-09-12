@@ -362,7 +362,8 @@ if _OPTIONS["test"] then
         print("Searching for tests:")
 
         local pattern = _OPTIONS["test"]
-        local test_names = {}
+        local externals = ""
+        local calls = ""
 
         for _,file in pairs(os.matchfiles("lib/vxt/**.c")) do
             if not pattern or string.find(file, pattern, 1, true) then
@@ -370,7 +371,9 @@ if _OPTIONS["test"] then
                 files { file } -- Ensure any files in recursive directories are added.
                 for line in io.lines(file) do
                     if string.startswith(line, "TEST(") then
-                        table.insert(test_names, string.sub(line, 6, -2))
+                        local name = string.sub(line, 6, -2)
+                        externals = externals .. string.format("extern int test_%s(struct Test T);\n", name)
+                        calls = calls .. string.format("\tRUN_TEST(test_%s);\n", name)
                     end
                 end
             end
@@ -378,18 +381,13 @@ if _OPTIONS["test"] then
 
         print("Generating test code:")
 
-        local head = '#include <stdio.h>\n#include "../lib/vxt/testing.h"\n\n'
-        head = head .. '#define RUN_TEST(t) { ok += run_test(t) ? 1 : 0; num++; }\n\n'
-        local body = "\t(void)argc; (void)argv;\n\tint ok = 0, num = 0;\n\n"
-        
-        for _,name in ipairs(test_names) do
-            print(name)
-            head = string.format("%sextern int test_%s(struct Test T);\n", head, name)
-            body = string.format("%s\tRUN_TEST(test_%s);\n", body, name)
-        end
+        -- Avoid using string.format here as the strings can be very large.
 
-        body = string.format('%s\n\tprintf("%%d/%%d tests passed!\\n", ok, num);\n\treturn (num - ok) ? -1 : 0;\n', body)
-        return string.format("%s\nint main(int argc, char *argv[]) {\n%s}\n", head, body)
+        local head = '#include <stdio.h>\n#include "../lib/vxt/testing.h"\n\n#define RUN_TEST(t) { ok += run_test(t) ? 1 : 0; num++; }\n\n' .. externals
+        local body = "\t(void)argc; (void)argv;\n\tint ok = 0, num = 0;\n\n" .. calls
+
+        body = body .. '\n\tprintf("%d/%d tests passed!\\n", ok, num);\n\treturn (num - ok) ? -1 : 0;\n'
+        return head .. "\nint main(int argc, char *argv[]) {\n" .. body .. "}\n"
     end)())
 end
 
