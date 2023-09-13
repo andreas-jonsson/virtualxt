@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ "new-tests" ]
-  #pull_request:
-  #  branches: [ "develop" ]
+    branches: [ "develop", "edge", "release" ]
+  pull_request:
+    branches: [ "develop" ]
 
   workflow_dispatch:
 
@@ -39,9 +39,7 @@ jobs:
         run: make clean test
 
       - name: Report
-        run: |
-          rm -rf lib/vxt/test
-          kcov kcov-out test/test .
+        run: kcov --include-path=lib/vxt --exclude-path=lib/vxt/include,lib/vxt/test kcov-out test/test .
 
       - name: Upload
         env:
