@@ -38,7 +38,7 @@ newaction {
     trigger = "check",
     description = "Run CppCheck on libvxt",
     execute = function ()
-        return os.execute("cppcheck --enable=style -I lib/vxt/include lib/vxt")
+        return os.execute("cppcheck --force --enable=style -I lib/vxt/include lib/vxt")
     end
 }
 
