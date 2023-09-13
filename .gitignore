@@ -24,11 +24,11 @@ __pycache__
 /modules/*.exp
 
 /tools/tests/8088v1/*.json.gz
-/lib/vxt/test/
+/tools/tests/8088v1/*.bin
+/lib/vxt/i8088_tests.c
 
 /*.trace*
 /tools/vxtdrv/vxtdrv.com
 /tools/shutdown/shutdown.com
-/__scrambler.tmp
 /boot/msdos*.img
 /boot/windows*.img
