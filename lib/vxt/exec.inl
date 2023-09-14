@@ -196,19 +196,18 @@ static void sub_1D_2D(CONSTSP(cpu) p, INST(inst)) {
 static void das_2F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_byte al = p->regs.al;
+   vxt_word af = p->regs.flags & VXT_AUXILIARY;
    vxt_word cf = p->regs.flags & VXT_CARRY;
    p->regs.flags &= ~VXT_CARRY;
 
    if (((al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
-      vxt_word v = ((vxt_word)al) - 6;
-      p->regs.al = (vxt_byte)(v & 0xFF);
-      SET_FLAG_IF(p->regs.flags, VXT_CARRY, cf || (v & 0xFF00));
+      p->regs.al -= 6;
    	p->regs.flags |= VXT_AUXILIARY;
 	} else {
       p->regs.flags &= ~VXT_AUXILIARY;
 	}
 
-   if ((al > 0x99) || cf) {
+   if ((al > (af ? 0x9F : 0x99)) || cf) {
       p->regs.al -= 0x60;
       p->regs.flags |= VXT_CARRY;
    } else {
@@ -254,23 +253,18 @@ static void and_25(CONSTSP(cpu) p, INST(inst)) {
 
 static void daa_27(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_byte comp = 0x99;
    vxt_byte al = p->regs.al;
+   vxt_word af = p->regs.flags & VXT_AUXILIARY;
    vxt_word cf = p->regs.flags & VXT_CARRY;
-   p->regs.flags &= ~VXT_CARRY;
 
-  
-   if (((p->regs.al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
-      vxt_word v = ((vxt_word)p->regs.al) + 6;
-      p->regs.al = (vxt_byte)(v & 0xFF);
-      SET_FLAG_IF(p->regs.flags, VXT_CARRY, cf || (v & 0xFF00));
-   	p->regs.flags |= VXT_AUXILIARY;
-      comp = 0x9F;
+   if (((al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
+      p->regs.al += 6;
+      p->regs.flags |= VXT_AUXILIARY;
 	} else {
       p->regs.flags &= ~VXT_AUXILIARY;
 	}
-   
-   if ((al > comp) || cf) {
+
+   if ((al > (af ? 0x9F : 0x99)) || cf) {
       p->regs.al += 0x60;
       p->regs.flags |= VXT_CARRY;
    } else {
@@ -318,7 +312,7 @@ static void xor_35(CONSTSP(cpu) p, INST(inst)) {
    static void name (CONSTSP(cpu) p, INST(inst)) {                               \
       UNUSED(inst);                                                              \
       if (((p->regs.al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {     \
-         p->regs.ax = p->regs.ax op 6;                                           \
+         p->regs.al = p->regs.al op 6;                                           \
          p->regs.ah = p->regs.ah op 1;                                           \
          p->regs.flags |= VXT_AUXILIARY | VXT_CARRY;                             \
       } else {                                                                   \
@@ -583,17 +577,17 @@ static void test_85(CONSTSP(cpu) p, INST(inst)) {
 
 static void xchg_86(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_byte v = reg_read8(&p->regs, p->mode.reg);
-   reg_write8(&p->regs, p->mode.reg, rm_read8(p));
-   rm_write8(p, v);
+   vxt_byte v = rm_read8(p);
+   rm_write8(p, reg_read8(&p->regs, p->mode.reg));
+   reg_write8(&p->regs, p->mode.reg, v);
    ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void xchg_87(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_word v = reg_read16(&p->regs, p->mode.reg);
-   reg_write16(&p->regs, p->mode.reg, rm_read16(p));
-   rm_write16(p, v);
+   vxt_word v = rm_read16(p);
+   rm_write16(p, reg_read16(&p->regs, p->mode.reg));
+   reg_write16(&p->regs, p->mode.reg, v);
    ADD_CYCLE_MOD_MEM(p, 21);
 }
 
