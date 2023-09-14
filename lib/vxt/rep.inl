@@ -42,7 +42,7 @@ REPEAT(movsb_A4, 17, {
    update_di_si(p, 1);
 })
 REPEAT(movsw_A5, 25, {
-   cpu_write_word(p, VXT_POINTER(p->regs.es, p->regs.di), cpu_read_word(p, VXT_POINTER(p->seg, p->regs.si)));
+   cpu_segment_write_word(p, p->regs.es, p->regs.di, cpu_segment_read_word(p, p->seg, p->regs.si));
    update_di_si(p, 2);
 })
 REPEAT(stosb_AA, 10, {
@@ -50,7 +50,7 @@ REPEAT(stosb_AA, 10, {
    update_di(p, 1);
 })
 REPEAT(stosw_AB, 14, {
-   cpu_write_word(p, VXT_POINTER(p->regs.es, p->regs.di), p->regs.ax);
+   cpu_segment_write_word(p, p->regs.es, p->regs.di, p->regs.ax);
    update_di(p, 2);
 })
 REPEAT(lodsb_AC, 16, {
@@ -58,7 +58,7 @@ REPEAT(lodsb_AC, 16, {
    update_si(p, 1);
 })
 REPEAT(lodsw_AD, 16, {
-   p->regs.ax = cpu_read_word(p, VXT_POINTER(p->seg, p->regs.si));
+   p->regs.ax = cpu_segment_read_word(p, p->seg, p->regs.si);
    update_si(p, 2);
 })
 #undef REPEAT
@@ -90,8 +90,8 @@ REPEAT(cmpsb_A6, 30, {
    flag_sub_sbb8(&p->regs, a, b, 0);
 })
 REPEAT(cmpsw_A7, 30, {
-   vxt_word a = cpu_read_word(p, VXT_POINTER(p->seg, p->regs.si));
-   vxt_word b = cpu_read_word(p, VXT_POINTER(p->regs.es, p->regs.di));
+   vxt_word a = cpu_segment_read_word(p, p->seg, p->regs.si);
+   vxt_word b = cpu_segment_read_word(p, p->regs.es, p->regs.di);
    update_di_si(p, 2);
    flag_sub_sbb16(&p->regs, a, b, 0);
 })
@@ -101,7 +101,7 @@ REPEAT(scasb_AE, 15, {
    flag_sub_sbb8(&p->regs, p->regs.al, v, 0);
 })
 REPEAT(scasw_AF, 19, {
-   vxt_word v = cpu_read_word(p, VXT_POINTER(p->regs.es, p->regs.di));
+   vxt_word v = cpu_segment_read_word(p, p->regs.es, p->regs.di);
    update_di(p, 2);
    flag_sub_sbb16(&p->regs, p->regs.ax, v, 0);
 })

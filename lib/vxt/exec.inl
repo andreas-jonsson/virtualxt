@@ -84,7 +84,7 @@ PUSH_POP(di)
 static void push_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      cpu_write_word(p, VXT_POINTER(p->regs.ss, p->regs.sp), p->regs.sp);
+      cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
       p->regs.sp -= 2;
    #else
       push(p, p->regs.sp);
@@ -94,7 +94,7 @@ static void push_sp(CONSTSP(cpu) p, INST(inst)) {
 static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      p->regs.sp = cpu_read_word(p, VXT_POINTER(p->regs.ss, p->regs.sp));
+      p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
    #else
       p->regs.sp = pop(p);
    #endif
@@ -439,7 +439,7 @@ static void insb_6C(CONSTSP(cpu) p, INST(inst)) {
 
 static void insw_6D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_write_word(p, VXT_POINTER(p->regs.ds, p->regs.si), WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
+   cpu_segment_write_word(p, p->regs.ds, p->regs.si, WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
    update_di_si(p, 2);
 }
 
@@ -451,7 +451,7 @@ static void outsb_6E(CONSTSP(cpu) p, INST(inst)) {
 
 static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_word data = cpu_read_word(p, VXT_POINTER(p->regs.ds, p->regs.si));
+   vxt_word data = cpu_segment_read_word(p, p->regs.ds, p->regs.si);
    system_out(p->s, p->regs.dx, (vxt_byte)(data & 0xFF));
    system_out(p->s, p->regs.dx + 1, (vxt_byte)(data >> 8));
    update_di_si(p, 2);
@@ -725,7 +725,7 @@ static void mov_A0(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ax = cpu_read_word(p, VXT_POINTER(p->seg, read_opcode16(p)));
+   p->regs.ax = cpu_segment_read_word(p, p->seg, read_opcode16(p));
 }
 
 static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
@@ -735,7 +735,7 @@ static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A3(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_write_word(p, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.ax);
+   cpu_segment_write_word(p, p->seg, read_opcode16(p), p->regs.ax);
 }
 
 static void test_A8(CONSTSP(cpu) p, INST(inst)) {

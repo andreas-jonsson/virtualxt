@@ -343,11 +343,11 @@ WIDE(RM_FUNC)
 
 static void push(CONSTSP(cpu) p, vxt_word data) {
    p->regs.sp -= 2;
-   cpu_write_word(p, VXT_POINTER(p->regs.ss, p->regs.sp), data);
+   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, data);
 }
 
 static vxt_word pop(CONSTSP(cpu) p) {
-   vxt_word data = cpu_read_word(p, VXT_POINTER(p->regs.ss, p->regs.sp));
+   vxt_word data = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
    p->regs.sp += 2;
    return data;
 }

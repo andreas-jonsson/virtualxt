@@ -5,6 +5,7 @@ import json
 import os
 import requests
 import struct
+#import pprint
 
 c_header = """// This file is generated!
 
@@ -26,7 +27,7 @@ VXT_PACK(struct) memory {
 #define NAME_SIZE 256
 #define CHECK_REG(reg) TASSERT(r->reg == regs.reg, "Expected the value of register '" #reg "' to be 0x%X(%d) but it was 0x%X(%d)", regs.reg, regs.reg, r->reg, r->reg)
 
-static int execute_test(struct Test T, char *name, const char *input) {
+static int execute_test(struct Test T, int *index, char *name, const char *input) {
     struct vxt_pirepheral *devices[] = {
         vxtu_memory_create(&TALLOC, 0x0, 0x100000, false),
         NULL
@@ -43,6 +44,8 @@ static int execute_test(struct Test T, char *name, const char *input) {
     TENSURE(fread(&num_tests, 4, 1, fp) == 1);
     
     for (int i = 0; i < num_tests; i++) {
+        *index = i;
+
         vxt_word flags_mask;
         TENSURE(fread(&flags_mask, 2, 1, fp) == 1);
 
@@ -112,16 +115,14 @@ static int execute_test(struct Test T, char *name, const char *input) {
 
 c_body = """
 TEST({name},
+    int index = 0;
     char name[NAME_SIZE] = {{0}};
-    if (execute_test(T, name, "{input}") != 0) {{
-        TLOG("Execute: %s", name);
+    if (execute_test(T, &index, name, "{input}") != 0) {{
+        TLOG("%d: %s", index, name);
         return -1;
     }}
 )
 """
-
-c_test_name = "lib/vxt/i8088_tests.c"
-mask_file = json.loads(open("tools/tests/8088v1/8088.json", "r").read())
 
 def pack_test(data, output):
     regs = data["regs"]
@@ -145,46 +146,68 @@ def write_test(data, output):
     output.write(struct.pack("HB", len(data["cycles"]), len(data["final"]["queue"])))
 
 def check_and_download(filename):
-    filepath = "tools/tests/8088v1/" + filename
+    filepath = data_dir + "/" + filename
     if not os.path.exists(filepath):
         print("Downloading: " + filename)
+        
         url = "https://github.com/virtualxt/ProcessorTests/raw/main/8088/v1/" + filename
-        fp = open(filepath, "wb")
-        fp.write(requests.get(url).content)
-        fp.close()
+        resp = requests.get(url)
+        if resp.status_code != requests.codes.ok:
+            return False
 
-def gen_tests(opcode, sub = -1):
+        with open(filepath, "wb") as f:
+            f.write(resp.content)
+
+    return True
+
+def gen_tests(input_name):
+    opcode = int(input_name[:2], 16)
+    reg = -1
+
+    if len(input_name) > 2:
+        reg = int(input_name[3:])
+
+    for op in skip_opcodes:
+        if isinstance(op, tuple):
+            if op[0] == opcode and reg == op[1]:
+                return
+        elif op == opcode:
+            return
+
     for arg in os.sys.argv[1:]:
         if int(arg, 16) != opcode:
             return
-        
-    if sub < 0: sub = ""
-    else: sub = "." + str(sub)
 
-    filename = "{:02X}{}.json.gz".format(opcode, sub)
-    check_and_download(filename)
-    print("Generating tests for opcode {:02X}...".format(opcode))
+    filename = input_name + ".json.gz"
+    if not check_and_download(filename):
+        print("Could not download: " + filename)
+        return
+
+    print("Generating tests for opcode {}".format(input_name))
     
-    output_file = "tools/tests/8088v1/{:02X}{}.bin".format(opcode, sub)
+    output_file = "{}/{}.bin".format(data_dir, input_name)
 
     with open(c_test_name, "a") as f:
-        f.write(c_body.format(name = "opcode_{:02X}{}".format(opcode, sub.replace(".", "_")), input = output_file))
+        f.write(c_body.format(name = "opcode_" + input_name.replace(".", "_"), input = output_file))
 
     output = open(output_file, "wb")
     output.write(struct.pack("I", 0))
     
     num_tests = 0
-    with gzip.open("tools/tests/8088v1/" + filename, mode="rt") as f:
+    with gzip.open(data_dir + "/" + filename, mode="r") as f:
         data = json.loads(f.read())
         for test in data:
-            opcode_ref = mask_file["{:02X}".format(opcode)]
-            if sub != "":
-                opcode_ref = opcode_ref["reg"][sub[1:]]
+            opcode_ref = index_file["{:02X}".format(opcode)]
+            if reg >= 0:
+                opcode_ref = opcode_ref["reg"][str(reg)]
 
             flags_mask = 0xFFFF
             if "flags-mask" in opcode_ref:
                 flags_mask = int(opcode_ref["flags-mask"])
             output.write(struct.pack("H", flags_mask))
+
+            #if num_tests == 7347:
+            #    pprint.pprint(test)
 
             write_test(test, output)
             num_tests += 1
@@ -195,40 +218,45 @@ def gen_tests(opcode, sub = -1):
 
 ####################### Start #######################
 
-with open(c_test_name, "w") as f: f.write(c_header)
+c_test_name = "lib/vxt/i8088_tests.c"
+data_dir = "tools/tests/8088v1"
 
-opcodes_bugs = {
-    0x11, 0x17, 0x27, 0x2F, 0x37, 0x3F, 0x50, 0x54, 0x57, 0x5A, 0x5D,
-    0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F,
-    0x86, 0x87, 0x8D, 0xA5, 0xAB, 0xC0, 0xC1, 0xC4, 0xC8, 0xC9, 0xCF,
-    0xD4, 0xD5, 0xE5
+skip_opcodes = {
+    # Prefixes
+    0x26, 0x2E, 0x36, 0x3E, 0xF0, 0xF2, 0xF3,
+
+    # Wait and Halt instruction
+    0x9B, 0xF4,
+
+    # FPU instructions
+    0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF,
+
+    # Undefined instructions
+    0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+    0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F,
+    0xC0, 0xC1, 0xC8, 0xC9, 0xF1,
+    (0xD0, 6), (0xD1, 6), (0xD2, 6), (0xD3, 6),
+    (0xFE, 2), (0xFE, 3), (0xFE, 4), (0xFE, 5), (0xFE, 6), (0xFE, 7),
+    (0xFF, 7),
+
+    # Issue with test data?
+    0x8F, 0xC6, 0xC7,
+
+    # BUGS
+    0x11, 0x27, 0x2F, 0x37, 0x3F, 0x54, 0x86, 0x87,
+    0x8D, 0xC4, 0xCF, 0xD4, 0xD5, 0xE5,
+    (0xF6, 6), (0xF6, 7), (0xF7, 6), (0xF7, 7),
+    (0xFF, 3), (0xFF, 6)
 }
 
-for i in range(256):
-    if i in opcodes_bugs:
-        continue
-    skip_opcodes = {
-        0x26, 0x2E, 0x36, 0x3E, 0x70, 0x80, 0x81,
-        0x82, 0x83, 0x9B, 0xD0, 0xD1, 0xD2, 0xD3,
-        0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF6, 0xF7,
-        0xFE, 0xFF
-    }
-    if i in skip_opcodes:
-        continue
-    gen_tests(i)
+check_and_download("8088.json")
+index_file = json.loads(open(data_dir + "/8088.json", "r").read())
 
-for i in range(8):
-    gen_tests(0x80, i)
-    gen_tests(0x81, i)
-    gen_tests(0x82, i)
-    gen_tests(0x83, i)
-    #gen_tests(0xD0, i)
-    #gen_tests(0xD1, i)
-    #gen_tests(0xD2, i)
-    #gen_tests(0xD3, i)
-    #gen_tests(0xF6, i)
-    #gen_tests(0xF7, i)
-    #gen_tests(0xFF, i)
+with open(c_test_name, "w") as f: f.write(c_header)
 
-gen_tests(0xFE, 0)
-gen_tests(0xFE, 1)
+for opcode,data in index_file.items():
+    if "reg" in data:
+        for reg in data["reg"]:
+            gen_tests("{}.{}".format(opcode, reg))
+    else:
+        gen_tests(opcode)
