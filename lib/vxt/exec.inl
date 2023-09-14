@@ -84,19 +84,25 @@ PUSH_POP(di)
 static void push_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
-      p->regs.sp -= 2;
+      if (p->cpu_type == VXT_CPU_V20) {
+         push(p, p->regs.sp);
+         return;
+      }
    #else
-      push(p, p->regs.sp);
+      p->regs.sp -= 2;
+      cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
    #endif
 }
 
 static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
+      if (p->cpu_type == VXT_CPU_V20) {
+         p->regs.sp = pop(p);
+         return;
+      }
    #else
-      p->regs.sp = pop(p);
+      p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
    #endif
 }
 
@@ -1314,7 +1320,17 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
       }
       case 6: // PUSH
       case 7:
-         push(p, v);
+         #ifdef VXT_CPU_286
+            if (p->cpu_type == VXT_CPU_V20) {
+               push(p, v);
+            } else
+         #endif
+         {
+            p->regs.sp -= 2;
+            v = rm_read16(p);
+            cpu_segment_write_word(p, p->regs.ss, p->regs.sp, v);
+         }
+
          p->cycles += 15; ADD_CYCLE_MOD_MEM(p, 9);
          break;
       default:

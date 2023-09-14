@@ -341,6 +341,7 @@ WIDE(RM_FUNC)
 #undef NARROW
 #undef WIDE
 
+// Don't use this function for pushing SP in 8086.
 static void push(CONSTSP(cpu) p, vxt_word data) {
    p->regs.sp -= 2;
    cpu_segment_write_word(p, p->regs.ss, p->regs.sp, data);

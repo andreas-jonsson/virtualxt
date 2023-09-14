@@ -5,7 +5,7 @@ import json
 import os
 import requests
 import struct
-#import pprint
+import pprint
 
 c_header = """// This file is generated!
 
@@ -26,6 +26,8 @@ VXT_PACK(struct) memory {
 
 #define NAME_SIZE 256
 #define CHECK_REG(reg) TASSERT(r->reg == regs.reg, "Expected the value of register '" #reg "' to be 0x%X(%d) but it was 0x%X(%d)", regs.reg, regs.reg, r->reg, r->reg)
+
+#ifdef TESTING
 
 static int execute_test(struct Test T, int *index, char *name, const char *input) {
     struct vxt_pirepheral *devices[] = {
@@ -111,6 +113,8 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
     fclose(fp);
     return 0;
 }
+
+#endif
 """
 
 c_body = """
@@ -206,7 +210,7 @@ def gen_tests(input_name):
                 flags_mask = int(opcode_ref["flags-mask"])
             output.write(struct.pack("H", flags_mask))
 
-            #if num_tests == 7347:
+            #if input_name == "FF.6" and num_tests == 63:
             #    pprint.pprint(test)
 
             write_test(test, output)
@@ -246,7 +250,7 @@ skip_opcodes = {
     0x11, 0x27, 0x2F, 0x37, 0x3F, 0x54, 0x86, 0x87,
     0x8D, 0xC4, 0xCF, 0xD4, 0xD5, 0xE5,
     (0xF6, 6), (0xF6, 7), (0xF7, 6), (0xF7, 7),
-    (0xFF, 3), (0xFF, 6)
+    (0xFF, 3)
 }
 
 check_and_download("8088.json")
