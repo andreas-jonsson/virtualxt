@@ -41,7 +41,7 @@ jobs:
       - name: Report
         run: |
           kcov --include-path=lib/vxt --exclude-path=lib/vxt/include,lib/vxt/test \
-          --exclude-pattern=cga.c,disk.c,dma.c,dummy.c,mda.cmemory.c,mouse.c,pic.c,pit.c,ppi.c,uart.c,utils.c,v20.inl \
+          --exclude-pattern=cga.c,disk.c,dma.c,dummy.c,mda.c,memory.c,mouse.c,pic.c,pit.c,ppi.c,uart.c,utils.c,v20.inl \
           kcov-out test/test .
 
       - name: Upload
