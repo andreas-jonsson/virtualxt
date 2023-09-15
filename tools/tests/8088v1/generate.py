@@ -5,7 +5,6 @@ import json
 import os
 import requests
 import struct
-import pprint
 
 c_header = """// This file is generated!
 
@@ -211,7 +210,7 @@ def gen_tests(input_name):
             output.write(struct.pack("H", flags_mask))
 
             #if input_name == "C4" and num_tests == 9495:
-            #    pprint.pprint(test)
+            #    print(json.dumps(test, indent=4))   
 
             write_test(test, output)
             num_tests += 1
@@ -225,7 +224,7 @@ def gen_tests(input_name):
 c_test_name = "lib/vxt/i8088_tests.c"
 data_dir = "tools/tests/8088v1"
 
-skip_opcodes = {
+skip_opcodes = (
     # Prefixes
     0x26, 0x2E, 0x36, 0x3E, 0xF0, 0xF2, 0xF3,
 
@@ -243,9 +242,6 @@ skip_opcodes = {
     (0xFE, 2), (0xFE, 3), (0xFE, 4), (0xFE, 5), (0xFE, 6), (0xFE, 7),
     (0xFF, 7),
 
-    # Issue with test data?
-    0x8F, 0xC6, 0xC7,
-
     # BUG: Div zero issue?
     0xD4,
     (0xF6, 6), (0xF6, 7), (0xF7, 6), (0xF7, 7),
@@ -254,9 +250,9 @@ skip_opcodes = {
     0x11,
 
     # BUG: Possible issue with get_effective_address
-    0x8D, 0xC4,
+    0xC4,
     (0xFF, 3)
-}
+)
 
 check_and_download("8088.json")
 index_file = json.loads(open(data_dir + "/8088.json", "r").read())
