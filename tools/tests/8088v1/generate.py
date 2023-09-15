@@ -210,7 +210,7 @@ def gen_tests(input_name):
                 flags_mask = int(opcode_ref["flags-mask"])
             output.write(struct.pack("H", flags_mask))
 
-            #if input_name == "FF.6" and num_tests == 63:
+            #if input_name == "C4" and num_tests == 9495:
             #    pprint.pprint(test)
 
             write_test(test, output)
@@ -246,10 +246,15 @@ skip_opcodes = {
     # Issue with test data?
     0x8F, 0xC6, 0xC7,
 
-    # BUGS
-    0x11,
-    0x8D, 0xC4, 0xCF, 0xD4, 0xD5, 0xE5,
+    # BUG: Div zero issue?
+    0xD4,
     (0xF6, 6), (0xF6, 7), (0xF7, 6), (0xF7, 7),
+
+    # BUG: ?
+    0x11,
+
+    # BUG: Possible issue with get_effective_address
+    0x8D, 0xC4,
     (0xFF, 3)
 }
 

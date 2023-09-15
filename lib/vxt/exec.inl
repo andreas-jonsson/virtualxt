@@ -869,10 +869,18 @@ static void int_CE(CONSTSP(cpu) p, INST(inst)) {
 static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    VALIDATOR_DISCARD(p);
+   p->inst_queue_dirty = true;
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
-   p->regs.flags = pop(p);
-   p->inst_queue_dirty = true;
+
+   p->regs.flags = pop(p) & ALL_FLAGS;
+   #if defined(VXT_CPU_286)
+      if (p->cpu_type == VXT_CPU_V20) {
+         p->regs.flags |= 0x2;
+         return;
+      }
+   #endif
+   p->regs.flags |= 0xF002;
 }
 
 static void grp2_D0(CONSTSP(cpu) p, INST(inst)) {
@@ -916,7 +924,6 @@ static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
 
    p->regs.ax = ((vxt_word)p->regs.ah * imm + (vxt_word)p->regs.al) & 0xFF;
    flag_szp8(&p->regs, p->regs.al);
-   SET_FLAG(p->regs.flags, VXT_ZERO, 0);
 }
 
 static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
@@ -943,7 +950,7 @@ static void in_E4(CONSTSP(cpu) p, INST(inst)) {
 
 static void in_E5(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ax = (vxt_word)system_in(p->s, read_opcode8(p));
+   p->regs.ax = (vxt_word)system_in(p->s, read_opcode8(p)) | 0xFF00;
 }
 
 static void out_E6(CONSTSP(cpu) p, INST(inst)) {
