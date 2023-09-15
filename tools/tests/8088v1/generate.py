@@ -11,28 +11,28 @@ c_header = """// This file is generated!
 #include <vxt/vxtu.h>
 #include "testing.h"
 
-VXT_PACK(struct) registers {
+VXT_PACK(struct) registers {{
     vxt_word ax, bx, cx, dx;
     vxt_word cs, ss, ds, es;
     vxt_word sp, bp, si, di;
     vxt_word ip, flags;
-};
+}};
                                                      
-VXT_PACK(struct) memory {
+VXT_PACK(struct) memory {{
     vxt_dword addr;
     vxt_byte data;
-};
+}};
 
 #define NAME_SIZE 256
 #define CHECK_REG(reg) TASSERT(r->reg == regs.reg, "Expected the value of register '" #reg "' to be 0x%X(%d) but it was 0x%X(%d)", regs.reg, regs.reg, r->reg, r->reg)
 
 #ifdef TESTING
 
-static int execute_test(struct Test T, int *index, char *name, const char *input) {
-    struct vxt_pirepheral *devices[] = {
+static int execute_test(struct Test T, int *index, char *name, const char *input) {{
+    struct vxt_pirepheral *devices[] = {{
         vxtu_memory_create(&TALLOC, 0x0, 0x100000, false),
         NULL
-    };
+    }};
 
     vxt_system *s = vxt_system_create(&TALLOC, VXT_CPU_8088, VXT_DEFAULT_FREQUENCY, devices);
     TENSURE(s);
@@ -44,7 +44,7 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
     int num_tests;
     TENSURE(fread(&num_tests, 4, 1, fp) == 1);
     
-    for (int i = 0; i < num_tests; i++) {
+    for (int i = 0; i < num_tests; i++) {{
         *index = i;
 
         vxt_word flags_mask;
@@ -65,11 +65,11 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
         vxt_word num_mem;
         TENSURE(fread(&num_mem, 2, 1, fp) == 1);
        
-        for (int i = 0; i < (int)num_mem; i++) {
+        for (int i = 0; i < (int)num_mem; i++) {{
             struct memory mem;
             TENSURE(fread(&mem, sizeof(struct memory), 1, fp) == 1);
             vxt_system_write_byte(s, mem.addr, mem.data);
-        }
+        }}
                                                         
         struct vxt_step step = vxt_system_step(s, 0);
         TENSURE_NO_ERR(step.err);
@@ -96,22 +96,26 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
 
         TENSURE(fread(&num_mem, 2, 1, fp) == 1);
        
-        for (int i = 0; i < (int)num_mem; i++) {
+        for (int i = 0; i < (int)num_mem; i++) {{
             struct memory mem;
             TENSURE(fread(&mem, sizeof(struct memory), 1, fp) == 1);
             vxt_byte data = vxt_system_read_byte(s, mem.addr);
             TASSERT(data == mem.data, "Expected memory at address 0x%X to be 0x%X(%d) but it is 0x%X(%d)", mem.addr, mem.data, mem.data, data, data);
-        }
+        }}
         
-        // Just skip this for now.          
-        TENSURE(fread(&num_mem, 2, 1, fp) == 1);
+        vxt_word cycles;        
+        TENSURE(fread(&cycles, 2, 1, fp) == 1);
+        if ({cycles} && cycles != step.cycles)
+            TLOG("%d: Expected \\"%s\\" to execute in %d cycles, but it took %d!", i, name, cycles, step.cycles);
+        
+        // Just skip the queue size for now. 
         TENSURE(fread(&num_mem, 1, 1, fp) == 1);
-    }
+    }}
 
     vxt_system_destroy(s);
     fclose(fp);
     return 0;
-}
+}}
 
 #endif
 """
@@ -257,7 +261,8 @@ skip_opcodes = (
 check_and_download("8088.json")
 index_file = json.loads(open(data_dir + "/8088.json", "r").read())
 
-with open(c_test_name, "w") as f: f.write(c_header)
+check_cycles = "false"
+with open(c_test_name, "w") as f: f.write(c_header.format(cycles = check_cycles))
 
 for opcode,data in index_file.items():
     if "reg" in data:
