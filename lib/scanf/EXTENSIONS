@@ -1,0 +1,61 @@
+
+This scanf implementation supports extensions. Extension support must be enabled
+by setting SCANF_EXTENSIONS to 1. All extensions begin with the formatting %!
+(or %*!). When that conversion specifier is encountered, the following function
+is called:
+
+    int scnext_(int (*getch)(void *data), void *data, const char **format,
+                int *buffer, int length, int nostore, void *destination);
+
+You must implement this function yourself.
+
+*format is the format string at the character after !. When the function
+returns, *format should be set to the first character after the custom format
+specifier.
+
+length is nonzero if a field length was specified and zero otherwise. You can
+use this to customize the behavior for the "default" length. You do not need to
+care about the actual length, as that is done for you.
+
+To read a character from the stream, check *buffer first, then call getch(data)
+to buffer the next character. Once your function is done, *buffer should contain
+the last value you got from getch (which should be read but not processed).
+*buffer will be a negative value if there was already an EOF. getch should not
+be called in this case or after it has returned an EOF. In the case of a
+matching failure, *buffer should represent the first character that was "wrong",
+i.e. the first character from which your implementation could deduce that a
+matching failure occurred.
+
+nostore represents whether a * character is present in the specifier. If nostore
+is non-zero, the value of destination is undefined and it should not be
+dereferenced; otherwise the converted value should be stored at destination.
+
+scnext_ shall return zero if a value was successfully read and converted, a
+positive value if there was a matching failure (invalid character, string cut
+off or an invalid or unrecognized format specifier) and a negative value if
+there was an input failure (such as an EOF before any conversion could be done).
+
+scnext_ is well-defined if and only if all of the following conditions are met:
+("prior" refers to the value given to scnext_,
+ "posterior" refers to the value after scnext_)
+- getch is only called with the given data pointer as the parameter.
+- getch is called only if the prior *buffer is non-negative.
+- If getch returns a negative value (EOF), it is not called again.
+- The posterior *format points to the same or later character within the same
+  string or buffer as the prior *format and does not point past the end of the
+  string or buffer in question.
+- *buffer is used as the "next character to process". The posterior *buffer
+  should contain the last character read but not yet processed. For example,
+  when reading two characters from the stream, the following is well-defined
+  (assuming no EOF occurs before the last call to getch):
+        int next = *buffer;
+        int character1 = next;
+        next = getch(data);
+        int character2 = next;
+        next = getch(data);
+        *buffer = next;
+- destination is dereferenced only if nostore is zero.
+
+If scnext_ is not well-defined, neither are any of the scanf functions.
+
+An example of a valid scanf extension is given in examples/ipv4.c.

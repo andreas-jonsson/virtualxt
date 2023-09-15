@@ -1,0 +1,152 @@
+
+WORK IN PROGRESS! Some things may still be buggy. Issues and pull requests
+are welcome. Additional tests are also very much welcome.
+
+This is a freestanding implementation of scanf (the standard C library function
+for reading formatted input). It does not have any dependencies other than the
+C89 standard library, specifically the following headers:
+    <limits.h>
+    <stdarg.h>
+    <stddef.h>
+    <stdint.h> (optional, C99 only)
+    <ctype.h> (optional, if SCANF_INTERNAL_CTYPE = 0)
+    <float.h> (optional, if SCANF_DISABLE_SUPPORT_FLOAT = 0)
+    <math.h> (optional, if SCANF_NOMATH = 0)
+
+The prototypes for the scanf functions are the same as in the standard:
+
+    int scanf(const char *format, ...);
+    int sscanf(const char *s, const char *format, ...);
+
+For scanf, two functions called getch_() and ungetch_() should be defined,
+the prototypes of which should be
+
+    int getch_(void);
+    void ungetch_(int);
+
+getch_ shall return an int that can be represented as an unsigned char
+(zero or positive) or a negative integral value that represents the end of file,
+in which case getch_ will not be called again by scanf.
+
+ungetch_ shall push a character back into the stream such that the next getch_
+call will return the character pushed. ungetch_ will not be called more than
+once for every *scanf call, nor will it be called more than once between calls
+to getch_, nor will it be called before getch_ has been called at least once.
+ungetch_ will only be called with values that getch_ can return, except EOF.
+
+In addition, a function that takes in two function pointers is available:
+
+    int fctscanf(int (*getch)(void *data), void (*ungetch)(int c, void *data), void *data, const char *format, ...);
+
+The functions given to (v)fctscanf shall function identically, except also take
+a parameter of type void  *which will have the same value as passed to
+(v)fctscanf. ungetch may be left as NULL for (v)fctscanf in which case it will
+not be called.
+
+All of these functions also have a v *variant that takes in a va_list.
+
+    int vscanf(const char *format, va_list arg);
+    int vsscanf(const char *s, const char *format, va_list arg);
+    int vfctscanf(int (*getch)(void *data), void (*ungetch)(int c, void *data), void *data, const char *format, va_list arg);
+
+In addition to these, you can also find
+
+    int spscanf(const char **sp, const char *format, ...);
+    int vspscanf(const char **sp, const char *format, va_list arg);
+
+which take a const char ** and will update the pointer such that it points to
+the first conflicting character (or end of the string).
+
+This implementation of scanf is intended to be completely standards-compliant
+and support all the same format specifiers as a standards-compliant
+implementation. It is thread-safe and reentrant (does not use any static
+storage), nor does it require any dynamic allocations (malloc). Primary focus is
+on portability and robustness, while secondary focus is on maximizing
+performance and minimizing code size.
+
+Known caveats:
+- Long length specifier for wide characters (%lc, %ls, %l[) is not supported
+  by default, but has to be enabled separately. See WCHAR.
+- Floating-point conversion may still suffer from some issues for edge cases.
+- The only supported locale is the C locale; no locale-specific formatting
+  is allowed.
+
+To use this library, simply include scanf.h, compile and link scanf.c into
+your program and implement getch_ and ungetch_ as documented above. You may
+also want to look at the defines below to customize your build.
+
+Note that scanf.h defines macros to map scanf etc. to the actual function names
+(scanf_). To avoid this, define SCANF_NODEFINE, or SCANF_NOCOLLIDE to only avoid
+those names that collide with those of the C standard library. Alternatively
+make sure scanf.h is always included after <stdio.h> (and/or <wchar.h>), should
+you need both in your program.
+
+Defines:
+    SCANF_SECURE (default: 0)
+        Fails (as if by invalid input) if a %s or %[ format specifier does not
+        specify a maximum length/width. This helps protect against buffer
+        overflows and should probably be enabled with new projects.
+    SCANF_CLAMP (default: 0)
+        Clamps integers to minimum/maximum values if there is an
+        overflow/underflow. This is already the default behavior for the
+        internal conversion, but does not happen automatically when the value
+        is assigned unless SCANF_CLAMP is set to 1. Clamping makes the function
+        behave better but takes up extra code space and run time.
+    SCANF_EXTENSIONS (default: undefined = 0)
+        Enables the extension engine. See EXTENSIONS.
+    SCANF_WIDE (default: 0)
+        See WCHAR.
+    SCANF_BINARY (default: 1)
+        Adds a new custom formatter %b for binary numbers.
+    SCANF_FAST_SCANSET (default: 1 if CHAR_BIT == 8, else 0)
+        Makes scanset scanning faster but takes up more memory.
+    SCANF_DISABLE_SUPPORT_FLOAT (default: undefined = 0)
+        Define as 1 to disable floating-point support.
+        %e, %f, %g and %a will simply fail.
+    SCANF_DISABLE_SUPPORT_LONG_LONG (default: 1, or undefined = 0 if C99)
+        Define as 1 to disable long long support. Note that this may also
+        disable size_t, ptrdiff_t etc. if they happen to be long long (and
+        larger than long).
+    SCANF_DISABLE_SUPPORT_SCANSET (default: undefined = 0)
+        Define as 1 to disable scanset (%[) support. Using it will fail.
+    SCANF_DISABLE_SUPPORT_NIL (default: undefined = 0)
+        Define as 1 to disable reading (nil) as a valid %p value (= NULL).
+    SCANF_INTERNAL_CTYPE (default: 1 if freestanding impl detected, else 0)
+        Define as 1 to use internal ctype functions instead of including
+        <ctype.h>. These functions match the C locale.
+    SCANF_NOMATH (default: 1 if freestanding impl detected, else 0)
+        Define as 1 to not use <math.h> as a dependency. It is only needed
+        for floating-point support; SCANF_NOMATH has no effect if
+        SCANF_DISABLE_SUPPORT_FLOAT is defined to be true.
+    SCANF_NOPOW (default: 1)
+        Define as 0 to use pow() from <math.h>. Has no effect is SCANF_NOMATH
+        or SCANF_DISABLE_SUPPORT_FLOAT is defined to be true.
+        Setting SCANF_NOPOW to 0 may speed up conversions to float.
+    SCANF_LOGN_POW (default: 1)
+        Uses a O(log(n)) integer power algorithm instead of O(n).
+        Should almost always work, but define to 0 if it causes issues.
+        Has no effect if SCANF_DISABLE_SUPPORT_FLOAT is defined to be true.
+    SCANF_MINIMIZE (default: undefined = 0)
+        Cuts out some code that is not required, reducing code size at the
+        expense of some runtime performance.
+    SCANF_INFINITE (default: 1 if C99 and SCANF_NOMATH not defined, else 0)
+        Define as 1 to enable INFINITY/NAN support. Macros called INFINITY
+        and NAN must be defined. SCANF_INFINITE has no effect if
+        SCANF_DISABLE_SUPPORT_FLOAT is defined to be true.
+    SCANF_SSCANF_ONLY (default: undefined = 0)
+        Replaces scanf and vscanf with stubs that always return EOF, leaving
+        only (v)(s/fct)scanf defined. This way, getch_ and ungetch_ don't need
+        to be defined if you only want to scan strings.
+    SCANF_ASCII (default: automatically detected)
+        Define as 0 if the following ASCII invariants are not necessarily true
+            '0123456789' are consecutive characters
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ' are consecutive characters
+            'abcdefghijklmnopqrstuvwxyz' are consecutive characters
+            uppercase letter bitwise ORed with 0x20 converts into lowercase
+
+You can also redefine EOF for scanf.c; by default it is defined as -1. The
+EOF check does not rely on its value (any negative value is assumed to be EOF),
+but it is used as the return value of scanf.
+
+Tests for scanf are included in the test program test-scanf.cc under the
+test folder (and test-wscanf.cc for a small test case for SCANF_WIDE=3).
