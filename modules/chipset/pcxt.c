@@ -23,7 +23,6 @@
 #include <vxt/vxtu.h>
 #include <frontend.h>
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 

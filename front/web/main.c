@@ -21,11 +21,11 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include <stdarg.h>
+#include <stdio.h>
 
 #include <vxt/vxt.h>
 #include <vxt/vxtu.h>
 
-#include <printf.h>
 #include <frontend.h>
 #include <modules.h>
 

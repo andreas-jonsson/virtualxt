@@ -78,6 +78,7 @@ workspace "virtualxt"
     filter "platforms:web"
         toolset "clang"
         defines "VXT_NO_LIBC"
+        includedirs "lib/libc"
         buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }       
 
     filter "options:memclear"
@@ -261,8 +262,9 @@ workspace "virtualxt"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
-        includedirs "lib/printf"
-        files { "lib/printf/printf.h", "lib/printf/printf.c" }
+        includedirs "lib/libc"
+        defines "SCANF_FREESTANDING"
+        files { "lib/libc/*.h", "lib/libc/*.c", "lib/scanf/scanf.c", "lib/printf/printf.h", "lib/printf/printf.c" }
 
         files "modules/modules.h"
         includedirs "modules"
