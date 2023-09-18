@@ -79,7 +79,7 @@ workspace "virtualxt"
         toolset "clang"
         defines "VXT_NO_LIBC"
         includedirs "lib/libc"
-        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }       
+        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }
 
     filter "options:memclear"
         defines "VXTU_MEMCLEAR"
@@ -263,7 +263,7 @@ workspace "virtualxt"
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
         includedirs "lib/libc"
-        defines "SCANF_FREESTANDING"
+        defines { "SCANF_FREESTANDING", "SCANF_DISABLE_SUPPORT_FLOAT" }
         files { "lib/libc/*.h", "lib/libc/*.c", "lib/scanf/scanf.c", "lib/printf/printf.h", "lib/printf/printf.c" }
 
         files "modules/modules.h"
