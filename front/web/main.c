@@ -257,3 +257,11 @@ void wasm_initialize_emulator(int v20, int freq) {
 void _putchar(char ch) {
     (void)ch;
 }
+
+int getch_(void) {
+	return 0;
+}
+
+void ungetch_(int ch) {
+	(void)ch;
+}
