@@ -63,7 +63,7 @@ static void out(struct lua_env *e, vxt_word port, vxt_byte data) {
 	}
 }
 
-static vxt_byte read(struct lua_env *e, vxt_pointer addr) {
+static vxt_byte mem_read(struct lua_env *e, vxt_pointer addr) {
     vxt_byte data = 0xFF;
 	if (lua_getglobal(e->L, "mem_read") == LUA_TFUNCTION) {
 		lua_pushinteger(e->L, addr);
@@ -74,7 +74,7 @@ static vxt_byte read(struct lua_env *e, vxt_pointer addr) {
     return data;
 }
 
-static void write(struct lua_env *e, vxt_pointer addr, vxt_byte data) {
+static void mem_write(struct lua_env *e, vxt_pointer addr, vxt_byte data) {
 	if (lua_getglobal(e->L, "mem_write") == LUA_TFUNCTION) {
 		lua_pushinteger(e->L, addr);
 		lua_pushinteger(e->L, data);
@@ -411,6 +411,6 @@ VXTU_MODULE_CREATE(lua_env, {
     PIREPHERAL->timer = &timer;
     PIREPHERAL->io.in = &in;
     PIREPHERAL->io.out = &out;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
+    PIREPHERAL->io.read = &mem_read;
+    PIREPHERAL->io.write = &mem_write;
 })
