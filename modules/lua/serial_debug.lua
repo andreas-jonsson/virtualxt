@@ -23,7 +23,7 @@ function io_out(port, data)
 end
 
 function install()
-    if base == 0 then
+    if not base then
         error("Invalid port address!")
     end
     install_io(base, base + 7)

@@ -20,15 +20,22 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
+#include <frontend.h>
 #include <vxt/vxtu.h>
 
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include <time.h>
+#include <dirent.h>
+#include <sys/stat.h>
+
+#include "crc32.h"
+
 #define MAX_NAME_LEN 128
 
-#define GET_DEV struct lua_env *e = (struct lua_env*)lua_topointer(L, lua_upvalueindex(1));
+#define GET_DEV struct lua_env *e = (struct lua_env*)lua_touserdata(L, lua_upvalueindex(1));
 
 struct lua_env {
 	char name[MAX_NAME_LEN];
@@ -220,7 +227,94 @@ static int lua_write_word(lua_State *L) {
 	return 0;
 }
 
-static bool initialize_environement(struct lua_env *e, const char *args) {
+static int lua_os_opendir(lua_State *L) {
+	if (!lua_isstring(L, -1))
+		return 0;
+	DIR *dir = opendir(lua_tostring(L, -1));
+	if (!dir)
+		return 0;
+	lua_pushlightuserdata(L, dir);
+	return 1;
+}
+
+static int lua_os_closedir(lua_State *L) {
+	if (lua_islightuserdata(L, -1))
+		lua_pushboolean(L, closedir(lua_touserdata(L, -1)) ? 0 : 1);
+	else
+		lua_pushboolean(L, 0);
+	return 1;
+}
+
+static int lua_os_readdir(lua_State *L) {
+	if (lua_islightuserdata(L, -1)) {
+		struct dirent *e = readdir(lua_touserdata(L, -1));
+		if (!e)
+			return 0;
+
+		lua_pushlightuserdata(L, e);
+		lua_pushstring(L, e->d_name);
+		return 2;
+	}
+	return 0;
+}
+
+static int lua_os_stat(lua_State *L) {
+	if (lua_isstring(L, -1)) {
+		struct stat stbuf;
+        if (stat(lua_tostring(L, -1), &stbuf))
+			return 0;
+		
+		lua_pushinteger(L, stbuf.st_size);
+        lua_pushboolean(L, S_ISDIR(stbuf.st_mode) ? 1 : 0);
+
+		struct tm *t = localtime(&stbuf.st_mtime);
+		lua_newtable(L);
+		{
+			lua_pushinteger(L, t->tm_hour);
+			lua_setfield(L, -2, "hour");
+			lua_pushinteger(L, t->tm_min);
+			lua_setfield(L, -2, "min");
+			lua_pushinteger(L, t->tm_sec);
+			lua_setfield(L, -2, "sec");
+
+			lua_pushinteger(L, t->tm_year);
+			lua_setfield(L, -2, "year");
+			lua_pushinteger(L, t->tm_mon);
+			lua_setfield(L, -2, "mon");
+			lua_pushinteger(L, t->tm_mday);
+			lua_setfield(L, -2, "mday");
+		}
+		return 3;
+	}
+	return 0;
+}
+
+static int lua_os_mkdir(lua_State *L) {
+	if (!lua_isstring(L, -1)) {
+		lua_pushboolean(L, 0);
+	} else {
+		const char *path = lua_tostring(L, -1);
+		int ret =
+		#ifdef _WIN32
+			mkdir(path);
+		#else
+			mkdir(path, S_IRWXU);
+		#endif
+		lua_pushboolean(L, ret ? 0 : 1);
+	}
+	return 1;
+}
+
+static int lua_math_crc32(lua_State *L) {
+	if (!lua_isstring(L, -1))
+		return 0;
+	
+	const char *data = lua_tostring(L, -1);
+	lua_pushinteger(L, crc32(data, (int)luaL_len(L, -1)));
+	return 1;
+}
+
+static bool initialize_environement(struct lua_env *e, const char *args, void *frontend) {
 	char script[FILENAME_MAX];
 	strncpy(script, args, FILENAME_MAX - 1);
 
@@ -230,6 +324,10 @@ static bool initialize_environement(struct lua_env *e, const char *args) {
 		script[ln] = 0;
 		params++;
 	}
+
+	struct frontend_interface *fi = (struct frontend_interface*)frontend;
+    if (fi && fi->resolve_path)
+		strcpy(script, fi->resolve_path(FRONTEND_MODULE_PATH, script));
 
 	if (!(e->L = lua_newstate(&lua_allocator, NULL)))
 		return false;
@@ -258,6 +356,28 @@ static bool initialize_environement(struct lua_env *e, const char *args) {
 
 	#undef MAP_FUNC
 
+	lua_getglobal(e->L, "os");
+	{
+		lua_pushcfunction(e->L, &lua_os_opendir);
+		lua_setfield(e->L, -2, "opendir");
+		lua_pushcfunction(e->L, &lua_os_closedir);
+		lua_setfield(e->L, -2, "closedir");
+		lua_pushcfunction(e->L, &lua_os_readdir);
+		lua_setfield(e->L, -2, "readdir");
+		lua_pushcfunction(e->L, &lua_os_stat);
+		lua_setfield(e->L, -2, "stat");
+		lua_pushcfunction(e->L, &lua_os_mkdir);
+		lua_setfield(e->L, -2, "mkdir");
+	}
+	lua_pop(e->L, 1);
+
+	lua_getglobal(e->L, "math");
+	{
+		lua_pushcfunction(e->L, &lua_math_crc32);
+		lua_setfield(e->L, -2, "crc32");
+	}
+	lua_pop(e->L, 1);
+
 	if (luaL_loadfile(e->L, script) != LUA_OK) {
 		VXT_LOG(lua_tostring(e->L, -1));
 		return false;
@@ -280,7 +400,7 @@ static bool initialize_environement(struct lua_env *e, const char *args) {
 }
 
 VXTU_MODULE_CREATE(lua_env, {
-	if (!initialize_environement(DEVICE, ARGS))
+	if (!initialize_environement(DEVICE, ARGS, FRONTEND))
 		return NULL;
 
     PIREPHERAL->install = &install;
