@@ -190,6 +190,12 @@ static int lua_wait(lua_State *L) {
 	return 0;
 }
 
+static int lua_frequency(lua_State *L) {
+	GET_DEV
+	lua_pushinteger(L, vxt_system_frequency(VXT_GET_SYSTEM(e)));
+	return 1;
+}
+
 static int lua_read_byte(lua_State *L) {
 	GET_DEV
 	lua_pushinteger(L, vxt_system_read_byte(VXT_GET_SYSTEM(e), (vxt_pointer)lua_tointeger(L, -1)));
@@ -243,6 +249,7 @@ static bool initialize_environement(struct lua_env *e, const char *args) {
 
 	MAP_FUNC(interrupt);
 	MAP_FUNC(wait);
+	MAP_FUNC(frequency);
 
 	MAP_FUNC(read_byte);
 	MAP_FUNC(read_word);
