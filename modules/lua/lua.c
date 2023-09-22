@@ -310,7 +310,7 @@ static int lua_math_crc32(lua_State *L) {
 		return 0;
 	
 	const char *data = lua_tostring(L, -1);
-	lua_pushinteger(L, crc32(data, (int)luaL_len(L, -1)));
+	lua_pushinteger(L, crc32((const vxt_byte*)data, (int)luaL_len(L, -1)));
 	return 1;
 }
 
