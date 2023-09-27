@@ -629,7 +629,7 @@ int main(int argc, char *argv[]) {
 
 	if (args.locate) {
 		puts(args.config);
-		return -1;
+		return 0;
 	}
 
 	printf("Config path: %s\n", args.config);
