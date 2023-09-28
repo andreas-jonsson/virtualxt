@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  VXT_VERSION: 0.9.0
+  VXT_VERSION: 0.10.0
   SDL2_VERSION: 2.24.1
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
       - name: Setup
         run: |
           sudo apt-get update
-          sudo apt-get install kcov cppcheck libpcap-dev libfuse2 libasound2-dev libpulse-dev
+          sudo apt-get install cppcheck libpcap-dev libfuse2 libasound2-dev libpulse-dev
           curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
           curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
@@ -44,13 +44,6 @@ jobs:
           premake5 check
           premake5 --test --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
           make clean test
-
-      - name: Report
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: |
-          kcov kcov-out test/test .
-          bash <(curl -s https://codecov.io/bash) -s kcov-out
         
       - name: Build
         run: |

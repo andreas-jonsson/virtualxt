@@ -29,11 +29,13 @@ cp build/bin/virtualxt $APP_DIR/
 cp build/bin/libvxt.so $APP_DIR/lib64/
 cp modules/*.vxt $APP_DIR/modules/
 cp bios/pcxtbios.bin $APP_DIR/bios/
+cp bios/GLaTICK_0.8.4_AT.ROM $APP_DIR/bios/
 cp bios/GLABIOS.ROM $APP_DIR/bios/
-cp bios/GLABIOS640.ROM $APP_DIR/bios/
 cp bios/vxtx.bin $APP_DIR/bios/
 cp bios/vgabios.bin $APP_DIR/bios/
+cp boot/freedos.img $APP_DIR/boot/
 cp boot/freedos_hd.img $APP_DIR/boot/
+cp boot/elks.img $APP_DIR/boot/
 cp tools/icon/icon.png $APP_DIR/virtualxt-icon.png
 
 curl -L -o apptool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage

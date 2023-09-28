@@ -23,8 +23,6 @@
 #include <vxt/vxtu.h>
 #include <frontend.h>
 
-#include <stdlib.h>
-
 static struct vxt_pirepheral *disk_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)args;
     struct frontend_interface *fi = (struct frontend_interface*)frontend;
@@ -46,24 +44,4 @@ static struct vxt_pirepheral *disk_create(vxt_allocator *alloc, void *frontend, 
     return p;
 }
 
-static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {
-    (void)frontend;
-    if (!args[0]) {
-		args = getenv("VXT_DEFAULT_VXTX_BIOS_PATH");
-		if (!args) args = "bios/vxtx.bin";
-	}
-
-    int size = 0;
-    vxt_byte *data = vxtu_read_file(alloc, args, &size);
-    if (!data) {
-        VXT_LOG("Could not load VirtualXT BIOS extension: %s", args);
-        return NULL;
-    }
-
-    struct vxt_pirepheral *p = vxtu_memory_create(alloc, 0xE0000, size, true);
-    vxtu_memory_device_fill(p, data, size);
-    alloc(data, 0);
-    return p;
-}
-
-VXTU_MODULE_ENTRIES(&disk_create, &bios_create)
+VXTU_MODULE_ENTRIES(&disk_create)

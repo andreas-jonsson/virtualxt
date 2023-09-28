@@ -459,6 +459,17 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
         v->set_video_adapter(&a);
     }
 
+    // Try to set XT switches to VGA.
+    for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
+        struct vxt_pirepheral *ip = vxt_system_pirepheral(s, (vxt_byte)i);
+        if (vxt_pirepheral_class(ip) == VXT_PCLASS_PPI) {
+            vxtu_ppi_set_xt_switches(ip, vxtu_ppi_xt_switches(ip) & 0xCF);
+            break;
+        }
+    }
+
+    vxt_system_install_monitor(s, p, "Video Mode", &v->video_mode, VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
+
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + 0x20000) - 1);
     vxt_system_install_mem(s, p, VIDEO_MODE_BDA_START_ADDRESS, VIDEO_MODE_BDA_END_ADDRESS); // BDA video mode
 

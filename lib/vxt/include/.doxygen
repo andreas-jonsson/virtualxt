@@ -987,7 +987,7 @@ EXCLUDE_PATTERNS       =
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories use the pattern */test/*
 
-EXCLUDE_SYMBOLS        = _VXTU_MODULE_ENTRIES _VXT_ERROR_ENUM _VXT_ERROR_CODES _VXT_NUM_ERRORS _VXT_REG _VXT_STRINGIFY _VXT_EVALUATOR _vxt_pirepheral
+EXCLUDE_SYMBOLS        = _VXTU_MODULE_ENTRIES _VXT_ERROR_ENUM _VXT_ERROR_CODES _VXT_NUM_ERRORS _VXT_REG _VXT_VERSION_SUFFIX _VXT_STRINGIFY _VXT_EVALUATOR _vxt_pirepheral
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include

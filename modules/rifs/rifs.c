@@ -99,7 +99,7 @@ static void time_and_data(time_t *mod_time, vxt_word *time_out, vxt_word *date_o
     }
 }
 
-#if defined(_WIN32) || defined(__linux__)
+#if defined(_WIN32) || defined(__linux__) || defined(__NetBSD__)
     #include "rifs_win_nix.inl"
 #else
     #include "rifs_dummy.inl"
@@ -229,7 +229,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
         case IFS_CLOSEFILE:
         {
             vxt_word idx = *(vxt_word*)pk->data;
-            if (idx >= MAX_OPEN_FILES) {
+            if (idx >= MAX_OPEN_FILES || !proc->files[idx]) {
                 pk->cmd = 6; // Invalid handle
             } else {
                 pk->cmd = 0;

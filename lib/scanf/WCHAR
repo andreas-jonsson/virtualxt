@@ -1,0 +1,57 @@
+This scanf implementation supports wide characters, but only as an optional
+feature that has to be enabled separately by defining SCANF_WIDE.
+
+The allowed values are:
+* SCANF_WIDE=0: only narrow/multibyte scanf supported (default)
+* SCANF_WIDE=1: only wide scanf supported
+* SCANF_WIDE=2: both narrow/wide scanf supported, but no interoperability
+                (%c %s %[ only for scanf, %lc %ls %l[ only for wscanf)
+* SCANF_WIDE=3: both narrow/wide scanf supported, with full interoperability
+
+Any SCANF_WIDE other than 0 requires a header called "wide.h" to define:
+* wint_t, an integral type enough to store any value of wchar_t and WEOF
+* WEOF, a macro representing a special value of type wint_t that does not
+  correspond to any valid wchar_t in the wide character set
+* scanf_mbstate_t, a type used with mbrtowc_ and wcrtomb_ (see below). not
+  strictly required for SCANF_WIDE values other than 3
+
+You can also define these to replace wchar_t altogether:
+    WCHAR               (default: wchar_t)
+    WINT                (default: wint_t)
+    MAKE_WCHAR(c)       (default: L##c, so MAKE_WCHAR('A') => L'A')
+    MAKE_WSTRING(s)     (default: L##s, so MAKE_WSTRING("ABC") => L"ABC")
+but make sure your own definitions (of getwch_, etc.) use the same types.
+
+wide.h must be provided manually, or alternatively you can pick an existing
+implementation from one of the folders under "wide" folder. Note that you can
+simply include some existing wide.h before you include wscanf.h; in that case,
+you do not even need a wide.h in the same folder.
+
+SCANF_WIDE=1 requires the following two functions to be implemented:
+
+    wint_t getwch_(void);
+    void ungetwch_(wint_t);
+
+with wint_t as previously stated. These functions should work like getch_ and
+ungetch_ respectively, but for wide characters. getwch_ should return WEOF
+(as defined by "wide.h") for EOF, or any other wint_t value representing a wide
+character (wchar_t).
+
+SCANF_WIDE=2 also requires getch_, ungetch_.
+
+SCANF_WIDE=3 also requires
+
+    void mbsetup_(scanf_mbstate_t *ps);
+    size_t mbrtowc_(wchar_t *pwc, const char *s, size_t n, scanf_mbstate_t *ps);
+    size_t wcrtomb_(char *s, wchar_t wc, scanf_mbstate_t *ps);
+
+mbsetup_ should reset the pointed scanf_mbstate_t into its default state.
+mbrtowc_ and wcrtomb_ shall function like mbrtowc and wcrtomb, respectively, as
+described in ISO/IEC 9899:1999.
+(However, neither pwc, s nor ps will ever be NULL)
+
+The wide scanf function declarations are located in wscanf.h.
+
+Wide extensions (see EXTENSIONS) are also supported with a different signature:
+
+    int scnwext_(wint_t (*getwch)(void *data), void *data, const wchar_t **format, wint_t *buffer, int length, int nostore, void *destination);

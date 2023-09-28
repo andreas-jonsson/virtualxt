@@ -217,8 +217,14 @@ static vxt_error install(struct cga_video *c, vxt_system *s) {
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + MEMORY_SIZE) - 1);
     vxt_system_install_io(s, p, 0x3B0, 0x3BF);
     vxt_system_install_io(s, p, 0x3D0, 0x3DF);
+    
     vxt_system_install_timer(s, p, CURSOR_TIMING);
     c->scanline_timer = vxt_system_install_timer(s, p, SCANLINE_TIMING);
+
+    enum vxt_monitor_flag flags = VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_BINARY;
+    vxt_system_install_monitor(s, p, "Mode", &c->mode_ctrl_reg, flags);
+    vxt_system_install_monitor(s, p, "Color", &c->color_ctrl_reg, flags);
+    vxt_system_install_monitor(s, p, "Status", &c->status_reg, flags);
     return VXT_NO_ERROR;
 }
 

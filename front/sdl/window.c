@@ -58,6 +58,7 @@ void help_window(mu_Context *ctx) {
 
 		const char *text_l =
 			"<F11>\n"
+			"<Ctrl+F11>\n"
 			"<F12>\n"
 			"<Alt+F12>\n"
 			"<Ctrl+F12>\n"
@@ -66,9 +67,10 @@ void help_window(mu_Context *ctx) {
 
 		const char *text_r =
 			"Toggle fullscreen\n"
+			"Eject floppy disk image\n"
 			"Show this help screen\n"
 			"Debug break, if GDB module is loaded\n"
-			"Eject floppy disk image\n"
+			"Show debug monitors\n"
 			"Drop floppy image file on window to mount\n"
 			"Release or capture mouse";
 

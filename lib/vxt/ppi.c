@@ -71,7 +71,7 @@ static vxt_byte in(struct ppi *c, vxt_word port) {
         case 0x61:
             return (c->port_61 & 0xEF) | c->refresh_request;
         case 0x62:
-            return c->xt_switches;
+            return (c->port_61 & 8) ? (c->xt_switches >> 4) : (c->xt_switches & 0xF);
         case 0x64:
             return c->command_port;
 	}
@@ -115,7 +115,7 @@ static vxt_error install(struct ppi *c, vxt_system *s) {
 
     for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
         struct vxt_pirepheral *ip = vxt_system_pirepheral(s, (vxt_byte)i);
-        if (vxt_pirepheral_class(ip) == VXT_PCLASS_PIT) {
+        if (ip && (vxt_pirepheral_class(ip) == VXT_PCLASS_PIT)) {
             c->pit = ip;
             break;
         }

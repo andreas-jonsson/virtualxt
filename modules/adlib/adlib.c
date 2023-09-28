@@ -48,7 +48,7 @@ static void out(struct adlib *a, vxt_word port, vxt_byte data) {
             a->index = data;
             break;
         case 0x389:
-            if (port == 4)
+            if (a->index == 4)
                 a->reg4 = data;
             OPL3_WriteRegBuffered(&a->chip, a->index, data);
             break;

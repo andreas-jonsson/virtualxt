@@ -49,6 +49,9 @@ struct system {
    int num_timers;
    struct timer timers[MAX_TIMERS];
 
+   int num_monitors;
+   struct vxt_monitor monitors[VXT_MAX_MONITORS];
+
    int num_devices;
    struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS];
    struct _vxt_pirepheral dummy;

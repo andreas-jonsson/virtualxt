@@ -51,6 +51,13 @@ struct frontend_disk_controller {
 	void (*set_boot)(struct vxt_pirepheral *p, int num);
 };
 
+enum frontend_path_type {
+	FRONTEND_CONFIG_PATH,
+	FRONTEND_BIOS_PATH,
+	FRONTEND_MODULE_PATH,
+	FRONTEND_ANY_PATH
+};
+
 enum frontend_joystick_id {
 	FRONTEND_JOYSTICK_1,
 	FRONTEND_JOYSTICK_2
@@ -102,6 +109,8 @@ struct frontend_interface {
 	bool (*set_keyboard_controller)(const struct frontend_keyboard_controller *controller);
 	bool (*set_disk_controller)(const struct frontend_disk_controller *controller);
 	bool (*set_joystick_controller)(const struct frontend_joystick_controller *controller);
+
+	const char *(*resolve_path)(enum frontend_path_type type, const char *path);
 
     struct frontend_ctrl_interface ctrl;
 	struct frontend_disk_interface disk;

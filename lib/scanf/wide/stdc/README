@@ -1,0 +1,7 @@
+This wide.h defines wint_t, WEOF and mbstate_t as they are defined in the C
+standard library, specifically the header <wchar.h>. C99 (or more specifically
+C95) is required for this version.
+
+With this header, mbrtowc_ and wcrtomb_ should ideally also map to the standard
+implementations of mbrtowc and wcrtomb, while mbsetup_ should simply be a
+memset(ps, 0, sizeof(mbstate_t)).

@@ -340,13 +340,14 @@ void retro_init(void) {
         disk = vxtu_disk_create(&realloc, &intrf);
         ppi = vxtu_ppi_create(&realloc);
         cga = vxtu_cga_create(&realloc);
-        mouse = vxtu_mouse_create(&realloc, 0x3F8, 4); // COM1
+        mouse = vxtu_mouse_create(&realloc, 0x3F8); // COM1
         joystick = joystick_create(&realloc, NULL, "0x201");
 
         struct vxt_pirepheral *devices[] = {
             vxtu_memory_create(&realloc, 0x0, 0x100000, false),
             load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000),
             load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000),
+            vxtu_uart_create(&realloc, 0x3F8, 4),
             vxtu_pic_create(&realloc),
             vxtu_dma_create(&realloc),
             vxtu_pit_create(&realloc),

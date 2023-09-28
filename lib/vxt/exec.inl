@@ -84,19 +84,25 @@ PUSH_POP(di)
 static void push_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      cpu_write_word(p, VXT_POINTER(p->regs.ss, p->regs.sp), p->regs.sp);
-      p->regs.sp -= 2;
+      if (p->cpu_type == VXT_CPU_V20) {
+         push(p, p->regs.sp);
+         return;
+      }
    #else
-      push(p, p->regs.sp);
+      p->regs.sp -= 2;
+      cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
    #endif
 }
 
 static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    #ifdef VXT_CPU_286
-      p->regs.sp = cpu_read_word(p, VXT_POINTER(p->regs.ss, p->regs.sp));
+      if (p->cpu_type == VXT_CPU_V20) {
+         p->regs.sp = pop(p);
+         return;
+      }
    #else
-      p->regs.sp = pop(p);
+      p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
    #endif
 }
 
@@ -190,19 +196,18 @@ static void sub_1D_2D(CONSTSP(cpu) p, INST(inst)) {
 static void das_2F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_byte al = p->regs.al;
+   vxt_word af = p->regs.flags & VXT_AUXILIARY;
    vxt_word cf = p->regs.flags & VXT_CARRY;
    p->regs.flags &= ~VXT_CARRY;
 
    if (((al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
-      vxt_word v = ((vxt_word)al) - 6;
-      p->regs.al = (vxt_byte)(v & 0xFF);
-      SET_FLAG_IF(p->regs.flags, VXT_CARRY, cf || (v & 0xFF00));
+      p->regs.al -= 6;
    	p->regs.flags |= VXT_AUXILIARY;
 	} else {
       p->regs.flags &= ~VXT_AUXILIARY;
 	}
 
-   if ((al > 0x99) || cf) {
+   if ((al > (af ? 0x9F : 0x99)) || cf) {
       p->regs.al -= 0x60;
       p->regs.flags |= VXT_CARRY;
    } else {
@@ -248,23 +253,18 @@ static void and_25(CONSTSP(cpu) p, INST(inst)) {
 
 static void daa_27(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_byte comp = 0x99;
    vxt_byte al = p->regs.al;
+   vxt_word af = p->regs.flags & VXT_AUXILIARY;
    vxt_word cf = p->regs.flags & VXT_CARRY;
-   p->regs.flags &= ~VXT_CARRY;
 
-  
-   if (((p->regs.al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
-      vxt_word v = ((vxt_word)p->regs.al) + 6;
-      p->regs.al = (vxt_byte)(v & 0xFF);
-      SET_FLAG_IF(p->regs.flags, VXT_CARRY, cf || (v & 0xFF00));
-   	p->regs.flags |= VXT_AUXILIARY;
-      comp = 0x9F;
+   if (((al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {
+      p->regs.al += 6;
+      p->regs.flags |= VXT_AUXILIARY;
 	} else {
       p->regs.flags &= ~VXT_AUXILIARY;
 	}
-   
-   if ((al > comp) || cf) {
+
+   if ((al > (af ? 0x9F : 0x99)) || cf) {
       p->regs.al += 0x60;
       p->regs.flags |= VXT_CARRY;
    } else {
@@ -312,7 +312,7 @@ static void xor_35(CONSTSP(cpu) p, INST(inst)) {
    static void name (CONSTSP(cpu) p, INST(inst)) {                               \
       UNUSED(inst);                                                              \
       if (((p->regs.al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {     \
-         p->regs.ax = p->regs.ax op 6;                                           \
+         p->regs.al = p->regs.al op 6;                                           \
          p->regs.ah = p->regs.ah op 1;                                           \
          p->regs.flags |= VXT_AUXILIARY | VXT_CARRY;                             \
       } else {                                                                   \
@@ -439,7 +439,7 @@ static void insb_6C(CONSTSP(cpu) p, INST(inst)) {
 
 static void insw_6D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_write_word(p, VXT_POINTER(p->regs.ds, p->regs.si), WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
+   cpu_segment_write_word(p, p->regs.ds, p->regs.si, WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
    update_di_si(p, 2);
 }
 
@@ -451,7 +451,7 @@ static void outsb_6E(CONSTSP(cpu) p, INST(inst)) {
 
 static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_word data = cpu_read_word(p, VXT_POINTER(p->regs.ds, p->regs.si));
+   vxt_word data = cpu_segment_read_word(p, p->regs.ds, p->regs.si);
    system_out(p->s, p->regs.dx, (vxt_byte)(data & 0xFF));
    system_out(p->s, p->regs.dx + 1, (vxt_byte)(data >> 8));
    update_di_si(p, 2);
@@ -577,17 +577,17 @@ static void test_85(CONSTSP(cpu) p, INST(inst)) {
 
 static void xchg_86(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_byte v = reg_read8(&p->regs, p->mode.reg);
-   reg_write8(&p->regs, p->mode.reg, rm_read8(p));
-   rm_write8(p, v);
+   vxt_byte v = rm_read8(p);
+   rm_write8(p, reg_read8(&p->regs, p->mode.reg));
+   reg_write8(&p->regs, p->mode.reg, v);
    ADD_CYCLE_MOD_MEM(p, 21);
 }
 
 static void xchg_87(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_word v = reg_read16(&p->regs, p->mode.reg);
-   reg_write16(&p->regs, p->mode.reg, rm_read16(p));
-   rm_write16(p, v);
+   vxt_word v = rm_read16(p);
+   rm_write16(p, reg_read16(&p->regs, p->mode.reg));
+   reg_write16(&p->regs, p->mode.reg, v);
    ADD_CYCLE_MOD_MEM(p, 21);
 }
 
@@ -725,7 +725,7 @@ static void mov_A0(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ax = cpu_read_word(p, VXT_POINTER(p->seg, read_opcode16(p)));
+   p->regs.ax = cpu_segment_read_word(p, p->seg, read_opcode16(p));
 }
 
 static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
@@ -735,7 +735,7 @@ static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A3(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_write_word(p, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.ax);
+   cpu_segment_write_word(p, p->seg, read_opcode16(p), p->regs.ax);
 }
 
 static void test_A8(CONSTSP(cpu) p, INST(inst)) {
@@ -869,10 +869,18 @@ static void int_CE(CONSTSP(cpu) p, INST(inst)) {
 static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    VALIDATOR_DISCARD(p);
+   p->inst_queue_dirty = true;
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
-   p->regs.flags = pop(p);
-   p->inst_queue_dirty = true;
+
+   p->regs.flags = pop(p) & ALL_FLAGS;
+   #if defined(VXT_CPU_286)
+      if (p->cpu_type == VXT_CPU_V20) {
+         p->regs.flags |= 0x2;
+         return;
+      }
+   #endif
+   p->regs.flags |= 0xF002;
 }
 
 static void grp2_D0(CONSTSP(cpu) p, INST(inst)) {
@@ -916,7 +924,6 @@ static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
 
    p->regs.ax = ((vxt_word)p->regs.ah * imm + (vxt_word)p->regs.al) & 0xFF;
    flag_szp8(&p->regs, p->regs.al);
-   SET_FLAG(p->regs.flags, VXT_ZERO, 0);
 }
 
 static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
@@ -943,7 +950,7 @@ static void in_E4(CONSTSP(cpu) p, INST(inst)) {
 
 static void in_E5(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ax = (vxt_word)system_in(p->s, read_opcode8(p));
+   p->regs.ax = (vxt_word)system_in(p->s, read_opcode8(p)) | 0xFF00;
 }
 
 static void out_E6(CONSTSP(cpu) p, INST(inst)) {
@@ -1314,7 +1321,17 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
       }
       case 6: // PUSH
       case 7:
-         push(p, v);
+         #ifdef VXT_CPU_286
+            if (p->cpu_type == VXT_CPU_V20) {
+               push(p, v);
+            } else
+         #endif
+         {
+            p->regs.sp -= 2;
+            v = rm_read16(p);
+            cpu_segment_write_word(p, p->regs.ss, p->regs.sp, v);
+         }
+
          p->cycles += 15; ADD_CYCLE_MOD_MEM(p, 9);
          break;
       default:

@@ -13,9 +13,11 @@ copy lib\vxt\include\vxt\*.h %PACKAGE_DEST%\modules\include\vxt
 copy front\common\frontend.h %PACKAGE_DEST%\modules\include
 copy bios\pcxtbios.bin %PACKAGE_DEST%\bios
 copy bios\GLABIOS.ROM %PACKAGE_DEST%\bios
-copy bios\GLABIOS640.ROM %PACKAGE_DEST%\bios
+copy bios\GLaTICK_0.8.4_AT.ROM %PACKAGE_DEST%\bios
 copy bios\vxtx.bin %PACKAGE_DEST%\bios
 copy bios\vgabios.bin %PACKAGE_DEST%\bios
+copy boot\freedos.img %PACKAGE_DEST%\boot
 copy boot\freedos_hd.img %PACKAGE_DEST%\boot
+copy boot\elks.img %PACKAGE_DEST%\boot
 copy tools\package\itch\itch.windows.toml %PACKAGE_DEST%\.itch.toml
 copy tools\npcap\npcap-1.72.exe %PACKAGE_DEST%\npcap-installer.exe

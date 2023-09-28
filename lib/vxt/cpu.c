@@ -118,50 +118,59 @@ void cpu_reset(CONSTSP(cpu) p) {
 }
 
 vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr) {
-    vxt_byte data = vxt_system_read_byte(p->s, addr);
-    p->bus_transfers++;
-    VALIDATOR_READ(p, addr, data);
-    return data;
+   vxt_byte data = vxt_system_read_byte(p->s, addr);
+   p->bus_transfers++;
+   VALIDATOR_READ(p, addr, data);
+   return data;
 }
 
 void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data) {
-    vxt_system_write_byte(p->s, addr, data);
-    p->bus_transfers++;
-    VALIDATOR_WRITE(p, addr, data);
+   vxt_system_write_byte(p->s, addr, data);
+   p->bus_transfers++;
+   VALIDATOR_WRITE(p, addr, data);
 }
 
 vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr) {
-    return WORD(cpu_read_byte(p, addr + 1), cpu_read_byte(p, addr));
+   return WORD(cpu_read_byte(p, addr + 1), cpu_read_byte(p, addr));
+}
+
+vxt_word cpu_segment_read_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset) {
+   return WORD(cpu_read_byte(p, VXT_POINTER(segment, offset + 1)), cpu_read_byte(p, VXT_POINTER(segment, offset)));
 }
 
 void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data) {
-    cpu_write_byte(p, addr, LBYTE(data));
-    cpu_write_byte(p, addr + 1, HBYTE(data));
+   cpu_write_byte(p, addr, LBYTE(data));
+   cpu_write_byte(p, addr + 1, HBYTE(data));
+}
+
+void cpu_segment_write_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data) {
+   cpu_write_byte(p, VXT_POINTER(segment, offset), LBYTE(data));
+   cpu_write_byte(p, VXT_POINTER(segment, offset + 1), HBYTE(data));
 }
 
 TEST(register_layout,
-    struct vxt_registers regs = {0};
-    regs.ax = 0x0102;
-    TENSURE(regs.ah == 1);
-    TENSURE(regs.al == 2);
+   struct vxt_registers regs = {0};
+   regs.ax = 0x0102;
+   TENSURE(regs.ah == 1);
+   TENSURE(regs.al == 2);
 
-    regs.bx = 0x0304;
-    TENSURE(regs.bh == 3);
-    TENSURE(regs.bl == 4);
-    TENSURE(regs.bx == 0x0304);
+   regs.bx = 0x0304;
+   TENSURE(regs.bh == 3);
+   TENSURE(regs.bl == 4);
+   TENSURE(regs.bx == 0x0304);
 
-    // Make sure AX was not affected by BX.
-    TENSURE(regs.ah == 1);
-    TENSURE(regs.al == 2);
-    TENSURE(regs.ax == 0x0102);
+   // Make sure AX was not affected by BX.
+   TENSURE(regs.ah == 1);
+   TENSURE(regs.al == 2);
+   TENSURE(regs.ax == 0x0102);
 
-    regs.cx = 0x0506;
-    TENSURE(regs.ch == 5);
-    TENSURE(regs.cl == 6);
-    TENSURE(regs.cx == 0x0506);
+   regs.cx = 0x0506;
+   TENSURE(regs.ch == 5);
+   TENSURE(regs.cl == 6);
+   TENSURE(regs.cx == 0x0506);
 
-    regs.dx = 0x0708;
-    TENSURE(regs.dh == 7);
-    TENSURE(regs.dl == 8);
-    TENSURE(regs.dx == 0x0708);
+   regs.dx = 0x0708;
+   TENSURE(regs.dh == 7);
+   TENSURE(regs.dl == 8);
+   TENSURE(regs.dx == 0x0708);
 )

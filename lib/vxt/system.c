@@ -113,9 +113,26 @@ VXT_API vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, unsigned reg_size
     if (sizeof(struct vxt_registers) != reg_size)
         return VXT_INVALID_REGISTER_PACKING;
 
-    //if (VXT_VERSION_MAJOR != v_major || VXT_VERSION_MINOR < v_minor)
     if (VXT_VERSION_MAJOR != v_major || VXT_VERSION_MINOR != v_minor)
         return VXT_INVALID_VERSION;
+
+    vxt_system_install_monitor(s, NULL, "AX", &s->cpu.regs.ax, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, NULL, "BX", &s->cpu.regs.bx, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, NULL, "CX", &s->cpu.regs.cx, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, NULL, "DX", &s->cpu.regs.dx, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+
+    vxt_system_install_monitor(s, NULL, "CS", &s->cpu.regs.cs, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, NULL, "SS", &s->cpu.regs.ss, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, NULL, "DS", &s->cpu.regs.ds, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, NULL, "ES", &s->cpu.regs.es, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+
+    vxt_system_install_monitor(s, NULL, "SP", &s->cpu.regs.sp, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, NULL, "BP", &s->cpu.regs.bp, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, NULL, "SI", &s->cpu.regs.si, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, NULL, "DI", &s->cpu.regs.di, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+
+    vxt_system_install_monitor(s, NULL, "IP", &s->cpu.regs.ip, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, NULL, "Flags", &s->cpu.regs.ip, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_BINARY);
 
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_pirepheral) d = s->devices[i];
@@ -220,6 +237,11 @@ VXT_API const vxt_byte *vxt_system_mem_map(vxt_system *s) {
     return s->mem_map;
 }
 
+VXT_API const struct vxt_monitor *vxt_system_monitor(vxt_system *s, vxt_byte idx) {
+    struct vxt_monitor *m = &s->monitors[idx];
+    return m->flags ? m : NULL;
+}
+
 VXT_API struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx) {
     return s->devices[idx];
 }
@@ -240,6 +262,10 @@ VXT_API enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p) {
     return p->pclass ? p->pclass(VXT_GET_DEVICE_PTR(p)) : VXT_PCLASS_GENERIC;
 }
 
+VXT_API void vxt_system_wait(CONSTP(vxt_system) s, int cycles) {
+    s->cpu.cycles += cycles;
+}
+
 VXT_API void vxt_system_interrupt(CONSTP(vxt_system) s, int n) {
     if (s->cpu.pic)
         s->cpu.pic->pic.irq(VXT_GET_DEVICE_PTR(s->cpu.pic), n);
@@ -251,6 +277,11 @@ VXT_API int vxt_system_frequency(CONSTP(vxt_system) s) {
 
 VXT_API void vxt_system_set_frequency(CONSTP(vxt_system) s, int freq) {
     s->frequency = freq;
+}
+
+VXT_API void vxt_system_install_monitor(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, const char *name, void *reg, enum vxt_monitor_flag flags) {
+    if (s->num_monitors < VXT_MAX_MONITORS)
+        s->monitors[s->num_monitors++] = (struct vxt_monitor){ dev ? vxt_pirepheral_name(dev) : "CPU", name, reg, flags };
 }
 
 VXT_API vxt_timer_id vxt_system_install_timer(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, unsigned int us) {

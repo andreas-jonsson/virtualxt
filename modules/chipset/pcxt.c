@@ -23,7 +23,6 @@
 #include <vxt/vxtu.h>
 #include <frontend.h>
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -44,10 +43,10 @@ static struct vxt_pirepheral *pit_create(vxt_allocator *alloc, void *frontend, c
 
 static vxt_error ppi_config(void *dev, const char *section, const char *key, const char *value) {
     struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(dev);
-    vxt_byte v = 0;
+    vxt_byte v = 0xFF;
     vxt_byte sw = vxtu_ppi_xt_switches(p);
 
-    #define READ if (sscanf(value, "%hhx", &v) != 1) { VXT_LOG("ERROR: [switch1] %s = %s", key, value); return VXT_USER_ERROR(0); }
+    #define READ if (sscanf(value, "%hhx", &v) != 1) { VXT_LOG("ERROR: [switch1] %s = %s", key, value); return VXT_USER_ERROR(0); } else { v = ~v; }
     if (!strcmp("switch1", section)) {
         if (!strcmp("ram", key)) {
             READ vxtu_ppi_set_xt_switches(p, (sw & 0xF3) | ((v & 3) << 2));

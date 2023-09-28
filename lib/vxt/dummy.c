@@ -20,28 +20,32 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
+#ifdef NDEBUG
+    #define VXT_NO_LOG
+#endif
+
 #include "common.h"
 #include "system.h"
 
 static vxt_byte in(void *p, vxt_word port) {
-    UNUSED(p);
+    UNUSED(p); UNUSED(port);
     VXT_PRINT("reading unmapped IO port: %X\n", port);
     return 0xFF;
 }
 
 static void out(void *p, vxt_word port, vxt_byte data) {
-    UNUSED(p); UNUSED(data);
+    UNUSED(p); UNUSED(port); UNUSED(data);
     VXT_PRINT("writing unmapped IO port: %X\n", port);
 }
 
 static vxt_byte read(void *p, vxt_pointer addr) {
-    UNUSED(p);
+    UNUSED(p); UNUSED(addr);
     VXT_PRINT("reading unmapped memory: %X\n", addr);
     return 0xFF;
 }
 
 static void write(void *p, vxt_pointer addr, vxt_byte data) {
-    UNUSED(p); UNUSED(data);
+    UNUSED(p); UNUSED(addr); UNUSED(data);
     VXT_PRINT("writing unmapped memory: %X\n", addr);
 }
 

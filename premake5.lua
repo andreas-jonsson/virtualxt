@@ -10,11 +10,6 @@ newoption {
 }
 
 newoption {
-    trigger = "scrambler",
-    description = "Generate make files for scrambler"
-}
-
-newoption {
     trigger = "modules",
     description = "Generate make files for all modules"
 }
@@ -43,7 +38,7 @@ newaction {
     trigger = "check",
     description = "Run CppCheck on libvxt",
     execute = function ()
-        return os.execute("cppcheck --enable=style -I lib/vxt/include lib/vxt")
+        return os.execute("cppcheck --force --enable=style -I lib/vxt/include lib/vxt")
     end
 }
 
@@ -61,6 +56,16 @@ workspace "virtualxt"
     language "C"
     cdialect "C11"
 
+    local handle = io.popen("git branch --show-current")
+    if handle then
+        local branch = handle:read("l") or "?"
+        print("Branch: " .. branch)
+        if branch == "release" then
+            defines "VXT_VERSION_RELEASE"
+        end
+        handle:close()
+    end
+
     filter "configurations:debug"
         symbols "On"
         optimize "Off"
@@ -73,7 +78,8 @@ workspace "virtualxt"
     filter "platforms:web"
         toolset "clang"
         defines "VXT_NO_LIBC"
-        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }       
+        includedirs "lib/libc"
+        buildoptions { "--target=wasm32", "-mbulk-memory", "-flto" }
 
     filter "options:memclear"
         defines "VXTU_MEMCLEAR"
@@ -256,8 +262,9 @@ workspace "virtualxt"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
-        includedirs "lib/printf"
-        files { "lib/printf/printf.h", "lib/printf/printf.c" }
+        includedirs "lib/libc"
+        defines { "SCANF_FREESTANDING", "SCANF_DISABLE_SUPPORT_FLOAT" }
+        files { "lib/libc/*.h", "lib/libc/*.c", "lib/scanf/scanf.c", "lib/printf/printf.h", "lib/printf/printf.c" }
 
         files "modules/modules.h"
         includedirs "modules"
@@ -334,33 +341,14 @@ workspace "virtualxt"
         filter "toolset:gcc"
             buildoptions "-Wno-maybe-uninitialized"
 
-if _OPTIONS["scrambler"] then
-    project "scrambler"
-        kind "ConsoleApp"
-        targetname "scrambler"
-        targetdir "build/bin"
-        links "gpiod"
-        defines { "PI8088", "VXT_CPU_286" }
-
-        files { "tools/validator/pi8088/scrambler.c", "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
-        
-        includedirs "lib/vxt/include"
-        files { "lib/vxt/**.h", "lib/vxt/*.c" }
-        removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
-
-        cleancommands {
-            "{RMDIR} build/bin",
-            "make clean %{cfg.buildcfg}"
-        }
-end
-
 if _OPTIONS["test"] then
     project "test"
         kind "ConsoleApp"
         targetdir "test"
         includedirs "lib/vxt/include"
-        defines { "TESTING", "VXT_CPU_286", "VXTU_MEMCLEAR" }
+        defines { "TESTING", "VXTU_MEMCLEAR" }
         files { "test/test.c", "lib/vxt/**.h", "lib/vxt/*.c" }
+
         optimize "Off"
         symbols "On"
         sanitize { "Address", "Fuzzer" }
@@ -373,24 +361,35 @@ if _OPTIONS["test"] then
             linkoptions "--coverage"
     
     io.writefile("test/test.c", (function()
-        local test_names = {}
-        for _,file in pairs(os.matchfiles("lib/vxt/*.c")) do
-            for line in io.lines(file) do
-                if string.startswith(line, "TEST(") then
-                    table.insert(test_names, string.sub(line, 6, -2))
+        print("Searching for tests:")
+
+        local pattern = _OPTIONS["test"]
+        local externals = ""
+        local calls = ""
+
+        for _,file in pairs(os.matchfiles("lib/vxt/**.c")) do
+            if not pattern or string.find(file, pattern, 1, true) then
+                print(file)
+                files { file } -- Ensure any files in recursive directories are added.
+                for line in io.lines(file) do
+                    if string.startswith(line, "TEST(") then
+                        local name = string.sub(line, 6, -2)
+                        externals = externals .. string.format("extern int test_%s(struct Test T);\n", name)
+                        calls = calls .. string.format("\tRUN_TEST(test_%s);\n", name)
+                    end
                 end
             end
         end
 
-        local head = '#include <stdio.h>\n#include "../lib/vxt/testing.h"\n\n'
-        head = head .. '#define RUN_TEST(t) { ok += run_test(t) ? 1 : 0; num++; }\n\n'
-        local body = "\t(void)argc; (void)argv;\n\tint ok = 0, num = 0;\n\n"
-        for _,name in ipairs(test_names) do
-            head = string.format("%sextern int test_%s(struct Test T);\n", head, name)
-            body = string.format("%s\tRUN_TEST(test_%s);\n", body, name)
-        end
-        body = string.format('%s\n\tprintf("%%d/%%d tests passed!\\n", ok, num);\n\treturn (num - ok) ? -1 : 0;\n', body)
-        return string.format("%s\nint main(int argc, char *argv[]) {\n%s}\n", head, body)
+        print("Generating test code:")
+
+        -- Avoid using string.format here as the strings can be very large.
+
+        local head = '#include <stdio.h>\n#include "../lib/vxt/testing.h"\n\n#define RUN_TEST(t) { ok += run_test(t) ? 1 : 0; num++; }\n\n' .. externals
+        local body = "\t(void)argc; (void)argv;\n\tint ok = 0, num = 0;\n\n" .. calls
+
+        body = body .. '\n\tprintf("%d/%d tests passed!\\n", ok, num);\n\treturn (num - ok) ? -1 : 0;\n'
+        return head .. "\nint main(int argc, char *argv[]) {\n" .. body .. "}\n"
     end)())
 end
 

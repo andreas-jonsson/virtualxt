@@ -1,5 +1,5 @@
 ZIP2IMG_SOURCES_C := $(CORE_DIR)/lib/miniz/miniz.c $(CORE_DIR)/lib/fat16/fat16.c
-VXT_SOURCES_C := $(VXT_DIR)/cga.c $(VXT_DIR)/cpu.c $(VXT_DIR)/disk.c $(VXT_DIR)/dma.c $(VXT_DIR)/dummy.c $(VXT_DIR)/memory.c $(VXT_DIR)/mouse.c $(VXT_DIR)/pic.c $(VXT_DIR)/pit.c $(VXT_DIR)/ppi.c $(VXT_DIR)/system.c
+VXT_SOURCES_C := $(VXT_DIR)/cga.c $(VXT_DIR)/cpu.c $(VXT_DIR)/disk.c $(VXT_DIR)/dma.c $(VXT_DIR)/dummy.c $(VXT_DIR)/memory.c $(VXT_DIR)/mouse.c $(VXT_DIR)/pic.c $(VXT_DIR)/pit.c $(VXT_DIR)/ppi.c $(VXT_DIR)/system.c $(VXT_DIR)/uart.c
 
 SOURCES_C   := $(CORE_DIR)/front/libretro/core.c $(CORE_DIR)/front/libretro/joystick.c $(VXT_SOURCES_C) $(ZIP2IMG_SOURCES_C)
 CFLAGS      := -DZIP2IMG -DVXTU_CGA_RED=2 -DVXTU_CGA_GREEN=1 -DVXTU_CGA_BLUE=0 -DVXTU_CGA_ALPHA=3 -I$(CORE_DIR)/lib/vxt/include -I$(CORE_DIR)/front/common -I$(CORE_DIR)/lib/libretro -I$(CORE_DIR)/lib/miniz -I$(CORE_DIR)/lib/fat16

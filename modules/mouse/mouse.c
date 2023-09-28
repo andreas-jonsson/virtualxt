@@ -26,11 +26,13 @@
 #include <stdio.h>
 
 static struct vxt_pirepheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args) {
-    vxt_word addr = 0x3F8;
-    int irq = 4;
-    sscanf(args, "%hx,%d", &addr, &irq);
+    vxt_word addr;
+    if (sscanf(args, "%hx", &addr) != 1) {
+		VXT_LOG("Invalid UART address: %s", args);
+		return NULL;
+    }
 
-    struct vxt_pirepheral *p = vxtu_mouse_create(alloc, addr, irq);
+    struct vxt_pirepheral *p = vxtu_mouse_create(alloc, addr);
     if (!p)
         return NULL;
 

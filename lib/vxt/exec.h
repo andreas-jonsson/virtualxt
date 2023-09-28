@@ -341,13 +341,14 @@ WIDE(RM_FUNC)
 #undef NARROW
 #undef WIDE
 
+// Don't use this function for pushing SP in 8086.
 static void push(CONSTSP(cpu) p, vxt_word data) {
    p->regs.sp -= 2;
-   cpu_write_word(p, VXT_POINTER(p->regs.ss, p->regs.sp), data);
+   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, data);
 }
 
 static vxt_word pop(CONSTSP(cpu) p) {
-   vxt_word data = cpu_read_word(p, VXT_POINTER(p->regs.ss, p->regs.sp));
+   vxt_word data = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
    p->regs.sp += 2;
    return data;
 }
@@ -432,15 +433,18 @@ static void prep_exec(CONSTSP(cpu) p) {
    p->inst_queue_dirty = false;
    p->bus_transfers = 0;
 
-   if (p->trap)
-      call_int(p, 1);
+   bool trap = (p->regs.flags & VXT_TRAP) != 0;
+   bool interrupt = (p->regs.flags & VXT_INTERRUPT) != 0;
 
-   p->trap = (p->regs.flags & VXT_TRAP) != 0;
-   if (p->pic && !p->trap && (p->regs.flags & VXT_INTERRUPT)) {
-      int n = p->pic->pic.next(VXT_GET_DEVICE_PTR(p->pic));
-      if (n >= 0) {
-         p->halt = false;
-         call_int(p, n);
+   if (trap && !p->trap) {
+      p->trap = interrupt;
+      call_int(p, 1);
+   } else if (interrupt) {
+      p->halt = p->trap = false;
+      if (p->pic) {
+         int n = p->pic->pic.next(VXT_GET_DEVICE_PTR(p->pic));
+         if (n >= 0)
+            call_int(p, n);
       }
    }
    

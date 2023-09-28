@@ -25,22 +25,12 @@
 #define BUFFER_SIZE 128
 
 struct serial_mouse {
-    int irq;
+    struct vxt_pirepheral *uart;
     vxt_word base_port;
-    vxt_byte registers[8];
 
     vxt_byte buffer[BUFFER_SIZE];
     int buffer_len;
 };
-
-static bool push_data(struct serial_mouse *m, vxt_byte data) {
-    if (m->buffer_len == BUFFER_SIZE)
-        return false;
-    else if (!m->buffer_len)
-        vxt_system_interrupt(VXT_GET_SYSTEM(m), m->irq);
-    m->buffer[m->buffer_len++] = data;
-    return true;
-}
 
 static vxt_byte pop_data(struct serial_mouse *m) {
     vxt_byte data = *m->buffer;
@@ -48,46 +38,55 @@ static vxt_byte pop_data(struct serial_mouse *m) {
     return data;
 }
 
-static vxt_byte in(struct serial_mouse *m, vxt_word port) {
-	vxt_word reg = port & 7;
-	switch (reg) {
-        case 0: // Serial Data Register
-        {
-            vxt_byte data = 0;
-            if (m->buffer_len) {
-                data = pop_data(m);
-                vxt_system_interrupt(VXT_GET_SYSTEM(m), m->irq);
-            }
-            return data;
-        }
-        case 5: // Line Status Register
-            if (m->buffer_len)
-                return 0x61;
-            return 0x60;
-	}
-	return m->registers[reg];
+static bool push_data(struct serial_mouse *m, vxt_byte data) {
+    if (m->buffer_len == BUFFER_SIZE)
+        return false;
+    m->buffer[m->buffer_len++] = data;
+
+    // If UART is busy, then we will get a ready callback instead.
+    if (vxtu_uart_ready(m->uart)) {
+        vxtu_uart_write(m->uart, *m->buffer);
+        pop_data(m);
+    }
+    return true;
 }
 
-static void out(struct serial_mouse *m, vxt_word port, vxt_byte data) {
-	vxt_word reg = port & 7;
-	vxt_byte rval = m->registers[reg];
-	m->registers[reg] = data;
+static void uart_ready_cb(struct vxt_pirepheral *uart, void *udata) {
+    struct serial_mouse *m = (struct serial_mouse*)udata; (void)uart;
+    if (m->buffer_len)
+        vxtu_uart_write(uart, pop_data(m));
+}
 
-	if (reg == 4) { // Modem Control Register
-		if ((data & 1) != (rval & 1)) {
-			m->buffer_len = 0;
-			push_data(m, 'M');
-		}
+static void uart_config_cb(struct vxt_pirepheral *uart, const struct vxtu_uart_registers *regs, int idx, void *udata) {
+    struct serial_mouse *m = (struct serial_mouse*)udata; (void)uart;
+
+    // Modem Control Register
+	if ((idx == 4) && (regs->mcr & 2)) {
+        m->buffer_len = 0;
+        push_data(m, 'M');
+        VXT_LOG("Serial mouse detect!");
 	}
 }
 
 static vxt_error install(struct serial_mouse *m, vxt_system *s) {
-    vxt_system_install_io(s, VXT_GET_PIREPHERAL(m), m->base_port, m->base_port + 7);
-    return VXT_NO_ERROR;
-}
-
-static vxt_error reset(struct serial_mouse *m) {
-    vxt_memclear(m->registers, sizeof(m->registers));
+    for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
+        struct vxt_pirepheral *ip = vxt_system_pirepheral(s, (vxt_byte)i);
+        if (ip && (vxt_pirepheral_class(ip) == VXT_PCLASS_UART) && (vxtu_uart_address(ip) == m->base_port)) {
+            struct vxtu_uart_interface intrf = {
+                .config = &uart_config_cb,
+                .ready = &uart_ready_cb,
+                .data = NULL,
+                .udata = (void*)m
+            };
+            vxtu_uart_set_callbacks(ip, &intrf);
+            m->uart = ip;
+            break;
+        }
+    }
+    if (!m->uart) {
+        VXT_LOG("Could not find UART with base address: 0x%X", m->base_port);
+        return VXT_USER_ERROR(0);
+    }
     return VXT_NO_ERROR;
 }
 
@@ -96,15 +95,11 @@ static const char *name(struct serial_mouse *m) {
     return "Microsoft Serial Mouse";
 }
 
-VXT_API struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_port, int irq) VXT_PIREPHERAL_CREATE(alloc, serial_mouse, {
+VXT_API struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_port) VXT_PIREPHERAL_CREATE(alloc, serial_mouse, {
     DEVICE->base_port = base_port;
-    DEVICE->irq = irq;
 
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
 })
 
 VXT_API bool vxtu_mouse_push_event(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev) {
