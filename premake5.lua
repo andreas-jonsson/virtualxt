@@ -306,8 +306,12 @@ workspace "virtualxt"
         files "modules/modules.h"
         includedirs "modules"
 
-        if _OPTIONS["modules"] and _OPTIONS["static"] then
-            links(modules)
+        if _OPTIONS["modules"] then
+            if _OPTIONS["static"] then
+                links(modules)
+            else
+                dependson "modules"
+            end
         end
 
         files { "front/sdl/*.h", "front/sdl/*.c" }
@@ -334,6 +338,7 @@ workspace "virtualxt"
 
         filter "toolset:clang or gcc"
             buildoptions "-Wno-unused-parameter"
+            linkoptions "-L../lib"
 
         filter "toolset:clang"
             buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
