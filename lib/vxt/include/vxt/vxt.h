@@ -29,7 +29,7 @@ extern "C" {
 
 #define VXT_VERSION_MAJOR 0
 #define VXT_VERSION_MINOR 10
-#define VXT_VERSION_PATCH 0
+#define VXT_VERSION_PATCH 1
 
 #ifdef VXT_VERSION_RELEASE
     #define _VXT_VERSION_SUFFIX

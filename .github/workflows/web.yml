@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  VXT_VERSION: 0.10.0
+  VXT_VERSION: 0.10.1
 
 jobs:
   web-build:
