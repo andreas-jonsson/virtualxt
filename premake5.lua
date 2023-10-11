@@ -338,7 +338,7 @@ workspace "virtualxt"
 
         filter "toolset:clang or gcc"
             buildoptions "-Wno-unused-parameter"
-            linkoptions "-Wl,-rpath='$$ORIGIN'/../lib"
+            linkoptions "-Wl,-rpath,'$$ORIGIN'/../lib"
 
         filter "toolset:clang"
             buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
