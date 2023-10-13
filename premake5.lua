@@ -1,3 +1,14 @@
+require "tools/premake-export-compile-commands/export-compile-commands"
+
+newaction {
+    trigger = 'export-compile-commands',
+    description = 'Export compiler commands in JSON Compilation Database Format',
+    execute = function()
+        export_compile_commands_execute()
+        os.copyfile("compile_commands/release_native.json", "compile_commands.json")
+    end
+}
+
 newoption {
     trigger = "sdl-config",
     value = "PATH",
