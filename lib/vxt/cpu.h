@@ -53,7 +53,6 @@ struct cpu {
 
    enum vxt_cpu_type cpu_type;
    const struct instruction *opcode_table;
-   int opcode_zero_count;
 
    vxt_byte opcode, repeat;
    struct address_mode mode;

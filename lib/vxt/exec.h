@@ -429,37 +429,6 @@ static void divZero(CONSTSP(cpu) p) {
    call_int(p, 0);
 }
 
-static void prep_exec(CONSTSP(cpu) p) {
-   p->inst_queue_dirty = false;
-   p->bus_transfers = 0;
-
-   bool trap = (p->regs.flags & VXT_TRAP) != 0;
-   bool interrupt = (p->regs.flags & VXT_INTERRUPT) != 0;
-
-   if (trap && !p->trap) {
-      p->trap = interrupt;
-      call_int(p, 1);
-   } else if (interrupt) {
-      p->halt = p->trap = false;
-      if (p->pic) {
-         int n = p->pic->pic.next(VXT_GET_DEVICE_PTR(p->pic));
-         if (n >= 0)
-            call_int(p, n);
-      }
-   }
-   
-   // We need to do a direct reset in case we do interrupt.
-   if (p->inst_queue_dirty) {
-      p->inst_queue_count = 0;
-      p->inst_queue_dirty = false;
-   }
-
-   p->seg = p->regs.ds;
-   p->seg_override = 0;
-   p->repeat = 0;
-   p->inst_start = p->regs.ip;
-}
-
 static bool valid_repeat(CONSTSP(cpu) p, vxt_byte opcode) {
    if ((opcode >= 0xA4) && (opcode <= 0xA7))
       return true;
@@ -468,42 +437,6 @@ static bool valid_repeat(CONSTSP(cpu) p, vxt_byte opcode) {
    if ((p->cpu_type != VXT_CPU_8088) && (opcode >= 0x6C) && (opcode <= 0x6F))
       return true;
    return false;
-}
-
-static void read_opcode(CONSTSP(cpu) p) {
-   for (;;) {
-      switch (p->opcode = read_opcode8(p)) {
-         case 0x26:
-            p->seg = p->regs.es;
-            p->seg_override = p->opcode;
-            p->cycles += 2;
-            break;
-         case 0x2E:
-            p->seg = p->regs.cs;
-            p->seg_override = p->opcode;
-            p->cycles += 2;
-            break;
-         case 0x36:
-            p->seg = p->regs.ss;
-            p->seg_override = p->opcode;
-            p->cycles += 2;
-            break;
-         case 0x3E:
-            p->seg = p->regs.ds;
-            p->seg_override = p->opcode;
-            p->cycles += 2;
-            break;
-         case 0xF2: // REPNE/REPNZ
-         case 0xF3: // REP/REPE/REPZ
-            p->repeat = p->opcode;
-            p->cycles += 2;
-            break;
-         default:
-            if (p->repeat && !valid_repeat(p, p->opcode))
-               p->repeat = 0;
-            return;
-      }
-   }
 }
 
 #endif

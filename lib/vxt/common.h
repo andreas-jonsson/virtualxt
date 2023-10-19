@@ -54,8 +54,8 @@
 #define CONSTSP(t)   struct CONSTP(t)
 
 #define PRINT(...)         { VXT_PRINT(__VA_ARGS__); VXT_PRINT("\n"); }
-#define ENSURE(e)          if (!(e)) { VXT_PRINT("( " #e " ) "); ABORT(); }
-#define ASSERT(e, ...)     if (!(e)) { VXT_PRINT("( " #e " ) "); PRINT(__VA_ARGS__); ABORT(); }
+#define ENSURE(e)          if (UNLIKELY(!(e))) { VXT_PRINT("( " #e " ) "); ABORT(); }
+#define ASSERT(e, ...)     if (UNLIKELY(!(e))) { VXT_PRINT("( " #e " ) "); PRINT(__VA_ARGS__); ABORT(); }
 #define PANIC(...)         { PRINT(__VA_ARGS__); ABORT(); }
 #define UNREACHABLE(...)   { PANIC("unreachable"); return __VA_ARGS__; }
 

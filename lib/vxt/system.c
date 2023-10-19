@@ -47,7 +47,7 @@ static vxt_error update_timers(CONSTP(vxt_system) s, int ticks) {
     for (int i = 0; i < s->num_timers; i++) {
         struct timer *t = &s->timers[i];
         t->ticks += ticks;
-        if (t->ticks >= (INT64)(t->interval * (double)s->frequency)) {
+        if (UNLIKELY(t->ticks >= (INT64)(t->interval * (double)s->frequency))) {
             vxt_error err = t->dev->timer(VXT_GET_DEVICE_PTR(t->dev), t->id, (int)t->ticks);
             if (err != VXT_NO_ERROR)
                 return err;
@@ -205,7 +205,7 @@ VXT_API struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
         step.cycles += c;
         step.halted = s->cpu.halt;
 
-        if ((step.err = update_timers(s, c)) != VXT_NO_ERROR)
+        if (UNLIKELY((step.err = update_timers(s, c)) != VXT_NO_ERROR))
             return step;
 
         if (newc >= cycles)

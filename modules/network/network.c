@@ -35,6 +35,12 @@
     #include <stdlib.h>
     #include <pcap/pcap.h>
 
+    #ifndef _WIN32
+        #include <sys/socket.h>
+        #include <netinet/in.h>
+        #include <arpa/inet.h>
+    #endif
+
     struct network {
         pcap_t *handle;
         bool can_recv;
