@@ -172,16 +172,15 @@ static vxt_byte read(struct vga_video *v, vxt_pointer addr) {
     addr -= MEMORY_START;
 
     if (v->reg.seq_reg[5] & 8) {
-        VXT_LOG("Readmode 1 is unsupported!");
+        VXT_LOG("Read mode 1 is unsupported!");
         return 0;
     }
 
 	if ((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x10) && (v->video_mode != 0x12))
         return MEMORY(v->mem, addr);
 
-    if (!(v->reg.seq_reg[4] & 6))
+    if (v->reg.seq_reg[4] & 8)
         return MEMORY(v->mem, addr);
-
 
     v->mem_latch[0] = MEMORY(v->mem, addr);
     v->mem_latch[1] = MEMORY(v->mem, addr + PLANE_SIZE);
@@ -205,22 +204,29 @@ static void write(struct vga_video *v, vxt_pointer addr, vxt_byte data) {
     }
     addr -= MEMORY_START;
 
-	if (((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x10) && (v->video_mode != 0x12)) || !(v->reg.seq_reg[4] & 6)) {
+	if ((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x10) && (v->video_mode != 0x12)) {
+        MEMORY(v->mem, addr) = data;
+        return;
+    }
+
+	if (v->reg.seq_reg[4] & 8) {
         MEMORY(v->mem, addr) = data;
         return;
     }
 
     vxt_byte *gr = v->reg.gfx_reg;
     vxt_byte bit_mask = gr[8];
-    vxt_byte map_mask = v->reg.seq_reg[2];
+    vxt_byte map_mask = v->reg.seq_reg[2] & 0xF;
 
     switch (gr[5] & 3) {
         case 0:
             ROTATE_OP(gr, data);
             FOR_PLANES(map_mask,
-                vxt_byte value = (data & M) ? 0xFF : 0x0;
+                vxt_byte value = data;
                 if (gr[1] & M)
                     value = (gr[0] & M) ? 0xFF : 0x0;
+                else
+                    ROTATE_OP(gr, value);
                 LOGIC_OP(gr, value, v->mem_latch[I]);
                 MEMORY(v->mem, addr + PLANE_SIZE * I) = (bit_mask & value) | (~bit_mask & v->mem_latch[I]);
             );
