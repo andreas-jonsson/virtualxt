@@ -101,9 +101,12 @@ struct snapshot {
     int video_page;
     int pixel_shift;
     bool plane_mode;
+    bool p54s;
     vxt_byte video_mode;
+    vxt_byte color_select;
     vxt_byte mode_ctrl_reg;
     vxt_byte color_ctrl_reg;
+    vxt_byte pal_reg[16];
 };
 
 struct vga_video {
