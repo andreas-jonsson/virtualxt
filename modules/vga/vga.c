@@ -27,7 +27,6 @@
 #include <frontend.h>
 
 #include "font.h"
-#include "palette.h"
 
 #include <string.h>
 
@@ -325,14 +324,12 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
     v->is_dirty = true;
     switch (port) {
         case 0x3C0:
-            if (v->reg.flip_3C0)
-                v->reg.attr_addr = data;
-            else
-                v->reg.attr_reg[v->reg.attr_addr] = data;
-            v->reg.flip_3C0 = !v->reg.flip_3C0;
-            break;
         case 0x3C1:
-            v->reg.attr_reg[v->reg.attr_addr] = data;
+            if (v->reg.flip_3C0)
+                v->reg.attr_reg[v->reg.attr_addr] = data;
+            else
+                v->reg.attr_addr = data;
+            v->reg.flip_3C0 = !v->reg.flip_3C0;
             break;
         case 0x3C2:
             v->reg.misc_output = data;
@@ -371,7 +368,7 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
                     v->reg.pal_write_latch = 0;
                     v->palette[v->reg.pal_write_index++] = v->reg.pal_rgb;
                     break;
-            }            
+            }
             break;
         }
         case 0x3CE:
@@ -424,7 +421,6 @@ static vxt_error reset(struct vga_video *v) {
     v->reg.status_reg = 0;
 
     v->is_dirty = true;
-    memcpy(v->palette, vga_palette, sizeof(vga_palette));
     return VXT_NO_ERROR;
 }
 
@@ -478,6 +474,8 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
     }
 
     vxt_system_install_monitor(s, p, "Video Mode", &v->video_mode, VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, p, "Color Select", &v->reg.attr_reg[0x14], VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, p, "Mode Control", &v->reg.attr_reg[0x10], VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_BINARY);
 
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + 0x20000) - 1);
     vxt_system_install_mem(s, p, VIDEO_MODE_BDA_START_ADDRESS, VIDEO_MODE_BDA_END_ADDRESS); // BDA video mode

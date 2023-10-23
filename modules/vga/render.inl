@@ -86,7 +86,7 @@ static bool snapshot(struct vxt_pirepheral *p) {
     v->snap.plane_mode = !(v->reg.seq_reg[0x4] & 6);
     v->snap.p54s = (v->reg.attr_reg[0x10] & 0x80) != 0;
     v->snap.pixel_shift = v->reg.attr_reg[0x13] & 15;
-    v->snap.color_select = v->reg.attr_reg[0x14] & 15;
+    v->snap.color_select = v->reg.attr_reg[0x14];
 
     v->snap.cursor_offset = v->cursor_offset;
     v->snap.cursor_visible = v->cursor_visible;
@@ -197,17 +197,16 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
                     int addr = y * num_col + (x >> 3);
                     int shift = 7 - (x & 7);
                     
-                    vxt_byte pixel = (MEMORY(snap->mem, addr) >> shift) & 1;
-                    pixel += ((MEMORY(snap->mem, PLANE_SIZE + addr) >> shift) & 1) << 1;
-                    pixel += ((MEMORY(snap->mem, PLANE_SIZE * 2 + addr) >> shift) & 1) << 2;
-                    pixel += ((MEMORY(snap->mem, PLANE_SIZE * 3 + addr) >> shift) & 1) << 3;
+                    vxt_byte idx = (MEMORY(snap->mem, addr) >> shift) & 1;
+                    idx |= ((MEMORY(snap->mem, PLANE_SIZE + addr) >> shift) & 1) << 1;
+                    idx |= ((MEMORY(snap->mem, PLANE_SIZE * 2 + addr) >> shift) & 1) << 2;
+                    idx |= ((MEMORY(snap->mem, PLANE_SIZE * 3 + addr) >> shift) & 1) << 3;
 
-                    //pixel = snap->pal_reg[pixel] | (snap->color_select << 4);
-                    //if (snap->p54s)
-                    //    pixel = (pixel & 0xCF) | ((snap->color_select & 3) << 4);
+                    idx = (snap->pal_reg[idx] & 0x3F) | ((snap->color_select & 0xC) << 4);
+                    if (snap->p54s)
+                        idx = (idx & 0xCF) | ((snap->color_select & 3) << 4);
 
-                    //blit32(snap->rgba_surface, (y * width + x) * 4, snap->palette[pixel]);
-                    blit32(snap->rgba_surface, (y * width + x) * 4, cga_palette[pixel]);
+                    blit32(snap->rgba_surface, (y * width + x) * 4, snap->palette[idx]);
                 }
             }
             return f(width, height, snap->rgba_surface, userdata);
