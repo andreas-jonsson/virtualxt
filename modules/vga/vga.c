@@ -41,6 +41,8 @@
 #define VIDEO_MODE_BDA_START_ADDRESS (VIDEO_MODE_BDA_ADDRESS & 0xFFFF0)
 #define VIDEO_MODE_BDA_END_ADDRESS (VIDEO_MODE_BDA_START_ADDRESS + 0xF)
 
+#define CGA_REGISTERS_MSG "WARNING: CGA register manipulation is not supported on VGA. Switch to the CGA module."
+
 #define MEMORY(p, i) ((p)[(i) & (MEMORY_SIZE - 1)])
 
 #define ONE_PLANE(mask, i, ...) {                   \
@@ -67,25 +69,6 @@
         case 3: (value) ^= (latch); break;          \
 	}                                               \
 
-static const vxt_dword cga_palette[] = {
-	0x000000,
-	0x0000AA,
-	0x00AA00,
-	0x00AAAA,
-	0xAA0000,
-	0xAA00AA,
-	0xAA5500,
-	0xAAAAAA,
-	0x555555,
-	0x5555FF,
-	0x55FF55,
-	0x55FFFF,
-	0xFF5555,
-	0xFF55FF,
-	0xFFFF55,
-	0xFFFFFF,
-};
-
 struct snapshot {
     vxt_byte mem[MEMORY_SIZE];
     vxt_byte rgba_surface[640 * 480 * 4];
@@ -104,7 +87,6 @@ struct snapshot {
     vxt_byte video_mode;
     vxt_byte color_select;
     vxt_byte mode_ctrl_reg;
-    vxt_byte color_ctrl_reg;
     vxt_byte pal_reg[16];
 };
 
@@ -133,7 +115,6 @@ struct vga_video {
 
     struct {
         vxt_byte mode_ctrl_reg;
-        vxt_byte color_ctrl_reg;
         vxt_byte feature_ctrl_reg;
         vxt_byte status_reg;
         bool flip_3C0;
@@ -312,8 +293,6 @@ static vxt_byte in(struct vga_video *v, vxt_word port) {
             return v->reg.crt_reg[v->reg.crt_addr];
         case 0x3D8:
             return v->reg.mode_ctrl_reg;
-        case 0x3D9:
-		    return v->reg.color_ctrl_reg;
         case 0x3BA:
         case 0x3DA:
             break;
@@ -412,7 +391,7 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
             v->reg.mode_ctrl_reg = data;
             break;
         case 0x3D9:
-            v->reg.color_ctrl_reg = data;
+            VXT_LOG(CGA_REGISTERS_MSG);
             break;
         case 0x3BA:
         case 0x3DA:
@@ -426,7 +405,6 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
 
 static vxt_error reset(struct vga_video *v) {
     v->reg.mode_ctrl_reg = 1;
-    v->reg.color_ctrl_reg = 0x20;
     v->reg.status_reg = 0;
 
     v->is_dirty = true;
@@ -466,7 +444,8 @@ static vxt_error timer(struct vga_video *v, vxt_timer_id id, int cycles) {
 }
 
 static vxt_dword border_color(struct vxt_pirepheral *p) {
-    return cga_palette[(VXT_GET_DEVICE(vga_video, p))->reg.color_ctrl_reg & 0xF];
+    (void)p;
+    return 0;//cga_palette[(VXT_GET_DEVICE(vga_video, p))->reg.color_ctrl_reg & 0xF];
 }
 
 static vxt_error install(struct vga_video *v, vxt_system *s) {
@@ -486,7 +465,6 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
     }
 
     vxt_system_install_monitor(s, p, "Video Mode", &v->video_mode, VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
-    vxt_system_install_monitor(s, p, "Color Control", &v->reg.color_ctrl_reg, VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
     vxt_system_install_monitor(s, p, "Color Select", &v->reg.attr_reg[0x14], VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
     vxt_system_install_monitor(s, p, "Mode Control", &v->reg.attr_reg[0x10], VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_BINARY);
 

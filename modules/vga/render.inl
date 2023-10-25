@@ -28,6 +28,13 @@ static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
     pixels[offset + VXTU_CGA_ALPHA] = VXTU_CGA_ALPHA_FILL;
 }
 
+static vxt_dword color_lookup(struct snapshot *snap, vxt_byte index) {
+    index = (snap->pal_reg[index] & 0x3F) | ((snap->color_select & 0xC) << 4);
+    if (snap->p54s)
+        index = (index & 0xCF) | ((snap->color_select & 3) << 4);
+    return snap->palette[index];
+}
+
 static void blit_char(struct vga_video *v, int ch, vxt_byte attr, int x, int y) {
     struct snapshot *snap = &v->snap;
 
@@ -44,8 +51,8 @@ static void blit_char(struct vga_video *v, int ch, vxt_byte attr, int x, int y) 
 		}
 	}
 
-	vxt_dword bg_color = cga_palette[bg_color_index];
-	vxt_dword fg_color = cga_palette[fg_color_index];
+	vxt_dword bg_color = color_lookup(snap, bg_color_index);
+	vxt_dword fg_color = color_lookup(snap, fg_color_index);
     int width = (snap->mode_ctrl_reg & 1) ? 640 : 320;
     int start = 0;
     int end = 15;
@@ -95,7 +102,6 @@ static bool snapshot(struct vxt_pirepheral *p) {
     v->snap.cursor_blink = v->cursor_blink;
 
     v->snap.mode_ctrl_reg = v->reg.mode_ctrl_reg;
-    v->snap.color_ctrl_reg = v->reg.color_ctrl_reg;
 
     v->is_dirty = false;
     return true;
@@ -138,51 +144,40 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
         }
         case 0x4:
         case 0x5: // CGA 320x200x4
-        {
-            int color_index = (snap->color_ctrl_reg >> 5) & 1;
-            int bg_color_index = snap->color_ctrl_reg & 0xF;
-            int intensity = ((snap->color_ctrl_reg >> 4) & 1) << 3;
-
             for (int y = 0; y < 200; y++) {
                 for (int x = 0; x < 320; x++) {
                     int addr = (y >> 1) * 80 + (y & 1) * 8192 + (x >> 2);
-                    vxt_byte pixel = MEMORY(snap->mem, CGA_BASE + addr);
+                    vxt_byte index = MEMORY(snap->mem, CGA_BASE + addr);
 
                     switch (x & 3) {
                         case 0:
-                            pixel = (pixel >> 6) & 3;
+                            index = (index >> 6) & 3;
                             break;
                         case 1:
-                            pixel = (pixel >> 4) & 3;
+                            index = (index >> 4) & 3;
                             break;
                         case 2:
-                            pixel = (pixel >> 2) & 3;
+                            index = (index >> 2) & 3;
                             break;
                         case 3:
-                            pixel = pixel & 3;
+                            index = index & 3;
                             break;
                     }
 
-                    vxt_dword color = cga_palette[pixel ? (pixel * 2 + color_index + intensity) : bg_color_index];
-                    blit32(snap->rgba_surface, (y * 320 + x) * 4, color);
+                    blit32(snap->rgba_surface, (y * 320 + x) * 4, color_lookup(snap, index));
                 }
             }
             return f(320, 200, snap->rgba_surface, userdata);
-        }
         case 0x6: // CGA 640x200x2
-        {
-            int bg_color_index = snap->color_ctrl_reg & 0xF;
             for (int y = 0; y < 200; y++) {
                 for (int x = 0; x < 640; x++) {
                     int addr = (y >> 1) * 80 + (y & 1) * 8192 + (x >> 3);
-                    vxt_byte pixel = (MEMORY(snap->mem, CGA_BASE + addr) >> (7 - (x & 7))) & 1;
-                    vxt_dword color = cga_palette[pixel * bg_color_index];
+                    vxt_byte index = (MEMORY(snap->mem, CGA_BASE + addr) >> (7 - (x & 7))) & 1;
                     int offset = (y * 640 + x) * 4;
-                    blit32(snap->rgba_surface, offset, color);
+                    blit32(snap->rgba_surface, offset, color_lookup(snap, index));
                 }
             }
             return f(640, 200, snap->rgba_surface, userdata);
-        }
         case 0xD: // EGA 320x200x16
             num_col = 40;
             snap->mode_ctrl_reg &= ~1;
@@ -197,16 +192,12 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
                     int addr = y * num_col + (x >> 3);
                     int shift = 7 - (x & 7);
                     
-                    vxt_byte idx = (MEMORY(snap->mem, addr) >> shift) & 1;
-                    idx |= ((MEMORY(snap->mem, PLANE_SIZE + addr) >> shift) & 1) << 1;
-                    idx |= ((MEMORY(snap->mem, PLANE_SIZE * 2 + addr) >> shift) & 1) << 2;
-                    idx |= ((MEMORY(snap->mem, PLANE_SIZE * 3 + addr) >> shift) & 1) << 3;
+                    vxt_byte index = (MEMORY(snap->mem, addr) >> shift) & 1;
+                    index |= ((MEMORY(snap->mem, PLANE_SIZE + addr) >> shift) & 1) << 1;
+                    index |= ((MEMORY(snap->mem, PLANE_SIZE * 2 + addr) >> shift) & 1) << 2;
+                    index |= ((MEMORY(snap->mem, PLANE_SIZE * 3 + addr) >> shift) & 1) << 3;
 
-                    idx = (snap->pal_reg[idx] & 0x3F) | ((snap->color_select & 0xC) << 4);
-                    if (snap->p54s)
-                        idx = (idx & 0xCF) | ((snap->color_select & 3) << 4);
-
-                    blit32(snap->rgba_surface, (y * width + x) * 4, snap->palette[idx]);
+                    blit32(snap->rgba_surface, (y * width + x) * 4, color_lookup(snap, index));
                 }
             }
             return f(width, height, snap->rgba_surface, userdata);
