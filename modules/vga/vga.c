@@ -41,8 +41,6 @@
 #define VIDEO_MODE_BDA_START_ADDRESS (VIDEO_MODE_BDA_ADDRESS & 0xFFFF0)
 #define VIDEO_MODE_BDA_END_ADDRESS (VIDEO_MODE_BDA_START_ADDRESS + 0xF)
 
-#define CGA_REGISTERS_MSG "WARNING: CGA register manipulation is not supported on VGA. Switch to the CGA module."
-
 #define MEMORY(p, i) ((p)[(i) & (MEMORY_SIZE - 1)])
 
 #define ONE_PLANE(mask, i, ...) {                   \
@@ -83,10 +81,9 @@ struct snapshot {
     int video_page;
     int pixel_shift;
     bool plane_mode;
-    bool p54s;
+    vxt_byte mode_ctrl;
     vxt_byte video_mode;
     vxt_byte color_select;
-    vxt_byte mode_ctrl_reg;
     vxt_byte pal_reg[16];
 };
 
@@ -114,7 +111,6 @@ struct vga_video {
     bool (*set_video_adapter)(const struct frontend_video_adapter*);
 
     struct {
-        vxt_byte mode_ctrl_reg;
         vxt_byte feature_ctrl_reg;
         vxt_byte status_reg;
         bool flip_3C0;
@@ -291,8 +287,6 @@ static vxt_byte in(struct vga_video *v, vxt_word port) {
         case 0x3B5:
         case 0x3D5:
             return v->reg.crt_reg[v->reg.crt_addr];
-        case 0x3D8:
-            return v->reg.mode_ctrl_reg;
         case 0x3BA:
         case 0x3DA:
             break;
@@ -388,10 +382,8 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
             }
             break;
         case 0x3D8:
-            v->reg.mode_ctrl_reg = data;
-            break;
         case 0x3D9:
-            VXT_LOG(CGA_REGISTERS_MSG);
+            VXT_LOG("WARNING: CGA register manipulation is not supported on VGA. Switch to the CGA module.");
             break;
         case 0x3BA:
         case 0x3DA:
@@ -404,9 +396,7 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error reset(struct vga_video *v) {
-    v->reg.mode_ctrl_reg = 1;
     v->reg.status_reg = 0;
-
     v->is_dirty = true;
     return VXT_NO_ERROR;
 }

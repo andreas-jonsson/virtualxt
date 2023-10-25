@@ -30,7 +30,7 @@ static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
 
 static vxt_dword color_lookup(struct snapshot *snap, vxt_byte index) {
     index = (snap->pal_reg[index] & 0x3F) | ((snap->color_select & 0xC) << 4);
-    if (snap->p54s)
+    if (snap->mode_ctrl & 0x80)
         index = (index & 0xCF) | ((snap->color_select & 3) << 4);
     return snap->palette[index];
 }
@@ -42,7 +42,7 @@ static void blit_char(struct vga_video *v, int ch, vxt_byte attr, int x, int y) 
 	int fg_color_index = attr & 0xF;
 
 	if (attr & 0x80) {
-		if (snap->mode_ctrl_reg & 0x20) {
+		if (snap->mode_ctrl & 8) {
 			if (snap->cursor_blink)
 				fg_color_index = bg_color_index;
 		} else {
@@ -53,7 +53,7 @@ static void blit_char(struct vga_video *v, int ch, vxt_byte attr, int x, int y) 
 
 	vxt_dword bg_color = color_lookup(snap, bg_color_index);
 	vxt_dword fg_color = color_lookup(snap, fg_color_index);
-    int width = (snap->mode_ctrl_reg & 1) ? 640 : 320;
+    int width = (snap->video_mode > 1) ? 640 : 320;
     int start = 0;
     int end = 15;
 
@@ -91,7 +91,7 @@ static bool snapshot(struct vxt_pirepheral *p) {
     v->snap.video_mode = v->video_mode;
     v->snap.video_page = ((int)v->reg.crt_reg[0xC] << 8) + (int)v->reg.crt_reg[0xD];
     v->snap.plane_mode = !(v->reg.seq_reg[0x4] & 6);
-    v->snap.p54s = (v->reg.attr_reg[0x10] & 0x80) != 0;
+    v->snap.mode_ctrl = v->reg.attr_reg[0x10];
     v->snap.pixel_shift = v->reg.attr_reg[0x13] & 15;
     v->snap.color_select = v->reg.attr_reg[0x14];
 
@@ -100,8 +100,6 @@ static bool snapshot(struct vxt_pirepheral *p) {
     v->snap.cursor_start = v->cursor_start;
     v->snap.cursor_end = v->cursor_end;
     v->snap.cursor_blink = v->cursor_blink;
-
-    v->snap.mode_ctrl_reg = v->reg.mode_ctrl_reg;
 
     v->is_dirty = false;
     return true;
@@ -117,12 +115,10 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
         case 0x0:
         case 0x1:
             num_col = 40;
-            snap->mode_ctrl_reg &= ~1;
         case 0x2:
         case 0x3:
         case 0x7:
         {
-            snap->mode_ctrl_reg |= 1;
             int num_char = num_col * 25;
             for (int i = 0; i < num_char * 2; i += 2) {
                 int idx = i / 2;
@@ -180,7 +176,6 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
             return f(640, 200, snap->rgba_surface, userdata);
         case 0xD: // EGA 320x200x16
             num_col = 40;
-            snap->mode_ctrl_reg &= ~1;
         case 0xE: // EGA 640x200x16
         case 0x10: // EGA 640x350x16
             height = (snap->video_mode == 0x10) ? 350 : 200;
