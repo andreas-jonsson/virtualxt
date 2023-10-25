@@ -173,11 +173,6 @@ static vxt_byte read(struct vga_video *v, vxt_pointer addr) {
     }
     addr -= MEMORY_START;
 
-    if (v->reg.seq_reg[5] & 8) {
-        VXT_LOG("Read mode 1 is unsupported!");
-        return 0;
-    }
-
 	if ((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x10) && (v->video_mode != 0x12))
         return MEMORY(v->mem, addr);
 
@@ -188,7 +183,20 @@ static vxt_byte read(struct vga_video *v, vxt_pointer addr) {
     v->mem_latch[1] = MEMORY(v->mem, addr + PLANE_SIZE);
     v->mem_latch[2] = MEMORY(v->mem, addr + PLANE_SIZE * 2);
     v->mem_latch[3] = MEMORY(v->mem, addr + PLANE_SIZE * 3);
-    return v->mem_latch[v->reg.gfx_reg[4] & 3];
+
+    vxt_byte data = 0;
+    if (v->reg.seq_reg[5] & 8) { // Readmode 1
+        vxt_byte map_mask = v->reg.seq_reg[2] & 0xF;
+        FOR_PLANES(map_mask,
+            if (v->reg.gfx_reg[7] & M) {
+                if (MEMORY(v->mem, addr + PLANE_SIZE * I) == (v->reg.gfx_reg[2] & 0xF))
+                    data |= M;
+            }
+        );
+    } else { // Readmode 0
+        data = v->mem_latch[v->reg.gfx_reg[4] & 3];
+    }
+    return data;
 }
 
 static void write(struct vga_video *v, vxt_pointer addr, vxt_byte data) {
@@ -405,6 +413,7 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
             break;
         case 0x3D9:
             v->reg.color_ctrl_reg = data;
+            break;
         case 0x3BA:
         case 0x3DA:
             v->reg.feature_ctrl_reg = data;
@@ -436,6 +445,9 @@ static vxt_error timer(struct vga_video *v, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
 
     if (v->scanline_timer == id) {
+
+        // TODO: This is not correct at all. Needs fixing!
+
         v->reg.status_reg = 6;
         v->reg.status_reg |= (v->retrace == 3) ? 1 : 0;
         v->reg.status_reg |= (v->scanline >= 224) ? 8 : 0;
@@ -474,6 +486,7 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
     }
 
     vxt_system_install_monitor(s, p, "Video Mode", &v->video_mode, VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, p, "Color Control", &v->reg.color_ctrl_reg, VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
     vxt_system_install_monitor(s, p, "Color Select", &v->reg.attr_reg[0x14], VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
     vxt_system_install_monitor(s, p, "Mode Control", &v->reg.attr_reg[0x10], VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_BINARY);
 
