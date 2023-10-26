@@ -183,7 +183,6 @@ static void write(struct vga_video *v, vxt_pointer addr, vxt_byte data) {
         if ((addr == VIDEO_MODE_BDA_ADDRESS) && (v->video_mode != data)) {
             VXT_LOG("Switch video mode: 0x%X", data);
             v->video_mode = data;
-            v->reg.seq_reg[4] = 0; // Set chained mode.
             return;
         }
         v->bios_bda_memory[addr - VIDEO_MODE_BDA_START_ADDRESS] = data;
