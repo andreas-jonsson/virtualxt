@@ -233,13 +233,15 @@ void wasm_initialize_emulator(int v20, int freq) {
 		#error The web frontend requires all modules to be staticlly linked!
 	#endif
 
+	static struct frontend_interface fi = { .interface_version = FRONTEND_INTERFACE_VERSION };
+	fi.ctrl.callback = &emu_control;
+	fi.set_video_adapter = &set_video_adapter;
+
 	vxtu_module_entry_func *e = _vxtu_module_ctrl_entry(&log_wrapper);
-	if (e) {
-		static struct frontend_interface fi = { .interface_version = FRONTEND_INTERFACE_VERSION };
-		fi.ctrl.callback = &emu_control;
-		fi.set_video_adapter = &set_video_adapter;
-		APPEND_DEVICE((*e)(&ALLOCATOR, &fi, ""));
-	}
+	if (e) APPEND_DEVICE((*e)(&ALLOCATOR, &fi, ""));
+
+	e = _vxtu_module_cga_entry(&log_wrapper);
+	if (e) APPEND_DEVICE((*e)(&ALLOCATOR, &fi, ""));
 
 	sys = vxt_system_create(&ALLOCATOR, v20 ? VXT_CPU_V20 : VXT_CPU_8088, freq, devices);
 	vxt_system_initialize(sys);
