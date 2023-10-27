@@ -263,14 +263,6 @@ VXT_API struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc);
 VXT_API void vxtu_mda_invalidate(struct vxt_pirepheral *p);
 VXT_API int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata);
 
-VXT_API struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc);
-VXT_API vxt_dword vxtu_cga_border_color(struct vxt_pirepheral *p);
-VXT_API bool vxtu_cga_snapshot(struct vxt_pirepheral *p);
-
-// This function only operates on snapshot data and is threadsafe.
-// The use of 'vxtu_cga_snapshot' and 'vxtu_cga_render' needs to be coordinated by the user.
-VXT_API int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
-
 VXT_API struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf);
 VXT_API void vxtu_disk_set_activity_callback(struct vxt_pirepheral *p, void (*cb)(int,void*), void *ud);
 VXT_API void vxtu_disk_set_boot_drive(struct vxt_pirepheral *p, int num);

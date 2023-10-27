@@ -40,6 +40,8 @@
 #include "../../bios/glabios.h"
 #include "../../bios/vxtx.h"
 
+#include "../../modules/cga/cga.h"
+
 #ifdef ZIP2IMG
     #include "zip2img.h"
 #endif
@@ -339,7 +341,7 @@ void retro_init(void) {
         
         disk = vxtu_disk_create(&realloc, &intrf);
         ppi = vxtu_ppi_create(&realloc);
-        cga = vxtu_cga_create(&realloc);
+        cga = cga_create(&realloc);
         mouse = vxtu_mouse_create(&realloc, 0x3F8); // COM1
         joystick = joystick_create(&realloc, NULL, "0x201");
 
@@ -519,10 +521,10 @@ void retro_run(void) {
             log_cb(RETRO_LOG_ERROR, vxt_error_str(s.err));
         last_update -= (s.cycles - clocks) * freq;
 
-        vxtu_cga_snapshot(cga);
+        cga_snapshot(cga);
     );
 
-    vxtu_cga_render(cga, &render_callback, NULL);
+    cga_render(cga, &render_callback, NULL);
 
     input_poll_cb();
 

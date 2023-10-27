@@ -540,7 +540,9 @@ static struct vxt_pirepheral *vga_create(vxt_allocator *alloc, void *frontend, c
 })
 
 static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {
-    (void)frontend;
+    struct frontend_interface *fi = (struct frontend_interface*)frontend;
+    if (fi && fi->resolve_path)
+        args = fi->resolve_path(FRONTEND_BIOS_PATH, args);
 
     int size = 0;
     vxt_byte *data = vxtu_read_file(alloc, args, &size);
