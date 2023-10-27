@@ -238,7 +238,7 @@ workspace "virtualxt"
         includedirs { "lib/libretro", "front/common" }
         files { "front/libretro/*.h", "front/libretro/*.c" }
         
-        defines { "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
+        defines { "VXTU_VIDEO_RED=2", "VXTU_VIDEO_GREEN=1", "VXTU_VIDEO_BLUE=0", "VXTU_VIDEO_ALPHA=3" }
         includedirs "lib/vxt/include"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }

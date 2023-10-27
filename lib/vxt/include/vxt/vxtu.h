@@ -29,20 +29,20 @@ extern "C" {
 
 #include "vxt.h"
 
-#ifndef VXTU_CGA_RED
-	#define VXTU_CGA_RED 0
+#ifndef VXTU_VIDEO_RED
+	#define VXTU_VIDEO_RED 0
 #endif
-#ifndef VXTU_CGA_GREEN
-	#define VXTU_CGA_GREEN 1
+#ifndef VXTU_VIDEO_GREEN
+	#define VXTU_VIDEO_GREEN 1
 #endif
-#ifndef VXTU_CGA_BLUE
-	#define VXTU_CGA_BLUE 2
+#ifndef VXTU_VIDEO_BLUE
+	#define VXTU_VIDEO_BLUE 2
 #endif
-#ifndef VXTU_CGA_ALPHA
-	#define VXTU_CGA_ALPHA 3
+#ifndef VXTU_VIDEO_ALPHA
+	#define VXTU_VIDEO_ALPHA 3
 #endif
-#ifndef VXTU_CGA_ALPHA_FILL
-	#define VXTU_CGA_ALPHA_FILL 0xFF
+#ifndef VXTU_VIDEO_ALPHA_FILL
+	#define VXTU_VIDEO_ALPHA_FILL 0xFF
 #endif
 
 // TODO: Fix this!
