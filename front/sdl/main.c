@@ -99,6 +99,9 @@ int num_devices = 0;
 struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = { NULL };
 #define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
 
+// Needed for detecting turbo mode.
+struct vxt_pirepheral *ppi_device = NULL;
+
 SDL_atomic_t running = {1};
 SDL_mutex *emu_mutex = NULL;
 SDL_Thread *emu_thread = NULL;
@@ -173,6 +176,9 @@ static int emu_loop(void *ptr) {
 	double frequency = cpu_frequency;
 	Uint64 start = SDL_GetPerformanceCounter();
 
+	if (!ppi_device)
+		return -1;
+
 	while (SDL_AtomicGet(&running)) {
 		struct vxt_step res;
 		SYNC(
@@ -185,6 +191,8 @@ static int emu_loop(void *ptr) {
 						printf("step error: %s", vxt_error_str(res.err));
 				}
 				num_cycles += res.cycles;
+			} else {
+				frequency = vxtu_ppi_turbo_enabled(ppi_device) ? cpu_frequency : ((double)VXT_DEFAULT_FREQUENCY / 1000000.0);
 			}
 		);
 
@@ -695,7 +703,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 	if (!renderer) {
 		printf("SDL_CreateRenderer() failed with error %s\n", SDL_GetError());
@@ -777,7 +785,7 @@ int main(int argc, char *argv[]) {
 	#endif
 	printf("Loaded modules:\n");
 
-	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, VXTU_CAST(&realloc, vxt_allocator*, void*))) {
+	if (ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, VXTU_CAST(&realloc, vxt_allocator*, void*))) {
 		printf("ERROR: Could not load all modules!\n");
 		return -1;
 	}
@@ -829,8 +837,12 @@ int main(int argc, char *argv[]) {
 	printf("Installed pirepherals:\n");
 	for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
 		struct vxt_pirepheral *device = vxt_system_pirepheral(vxt, (vxt_byte)i);
-		if (device)
+		if (device) {
 			printf("%d - %s\n", i, vxt_pirepheral_name(device));
+
+			if (vxt_pirepheral_class(device) == VXT_PCLASS_PPI)
+				ppi_device = device;
+		}
 	}
 
 	if (!disk_controller.device) {
