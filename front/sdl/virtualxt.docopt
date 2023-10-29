@@ -7,7 +7,7 @@ Options:
   --halt                  Debug break on startup.
   --mute                  Disable audio.
   --no-activity           Disable disk activity indicator.
-  --v20                   Enable NEC V20 CPU support.
+  --intel                 Select Intel 8088 instead of NEC V20.
   --clean                 Remove config file and write a new default one.
   --edit                  Open config file in system text editor.
   --locate                Locate the configuration directory.
