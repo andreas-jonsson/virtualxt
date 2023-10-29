@@ -299,7 +299,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, (char *) "10.0", NULL, NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, (char *) "8.0", NULL, NULL,
         NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
@@ -318,7 +318,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --rifs=PATH             Enable experimental RIFS support. (Shared folders)",
               "  --config=PATH           Set config directory.",
               "  --trace=FILE            Write CPU trace to file.",
-              "  --frequency=MHZ         CPU frequency. [default: 10.0]",
+              "  --frequency=MHZ         CPU frequency. [default: 8.0]",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
               "  -c --harddrive=FILE     Mount harddrive image as drive C."}
     };

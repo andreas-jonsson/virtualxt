@@ -14,6 +14,6 @@ Options:
   --rifs=PATH             Enable experimental RIFS support. (Shared folders)
   --config=PATH           Set config directory.
   --trace=FILE            Write CPU trace to file.
-  --frequency=MHZ         CPU frequency. [default: 10.0]
+  --frequency=MHZ         CPU frequency. [default: 8.0]
   -a --floppy=FILE        Mount floppy image as drive A.
   -c --harddrive=FILE     Mount harddrive image as drive C.
