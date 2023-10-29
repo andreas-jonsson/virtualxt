@@ -92,7 +92,7 @@ struct DocoptArgs args = {0};
 Uint32 last_title_update = 0;
 int num_cycles = 0;
 double cpu_frequency = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
-enum vxt_cpu_type cpu_type = VXT_CPU_V20;
+enum vxt_cpu_type cpu_type = VXT_CPU_8088;
 bool cpu_paused = false;
 
 int num_devices = 0;
@@ -466,8 +466,8 @@ static int load_config(void *user, const char *section, const char *name, const 
 			args.halt |= atoi(value);
 		else if (!strcmp("mute", name))
 			args.mute |= atoi(value);
-		else if (!strcmp("intel", name))
-			args.intel |= atoi(value);
+		else if (!strcmp("v20", name))
+			args.v20 |= atoi(value);
 		else if (!strcmp("no-activity", name))
 			args.no_activity |= atoi(value);
 		else if (!strcmp("harddrive", name) && !args.harddrive) {
@@ -593,9 +593,8 @@ static bool write_default_config(const char *path, bool clean) {
 		"; Otherwise you might have trouble with hardware breakpoints.\n"
 		";gdb=1234\n"
 		"\n[args]\n"
-		";bios=pcxtbios.bin\n"
 		";halt=1\n"
-		";intel=1\n"
+		";v20=1\n"
 		";hdboot=1\n"
 		";harddrive=boot/freedos_hd.img\n"
 		"\n[ch36x_isa]\n"
@@ -668,15 +667,15 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (args.intel) {
-		printf("CPU type: 8088\n");
-	} else {
+	if (args.v20) {
 		cpu_type = VXT_CPU_V20;
 		#ifdef VXT_CPU_286
 			printf("CPU type: 286\n");
 		#else
 			printf("CPU type: V20\n");
 		#endif
+	} else {
+		printf("CPU type: 8088\n");
 	}
 
 	if (args.frequency)

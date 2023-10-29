@@ -243,14 +243,14 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->hdboot = option->value;
         } else if (strcmp(option->olong, "--help") == 0) {
             args->help = option->value;
-        } else if (strcmp(option->olong, "--intel") == 0) {
-            args->intel = option->value;
         } else if (strcmp(option->olong, "--locate") == 0) {
             args->locate = option->value;
         } else if (strcmp(option->olong, "--mute") == 0) {
             args->mute = option->value;
         } else if (strcmp(option->olong, "--no-activity") == 0) {
             args->no_activity = option->value;
+        } else if (strcmp(option->olong, "--v20") == 0) {
+            args->v20 = option->value;
         } else if (strcmp(option->olong, "--version") == 0) {
             args->version = option->value;
         } else if (strcmp(option->olong, "--config") == 0) {
@@ -311,7 +311,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --halt                  Debug break on startup.",
               "  --mute                  Disable audio.",
               "  --no-activity           Disable disk activity indicator.",
-              "  --intel                 Select Intel 8088 instead of NEC V20.",
+              "  --v20                   Enable NEC V20 CPU support.",
               "  --clean                 Remove config file and write a new default one.",
               "  --edit                  Open config file in system text editor.",
               "  --locate                Locate the configuration directory.",
@@ -332,10 +332,10 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--halt", 0, 0, NULL},
         {NULL, "--hdboot", 0, 0, NULL},
         {"-h", "--help", 0, 0, NULL},
-        {NULL, "--intel", 0, 0, NULL},
         {NULL, "--locate", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
         {NULL, "--no-activity", 0, 0, NULL},
+        {NULL, "--v20", 0, 0, NULL},
         {"-v", "--version", 0, 0, NULL},
         {NULL, "--config", 1, 0, NULL},
         {"-a", "--floppy", 1, 0, NULL},

@@ -92,10 +92,10 @@ struct DocoptArgs {
     size_t halt;
     size_t hdboot;
     size_t help;
-    size_t intel;
     size_t locate;
     size_t mute;
     size_t no_activity;
+    size_t v20;
     size_t version;
     /* options with arguments */
     char *config;
