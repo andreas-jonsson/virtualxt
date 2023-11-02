@@ -96,7 +96,7 @@ bool joystick_push_event(struct vxt_pirepheral *p, const struct frontend_joystic
 struct vxt_pirepheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args);
 
 // From mouse.c
-struct vxt_pirepheral *mouse_create(vxt_allocator *alloc, vxt_word base_port);
+struct vxt_pirepheral *mouse_create(vxt_allocator *alloc);
 bool mouse_push_event(struct vxt_pirepheral *p, const struct frontend_mouse_event *ev);
 
 static void no_log(enum retro_log_level level, const char *fmt, ...) {
