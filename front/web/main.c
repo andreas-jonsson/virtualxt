@@ -48,12 +48,13 @@ int disk_head = 0;
 int cga_width = -1;
 int cga_height = -1;
 vxt_dword cga_border = 0;
+
 struct frontend_video_adapter video_adapter = {0};
+struct frontend_mouse_adapter mouse_adapter = {0};
 
 vxt_system *sys = NULL;
 struct vxt_pirepheral *disk = NULL;
 struct vxt_pirepheral *ppi = NULL;
-struct vxt_pirepheral *mouse = NULL;
 
 static int log_wrapper(const char *fmt, ...) {
 	va_list args;
@@ -143,6 +144,13 @@ static bool set_video_adapter(const struct frontend_video_adapter *adapter) {
 	return true;
 }
 
+static bool set_mouse_adapter(const struct frontend_mouse_adapter *adapter) {
+	if (mouse_adapter.device)
+		return false;
+	mouse_adapter = *adapter;
+	return true;
+}
+
 static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
 	(void)userdata;
 	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
@@ -187,12 +195,16 @@ void wasm_send_key(int scan) {
 }
 
 void wasm_send_mouse(int xrel, int yrel, unsigned int buttons) {
+	if (!mouse_adapter.device)
+		return;
+
 	struct frontend_mouse_event ev = {0, xrel, yrel};
 	if (buttons & 1)
 		ev.buttons |= FRONTEND_MOUSE_LEFT;
 	if (buttons & 2)
 		ev.buttons |= FRONTEND_MOUSE_RIGHT;
-	frontend_push_event(mouse, &ev);
+
+	mouse_adapter.push_event(mouse_adapter.device, &ev);
 }
 
 int wasm_step_emulation(int cycles) {
@@ -234,6 +246,7 @@ void wasm_initialize_emulator(int v20, int freq) {
 	static struct frontend_interface fi = { .interface_version = FRONTEND_INTERFACE_VERSION };
 	fi.ctrl.callback = &emu_control;
 	fi.set_video_adapter = &set_video_adapter;
+	fi.set_mouse_adapter = &set_mouse_adapter;
 
 	vxtu_module_entry_func *e = _vxtu_module_ctrl_entry(&log_wrapper);
 	if (e) APPEND_DEVICE((*e)(&ALLOCATOR, &fi, ""));
