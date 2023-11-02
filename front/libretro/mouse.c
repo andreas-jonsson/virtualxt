@@ -22,8 +22,8 @@
 
 #include "../../modules/mouse/mouse.c"
 
-struct vxt_pirepheral *mouse_create(vxt_allocator *alloc, vxt_word base_port) {
-    return create(alloc, base_port);
+struct vxt_pirepheral *mouse_create(vxt_allocator *alloc) {
+    return create(alloc, NULL, "0x3F8");
 }
 
 bool mouse_push_event(struct vxt_pirepheral *p, const struct frontend_mouse_event *ev) {

@@ -346,7 +346,7 @@ void retro_init(void) {
         disk = vxtu_disk_create(&realloc, &intrf);
         ppi = vxtu_ppi_create(&realloc);
         cga = cga_create(&realloc);
-        mouse = vxtu_mouse_create(&realloc, 0x3F8); // COM1
+        mouse = mouse_create(&realloc); // COM1
         joystick = joystick_create(&realloc, NULL, "0x201");
 
         struct vxt_pirepheral *devices[] = {
