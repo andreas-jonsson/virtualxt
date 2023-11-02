@@ -71,7 +71,7 @@ retro_set_led_state_t set_led_state = NULL;
 
 struct retro_vfs_interface *vfs = NULL;
 
-enum vxtu_mouse_button mouse_state = 0;
+enum frontend_mouse_button mouse_state = 0;
 long long last_update = 0;
 
 bool floppy_ejected = false;
@@ -94,6 +94,10 @@ struct vxt_pirepheral *joystick = NULL;
 // From joystick.c
 bool joystick_push_event(struct vxt_pirepheral *p, const struct frontend_joystick_event *ev);
 struct vxt_pirepheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args);
+
+// From mouse.c
+struct vxt_pirepheral *mouse_create(vxt_allocator *alloc, vxt_word base_port);
+bool mouse_push_event(struct vxt_pirepheral *p, const struct frontend_mouse_event *ev);
 
 static void no_log(enum retro_log_level level, const char *fmt, ...) {
     (void)level; (void)fmt;
@@ -186,11 +190,11 @@ static void mouse_event(void) {
     int l = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT);
     int r = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT);
 
-    enum vxtu_mouse_button btn = (enum vxtu_mouse_button)((l << 1) | r);
+    enum frontend_mouse_button btn = (enum frontend_mouse_button)((l << 1) | r);
     if ((btn != mouse_state) || x || y) {
         mouse_state = btn;
-        struct vxtu_mouse_event state = {btn, x, y};
-        SYNC(vxtu_mouse_push_event(mouse, &state));
+        struct frontend_mouse_event state = {btn, x, y};
+        SYNC(mouse_push_event(mouse, &state));
     }
 }
 

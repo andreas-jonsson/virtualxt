@@ -21,6 +21,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include <vxt/vxtu.h>
+#include <frontend.h>
 #include "cga_font.h"
 
 #define MEMORY_SIZE 0x10000
@@ -281,10 +282,10 @@ static vxt_error timer(struct cga_video *c, vxt_timer_id id, int cycles) {
 }
 
 static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
-    pixels[offset + VXTU_VIDEO_RED] = (vxt_byte)((color & 0xFF0000) >> 16);
-    pixels[offset + VXTU_VIDEO_GREEN] = (vxt_byte)((color & 0x00FF00) >> 8);
-    pixels[offset + VXTU_VIDEO_BLUE] = (vxt_byte)(color & 0x0000FF);
-    pixels[offset + VXTU_VIDEO_ALPHA] = VXTU_VIDEO_ALPHA_FILL;
+    pixels[offset + FRONTEND_VIDEO_RED] = (vxt_byte)((color & 0xFF0000) >> 16);
+    pixels[offset + FRONTEND_VIDEO_GREEN] = (vxt_byte)((color & 0x00FF00) >> 8);
+    pixels[offset + FRONTEND_VIDEO_BLUE] = (vxt_byte)(color & 0x0000FF);
+    pixels[offset + FRONTEND_VIDEO_ALPHA] = FRONTEND_VIDEO_ALPHA_FILL;
 }
 
 static void blit_char(struct cga_video *c, int ch, vxt_byte attr, int x, int y) {

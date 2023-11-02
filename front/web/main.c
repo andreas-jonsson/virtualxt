@@ -187,12 +187,12 @@ void wasm_send_key(int scan) {
 }
 
 void wasm_send_mouse(int xrel, int yrel, unsigned int buttons) {
-	struct vxtu_mouse_event ev = {0, xrel, yrel};
+	struct frontend_mouse_event ev = {0, xrel, yrel};
 	if (buttons & 1)
-		ev.buttons |= VXTU_MOUSE_LEFT;
+		ev.buttons |= FRONTEND_MOUSE_LEFT;
 	if (buttons & 2)
-		ev.buttons |= VXTU_MOUSE_RIGHT;
-	vxtu_mouse_push_event(mouse, &ev);
+		ev.buttons |= FRONTEND_MOUSE_RIGHT;
+	frontend_push_event(mouse, &ev);
 }
 
 int wasm_step_emulation(int cycles) {
@@ -216,7 +216,6 @@ void wasm_initialize_emulator(int v20, int freq) {
 	vxtu_disk_set_activity_callback(disk, &js_disk_activity, NULL);
 	
 	ppi = vxtu_ppi_create(&ALLOCATOR);
-	mouse = vxtu_mouse_create(&ALLOCATOR, 0x3F8); // COM1
 
 	APPEND_DEVICE(vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false));
 	APPEND_DEVICE(load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000));
@@ -227,7 +226,6 @@ void wasm_initialize_emulator(int v20, int freq) {
 	APPEND_DEVICE(vxtu_pit_create(&ALLOCATOR));
 	APPEND_DEVICE(ppi);
 	APPEND_DEVICE(disk);
-	APPEND_DEVICE(mouse);
 
 	#ifndef VXTU_STATIC_MODULES
 		#error The web frontend requires all modules to be staticlly linked!
@@ -242,6 +240,9 @@ void wasm_initialize_emulator(int v20, int freq) {
 
 	e = _vxtu_module_cga_entry(&log_wrapper);
 	if (e) APPEND_DEVICE((*e)(&ALLOCATOR, &fi, ""));
+
+	e = _vxtu_module_mouse_entry(&log_wrapper);
+	if (e) APPEND_DEVICE((*e)(&ALLOCATOR, &fi, "0x3F8"));
 
 	sys = vxt_system_create(&ALLOCATOR, v20 ? VXT_CPU_V20 : VXT_CPU_8088, freq, devices);
 	vxt_system_initialize(sys);

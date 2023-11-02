@@ -927,11 +927,11 @@ int main(int argc, char *argv[]) {
 				case SDL_MOUSEMOTION:
 					if (mouse_adapter.device && SDL_GetRelativeMouseMode() && !has_open_windows) {
 						Uint32 state = SDL_GetMouseState(NULL, NULL);
-						struct vxtu_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
+						struct frontend_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
 						if (state & SDL_BUTTON_LMASK)
-							ev.buttons |= VXTU_MOUSE_LEFT;
+							ev.buttons |= FRONTEND_MOUSE_LEFT;
 						if (state & SDL_BUTTON_RMASK)
-							ev.buttons |= VXTU_MOUSE_RIGHT;
+							ev.buttons |= FRONTEND_MOUSE_RIGHT;
 						SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
 					}
 					break;
@@ -943,11 +943,11 @@ int main(int argc, char *argv[]) {
 						}
 						SDL_SetRelativeMouseMode(true);
 
-						struct vxtu_mouse_event ev = {0};
+						struct frontend_mouse_event ev = {0};
 						if (e.button.button == SDL_BUTTON_LEFT)
-							ev.buttons |= VXTU_MOUSE_LEFT;
+							ev.buttons |= FRONTEND_MOUSE_LEFT;
 						if (e.button.button == SDL_BUTTON_RIGHT)
-							ev.buttons |= VXTU_MOUSE_RIGHT;
+							ev.buttons |= FRONTEND_MOUSE_RIGHT;
 						SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
 					}
 					break;

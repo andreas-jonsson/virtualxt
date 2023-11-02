@@ -21,10 +21,10 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 static void blit32(vxt_byte *pixels, int offset, vxt_dword color) {
-    pixels[offset + VXTU_VIDEO_RED] = (vxt_byte)((color & 0xFF0000) >> 16);
-    pixels[offset + VXTU_VIDEO_GREEN] = (vxt_byte)((color & 0x00FF00) >> 8);
-    pixels[offset + VXTU_VIDEO_BLUE] = (vxt_byte)(color & 0x0000FF);
-    pixels[offset + VXTU_VIDEO_ALPHA] = VXTU_VIDEO_ALPHA_FILL;
+    pixels[offset + FRONTEND_VIDEO_RED] = (vxt_byte)((color & 0xFF0000) >> 16);
+    pixels[offset + FRONTEND_VIDEO_GREEN] = (vxt_byte)((color & 0x00FF00) >> 8);
+    pixels[offset + FRONTEND_VIDEO_BLUE] = (vxt_byte)(color & 0x0000FF);
+    pixels[offset + FRONTEND_VIDEO_ALPHA] = FRONTEND_VIDEO_ALPHA_FILL;
 }
 
 static vxt_dword color_lookup(struct snapshot *snap, vxt_byte index) {
