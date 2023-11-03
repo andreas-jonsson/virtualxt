@@ -20,7 +20,12 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-// Reference: https://www.scs.stanford.edu/10wi-cs140/pintos/specs/freevga/vga/vga.htm
+/*
+References: https://www.scs.stanford.edu/10wi-cs140/pintos/specs/freevga/vga/vga.htm
+            http://www.osdever.net/FreeVGA/vga/vga.htm
+            https://wiki.osdev.org/Video_Signals_And_Timing
+
+*/
 
 #include <vxt/vxtu.h>
 
@@ -34,7 +39,6 @@
 #define MEMORY_SIZE 0x40000
 #define MEMORY_START 0xA0000
 #define CGA_BASE 0x18000
-#define SCANLINE_TIMING 16
 #define CURSOR_TIMING 333333
 
 #define MEMORY(p, i) ((p)[(i) & (MEMORY_SIZE - 1)])
@@ -92,9 +96,8 @@ struct vga_video {
     bool is_dirty;
     struct snapshot snap;
 
+    vxt_timer_id retrace_timer;
     vxt_timer_id scanline_timer;
-    int scanline;
-    int retrace;
 
     vxt_word width;
     vxt_word height;
@@ -145,11 +148,15 @@ struct vga_video {
 #include "render.inl"
 
 static void update_video_mode(struct vga_video *v) {
-    const vxt_byte *crt = v->reg.crt_reg;
+    const vxt_byte* const crt = v->reg.crt_reg;
 
     vxt_byte dots = (v->reg.seq_reg[1] & 1) ? 8 : 9;
 	v->width = ((crt[1] + 1) - ((crt[5] & 0x60) >> 5)) * dots;
 	v->height = (crt[0x12] | ((crt[7] & 2) ? 0x100 : 0) | ((crt[7] & 0x40) ? 0x200 : 0)) + 1;
+
+    int htotal = (int)crt[0] + 5;
+    int vtotal = (int)crt[6] | ((crt[7] & 1) ? 0x100 : 0) | ((crt[7] & 0x20) ? 0x200 : 0);
+    double pixel_clock = (v->reg.misc_output & 4) ? 28322000.0 : 25175000.0;
 
     if (crt[9] & 0x80)
         v->height >>= 1;
@@ -170,6 +177,10 @@ static void update_video_mode(struct vga_video *v) {
             case 2:
             case 3:
                 v->bpp = 8;
+
+                // TODO: We should NOT have to adjust this here.
+                v->width = 320;
+                v->height = 200;
                 break;
 		}
     }
@@ -180,7 +191,15 @@ static void update_video_mode(struct vga_video *v) {
     if (v->height < 100) v->height = 100;
     else if (v->height > 480) v->height = 480;
 
-	//VXT_LOG("Video Mode: %dx%d %dbpp%s", v->width, v->height, v->bpp, v->textmode ? " (textmode)" : "");
+    int freq_div = htotal * vtotal * (int)dots;
+    unsigned int interval_us = (freq_div > 0) ? (unsigned int)(500000.0 / (pixel_clock / (double)freq_div)) : 0;
+    vxt_system_set_timer_interval(VXT_GET_SYSTEM(v), v->retrace_timer, interval_us);
+
+    freq_div = htotal * (int)dots;
+    interval_us = (freq_div > 0) ? (unsigned int)(500000.0 / (pixel_clock / (double)freq_div)) : 0;
+    vxt_system_set_timer_interval(VXT_GET_SYSTEM(v), v->scanline_timer, interval_us);
+
+	//VXT_LOG("Video Mode: %dx%d %dbpp @ %.02fHz%s", v->width, v->height, v->bpp, pixel_clock / (double)(htotal * vtotal * (int)dots), v->textmode ? " (textmode)" : "");
 }
 
 static vxt_byte read(struct vga_video *v, vxt_pointer addr) {
@@ -442,23 +461,15 @@ static vxt_error timer(struct vga_video *v, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
 
     if (v->scanline_timer == id) {
-
-        // TODO: This is CGA code. Needs fixing!
-
-        v->reg.status_reg = 6;
-        v->reg.status_reg |= (v->retrace == 3) ? 1 : 0;
-        v->reg.status_reg |= (v->scanline >= 224) ? 8 : 0;
-        
-        if (++v->retrace == 4) {
-            v->retrace = 0;
-            v->scanline++;
-        }
-        if (v->scanline == 256)
-            v->scanline = 0;
+        v->reg.status_reg ^= 1;
+    } else if (v->retrace_timer == id) {
+        v->reg.status_reg ^= 8;
     } else {
         v->cursor_blink = !v->cursor_blink;
         v->is_dirty = true;
     }
+
+    v->reg.status_reg |= 6;
     return VXT_NO_ERROR;
 }
 
@@ -490,7 +501,8 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + 0x20000) - 1);
 
     vxt_system_install_timer(s, p, CURSOR_TIMING);
-    v->scanline_timer = vxt_system_install_timer(s, p, SCANLINE_TIMING);
+    v->retrace_timer = vxt_system_install_timer(s, p, 0);
+    v->scanline_timer = vxt_system_install_timer(s, p, 0);
 
     vxt_system_install_io_at(s, p, 0x3B4); // --
     vxt_system_install_io_at(s, p, 0x3D4); // R/W: CRT Index

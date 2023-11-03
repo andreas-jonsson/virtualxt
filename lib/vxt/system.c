@@ -92,6 +92,9 @@ VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty
     }
     s->num_devices = i;
 
+    for (i = 0; i < MAX_TIMERS; i++)
+        s->timers[i].id = VXT_INVALID_TIMER_ID;
+
     // Always init dummy device 0. Depends on memset!
     s->devices[0] = (struct vxt_pirepheral*)&s->dummy;
     init_dummy_device(s);
@@ -293,6 +296,19 @@ VXT_API vxt_timer_id vxt_system_install_timer(CONSTP(vxt_system) s, struct vxt_p
     t->dev = dev;
     t->id = (vxt_timer_id)s->num_timers++;
     return t->id;
+}
+
+VXT_API bool vxt_system_set_timer_interval(vxt_system *s, vxt_timer_id id, unsigned int us) {
+    if (s->num_timers >= MAX_TIMERS)
+        return false;
+
+    struct timer *t = &s->timers[id];
+    if (t->id == VXT_INVALID_TIMER_ID)
+        return false;
+
+    t->ticks = 0;
+    t->interval = (double)us / 1000000.0;
+    return true;
 }
 
 VXT_API void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word addr) {

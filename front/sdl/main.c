@@ -702,7 +702,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 	if (!renderer) {
 		printf("SDL_CreateRenderer() failed with error %s\n", SDL_GetError());

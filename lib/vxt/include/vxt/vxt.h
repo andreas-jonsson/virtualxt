@@ -374,6 +374,7 @@ VXT_API void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev,
 VXT_API void vxt_system_install_io(vxt_system *s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to);
 VXT_API void vxt_system_install_mem(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to);
 VXT_API vxt_timer_id vxt_system_install_timer(vxt_system *s, struct vxt_pirepheral *dev, unsigned int us);
+VXT_API bool vxt_system_set_timer_interval(vxt_system *s, vxt_timer_id id, unsigned int us);
 VXT_API void vxt_system_install_monitor(vxt_system *s, struct vxt_pirepheral *dev, const char *name, void *reg, enum vxt_monitor_flag flags);
 
 VXT_API vxt_byte vxt_system_read_byte(vxt_system *s, vxt_pointer addr);
