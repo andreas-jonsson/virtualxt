@@ -35,7 +35,7 @@ static vxt_dword color_lookup(struct snapshot *snap, vxt_byte index) {
 }
 
 static void blit_char(struct vga_video *v, int ch, vxt_byte attr, int x, int y) {
-    struct snapshot *snap = &v->snap;
+    struct snapshot * const snap = &v->snap;
 
     int bg_color_index = (attr & 0x70) >> 4;
 	int fg_color_index = attr & 0xF;
@@ -52,6 +52,9 @@ static void blit_char(struct vga_video *v, int ch, vxt_byte attr, int x, int y) 
 
 	vxt_dword bg_color = color_lookup(snap, bg_color_index);
 	vxt_dword fg_color = color_lookup(snap, fg_color_index);
+    int font = (attr & 8) ? snap->font_b : snap->font_a;
+
+    // TODO: Fix this! We only run at 640 in textmode.
     int width = (snap->width >= 640) ? 640 : 320;
     int start = 0;
     int end = 15;
@@ -64,7 +67,7 @@ static void blit_char(struct vga_video *v, int ch, vxt_byte attr, int x, int y) 
 
 	for (int i = start; true; i++) {
         int n = i % 16;
-		vxt_byte glyph_line = vga_font[ch * 16 + n];
+		vxt_byte glyph_line = snap->mem[font + ch * 32 + n];
 
 		for (int j = 0; j < 8; j++) {
 			vxt_byte mask = 0x80 >> j;
@@ -85,12 +88,20 @@ static bool snapshot(struct vxt_pirepheral *p) {
 
     memcpy(v->snap.mem, v->mem, MEMORY_SIZE);
     memcpy(v->snap.palette, v->palette, sizeof(v->snap.palette));
-    memcpy(v->snap.pal_reg,  v->reg.attr_reg, 16);
+    memcpy(v->snap.pal_reg, v->reg.attr_reg, 16);
     
     v->snap.width = v->width;
     v->snap.height = v->height;
     v->snap.bpp = v->bpp;
     v->snap.textmode = v->textmode;
+
+    vxt_byte char_map_reg = v->reg.seq_reg[0x3];
+    vxt_byte fa = ((char_map_reg >> 3) & 4) | ((char_map_reg >> 2) & 3);
+    vxt_byte fb = ((char_map_reg >> 2) & 4) | (char_map_reg & 3);
+
+    const int font_offsets[] = { 0x0000, 0x4000, 0x8000, 0xC000, 0x2000, 0x6000, 0xA000, 0xE000 };
+    v->snap.font_a = font_offsets[fa];
+    v->snap.font_b = font_offsets[fb];
 
     v->snap.video_page = ((int)v->reg.crt_reg[0xC] << 8) + (int)v->reg.crt_reg[0xD];
     v->snap.plane_mode = !(v->reg.seq_reg[0x4] & 6);
@@ -110,7 +121,7 @@ static bool snapshot(struct vxt_pirepheral *p) {
 
 static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
     struct vga_video *v = VXT_GET_DEVICE(vga_video, p);
-    struct snapshot *snap = &v->snap;
+    struct snapshot * const snap = &v->snap;
 
     if (snap->textmode) {
         int num_col = (snap->width < 640) ? 40 : 80;

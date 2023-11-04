@@ -16,7 +16,7 @@ Browser version is avalible [here](https://realmode.games).
 
 * Intel 8088 or NEC V20 CPU
 * Hardware CPU validator
-* CGA/HGC compatible graphics
+* VGA and CGA compatible graphics
 * GLaBIOS or Turbo XT BIOS 3.1 with extensions
 * Keyboard controller with 83-key XT-style keyboard
 * Serial port with Microsoft 2-button mouse

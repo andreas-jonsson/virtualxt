@@ -28,11 +28,7 @@ References: https://www.scs.stanford.edu/10wi-cs140/pintos/specs/freevga/vga/vga
 */
 
 #include <vxt/vxtu.h>
-
 #include <frontend.h>
-
-#include "font.h"
-
 #include <string.h>
 
 #define PLANE_SIZE 0x10000
@@ -82,6 +78,8 @@ struct snapshot {
     vxt_word height;
     vxt_byte bpp;
     bool textmode;
+    int font_a;
+    int font_b;
 
     int video_page;
     int pixel_shift;

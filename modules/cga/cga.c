@@ -206,7 +206,7 @@ static void out(struct cga_video *c, vxt_word port, vxt_byte data) {
         case 0x3BF: // Enable HGC.
             // Set bit 0 to enable bit 1 of 3B8.
             // Set bit 1 to enable bit 7 of 3B8 and the second 32k of RAM ("Full" mode).
-            #ifndef VXTU_CGA_NO_HGC
+            #ifndef CGA_NO_HGC
                 c->hgc_enable = data & 3;
             #endif
             break;
@@ -250,7 +250,7 @@ static vxt_error reset(struct cga_video *c) {
 static const char *name(struct cga_video *c) {
     (void)c;
     return "CGA"
-        #ifndef VXTU_CGA_NO_HGC
+        #ifndef CGA_NO_HGC
             "/HGC"
         #endif
         " Compatible Device";
