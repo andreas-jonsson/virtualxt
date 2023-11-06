@@ -176,9 +176,6 @@ static int emu_loop(void *ptr) {
 	double frequency = cpu_frequency;
 	Uint64 start = SDL_GetPerformanceCounter();
 
-	if (!ppi_device)
-		return -1;
-
 	while (SDL_AtomicGet(&running)) {
 		struct vxt_step res;
 		SYNC(
@@ -844,6 +841,11 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	if (!ppi_device) {
+		printf("No PPI device!\n");
+		return -1;
+	}
+
 	if (!disk_controller.device) {
 		printf("No disk controller!\n");
 		return -1;
@@ -1020,10 +1022,12 @@ int main(int argc, char *argv[]) {
 
 			char buffer[100];
 			double mhz;
+			bool turbo;
 
 			SYNC(
 				mhz = (double)num_cycles / 500000.0;
 				num_cycles = 0;
+				turbo = vxtu_ppi_turbo_enabled(ppi_device);
 			);
 
 			const char *name = "8088";
@@ -1036,7 +1040,7 @@ int main(int argc, char *argv[]) {
 			}
 			
 			if (ticks > 10000) {
-				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz", name, mhz);
+				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz%s", name, mhz, turbo ? " (Turbo)" : "");
 			} else {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
 			}
