@@ -108,6 +108,20 @@ else ifneq (,$(findstring ios,$(platform)))
       SHARED += -arch armv7 $(MIN_VERSION) -isysroot $(IOSSDK)
       CC = cc -arch armv7 $(MIN_VERSION) -isysroot $(IOSSDK)
    endif
+else ifneq (,$(findstring tvos,$(platform)))
+	EXT ?= dylib
+   TARGET := $(TARGET_NAME)_libretro_tvos.$(EXT)
+   fpic := -fPIC
+   SHARED := -dynamiclib
+   DEFINES := -DIOS -DTVOS
+   MIN_VERSION := -mappletvos-version-min=9.0
+
+   ifeq ($(TVOSSDK),)
+      TVOSSDK := $(shell xcodebuild -version -sdk appletvos Path)
+   endif
+
+   SHARED += -arch arm64 $(MIN_VERSION) -isysroot $(TVOSSDK)
+   CC = cc -arch arm64 $(MIN_VERSION) -isysroot $(TVOSSDK)
 else ifeq ($(platform), emscripten)
    TARGET := $(TARGET_NAME)_libretro_emscripten.bc
    fpic := -fPIC

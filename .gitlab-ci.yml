@@ -50,6 +50,10 @@ include:
   - project: 'libretro-infrastructure/ci-templates'
     file: '/ios9.yml'
 
+  # tvOS
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/tvos-arm64.yml'
+
   #################################### MISC ##################################
   # Emscripten
   - project: 'libretro-infrastructure/ci-templates'
@@ -173,6 +177,15 @@ libretro-build-ios9:
     - release
   extends:
     - .libretro-ios9-make-default
+    - .core-defs
+
+# tvOS
+libretro-build-tvos-arm64:
+  only:
+    - edge
+    - release
+  extends:
+    - .libretro-tvos-arm64-make-default
     - .core-defs
 
 #################################### MISC ##################################
