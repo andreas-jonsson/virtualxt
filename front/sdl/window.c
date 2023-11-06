@@ -26,6 +26,8 @@
 #include <stdbool.h>
 #include <microui.h>
 
+#include <vxt/vxt.h>
+
 #include "window.h"
 #include "mu_renderer.h"
 
@@ -51,10 +53,13 @@ void help_window(mu_Context *ctx) {
 		has_open_windows = true;
 
 		mu_layout_row(ctx, 1, (int[]){-1}, 80);
-		mu_text(ctx,
-			"VirtualXT is a Turbo PC/XT emulator that runs on modern hardware and\n"
-			"operating systems. It is designed to be simple and lightweight yet\n"
-			"still capable enough to run a large library of old application and games.");
+
+		char text_b[256];
+		sprintf(text_b,
+			"VirtualXT (%s) is a Turbo PC/XT emulator that runs on modern\n"
+			"hardware and operating systems. It is designed to be simple and lightweight\n"
+			"yet still capable enough to run a large library of old application and games.", VXT_VERSION);
+		mu_text(ctx, text_b);
 
 		const char *text_l =
 			"<F11>\n"
