@@ -301,6 +301,8 @@ Functions</h2></td></tr>
 <tr class="separator:a8d263c29de823f73f7c4bce773bd5f12"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8cb5523cfd5bc8061dc64af3fe108831"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> <a class="el" href="vxt_8h.html#a05691a5b6a191969b75e371ad5d5fd0d">vxt_timer_id</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a8cb5523cfd5bc8061dc64af3fe108831">vxt_system_install_timer</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, struct vxt_pirepheral *dev, unsigned int us)</td></tr>
 <tr class="separator:a8cb5523cfd5bc8061dc64af3fe108831"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42ef388dd0522be98631ce1a55350317"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a42ef388dd0522be98631ce1a55350317">vxt_system_set_timer_interval</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, <a class="el" href="vxt_8h.html#a05691a5b6a191969b75e371ad5d5fd0d">vxt_timer_id</a> id, unsigned int us)</td></tr>
+<tr class="separator:a42ef388dd0522be98631ce1a55350317"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8776c5c98fe8c88e35984c39f8565fb6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#a8776c5c98fe8c88e35984c39f8565fb6">vxt_system_install_monitor</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, struct vxt_pirepheral *dev, const char *name, void *reg, enum <a class="el" href="vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471">vxt_monitor_flag</a> flags)</td></tr>
 <tr class="separator:a8776c5c98fe8c88e35984c39f8565fb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad72e866fe07a7e17d0ce563c8941fd86"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> <a class="el" href="vxt_8h.html#a2236a1c7fabb4e887ef168a3e721fa08">vxt_byte</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxt_8h.html#ad72e866fe07a7e17d0ce563c8941fd86">vxt_system_read_byte</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, <a class="el" href="vxt_8h.html#acdaa6dbd7750ec3dcc0d0e822dba8ea6">vxt_pointer</a> addr)</td></tr>
@@ -1920,6 +1922,40 @@ Functions</h2></td></tr>
           <td></td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>freq</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a42ef388dd0522be98631ce1a55350317"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a42ef388dd0522be98631ce1a55350317">&#9670;&nbsp;</a></span>vxt_system_set_timer_interval()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> bool vxt_system_set_timer_interval </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *&#160;</td>
+          <td class="paramname"><em>s</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#a05691a5b6a191969b75e371ad5d5fd0d">vxt_timer_id</a>&#160;</td>
+          <td class="paramname"><em>id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>us</em>&#160;</td>
         </tr>
         <tr>
           <td></td>

@@ -115,6 +115,7 @@ var vxt_8h =
     [ "vxt_system_registers", "vxt_8h.html#a7b55087e34ab4ce1cf09bbf2903707ba", null ],
     [ "vxt_system_reset", "vxt_8h.html#abf38c1171596038b8edebaebae730893", null ],
     [ "vxt_system_set_frequency", "vxt_8h.html#a1aa165aa185acea6cf191036cba810b5", null ],
+    [ "vxt_system_set_timer_interval", "vxt_8h.html#a42ef388dd0522be98631ce1a55350317", null ],
     [ "vxt_system_set_tracer", "vxt_8h.html#a2d313961a7b4212980f2dd204b4f8ef6", null ],
     [ "vxt_system_set_userdata", "vxt_8h.html#ac4056f6adbfada488371c4676dd5e11b", null ],
     [ "vxt_system_set_validator", "vxt_8h.html#af775d105a3e3694a1c979483016ee71d", null ],
