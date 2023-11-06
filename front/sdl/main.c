@@ -186,11 +186,12 @@ static int emu_loop(void *ptr) {
 						SDL_AtomicSet(&running, 0);
 					else
 						printf("step error: %s", vxt_error_str(res.err));
+				} else if (res.halted) {
+					SDL_Delay(0); // Yield CPU time to other processes.
 				}
 				num_cycles += res.cycles;
-			} else {
-				frequency = vxtu_ppi_turbo_enabled(ppi_device) ? cpu_frequency : ((double)VXT_DEFAULT_FREQUENCY / 1000000.0);
 			}
+			frequency = vxtu_ppi_turbo_enabled(ppi_device) ? cpu_frequency : ((double)VXT_DEFAULT_FREQUENCY / 1000000.0);
 		);
 
 		for (;;) {
