@@ -983,7 +983,13 @@ int main(int argc, char *argv[]) {
 					break;
 				case SDL_KEYUP:
 					if (e.key.keysym.sym == SDLK_F11) {
-						if ((e.key.keysym.mod & KMOD_CTRL)) {
+						if (e.key.keysym.mod & KMOD_ALT) {
+							printf("Toggle turbo!\n");
+							SYNC(
+								vxt_byte data = ppi_device->io.in(VXT_GET_DEVICE_PTR(ppi_device), 0x61);
+								ppi_device->io.out(VXT_GET_DEVICE_PTR(ppi_device), 0x61, data ^ 4);
+							);
+						} else if (e.key.keysym.mod & KMOD_CTRL) {
 							open_window(ctx, "Eject");
 						} else {
 							if (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) {
