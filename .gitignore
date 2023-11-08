@@ -3,6 +3,7 @@ __pycache__
 /obj
 /bin
 /.vscode
+/*.geany
 /kcov-out
 /build
 /docs
