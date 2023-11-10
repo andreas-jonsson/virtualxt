@@ -66,9 +66,9 @@ static vxt_error ppi_config(void *dev, const char *section, const char *key, con
 
 static struct vxt_pirepheral *ppi_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)args;
+    
     struct vxt_pirepheral *p = vxtu_ppi_create(alloc);
-    if (!p)
-        return NULL;
+    if (!p) return NULL;
 
 	if (frontend) {
 		struct frontend_interface *fi = (struct frontend_interface*)frontend;
