@@ -70,15 +70,17 @@ static struct vxt_pirepheral *ppi_create(vxt_allocator *alloc, void *frontend, c
     if (!p)
         return NULL;
 
-    struct frontend_interface *fi = (struct frontend_interface*)frontend;
-    if (fi->set_keyboard_controller) {
-        struct frontend_keyboard_controller controller = { p, &vxtu_ppi_key_event };
-        fi->set_keyboard_controller(&controller);
-    }
-    if (fi->set_audio_adapter) {
-        struct frontend_audio_adapter adapter = { p, &vxtu_ppi_generate_sample };
-        fi->set_audio_adapter(&adapter);
-    }
+	if (frontend) {
+		struct frontend_interface *fi = (struct frontend_interface*)frontend;
+		if (fi->set_keyboard_controller) {
+			struct frontend_keyboard_controller controller = { p, &vxtu_ppi_key_event };
+			fi->set_keyboard_controller(&controller);
+		}
+		if (fi->set_audio_adapter) {
+			struct frontend_audio_adapter adapter = { p, &vxtu_ppi_generate_sample };
+			fi->set_audio_adapter(&adapter);
+		}
+	}
 
     p->config = &ppi_config;
     return p;

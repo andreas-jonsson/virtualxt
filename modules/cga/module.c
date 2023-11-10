@@ -32,7 +32,7 @@ static struct vxt_pirepheral *cga_module_create(vxt_allocator *alloc, void *fron
         return NULL;
 
     struct frontend_interface *fi = (struct frontend_interface*)frontend;
-    if (fi->set_video_adapter) {
+    if (fi && fi->set_video_adapter) {
 		struct frontend_video_adapter a = {
 			p,
 			&cga_border_color,

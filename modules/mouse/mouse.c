@@ -119,7 +119,7 @@ static struct vxt_pirepheral *create(vxt_allocator *alloc, void *frontend, const
     }
 
     struct frontend_interface *fi = (struct frontend_interface*)frontend;
-    if (fi->set_mouse_adapter) {
+    if (fi && fi->set_mouse_adapter) {
 		struct frontend_mouse_adapter a;
         a.device = (struct vxt_pirepheral*)PIREPHERAL;
         a.push_event = &push_event;
