@@ -96,7 +96,7 @@ bool joystick_push_event(struct vxt_pirepheral *p, const struct frontend_joystic
 struct vxt_pirepheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args);
 
 // From mouse.c
-struct vxt_pirepheral *mouse_create(vxt_allocator *alloc);
+struct vxt_pirepheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args);
 bool mouse_push_event(struct vxt_pirepheral *p, const struct frontend_mouse_event *ev);
 
 static void no_log(enum retro_log_level level, const char *fmt, ...) {
@@ -346,7 +346,7 @@ void retro_init(void) {
         disk = vxtu_disk_create(&realloc, &intrf);
         ppi = vxtu_ppi_create(&realloc);
         cga = cga_create(&realloc);
-        mouse = mouse_create(&realloc); // COM1
+        mouse = mouse_create(&realloc, NULL, "0x3F8"); // COM1
         joystick = joystick_create(&realloc, NULL, "0x201");
 
         struct vxt_pirepheral *devices[] = {
