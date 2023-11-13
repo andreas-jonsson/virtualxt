@@ -678,7 +678,7 @@ static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
 
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.flags |= 0xF002;
+   p->regs.flags = (pop(p) & ALL_FLAGS) | 0xF002;
 }
 
 static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
