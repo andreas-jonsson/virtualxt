@@ -667,11 +667,7 @@ int main(int argc, char *argv[]) {
 
 	if (args.v20) {
 		cpu_type = VXT_CPU_V20;
-		#ifdef VXT_CPU_286
-			printf("CPU type: 286\n");
-		#else
-			printf("CPU type: V20\n");
-		#endif
+		printf("CPU type: V20\n");
 	} else {
 		printf("CPU type: 8088\n");
 	}
@@ -1039,11 +1035,7 @@ int main(int argc, char *argv[]) {
 
 			const char *name = "8088";
 			if (cpu_type == VXT_CPU_V20) {
-				#ifdef VXT_CPU_286
-					name = "286";
-				#else
-					name = "V20";
-				#endif
+				name = "V20";
 			}
 			
 			if (ticks > 10000) {

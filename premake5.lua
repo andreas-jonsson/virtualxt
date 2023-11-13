@@ -40,11 +40,6 @@ newoption {
     description = "Enable the PI8088 hardware validator"
 }
 
-newoption {
-    trigger = "i286",
-    description = "Provide some 286 support when running with a V20"
-}
-
 newaction {
     trigger = "check",
     description = "Run CppCheck on libvxt",
@@ -94,9 +89,6 @@ workspace "virtualxt"
 
     filter "options:memclear"
         defines "VXTU_MEMCLEAR"
-
-    filter "options:i286"
-        defines "VXT_CPU_286"
 
     filter "options:validator"
         defines "PI8088"

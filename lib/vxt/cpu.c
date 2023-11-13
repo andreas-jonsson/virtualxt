@@ -161,16 +161,12 @@ void cpu_reset_cycle_count(CONSTSP(cpu) p) {
 
 void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
-   vxt_memclear(&p->regs, sizeof(p->regs));
-   #ifdef VXT_CPU_286
-      p->regs.flags = 0x2;
-   #else
-      p->regs.flags = 0xF002;
-   #endif
-   p->regs.cs = 0xFFFF;
-   p->regs.debug = false;
-   p->inst_queue_count = 0;
-   cpu_reset_cycle_count(p);
+	vxt_memclear(&p->regs, sizeof(p->regs));
+	p->regs.flags = 0xF002;
+	p->regs.cs = 0xFFFF;
+	p->regs.debug = false;
+	p->inst_queue_count = 0;
+	cpu_reset_cycle_count(p);
 }
 
 vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr) {
