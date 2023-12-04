@@ -44,7 +44,6 @@ struct ppi {
     vxt_byte xt_switches;
 
     vxt_byte command;
-    vxt_byte refresh_request;
     bool keyboard_enable;
     bool turbo_enabled;
 
@@ -69,7 +68,7 @@ static vxt_byte in(struct ppi *c, vxt_word port) {
             return data;
         }
         case 0x61:
-            return (c->port_61 & 0xEF) | c->refresh_request;
+            return c->port_61;
         case 0x62:
             return (c->port_61 & 8) ? (c->xt_switches >> 4) : (c->xt_switches & 0xF);
         case 0x64:

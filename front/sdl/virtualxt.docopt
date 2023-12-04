@@ -6,7 +6,6 @@ Options:
   --hdboot                Prefer booting from harddrive.
   --halt                  Debug break on startup.
   --mute                  Disable audio.
-  --no-modules            Disable all modules.
   --no-activity           Disable disk activity indicator.
   --v20                   Enable NEC V20 CPU support.
   --clean                 Remove config file and write a new default one.
@@ -15,6 +14,6 @@ Options:
   --rifs=PATH             Enable experimental RIFS support. (Shared folders)
   --config=PATH           Set config directory.
   --trace=FILE            Write CPU trace to file.
-  --frequency=MHZ         CPU frequency. [default: 4.772726]
+  --frequency=MHZ         CPU frequency. [default: 8.0]
   -a --floppy=FILE        Mount floppy image as drive A.
   -c --harddrive=FILE     Mount harddrive image as drive C.

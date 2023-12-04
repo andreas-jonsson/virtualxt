@@ -3,11 +3,16 @@ __pycache__
 /obj
 /bin
 /.vscode
+/*.geany
 /kcov-out
 /build
 /docs
 /gh-pages
 /test
+
+/.cache
+/compile_commands
+/compile_commands.json
 
 /Makefile
 /*.make

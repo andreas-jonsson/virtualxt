@@ -47,7 +47,7 @@ static vxt_error update_timers(CONSTP(vxt_system) s, int ticks) {
     for (int i = 0; i < s->num_timers; i++) {
         struct timer *t = &s->timers[i];
         t->ticks += ticks;
-        if (t->ticks >= (INT64)(t->interval * (double)s->frequency)) {
+        if (UNLIKELY(t->ticks >= (INT64)(t->interval * (double)s->frequency))) {
             vxt_error err = t->dev->timer(VXT_GET_DEVICE_PTR(t->dev), t->id, (int)t->ticks);
             if (err != VXT_NO_ERROR)
                 return err;
@@ -91,6 +91,9 @@ VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty
         internal->s = s;
     }
     s->num_devices = i;
+
+    for (i = 0; i < MAX_TIMERS; i++)
+        s->timers[i].id = VXT_INVALID_TIMER_ID;
 
     // Always init dummy device 0. Depends on memset!
     s->devices[0] = (struct vxt_pirepheral*)&s->dummy;
@@ -205,7 +208,7 @@ VXT_API struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
         step.cycles += c;
         step.halted = s->cpu.halt;
 
-        if ((step.err = update_timers(s, c)) != VXT_NO_ERROR)
+        if (UNLIKELY((step.err = update_timers(s, c)) != VXT_NO_ERROR))
             return step;
 
         if (newc >= cycles)
@@ -293,6 +296,19 @@ VXT_API vxt_timer_id vxt_system_install_timer(CONSTP(vxt_system) s, struct vxt_p
     t->dev = dev;
     t->id = (vxt_timer_id)s->num_timers++;
     return t->id;
+}
+
+VXT_API bool vxt_system_set_timer_interval(vxt_system *s, vxt_timer_id id, unsigned int us) {
+    if (s->num_timers >= MAX_TIMERS)
+        return false;
+
+    struct timer *t = &s->timers[id];
+    if (t->id == VXT_INVALID_TIMER_ID)
+        return false;
+
+    t->ticks = 0;
+    t->interval = (double)us / 1000000.0;
+    return true;
 }
 
 VXT_API void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word addr) {

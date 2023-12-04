@@ -42,20 +42,76 @@
    }
 #endif
 
+static void read_opcode(CONSTSP(cpu) p) {
+   for (;;) {
+      switch (p->opcode = read_opcode8(p)) {
+         case 0x26:
+            p->seg = p->regs.es;
+            p->seg_override = p->opcode;
+            p->cycles += 2;
+            break;
+         case 0x2E:
+            p->seg = p->regs.cs;
+            p->seg_override = p->opcode;
+            p->cycles += 2;
+            break;
+         case 0x36:
+            p->seg = p->regs.ss;
+            p->seg_override = p->opcode;
+            p->cycles += 2;
+            break;
+         case 0x3E:
+            p->seg = p->regs.ds;
+            p->seg_override = p->opcode;
+            p->cycles += 2;
+            break;
+         case 0xF2: // REPNE/REPNZ
+         case 0xF3: // REP/REPE/REPZ
+            p->repeat = p->opcode;
+            p->cycles += 2;
+            break;
+         default:
+            if (p->repeat && !valid_repeat(p, p->opcode))
+               p->repeat = 0;
+            return;
+      }
+   }
+}
+
+static void prep_exec(CONSTSP(cpu) p) {
+   p->inst_queue_dirty = false;
+   p->bus_transfers = 0;
+
+   bool trap = (p->regs.flags & VXT_TRAP) != 0;
+   bool interrupt = (p->regs.flags & VXT_INTERRUPT) != 0;
+
+   if (UNLIKELY(trap && !p->trap)) {
+      p->trap = interrupt;
+      call_int(p, 1);
+   } else if (UNLIKELY(interrupt)) {
+      p->halt = p->trap = false;
+      if (LIKELY(p->pic != NULL)) {
+         int n = p->pic->pic.next(VXT_GET_DEVICE_PTR(p->pic));
+         if (n >= 0)
+            call_int(p, n);
+      }
+   }
+
+   // We need to do a direct reset in case we do interrupt.
+   if (UNLIKELY(p->inst_queue_dirty)) {
+      p->inst_queue_count = 0;
+      p->inst_queue_dirty = false;
+   }
+
+   p->seg = p->regs.ds;
+   p->seg_override = 0;
+   p->repeat = 0;
+   p->inst_start = p->regs.ip;
+}
+
 static void do_exec(CONSTSP(cpu) p) {
    const CONSTSP(instruction) inst = &p->opcode_table[p->opcode];
    ENSURE(inst->opcode == p->opcode);
-
-   // TODO: Remove this debug code.
-   if (!p->opcode) {
-      // Unlikely to be correct.
-      if (++p->opcode_zero_count > 5) {
-         p->regs.debug = true;
-         p->opcode_zero_count = 0;
-      }
-   } else {
-      p->opcode_zero_count = 0;
-   }
 
    p->ea_cycles = 0;
    if (inst->modregrm)
@@ -63,10 +119,10 @@ static void do_exec(CONSTSP(cpu) p) {
    inst->func(p, inst);
    
    p->cycles += inst->cycles;
-   if (p->cpu_type == VXT_CPU_8088)
+   if (LIKELY(p->cpu_type == VXT_CPU_8088))
       p->cycles += p->ea_cycles;
 
-   if (p->inst_queue_dirty) {
+   if (UNLIKELY(p->inst_queue_dirty)) {
       p->inst_queue_count = 0;
    } else {
       #ifndef VXT_NO_PREFETCH
@@ -85,7 +141,7 @@ int cpu_step(CONSTSP(cpu) p) {
    VALIDATOR_BEGIN(p, &p->regs);
 
    prep_exec(p);
-   if (!p->halt) {
+   if (LIKELY(!p->halt)) {
       read_opcode(p);
       do_exec(p);
    } else {
@@ -105,16 +161,12 @@ void cpu_reset_cycle_count(CONSTSP(cpu) p) {
 
 void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
-   vxt_memclear(&p->regs, sizeof(p->regs));
-   #ifdef VXT_CPU_286
-      p->regs.flags = 0x2;
-   #else
-      p->regs.flags = 0xF002;
-   #endif
-   p->regs.cs = 0xFFFF;
-   p->regs.debug = false;
-   p->inst_queue_count = 0;
-   cpu_reset_cycle_count(p);
+	vxt_memclear(&p->regs, sizeof(p->regs));
+	p->regs.flags = 0xF002;
+	p->regs.cs = 0xFFFF;
+	p->regs.debug = false;
+	p->inst_queue_count = 0;
+	cpu_reset_cycle_count(p);
 }
 
 vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr) {

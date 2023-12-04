@@ -25,10 +25,12 @@
 
 static struct vxt_pirepheral *disk_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)args;
+    
     struct frontend_interface *fi = (struct frontend_interface*)frontend;
+    if (!fi) return NULL;
+    
     struct vxt_pirepheral *p = vxtu_disk_create(alloc, &fi->disk.di);
-    if (!p)
-        return NULL;
+    if (!p) return NULL;
 
     if (fi->set_disk_controller) {
 		struct frontend_disk_controller c = {

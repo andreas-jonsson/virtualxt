@@ -1,3 +1,14 @@
+require "tools/premake-export-compile-commands/export-compile-commands"
+
+newaction {
+    trigger = 'export-compile-commands',
+    description = 'Export compiler commands in JSON Compilation Database Format',
+    execute = function()
+        export_compile_commands_execute()
+        os.copyfile("compile_commands/release_native.json", "compile_commands.json")
+    end
+}
+
 newoption {
     trigger = "sdl-config",
     value = "PATH",
@@ -27,11 +38,6 @@ newoption {
 newoption {
     trigger = "validator",
     description = "Enable the PI8088 hardware validator"
-}
-
-newoption {
-    trigger = "i286",
-    description = "Provide some 286 support when running with a V20"
 }
 
 newaction {
@@ -83,9 +89,6 @@ workspace "virtualxt"
 
     filter "options:memclear"
         defines "VXTU_MEMCLEAR"
-
-    filter "options:i286"
-        defines "VXT_CPU_286"
 
     filter "options:validator"
         defines "PI8088"
@@ -227,7 +230,7 @@ workspace "virtualxt"
         includedirs { "lib/libretro", "front/common" }
         files { "front/libretro/*.h", "front/libretro/*.c" }
         
-        defines { "VXTU_CGA_RED=2", "VXTU_CGA_GREEN=1", "VXTU_CGA_BLUE=0", "VXTU_CGA_ALPHA=3" }
+        defines { "FRONTEND_VIDEO_RED=2", "FRONTEND_VIDEO_GREEN=1", "FRONTEND_VIDEO_BLUE=0", "FRONTEND_VIDEO_ALPHA=3" }
         includedirs "lib/vxt/include"
         files { "lib/vxt/**.h", "lib/vxt/*.c" }
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
@@ -338,7 +341,7 @@ workspace "virtualxt"
 
         filter "toolset:clang or gcc"
             buildoptions "-Wno-unused-parameter"
-            linkoptions "-L../lib"
+            linkoptions "-Wl,-rpath,'$$ORIGIN'/../lib"
 
         filter "toolset:clang"
             buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }

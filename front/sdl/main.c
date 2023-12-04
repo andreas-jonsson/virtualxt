@@ -99,6 +99,9 @@ int num_devices = 0;
 struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = { NULL };
 #define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
 
+// Needed for detecting turbo mode.
+struct vxt_pirepheral *ppi_device = NULL;
+
 SDL_atomic_t running = {1};
 SDL_mutex *emu_mutex = NULL;
 SDL_Thread *emu_thread = NULL;
@@ -183,9 +186,12 @@ static int emu_loop(void *ptr) {
 						SDL_AtomicSet(&running, 0);
 					else
 						printf("step error: %s", vxt_error_str(res.err));
+				} else if (res.halted) {
+					SDL_Delay(0); // Yield CPU time to other processes.
 				}
 				num_cycles += res.cycles;
 			}
+			frequency = vxtu_ppi_turbo_enabled(ppi_device) ? cpu_frequency : ((double)VXT_DEFAULT_FREQUENCY / 1000000.0);
 		);
 
 		for (;;) {
@@ -564,6 +570,7 @@ static bool write_default_config(const char *path, bool clean) {
 		"uart=0x3F8,4 \t;COM1\n"
 		"uart=0x2F8,3 \t;COM2\n"
 		"cga=\n"
+		";vga=vgabios.bin\n"
 		"disk=\n"
 		"bios=0xE0000,vxtx.bin \t;DISK\n"
 		"rtc=0x240\n"
@@ -576,18 +583,14 @@ static bool write_default_config(const char *path, bool clean) {
 		"mouse=0x3F8\n"
 		";serial=0x2F8,/dev/ttyUSB0\n"
 		";covox=0x378,disney\n"
-		";fdc=\n"
 		";network=eth0\n"
 		";arstech_isa=libarsusb4.so\n"
 		";ch36x_isa=/dev/ch36xpci0\n"
 		";lua=lua/serial_debug.lua,0x3F8\n"
-		"\n; The VGA module requires the CGA one to be disabled.\n"
-		";vga=bios/vgabios.bin\n"
 		"\n; GDB server module should always be loadad after the others.\n"
 		"; Otherwise you might have trouble with hardware breakpoints.\n"
 		";gdb=1234\n"
 		"\n[args]\n"
-		";bios=bios/pcxtbios.bin\n"
 		";halt=1\n"
 		";v20=1\n"
 		";hdboot=1\n"
@@ -664,11 +667,7 @@ int main(int argc, char *argv[]) {
 
 	if (args.v20) {
 		cpu_type = VXT_CPU_V20;
-		#ifdef VXT_CPU_286
-			printf("CPU type: 286\n");
-		#else
-			printf("CPU type: V20\n");
-		#endif
+		printf("CPU type: V20\n");
 	} else {
 		printf("CPU type: 8088\n");
 	}
@@ -779,7 +778,7 @@ int main(int argc, char *argv[]) {
 	#endif
 	printf("Loaded modules:\n");
 
-	if (!args.no_modules && ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, VXTU_CAST(&realloc, vxt_allocator*, void*))) {
+	if (ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &load_modules, VXTU_CAST(&realloc, vxt_allocator*, void*))) {
 		printf("ERROR: Could not load all modules!\n");
 		return -1;
 	}
@@ -831,8 +830,17 @@ int main(int argc, char *argv[]) {
 	printf("Installed pirepherals:\n");
 	for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
 		struct vxt_pirepheral *device = vxt_system_pirepheral(vxt, (vxt_byte)i);
-		if (device)
+		if (device) {
 			printf("%d - %s\n", i, vxt_pirepheral_name(device));
+
+			if (vxt_pirepheral_class(device) == VXT_PCLASS_PPI)
+				ppi_device = device;
+		}
+	}
+
+	if (!ppi_device) {
+		printf("No PPI device!\n");
+		return -1;
 	}
 
 	if (!disk_controller.device) {
@@ -918,11 +926,11 @@ int main(int argc, char *argv[]) {
 				case SDL_MOUSEMOTION:
 					if (mouse_adapter.device && SDL_GetRelativeMouseMode() && !has_open_windows) {
 						Uint32 state = SDL_GetMouseState(NULL, NULL);
-						struct vxtu_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
+						struct frontend_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
 						if (state & SDL_BUTTON_LMASK)
-							ev.buttons |= VXTU_MOUSE_LEFT;
+							ev.buttons |= FRONTEND_MOUSE_LEFT;
 						if (state & SDL_BUTTON_RMASK)
-							ev.buttons |= VXTU_MOUSE_RIGHT;
+							ev.buttons |= FRONTEND_MOUSE_RIGHT;
 						SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
 					}
 					break;
@@ -934,11 +942,11 @@ int main(int argc, char *argv[]) {
 						}
 						SDL_SetRelativeMouseMode(true);
 
-						struct vxtu_mouse_event ev = {0};
+						struct frontend_mouse_event ev = {0};
 						if (e.button.button == SDL_BUTTON_LEFT)
-							ev.buttons |= VXTU_MOUSE_LEFT;
+							ev.buttons |= FRONTEND_MOUSE_LEFT;
 						if (e.button.button == SDL_BUTTON_RIGHT)
-							ev.buttons |= VXTU_MOUSE_RIGHT;
+							ev.buttons |= FRONTEND_MOUSE_RIGHT;
 						SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
 					}
 					break;
@@ -971,7 +979,13 @@ int main(int argc, char *argv[]) {
 					break;
 				case SDL_KEYUP:
 					if (e.key.keysym.sym == SDLK_F11) {
-						if ((e.key.keysym.mod & KMOD_CTRL)) {
+						if (e.key.keysym.mod & KMOD_ALT) {
+							printf("Toggle turbo!\n");
+							SYNC(
+								vxt_byte data = ppi_device->io.in(VXT_GET_DEVICE_PTR(ppi_device), 0x61);
+								ppi_device->io.out(VXT_GET_DEVICE_PTR(ppi_device), 0x61, data ^ 4);
+							);
+						} else if (e.key.keysym.mod & KMOD_CTRL) {
 							open_window(ctx, "Eject");
 						} else {
 							if (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) {
@@ -1011,23 +1025,21 @@ int main(int argc, char *argv[]) {
 
 			char buffer[100];
 			double mhz;
+			bool turbo;
 
 			SYNC(
 				mhz = (double)num_cycles / 500000.0;
 				num_cycles = 0;
+				turbo = vxtu_ppi_turbo_enabled(ppi_device);
 			);
 
 			const char *name = "8088";
 			if (cpu_type == VXT_CPU_V20) {
-				#ifdef VXT_CPU_286
-					name = "286";
-				#else
-					name = "V20";
-				#endif
+				name = "V20";
 			}
 			
 			if (ticks > 10000) {
-				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz", name, mhz);
+				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz%s", name, mhz, turbo ? " (Turbo)" : "");
 			} else {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
 			}

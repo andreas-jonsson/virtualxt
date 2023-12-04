@@ -27,61 +27,9 @@ static void ext_F(CONSTSP(cpu) p, INST(inst)) {
    VALIDATOR_DISCARD(p);
 
    vxt_byte ext_op = read_opcode8(p);
-   #ifdef VXT_CPU_286
-      switch (ext_op) {
-         case 0:
-            read_modregrm(p);
-            switch (p->mode.reg) {
-               case 0: // SLDT - Store Local Descriptor Table Register
-                  return;
-               case 1: // STR - Store Task Register
-                  return;
-               case 2: // LDTR - Load Local Descriptor Table Register
-                  return;
-               case 3: // LTR - Load Task Register
-                  return;
-               case 4: // VERR - Verify a Segment for Reading
-                  return;
-               case 5: // VERW - Verify a Segment for Writing
-                  return;
-            }
-            return;
-         case 1:
-            read_modregrm(p);
-            switch (p->mode.reg) {
-               case 0: // SGDT - Store Global Descriptor Table Register
-                  return;
-               case 1: // SIDT - Store Interrupt Descriptor Table Register
-                  return;
-               case 2: // LGDT - Load Global Descriptor Table Register
-                  return;
-               case 3: // LIDT - Load Interrupt Descriptor Table Register
-                  return;
-               case 4: // SMSW - Store Machine Status Word
-                  return;
-               case 6: // LMSW - Load Machine Status Word
-                  return;
-            }
-            return;
-         case 2: // LAR - Load Access Rights Byte
-            read_modregrm(p);
-            return;
-         case 3: // LSL - Load Segment Limit
-            read_modregrm(p);
-            return;
-         case 5: // LOADALL - Load All of the CPU Registers
-            return;
-         case 6: // CLTS - Clear Task-Switched Flag in CR0
-            return;
-      }
-      p->regs.ip = p->inst_start;
-      call_int(p, 6); 
-   #else
-      
-      // TODO
-      UNUSED(ext_op);
-
-   #endif
+     
+   // TODO
+   UNUSED(ext_op);
 
    p->regs.ip = p->inst_start;
    call_int(p, 6); 

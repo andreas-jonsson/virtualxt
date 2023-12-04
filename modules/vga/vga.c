@@ -20,27 +20,22 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-// Reference: https://www.scs.stanford.edu/10wi-cs140/pintos/specs/freevga/vga/vga.htm
+/*
+References: https://www.scs.stanford.edu/10wi-cs140/pintos/specs/freevga/vga/vga.htm
+            http://www.osdever.net/FreeVGA/vga/vga.htm
+            https://wiki.osdev.org/Video_Signals_And_Timing
+
+*/
 
 #include <vxt/vxtu.h>
-
 #include <frontend.h>
-
-#include "font.h"
-#include "palette.h"
-
 #include <string.h>
 
 #define PLANE_SIZE 0x10000
 #define MEMORY_SIZE 0x40000
 #define MEMORY_START 0xA0000
 #define CGA_BASE 0x18000
-#define SCANLINE_TIMING 16
 #define CURSOR_TIMING 333333
-
-#define VIDEO_MODE_BDA_ADDRESS (VXT_POINTER(0x40, 0x49))
-#define VIDEO_MODE_BDA_START_ADDRESS (VIDEO_MODE_BDA_ADDRESS & 0xFFFF0)
-#define VIDEO_MODE_BDA_END_ADDRESS (VIDEO_MODE_BDA_START_ADDRESS + 0xF)
 
 #define MEMORY(p, i) ((p)[(i) & (MEMORY_SIZE - 1)])
 
@@ -68,28 +63,9 @@
         case 3: (value) ^= (latch); break;          \
 	}                                               \
 
-static const vxt_dword cga_palette[] = {
-	0x000000,
-	0x0000AA,
-	0x00AA00,
-	0x00AAAA,
-	0xAA0000,
-	0xAA00AA,
-	0xAA5500,
-	0xAAAAAA,
-	0x555555,
-	0x5555FF,
-	0x55FF55,
-	0x55FFFF,
-	0xFF5555,
-	0xFF55FF,
-	0xFFFF55,
-	0xFFFFFF,
-};
-
 struct snapshot {
     vxt_byte mem[MEMORY_SIZE];
-    vxt_byte rgba_surface[640 * 480 * 4];
+    vxt_byte rgba_surface[720 * 480 * 4];
     vxt_dword palette[0x100];
 
     bool cursor_blink;
@@ -98,12 +74,19 @@ struct snapshot {
     vxt_byte cursor_end;
     int cursor_offset;
 
+    vxt_word width;
+    vxt_word height;
+    vxt_byte bpp;
+    bool textmode;
+    int font_a;
+    int font_b;
+
     int video_page;
     int pixel_shift;
     bool plane_mode;
-    vxt_byte video_mode;
-    vxt_byte mode_ctrl_reg;
-    vxt_byte color_ctrl_reg;
+    vxt_byte mode_ctrl;
+    vxt_byte color_select;
+    vxt_byte pal_reg[16];
 };
 
 struct vga_video {
@@ -111,9 +94,13 @@ struct vga_video {
     bool is_dirty;
     struct snapshot snap;
 
+    vxt_timer_id retrace_timer;
     vxt_timer_id scanline_timer;
-    int scanline;
-    int retrace;
+
+    vxt_word width;
+    vxt_word height;
+    vxt_byte bpp;
+    bool textmode;
 
     bool cursor_blink;
     bool cursor_visible;
@@ -121,17 +108,12 @@ struct vga_video {
     vxt_byte cursor_end;
     int cursor_offset;
 
-    vxt_byte bios_bda_memory[16];
-    vxt_byte video_mode;
     vxt_byte mem_latch[4];
-
     vxt_dword palette[0x100];
 
     bool (*set_video_adapter)(const struct frontend_video_adapter*);
 
     struct {
-        vxt_byte mode_ctrl_reg;
-        vxt_byte color_ctrl_reg;
         vxt_byte feature_ctrl_reg;
         vxt_byte status_reg;
         bool flip_3C0;
@@ -163,64 +145,117 @@ struct vga_video {
 
 #include "render.inl"
 
-static vxt_byte read(struct vga_video *v, vxt_pointer addr) {
-    if ((addr >= VIDEO_MODE_BDA_START_ADDRESS) && (addr <= VIDEO_MODE_BDA_END_ADDRESS)) {
-        if (addr == VIDEO_MODE_BDA_ADDRESS)
-            return v->video_mode;
-        return v->bios_bda_memory[addr - VIDEO_MODE_BDA_START_ADDRESS];
+static void update_video_mode(struct vga_video *v) {
+    const vxt_byte* const crt = v->reg.crt_reg;
+
+    vxt_byte dots = (v->reg.seq_reg[1] & 1) ? 8 : 9;
+	v->width = ((crt[1] + 1) - ((crt[5] & 0x60) >> 5)) * dots;
+	v->height = (crt[0x12] | ((crt[7] & 2) ? 0x100 : 0) | ((crt[7] & 0x40) ? 0x200 : 0)) + 1;
+
+    int htotal = (int)crt[0] + 5;
+    int vtotal = (int)crt[6] | ((crt[7] & 1) ? 0x100 : 0) | ((crt[7] & 0x20) ? 0x200 : 0);
+    double pixel_clock = (v->reg.misc_output & 4) ? 28322000.0 : 25175000.0;
+
+    if (crt[9] & 0x80)
+        v->height >>= 1;
+
+    v->bpp = 4;
+    v->textmode = true;
+
+    if (v->reg.attr_reg[0x10] & 1) {
+        v->textmode = false;
+
+		switch ((v->reg.gfx_reg[5] >> 5) & 3) {
+            case 0:
+                v->bpp = ((v->reg.attr_reg[0x12] & 0xF) == 1) ? 1 : 4;
+                break;
+            case 1:
+                v->bpp = 2;
+                break;
+            case 2:
+            case 3:
+                v->bpp = 8;
+
+                // TODO: We should NOT have to adjust this here.
+                v->width = 320;
+                v->height = 200;
+                break;
+		}
     }
+
+    if (v->width < 160) v->width = 160;
+    else if (v->width > 720) v->width = 720;
+
+    if (v->height < 100) v->height = 100;
+    else if (v->height > 480) v->height = 480;
+
+    int freq_div = htotal * vtotal * (int)dots;
+    unsigned int interval_us = (freq_div > 0) ? (unsigned int)(500000.0 / (pixel_clock / (double)freq_div)) : 0;
+    vxt_system_set_timer_interval(VXT_GET_SYSTEM(v), v->retrace_timer, interval_us);
+
+    freq_div = htotal * (int)dots;
+    interval_us = (freq_div > 0) ? (unsigned int)(500000.0 / (pixel_clock / (double)freq_div)) : 0;
+    vxt_system_set_timer_interval(VXT_GET_SYSTEM(v), v->scanline_timer, interval_us);
+
+	//VXT_LOG("Video Mode: %dx%d %dbpp @ %.02fHz%s", v->width, v->height, v->bpp, pixel_clock / (double)(htotal * vtotal * (int)dots), v->textmode ? " (textmode)" : "");
+}
+
+static vxt_byte read(struct vga_video *v, vxt_pointer addr) {
     addr -= MEMORY_START;
 
-    if (v->reg.seq_reg[5] & 8) {
-        VXT_LOG("Readmode 1 is unsupported!");
-        return 0;
-    }
-
-	if ((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x10) && (v->video_mode != 0x12))
+	if (v->textmode || (v->bpp != 4))
         return MEMORY(v->mem, addr);
 
-    if (!(v->reg.seq_reg[4] & 6))
+    if (v->reg.seq_reg[4] & 8)
         return MEMORY(v->mem, addr);
-
 
     v->mem_latch[0] = MEMORY(v->mem, addr);
     v->mem_latch[1] = MEMORY(v->mem, addr + PLANE_SIZE);
     v->mem_latch[2] = MEMORY(v->mem, addr + PLANE_SIZE * 2);
     v->mem_latch[3] = MEMORY(v->mem, addr + PLANE_SIZE * 3);
-    return v->mem_latch[v->reg.gfx_reg[4] & 3];
+
+    vxt_byte data = 0;
+    if (v->reg.seq_reg[5] & 8) { // Readmode 1
+        vxt_byte map_mask = v->reg.seq_reg[2] & 0xF;
+        FOR_PLANES(map_mask,
+            if (v->reg.gfx_reg[7] & M) {
+                if (MEMORY(v->mem, addr + PLANE_SIZE * I) == (v->reg.gfx_reg[2] & 0xF))
+                    data |= M;
+            }
+        );
+    } else { // Readmode 0
+        data = v->mem_latch[v->reg.gfx_reg[4] & 3];
+    }
+    return data;
 }
 
 static void write(struct vga_video *v, vxt_pointer addr, vxt_byte data) {
+    addr -= MEMORY_START;
     v->is_dirty = true;
 
-    if ((addr >= VIDEO_MODE_BDA_START_ADDRESS) && (addr <= VIDEO_MODE_BDA_END_ADDRESS)) {
-        if ((addr == VIDEO_MODE_BDA_ADDRESS) && (v->video_mode != data)) {
-            VXT_LOG("Switch video mode: 0x%X", data);
-            v->video_mode = data;
-            v->reg.seq_reg[4] = 0; // Set chained mode.
-            return;
-        }
-        v->bios_bda_memory[addr - VIDEO_MODE_BDA_START_ADDRESS] = data;
+	if (v->textmode || (v->bpp != 4)) {
+        MEMORY(v->mem, addr) = data;
         return;
     }
-    addr -= MEMORY_START;
 
-	if (((v->video_mode != 0xD) && (v->video_mode != 0xE) && (v->video_mode != 0x10) && (v->video_mode != 0x12)) || !(v->reg.seq_reg[4] & 6)) {
+	if (v->reg.seq_reg[4] & 8) {
         MEMORY(v->mem, addr) = data;
         return;
     }
 
     vxt_byte *gr = v->reg.gfx_reg;
     vxt_byte bit_mask = gr[8];
-    vxt_byte map_mask = v->reg.seq_reg[2];
+    vxt_byte map_mask = v->reg.seq_reg[2] & 0xF;
 
     switch (gr[5] & 3) {
         case 0:
             ROTATE_OP(gr, data);
             FOR_PLANES(map_mask,
-                vxt_byte value = (data & M) ? 0xFF : 0x0;
+                vxt_byte value = data;
                 if (gr[1] & M)
                     value = (gr[0] & M) ? 0xFF : 0x0;
+                else
+                    ROTATE_OP(gr, value);
                 LOGIC_OP(gr, value, v->mem_latch[I]);
                 MEMORY(v->mem, addr + PLANE_SIZE * I) = (bit_mask & value) | (~bit_mask & v->mem_latch[I]);
             );
@@ -294,10 +329,6 @@ static vxt_byte in(struct vga_video *v, vxt_word port) {
         case 0x3B5:
         case 0x3D5:
             return v->reg.crt_reg[v->reg.crt_addr];
-        case 0x3D8:
-            return v->reg.mode_ctrl_reg;
-        case 0x3D9:
-		    return v->reg.color_ctrl_reg;
         case 0x3BA:
         case 0x3DA:
             break;
@@ -316,14 +347,12 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
     v->is_dirty = true;
     switch (port) {
         case 0x3C0:
-            if (v->reg.flip_3C0)
-                v->reg.attr_addr = data;
-            else
-                v->reg.attr_reg[v->reg.attr_addr] = data;
-            v->reg.flip_3C0 = !v->reg.flip_3C0;
-            break;
         case 0x3C1:
-            v->reg.attr_reg[v->reg.attr_addr] = data;
+            if (v->reg.flip_3C0)
+                v->reg.attr_reg[v->reg.attr_addr] = data;
+            else
+                v->reg.attr_addr = data;
+            v->reg.flip_3C0 = !v->reg.flip_3C0;
             break;
         case 0x3C2:
             v->reg.misc_output = data;
@@ -336,6 +365,7 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
             break;
         case 0x3C5:
             v->reg.seq_reg[v->reg.seq_addr] = data;
+            update_video_mode(v);
             break;
         case 0x3C7:
             v->reg.pal_read_index = data;
@@ -362,7 +392,7 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
                     v->reg.pal_write_latch = 0;
                     v->palette[v->reg.pal_write_index++] = v->reg.pal_rgb;
                     break;
-            }            
+            }
             break;
         }
         case 0x3CE:
@@ -370,6 +400,7 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
             break;
         case 0x3CF:
             v->reg.gfx_reg[v->reg.gfx_addr] = data;
+            update_video_mode(v);
             break;
         case 0x3B4:
         case 0x3D4:
@@ -392,13 +423,14 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
                 case 0xF:
                     v->cursor_offset = (v->cursor_offset & 0xFF00) | (vxt_word)data;
                     break;
+                default:
+                    update_video_mode(v);
             }
             break;
         case 0x3D8:
-            v->reg.mode_ctrl_reg = data;
-            break;
         case 0x3D9:
-            v->reg.color_ctrl_reg = data;
+            VXT_LOG("WARNING: CGA register manipulation is not supported on VGA. Switch to the CGA module.");
+            break;
         case 0x3BA:
         case 0x3DA:
             v->reg.feature_ctrl_reg = data;
@@ -410,12 +442,8 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error reset(struct vga_video *v) {
-    v->reg.mode_ctrl_reg = 1;
-    v->reg.color_ctrl_reg = 0x20;
     v->reg.status_reg = 0;
-
     v->is_dirty = true;
-    memcpy(v->palette, vga_palette, sizeof(vga_palette));
     return VXT_NO_ERROR;
 }
 
@@ -431,25 +459,21 @@ static vxt_error timer(struct vga_video *v, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
 
     if (v->scanline_timer == id) {
-        v->reg.status_reg = 6;
-        v->reg.status_reg |= (v->retrace == 3) ? 1 : 0;
-        v->reg.status_reg |= (v->scanline >= 224) ? 8 : 0;
-        
-        if (++v->retrace == 4) {
-            v->retrace = 0;
-            v->scanline++;
-        }
-        if (v->scanline == 256)
-            v->scanline = 0;
+        v->reg.status_reg ^= 1;
+    } else if (v->retrace_timer == id) {
+        v->reg.status_reg ^= 8;
     } else {
         v->cursor_blink = !v->cursor_blink;
         v->is_dirty = true;
     }
+
+    v->reg.status_reg |= 6;
     return VXT_NO_ERROR;
 }
 
 static vxt_dword border_color(struct vxt_pirepheral *p) {
-    return cga_palette[(VXT_GET_DEVICE(vga_video, p))->reg.color_ctrl_reg & 0xF];
+    (void)p;
+    return 0;
 }
 
 static vxt_error install(struct vga_video *v, vxt_system *s) {
@@ -468,13 +492,15 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
         }
     }
 
-    vxt_system_install_monitor(s, p, "Video Mode", &v->video_mode, VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, p, "Color Select", &v->reg.attr_reg[0x14], VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_HEX);
+    vxt_system_install_monitor(s, p, "Mode Control", &v->reg.attr_reg[0x10], VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_BINARY);
+    vxt_system_install_monitor(s, p, "Offset Register", &v->reg.attr_reg[0x13], VXT_MONITOR_SIZE_BYTE|VXT_MONITOR_FORMAT_DECIMAL);
 
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + 0x20000) - 1);
-    vxt_system_install_mem(s, p, VIDEO_MODE_BDA_START_ADDRESS, VIDEO_MODE_BDA_END_ADDRESS); // BDA video mode
 
     vxt_system_install_timer(s, p, CURSOR_TIMING);
-    v->scanline_timer = vxt_system_install_timer(s, p, SCANLINE_TIMING);
+    v->retrace_timer = vxt_system_install_timer(s, p, 0);
+    v->scanline_timer = vxt_system_install_timer(s, p, 0);
 
     vxt_system_install_io_at(s, p, 0x3B4); // --
     vxt_system_install_io_at(s, p, 0x3D4); // R/W: CRT Index
@@ -524,7 +550,9 @@ static struct vxt_pirepheral *vga_create(vxt_allocator *alloc, void *frontend, c
 })
 
 static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {
-    (void)frontend;
+    struct frontend_interface *fi = (struct frontend_interface*)frontend;
+    if (fi && fi->resolve_path)
+        args = fi->resolve_path(FRONTEND_BIOS_PATH, args);
 
     int size = 0;
     vxt_byte *data = vxtu_read_file(alloc, args, &size);

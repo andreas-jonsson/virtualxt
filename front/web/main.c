@@ -49,11 +49,12 @@ int cga_width = -1;
 int cga_height = -1;
 vxt_dword cga_border = 0;
 
+struct frontend_video_adapter video_adapter = {0};
+struct frontend_mouse_adapter mouse_adapter = {0};
+
 vxt_system *sys = NULL;
 struct vxt_pirepheral *disk = NULL;
 struct vxt_pirepheral *ppi = NULL;
-struct vxt_pirepheral *cga = NULL;
-struct vxt_pirepheral *mouse = NULL;
 
 static int log_wrapper(const char *fmt, ...) {
 	va_list args;
@@ -136,6 +137,20 @@ static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_poin
 	return rom;
 }
 
+static bool set_video_adapter(const struct frontend_video_adapter *adapter) {
+	if (video_adapter.device)
+		return false;
+	video_adapter = *adapter;
+	return true;
+}
+
+static bool set_mouse_adapter(const struct frontend_mouse_adapter *adapter) {
+	if (mouse_adapter.device)
+		return false;
+	mouse_adapter = *adapter;
+	return true;
+}
+
 static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
 	(void)userdata;
 	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
@@ -161,14 +176,17 @@ int wasm_video_height(void) {
 }
 
 const void *wasm_video_rgba_memory_pointer(void) {
-	vxtu_cga_snapshot(cga);
+	if (!video_adapter.device)
+		return NULL;
 
-	vxt_dword color = vxtu_cga_border_color(cga);
+	video_adapter.snapshot(video_adapter.device);
+
+	vxt_dword color = video_adapter.border_color(video_adapter.device);
 	if (color != cga_border)
 		js_set_border_color((cga_border = color));
 
 	const vxt_byte *video_mem_buffer = NULL;
-	vxtu_cga_render(cga, &render_callback, &video_mem_buffer);
+	video_adapter.render(video_adapter.device, &render_callback, &video_mem_buffer);
 	return (void*)video_mem_buffer;
 }
 
@@ -177,12 +195,16 @@ void wasm_send_key(int scan) {
 }
 
 void wasm_send_mouse(int xrel, int yrel, unsigned int buttons) {
-	struct vxtu_mouse_event ev = {0, xrel, yrel};
+	if (!mouse_adapter.device)
+		return;
+
+	struct frontend_mouse_event ev = {0, xrel, yrel};
 	if (buttons & 1)
-		ev.buttons |= VXTU_MOUSE_LEFT;
+		ev.buttons |= FRONTEND_MOUSE_LEFT;
 	if (buttons & 2)
-		ev.buttons |= VXTU_MOUSE_RIGHT;
-	vxtu_mouse_push_event(mouse, &ev);
+		ev.buttons |= FRONTEND_MOUSE_RIGHT;
+
+	mouse_adapter.push_event(mouse_adapter.device, &ev);
 }
 
 int wasm_step_emulation(int cycles) {
@@ -206,8 +228,6 @@ void wasm_initialize_emulator(int v20, int freq) {
 	vxtu_disk_set_activity_callback(disk, &js_disk_activity, NULL);
 	
 	ppi = vxtu_ppi_create(&ALLOCATOR);
-    cga = vxtu_cga_create(&ALLOCATOR);
-	mouse = vxtu_mouse_create(&ALLOCATOR, 0x3F8); // COM1
 
 	APPEND_DEVICE(vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false));
 	APPEND_DEVICE(load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000));
@@ -217,21 +237,25 @@ void wasm_initialize_emulator(int v20, int freq) {
 	APPEND_DEVICE(vxtu_dma_create(&ALLOCATOR));
 	APPEND_DEVICE(vxtu_pit_create(&ALLOCATOR));
 	APPEND_DEVICE(ppi);
-	APPEND_DEVICE(cga);
 	APPEND_DEVICE(disk);
-	APPEND_DEVICE(mouse);
 
-	#ifdef VXTU_MODULE_CTRL
-		#ifndef VXTU_STATIC_MODULES
-			#error The web frontend requires all modules to be staticlly linked!
-		#endif
-		vxtu_module_entry_func *e = _vxtu_module_ctrl_entry(&log_wrapper);
-		if (e) {
-			static struct frontend_interface fi = {0};
-			fi.ctrl.callback = &emu_control;
-			APPEND_DEVICE((*e)(&ALLOCATOR, &fi, ""));
-		}
+	#ifndef VXTU_STATIC_MODULES
+		#error The web frontend requires all modules to be staticlly linked!
 	#endif
+
+	static struct frontend_interface fi = { .interface_version = FRONTEND_INTERFACE_VERSION };
+	fi.ctrl.callback = &emu_control;
+	fi.set_video_adapter = &set_video_adapter;
+	fi.set_mouse_adapter = &set_mouse_adapter;
+
+	vxtu_module_entry_func *e = _vxtu_module_ctrl_entry(&log_wrapper);
+	if (e) APPEND_DEVICE((*e)(&ALLOCATOR, &fi, ""));
+
+	e = _vxtu_module_cga_entry(&log_wrapper);
+	if (e) APPEND_DEVICE((*e)(&ALLOCATOR, &fi, ""));
+
+	e = _vxtu_module_mouse_entry(&log_wrapper);
+	if (e) APPEND_DEVICE((*e)(&ALLOCATOR, &fi, "0x3F8"));
 
 	sys = vxt_system_create(&ALLOCATOR, v20 ? VXT_CPU_V20 : VXT_CPU_8088, freq, devices);
 	vxt_system_initialize(sys);

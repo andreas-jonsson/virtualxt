@@ -27,6 +27,22 @@
 
 #define FRONTEND_INTERFACE_VERSION 0
 
+#ifndef FRONTEND_VIDEO_RED
+	#define FRONTEND_VIDEO_RED 0
+#endif
+#ifndef FRONTEND_VIDEO_GREEN
+	#define FRONTEND_VIDEO_GREEN 1
+#endif
+#ifndef FRONTEND_VIDEO_BLUE
+	#define FRONTEND_VIDEO_BLUE 2
+#endif
+#ifndef FRONTEND_VIDEO_ALPHA
+	#define FRONTEND_VIDEO_ALPHA 3
+#endif
+#ifndef FRONTEND_VIDEO_ALPHA_FILL
+	#define FRONTEND_VIDEO_ALPHA_FILL 0xFF
+#endif
+
 struct frontend_video_adapter {
 	struct vxt_pirepheral *device;
 	vxt_dword (*border_color)(struct vxt_pirepheral *p);
@@ -39,9 +55,20 @@ struct frontend_audio_adapter {
 	vxt_int16 (*generate_sample)(struct vxt_pirepheral *p, int freq);
 };
 
+enum frontend_mouse_button {
+    FRONTEND_MOUSE_RIGHT = 0x1,
+	FRONTEND_MOUSE_LEFT  = 0x2
+};
+
+struct frontend_mouse_event {
+	enum frontend_mouse_button buttons;
+	int xrel;
+    int yrel;
+};
+
 struct frontend_mouse_adapter {
 	struct vxt_pirepheral *device;
-	bool (*push_event)(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev);
+	bool (*push_event)(struct vxt_pirepheral *p, const struct frontend_mouse_event *ev);
 };
 
 struct frontend_disk_controller {

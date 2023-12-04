@@ -29,22 +29,6 @@ extern "C" {
 
 #include "vxt.h"
 
-#ifndef VXTU_CGA_RED
-	#define VXTU_CGA_RED 0
-#endif
-#ifndef VXTU_CGA_GREEN
-	#define VXTU_CGA_GREEN 1
-#endif
-#ifndef VXTU_CGA_BLUE
-	#define VXTU_CGA_BLUE 2
-#endif
-#ifndef VXTU_CGA_ALPHA
-	#define VXTU_CGA_ALPHA 3
-#endif
-#ifndef VXTU_CGA_ALPHA_FILL
-	#define VXTU_CGA_ALPHA_FILL 0xFF
-#endif
-
 // TODO: Fix this!
 #ifdef _MSC_VER
 	#define VXTU_CAST(in, tin, tout) ((tout)in)
@@ -197,17 +181,6 @@ enum vxtu_mda_attrib {
     VXTU_MDA_INVERSE        = 0x8
 };
 
-enum vxtu_mouse_button {
-    VXTU_MOUSE_RIGHT = 0x1,
-	VXTU_MOUSE_LEFT  = 0x2    
-};
-
-struct vxtu_mouse_event {
-	enum vxtu_mouse_button buttons;
-	int xrel;
-    int yrel;
-};
-
 struct vxtu_uart_registers {
 	vxt_word divisor; // Baud Rate Divisor
 	vxt_byte ien; // Interrupt Enable
@@ -263,22 +236,11 @@ VXT_API struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc);
 VXT_API void vxtu_mda_invalidate(struct vxt_pirepheral *p);
 VXT_API int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata);
 
-VXT_API struct vxt_pirepheral *vxtu_cga_create(vxt_allocator *alloc);
-VXT_API vxt_dword vxtu_cga_border_color(struct vxt_pirepheral *p);
-VXT_API bool vxtu_cga_snapshot(struct vxt_pirepheral *p);
-
-// This function only operates on snapshot data and is threadsafe.
-// The use of 'vxtu_cga_snapshot' and 'vxtu_cga_render' needs to be coordinated by the user.
-VXT_API int vxtu_cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
-
 VXT_API struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf);
 VXT_API void vxtu_disk_set_activity_callback(struct vxt_pirepheral *p, void (*cb)(int,void*), void *ud);
 VXT_API void vxtu_disk_set_boot_drive(struct vxt_pirepheral *p, int num);
 VXT_API vxt_error vxtu_disk_mount(struct vxt_pirepheral *p, int num, void *fp);
 VXT_API bool vxtu_disk_unmount(struct vxt_pirepheral *p, int num);
-
-VXT_API struct vxt_pirepheral *vxtu_mouse_create(vxt_allocator *alloc, vxt_word base_port);
-VXT_API bool vxtu_mouse_push_event(struct vxt_pirepheral *p, const struct vxtu_mouse_event *ev);
 
 VXT_API struct vxt_pirepheral *vxtu_uart_create(vxt_allocator *alloc, vxt_word base_port, int irq);
 VXT_API const struct vxtu_uart_registers *vxtu_uart_internal_registers(struct vxt_pirepheral *p);
