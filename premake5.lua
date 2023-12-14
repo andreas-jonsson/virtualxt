@@ -293,6 +293,7 @@ workspace "virtualxt"
             "{COPYFILE} front/web/favicon.ico build/web/",
             "{COPYFILE} front/web/disk.png build/web/",
             "{COPYFILE} boot/freedos_web_hd.img build/web/",
+            "{COPYFILE} boot/elks_hd.img build/web/",
             "{COPYDIR} lib/simple-keyboard/build/ build/web/kb/"
         }
 
