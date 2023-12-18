@@ -151,8 +151,8 @@ static bool set_mouse_adapter(const struct frontend_mouse_adapter *adapter) {
 	return true;
 }
 
-static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
-	(void)userdata;
+static vxt_byte emu_control(enum frontend_ctrl_command cmd, vxt_byte data, void *userdata) {
+	(void)data; (void)userdata;
 	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
 		LOG("Guest OS shutdown!");
 		js_shutdown();

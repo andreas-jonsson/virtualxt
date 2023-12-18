@@ -113,12 +113,21 @@ struct frontend_keyboard_controller {
 };
 
 enum frontend_ctrl_command {
-	FRONTEND_CTRL_SHUTDOWN = 0x1
+	FRONTEND_CTRL_RESET,
+	FRONTEND_CTRL_SHUTDOWN,
+	FRONTEND_CTRL_HAS_DATA,
+	FRONTEND_CTRL_READ_DATA,
+	FRONTEND_CTRL_WRITE_DATA,
+	FRONTEND_CTRL_POPEN,
+	FRONTEND_CTRL_PCLOSE,
+	FRONTEND_CTRL_FCLOSE,
+	FRONTEND_CTRL_PUSH,
+	FRONTEND_CTRL_PULL
 };
 
 struct frontend_ctrl_interface {
     void *userdata;
-	vxt_byte (*callback)(enum frontend_ctrl_command cmd, void *userdata);
+	vxt_byte (*callback)(enum frontend_ctrl_command cmd, vxt_byte data, void *userdata);
 };
 
 struct frontend_disk_interface {

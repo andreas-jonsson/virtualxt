@@ -114,6 +114,12 @@ char new_floppy_image_path[FILENAME_MAX] = {0};
 
 bool config_updated = false;
 
+#define EMUCTRL_BUFFER_SIZE 1024
+vxt_byte emuctrl_buffer[EMUCTRL_BUFFER_SIZE] = {0};
+int emuctrl_buffer_len = 0;
+FILE *emuctrl_file_handle = NULL;
+bool emuctrl_is_popen_handle = false;
+
 int str_buffer_len = 0;
 char *str_buffer = NULL;
 
@@ -404,11 +410,93 @@ static const char *resolve_path(enum frontend_path_type type, const char *path) 
 	return buffer;
 }
 
-static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
+static vxt_byte emu_control(enum frontend_ctrl_command cmd, vxt_byte data, void *userdata) {
 	(void)userdata;
-	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
-		printf("Guest OS shutdown!\n");
-		SDL_AtomicSet(&running, 0);
+
+	switch (cmd) {
+		case FRONTEND_CTRL_RESET:
+			emuctrl_buffer_len = 0;
+			if (emuctrl_file_handle) {
+				if (emuctrl_is_popen_handle)
+					#ifdef _WIN32
+						_pclose
+					#else
+						pclose
+					#endif
+					(emuctrl_file_handle);
+				else
+					fclose(emuctrl_file_handle);
+			}
+			emuctrl_file_handle = NULL;
+			emuctrl_is_popen_handle = false;
+			break;
+		case FRONTEND_CTRL_SHUTDOWN:
+			printf("Guest OS shutdown!\n");
+			SDL_AtomicSet(&running, 0);
+			break;
+		case FRONTEND_CTRL_HAS_DATA:
+			if (emuctrl_file_handle) {
+				int ch = fgetc(emuctrl_file_handle);
+				if (ch & ~0xFF) {
+					return 0;
+				} else {
+					ungetc(ch, emuctrl_file_handle);
+					return 1;
+				}
+			}
+			return emuctrl_buffer_len ? 1 : 0;
+		case FRONTEND_CTRL_READ_DATA:
+			if (emuctrl_file_handle)
+				return (vxt_byte)fgetc(emuctrl_file_handle);
+			else if (emuctrl_buffer_len)
+				return emuctrl_buffer[--emuctrl_buffer_len];
+			break;
+		case FRONTEND_CTRL_WRITE_DATA:
+			if (emuctrl_file_handle && !emuctrl_is_popen_handle)
+				return (fputc(data, emuctrl_file_handle) == data) ? 0 : 1;
+			if (emuctrl_buffer_len >= EMUCTRL_BUFFER_SIZE)
+				return 1;
+			emuctrl_buffer[emuctrl_buffer_len++] = data;
+			break;
+		case FRONTEND_CTRL_POPEN:
+			if (!(emuctrl_file_handle = 
+				#ifdef _WIN32
+					_popen
+				#else
+					popen
+				#endif
+					((char*)emuctrl_buffer, "r"))
+			) {
+				printf("FRONTEND_CTRL_POPEN: popen failed!\n");
+				return 1;
+			}
+			printf("FRONTEND_CTRL_POPEN: \"%s\"\n", (char*)emuctrl_buffer);
+			emuctrl_buffer_len = 0;
+			emuctrl_is_popen_handle = true;
+			break;
+		case FRONTEND_CTRL_PCLOSE:
+			if (!emuctrl_is_popen_handle)
+				return 1;
+			if (emuctrl_file_handle)
+				pclose(emuctrl_file_handle);
+			emuctrl_file_handle = NULL;
+			emuctrl_is_popen_handle = false;
+			break;
+		case FRONTEND_CTRL_FCLOSE:
+			if (emuctrl_is_popen_handle)
+				return 1;
+			if (emuctrl_file_handle)
+				fclose(emuctrl_file_handle);
+			emuctrl_file_handle = NULL;
+			break;
+		case FRONTEND_CTRL_PUSH:
+		case FRONTEND_CTRL_PULL:
+			if (!(emuctrl_file_handle = fopen((char*)emuctrl_buffer, (cmd == FRONTEND_CTRL_PUSH) ? "wb" : "rb"))) {
+				printf("FRONTEND_CTRL_PUSH/PULL: fopen failed!\n");
+				return 1;
+			}
+			emuctrl_buffer_len = 0;
+			break;
 	}
 	return 0;
 }
