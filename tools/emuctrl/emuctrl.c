@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define VERSION "1.0.0"
+#define COMMAND_PORT 0xB4
+#define DATA_PORT 0xB5
+
 #if !defined(__BCC__) || !defined(__MSDOS__)
 	#error Use BCC to produce MSDOS executable!
 #endif
@@ -27,7 +31,7 @@ enum {
 static int read_status(void) {
 #asm
 	xor ax, ax
-	in al, 0xB4
+	in al, COMMAND_PORT
 #endasm
 }
 
@@ -36,7 +40,7 @@ static void write_command_(unsigned char c) {
 	push bx
 	mov bx, sp
 	mov al, [bx+4]
-	out 0xB4, al
+	out COMMAND_PORT, al
 	pop bx
 #endasm
 }
@@ -56,7 +60,7 @@ static void write_data(unsigned char c) {
 	push bx
 	mov bx, sp
 	mov al, [bx+4]
-	out 0xB5, al
+	out DATA_PORT, al
 	pop bx
 #endasm
 }
@@ -64,13 +68,14 @@ static void write_data(unsigned char c) {
 static unsigned char read_data(void) {
 #asm
 	xor ax, ax
-	in al, 0xB5
+	in al, DATA_PORT
 #endasm
 }
 
 static void print_help(void) {
 	printf(
 		"Usage: emuctrl [cmd] <args...>\n\n"
+		"  version                 Display software information\n"
 		"  shutdown                Terminates the emulator\n"
 		"  popen     <args...>     Execute command on host and pipe input to guest\n"
 		"  push      [src] [dest]  Upload file from guest to host\n"
@@ -169,6 +174,9 @@ int main(int argc, char *argv[]) {
 		
 		write_command(FRONTEND_CTRL_FCLOSE);
 		fclose(fp);
+	} else if (!strcmp(argv[1], "version")) {
+		printf("VirtualXT Control Software\n");
+		printf("Version: %s\n", VERSION);
 	} else {
 		print_help();
 	}
