@@ -672,7 +672,7 @@ static bool write_default_config(const char *path, bool clean) {
 		";serial=0x2F8,/dev/ttyUSB0\n"
 		";covox=0x378,disney\n"
 		";network=eth0\n"
-		";arstech_isa=libarsusb4.so\n"
+		";arstech_isa=\n"
 		";ch36x_isa=/dev/ch36xpci0\n"
 		";lua=lua/serial_debug.lua,0x3F8\n"
 		"\n; GDB server module should always be loadad after the others.\n"

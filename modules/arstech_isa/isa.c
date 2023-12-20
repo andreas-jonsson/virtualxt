@@ -22,6 +22,8 @@
 
 #include <vxt/vxtu.h>
 
+#ifdef ARSTECHUSB
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -136,3 +138,10 @@ VXTU_MODULE_CREATE(arstech_isa, {
     PIREPHERAL->io.read = &read;
     PIREPHERAL->io.write = &write;
 })
+
+#else
+
+struct arstech_isa { int _; };
+VXTU_MODULE_CREATE(arstech_isa, { return NULL; })
+
+#endif
