@@ -22,7 +22,7 @@
 
 #include <vxt/vxtu.h>
 
-#ifdef ARSTECHUSB
+#ifdef ARSTECH
 
 #include <stdio.h>
 #include <stdlib.h>

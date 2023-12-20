@@ -6,7 +6,7 @@ newoption {
 files "isa.c"
 
 if _OPTIONS["arstech"] then
-	defines "ARSTECHUSB"
+	defines "ARSTECH"
 	module_link_callback(function()
 			links(_OPTIONS["arstech"])
 	end)
