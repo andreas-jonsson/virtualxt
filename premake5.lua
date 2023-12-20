@@ -313,6 +313,7 @@ workspace "virtualxt"
         if _OPTIONS["modules"] then
             if _OPTIONS["static"] then
                 links(modules)
+                links "arsusb4"
             else
                 dependson "modules"
             end
@@ -340,11 +341,12 @@ workspace "virtualxt"
         filter "options:validator"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
 
-        filter "toolset:clang or gcc"
-            buildoptions "-Wno-unused-parameter"
-            linkoptions "-Wl,-rpath,'$$ORIGIN'/../lib"
+		filter "toolset:clang or gcc"
+			links "m"
+			buildoptions "-Wno-unused-parameter"
+			linkoptions "-Wl,-rpath,'$$ORIGIN'/../lib"
 
-        filter "toolset:clang"
+		filter "toolset:clang"
             buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
 
         filter "toolset:gcc"
