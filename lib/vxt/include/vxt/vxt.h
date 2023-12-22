@@ -207,7 +207,7 @@ struct vxt_registers {
 
 struct vxt_step {
     int cycles;
-    bool halted;
+    bool halted, int28;
     vxt_error err;
 };
 

@@ -42,14 +42,11 @@ struct instruction {
    void (*func)(CONSTSP(cpu), INST());
 };
 
-#define SIGNEXT16(v) signe_extend16(v)
-#define SIGNEXT32(v) signe_extend32(v)
-
-static vxt_dword signe_extend32(vxt_word v) {
+static vxt_dword sign_extend32(vxt_word v) {
    return (v & 0x8000) ? ((vxt_dword)v) | 0xFFFF0000 : (vxt_dword)v;
 }
 
-static vxt_word signe_extend16(vxt_byte v) {
+static vxt_word sign_extend16(vxt_byte v) {
    return (v & 0x80) ? ((vxt_word)v) | 0xFF00 : (vxt_word)v;
 }
 
@@ -392,7 +389,7 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
          override_with_ss(p, (mode.rm == 2) || (mode.rm == 3));
 	      break;
 	   case 1:
-	      mode.disp = SIGNEXT16(read_opcode8(p));
+	      mode.disp = sign_extend16(read_opcode8(p));
          override_with_ss(p, (mode.rm == 2) || (mode.rm == 3) || (mode.rm == 6));
 	      break;
 	   case 2:
@@ -406,17 +403,20 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
 }
 
 static void call_int(CONSTSP(cpu) p, int n) {
-   VALIDATOR_DISCARD(p);
-   CONSTSP(vxt_registers) r = &p->regs;
+	VALIDATOR_DISCARD(p);
+	CONSTSP(vxt_registers) r = &p->regs;
 
-   push(p, (r->flags & ALL_FLAGS) | 0xF002);
-   push(p, r->cs);
-   push(p, r->ip);
+	push(p, (r->flags & ALL_FLAGS) | 0xF002);
+	push(p, r->cs);
+	push(p, r->ip);
 
-   r->ip = cpu_read_word(p, (vxt_pointer)n * 4);
-   r->cs = cpu_read_word(p, (vxt_pointer)n * 4 + 2);
-   r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
-   p->inst_queue_dirty = true;
+	r->ip = cpu_read_word(p, (vxt_pointer)n * 4);
+	r->cs = cpu_read_word(p, (vxt_pointer)n * 4 + 2);
+	r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
+	p->inst_queue_dirty = true;
+
+	if (n == 0x28)
+		p->int28 = true; 
 }
 
 static void divZero(CONSTSP(cpu) p) {

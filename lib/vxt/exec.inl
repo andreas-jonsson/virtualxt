@@ -386,10 +386,10 @@ static void popa_61(CONSTSP(cpu) p, INST(inst)) {
 
 static void bound_62(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_dword idx = SIGNEXT32(reg_read16(&p->regs, p->mode.reg));
+   vxt_dword idx = sign_extend32(reg_read16(&p->regs, p->mode.reg));
    vxt_pointer addr = get_effective_address(p);
 
-   if ((idx < SIGNEXT32(cpu_read_word(p, addr))) || (idx > SIGNEXT32(cpu_read_word(p, addr + 2)))) {
+   if ((idx < sign_extend32(cpu_read_word(p, addr))) || (idx > sign_extend32(cpu_read_word(p, addr + 2)))) {
       p->regs.ip = p->inst_start;
       call_int(p, 5);
    }
@@ -401,8 +401,8 @@ static void push_68(CONSTSP(cpu) p, INST(inst)) {
 }
 
 static void imul_69_6B(CONSTSP(cpu) p, INST(inst)) {
-   vxt_int32 a = SIGNEXT32(rm_read16(p));
-   vxt_int32 b = (inst->opcode == 69) ? SIGNEXT32(SIGNEXT16(read_opcode8(p))) : SIGNEXT32(read_opcode16(p));
+   vxt_int32 a = sign_extend32(rm_read16(p));
+   vxt_int32 b = (inst->opcode == 69) ? sign_extend32(sign_extend16(read_opcode8(p))) : sign_extend32(read_opcode16(p));
 
    vxt_int32 res = a * b;
    vxt_word res16 = (vxt_word)(res & 0xFFFF);
@@ -446,7 +446,7 @@ static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
 #define JUMP(name, cond)                                       \
    static void jump_ ##name (CONSTSP(cpu) p, INST(inst)) {     \
       UNUSED(inst);                                            \
-      vxt_word offset = SIGNEXT16(read_opcode8(p));            \
+      vxt_word offset = sign_extend16(read_opcode8(p));        \
       if (cond) {                                              \
          p->regs.ip += offset;                                 \
          p->cycles += 12;                                      \
@@ -513,7 +513,7 @@ static void grp1_80_82(CONSTSP(cpu) p, INST(inst)) {
 
 static void grp1_81_83(CONSTSP(cpu) p, INST(inst)) {
    vxt_word a = rm_read16(p);
-   vxt_word b = (inst->opcode == 0x81) ? read_opcode16(p) : SIGNEXT16(read_opcode8(p));
+   vxt_word b = (inst->opcode == 0x81) ? read_opcode16(p) : sign_extend16(read_opcode8(p));
    vxt_word res = 0;
 
    switch (p->mode.reg) {
@@ -956,7 +956,7 @@ static void jmp_EA(CONSTSP(cpu) p, INST(inst)) {
 
 static void jmp_EB(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.ip += SIGNEXT16(read_opcode8(p));
+   p->regs.ip += sign_extend16(read_opcode8(p));
    p->inst_queue_dirty = true;
 }
 

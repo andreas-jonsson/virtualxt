@@ -192,8 +192,8 @@ static int emu_loop(void *ptr) {
 						SDL_AtomicSet(&running, 0);
 					else
 						printf("step error: %s", vxt_error_str(res.err));
-				} else if (res.halted) {
-					SDL_Delay(0); // Yield CPU time to other processes.
+				} else if (res.halted || res.int28) { // Assume int28 is DOS waiting for input.
+					SDL_Delay(1); // Yield CPU time to other processes.
 				}
 				num_cycles += res.cycles;
 			}
