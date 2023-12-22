@@ -535,6 +535,8 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
 
 static struct vxt_pirepheral *vga_create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PIREPHERAL_CREATE(alloc, vga_video, {
     (void)args;
+	vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PIREPHERAL);
+
     if (frontend)
         DEVICE->set_video_adapter = ((struct frontend_interface*)frontend)->set_video_adapter;
 
