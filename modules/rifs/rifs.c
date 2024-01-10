@@ -145,7 +145,7 @@ static void server_response(struct rifs *fs, const struct rifs_packet *pk, int p
 static bool verify_packet(struct rifs_packet *pk) {
     vxt_word len = ~pk->notlength;
     if (pk->length != len) {
-        fprintf(stderr, "RIFS packet of invalid size!\n");
+        VXT_LOG("ERROR: Packet of invalid size!");
         return false;
     }
 
@@ -153,7 +153,7 @@ static bool verify_packet(struct rifs_packet *pk) {
     pk->crc32 = 0;
 
     if (crc != crc32((vxt_byte*)pk, len)) {
-        fprintf(stderr, "RIFS packet CRC failed!\n");
+        VXT_LOG("ERROR: Packet CRC failed!");
         return false;
     }
 
@@ -168,7 +168,7 @@ static const char *host_path(struct rifs *fs, const char *path) {
     if ((strlen(path) >= 2) && (path[1] == ':'))
         path = path + 2;
     else
-        fprintf(stderr, "RIFS path is not absolute!\n");
+        VXT_LOG("WARNING: Path is not absolute!");
        
     strncat(fs->path_scratchpad, path, sizeof(fs->path_scratchpad) - 1);
 
@@ -202,7 +202,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
     int data_size = pk->length - sizeof(struct rifs_packet);
     struct dos_proc *proc = get_proc(fs, pk->process_id);
     if (!proc) {
-        fprintf(stderr, "To many RIFS procs!\n");
+        VXT_LOG("ERROR: To many RIFS procs!");
         return;
     }
 
@@ -402,7 +402,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             server_response(fs, pk, 0);
             break;
         default:
-            fprintf(stderr, "Unknown RIFS command: 0x%X (payload size %d)\n", pk->cmd, data_size);
+            VXT_LOG("WARNING: Unknown RIFS command: 0x%X (payload size %d)", pk->cmd, data_size);
             pk->cmd = 0x16; // Unknown command
             server_response(fs, pk, 0);
     }
@@ -445,7 +445,7 @@ static void out(struct rifs *fs, vxt_word port, vxt_byte data) {
                 return;
 
             if (fs->buffer_output_len >= BUFFER_SIZE) {
-                fprintf(stderr, "Invalid RIFS buffer state!\n");
+                VXT_LOG("ERROR: Invalid RIFS buffer state!");
                 fs->buffer_output_len = 0;
                 return;
             }
@@ -466,7 +466,7 @@ static void out(struct rifs *fs, vxt_word port, vxt_byte data) {
                 if (fs->dlab != dlab) {
                     fs->dlab = dlab;
                     fs->buffer_output_len = fs->buffer_input_len = 0;
-                    fprintf(stderr, "DLAB change! Assume RIFS state reset.\n");
+                    VXT_LOG("DLAB change! Assume RIFS state reset.");
                 }
             }
             break;
