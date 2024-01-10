@@ -644,6 +644,37 @@ static int configure_pirepherals(void *user, const char *section, const char *na
 	return (vxt_system_configure(user, section, name, value) == VXT_NO_ERROR) ? 1 : 0;
 }
 
+static void print_memory_map(vxt_system *s)	{
+	int prev_idx = 0;
+	const vxt_byte *map = vxt_system_io_map(s);
+
+	printf("IO map:\n");
+	for (int i = 0; i < VXT_IO_MAP_SIZE; i++) {
+		int idx = map[i];
+		if (idx && (idx != prev_idx)) {
+			printf("[0x%.4X-", i);
+			while (map[++i] == idx);
+			printf("0x%.4X] %s\n", i - 1, vxt_pirepheral_name(vxt_system_pirepheral(s, idx)));
+			prev_idx = idx;
+		}			
+	}
+
+	prev_idx = 0;
+	map = vxt_system_mem_map(s);
+
+	printf("Memory map:\n");
+	for (int i = 0; i < VXT_MEM_MAP_SIZE; i++) {
+		int idx = map[i];
+		if (idx != prev_idx) {
+			printf("[0x%.5X-", i << 4);
+			while (map[++i] == idx);
+			printf("0x%.5X] %s\n", (i << 4) - 1, vxt_pirepheral_name(vxt_system_pirepheral(s, idx)));
+			prev_idx = idx;
+			i--;
+		}			
+	}
+}
+
 static bool write_default_config(const char *path, bool clean) {
 	FILE *fp;
 	if (!clean && (fp = fopen(path, "r"))) {
@@ -961,6 +992,8 @@ int main(int argc, char *argv[]) {
 				disk_controller.set_boot(disk_controller.device, 128);
 		}
 	}
+
+	print_memory_map(vxt);
 
 	vxt_system_reset(vxt);
 	vxt_system_registers(vxt)->debug = args.halt != 0;
