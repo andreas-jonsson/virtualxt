@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 19; j++)
+            for (j = 0; j < 20; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -249,13 +249,17 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->mute = option->value;
         } else if (strcmp(option->olong, "--no-activity") == 0) {
             args->no_activity = option->value;
-        } else if (strcmp(option->olong, "--v20") == 0) {
-            args->v20 = option->value;
+        } else if (strcmp(option->olong, "--no-idle") == 0) {
+            args->no_idle = option->value;
         } else if (strcmp(option->olong, "--version") == 0) {
             args->version = option->value;
         } else if (strcmp(option->olong, "--config") == 0) {
             if (option->argument) {
                 args->config = (char *) option->argument;
+            }
+        } else if (strcmp(option->olong, "--cpu") == 0) {
+            if (option->argument) {
+                args->cpu = (char *) option->argument;
             }
         } else if (strcmp(option->olong, "--floppy") == 0) {
             if (option->argument) {
@@ -299,8 +303,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, (char *) "8.0", NULL, NULL,
-        NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, (char *) "8088", NULL, (char *)
+        "8.0", NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -311,13 +315,14 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --halt                  Debug break on startup.",
               "  --mute                  Disable audio.",
               "  --no-activity           Disable disk activity indicator.",
-              "  --v20                   Enable NEC V20 CPU support.",
+              "  --no-idle               Disable CPU idle on INT28.",
               "  --clean                 Remove config file and write a new default one.",
               "  --edit                  Open config file in system text editor.",
               "  --locate                Locate the configuration directory.",
               "  --rifs=PATH             Enable experimental RIFS support. (Shared folders)",
               "  --config=PATH           Set config directory.",
               "  --trace=FILE            Write CPU trace to file.",
+              "  --cpu=TYPE              Types are 8088, v20 and 286. [default: 8088]",
               "  --frequency=MHZ         CPU frequency. [default: 8.0]",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
               "  -c --harddrive=FILE     Mount harddrive image as drive C."}
@@ -335,9 +340,10 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--locate", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
         {NULL, "--no-activity", 0, 0, NULL},
-        {NULL, "--v20", 0, 0, NULL},
+        {NULL, "--no-idle", 0, 0, NULL},
         {"-v", "--version", 0, 0, NULL},
         {NULL, "--config", 1, 0, NULL},
+        {NULL, "--cpu", 1, 0, NULL},
         {"-a", "--floppy", 1, 0, NULL},
         {NULL, "--frequency", 1, 0, NULL},
         {"-c", "--harddrive", 1, 0, NULL},
@@ -349,17 +355,17 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 16;
+    elements.n_options = 17;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;
-    /*
+	/*
     if (argc == 1) {
         argv[argc++] = "--help";
         argv[argc++] = NULL;
         return_code = EXIT_FAILURE;
     }
-    */
+	*/
     {
         struct Tokens ts = tokens_new(argc, argv);
         if (parse_args(&ts, &elements))

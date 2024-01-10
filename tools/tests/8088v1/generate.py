@@ -225,7 +225,7 @@ def gen_tests(input_name):
 
 ####################### Start #######################
 
-c_test_name = "lib/vxt/i8088_tests.c"
+c_test_name = "lib/vxt/8088_tests.c"
 data_dir = "tools/tests/8088v1"
 
 skip_opcodes = (

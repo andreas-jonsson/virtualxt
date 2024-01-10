@@ -20,23 +20,81 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-static void ext_v20_F(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   VALIDATOR_DISCARD(p);
+static void ext_286_F(CONSTSP(cpu) p, INST(inst)) {
+	UNUSED(inst);
+	VALIDATOR_DISCARD(p);
 
-   vxt_byte ext_op = read_opcode8(p);
-     
-   // TODO
-   UNUSED(ext_op);
+	switch (read_opcode8(p)) {
+		case 0:
+			read_modregrm(p);
+			switch (p->mode.reg) {
+				case 0: // SLDT - Store Local Descriptor Table Register
+					VXT_LOG("SLDT - Store Local Descriptor Table Register");
+					return;
+				case 1: // STR - Store Task Register
+					VXT_LOG("STR - Store Task Register");
+					return;
+				case 2: // LDTR - Load Local Descriptor Table Register
+					VXT_LOG("LDTR - Load Local Descriptor Table Register");
+					return;
+				case 3: // LTR - Load Task Register
+					VXT_LOG("LTR - Load Task Register");
+					return;
+				case 4: // VERR - Verify a Segment for Reading
+					VXT_LOG("VERR - Verify a Segment for Reading");
+					return;
+				case 5: // VERW - Verify a Segment for Writing
+					VXT_LOG("VERW - Verify a Segment for Writing");
+					return;
+			}
+			return;
+		case 1:
+			read_modregrm(p);
+			switch (p->mode.reg) {
+				case 0: // SGDT - Store Global Descriptor Table Register
+					VXT_LOG("SGDT - Store Global Descriptor Table Register");
+					return;
+				case 1: // SIDT - Store Interrupt Descriptor Table Register
+					VXT_LOG("SIDT - Store Interrupt Descriptor Table Register");
+					return;
+				case 2: // LGDT - Load Global Descriptor Table Register
+					VXT_LOG("LGDT - Load Global Descriptor Table Register");
+					return;
+				case 3: // LIDT - Load Interrupt Descriptor Table Register
+					VXT_LOG("LIDT - Load Interrupt Descriptor Table Register");
+					return;
+				case 4: // SMSW - Store Machine Status Word
+					VXT_LOG("SMSW - Store Machine Status Word");
+					return;
+				case 6: // LMSW - Load Machine Status Word
+					VXT_LOG("LMSW - Load Machine Status Word");
+					return;
+			}
+			return;
+		case 2: // LAR - Load Access Rights Byte
+			VXT_LOG("LAR - Load Access Rights Byte");
+			read_modregrm(p);
+			return;
+		case 3: // LSL - Load Segment Limit
+			VXT_LOG("LSL - Load Segment Limit");
+			read_modregrm(p);
+			return;
+		case 5: // LOADALL - Load All of the CPU Registers
+			VXT_LOG("LOADALL - Load All of the CPU Registers");
+			return;
+		case 6: // CLTS - Clear Task-Switched Flag in CR0
+			VXT_LOG("CLTS - Clear Task-Switched Flag in CR0");
+			return;
+	}
 
-   p->regs.ip = p->inst_start;
-   call_int(p, 6); 
+	p->regs.ip = p->inst_start;
+	call_int(p, 6); 
 }
 
 #define X 1
 #define INVALID "INVALID", false, X, &invalid_op
 
-static struct instruction const opcode_table_v20[0x100] = {
+static struct instruction const opcode_table_286[0x100] = {
    {0x0, "ADD Eb Gb", true, X, &add_0_10},
    {0x1, "ADD Ev Gv", true, X, &add_1_11},
    {0x2, "ADD Gb Eb", true, X, &add_2_12},
@@ -52,7 +110,7 @@ static struct instruction const opcode_table_v20[0x100] = {
    {0xC, "OR AL Ib", false, X, &or_C},
    {0xD, "OR AX Iv", false, X, &or_D},
    {0xE, "PUSH CS", false, X, &push_cs},
-   {0xF, "EXTENDED 0xF", false, X, &ext_v20_F},
+   {0xF, "EXTENDED 0xF", false, X, &ext_286_F},
    {0x10, "ADC Eb Gb", true, X, &add_0_10},
    {0x11, "ADC Ev Gv", true, X, &add_1_11},
    {0x12, "ADC Gb Eb", true, X, &add_2_12},

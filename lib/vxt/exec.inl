@@ -83,13 +83,20 @@ PUSH_POP(di)
 
 static void push_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
+   if (p->cpu_type == VXT_CPU_286) {
+      push(p, p->regs.sp);
+      return;
+   }
    p->regs.sp -= 2;
    cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
 }
 
 static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
+   if (p->cpu_type == VXT_CPU_286)
+      p->regs.sp = pop(p);
+   else
+      p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
 }
 
 static void push_cs(CONSTSP(cpu) p, INST(inst)) {
@@ -673,12 +680,18 @@ static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
 
 static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   push(p, (p->regs.flags & ALL_FLAGS) | 0xF002);
+   if (p->cpu_type == VXT_CPU_286)
+      push(p, (p->regs.flags & (ALL_FLAGS | 0xF000)) | 2);
+   else
+      push(p, (p->regs.flags & ALL_FLAGS) | 0xF002);
 }
 
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.flags = (pop(p) & ALL_FLAGS) | 0xF002;
+   if (p->cpu_type == VXT_CPU_286)
+      p->regs.flags = (pop(p) & (ALL_FLAGS | 0xF000)) | 2;
+   else
+      p->regs.flags = (pop(p) & ALL_FLAGS) | 0xF002;
 }
 
 static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
@@ -846,8 +859,13 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
 
-   p->regs.flags = pop(p) & ALL_FLAGS;
-   p->regs.flags |= 0xF002;
+   if (p->cpu_type == VXT_CPU_286) {
+      p->regs.flags = pop(p) & (ALL_FLAGS | 0xF000);
+	  p->regs.flags |= 2;
+   } else {
+      p->regs.flags = pop(p) & ALL_FLAGS;
+      p->regs.flags |= 0xF002;
+   }
 }
 
 static void grp2_D0(CONSTSP(cpu) p, INST(inst)) {

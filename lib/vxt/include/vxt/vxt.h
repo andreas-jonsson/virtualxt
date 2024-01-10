@@ -169,7 +169,8 @@ typedef void *vxt_allocator(void*, size_t);
 
 enum vxt_cpu_type {
     VXT_CPU_8088,
-    VXT_CPU_V20
+    VXT_CPU_V20,
+	VXT_CPU_286
 };
 
 enum {

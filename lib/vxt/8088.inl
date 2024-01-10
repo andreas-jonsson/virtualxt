@@ -20,8 +20,6 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "exec.inl"
-
 static void pop_cs(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.cs = pop(p);

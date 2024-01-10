@@ -22,10 +22,13 @@
 
 #include "common.h"
 #include "cpu.h"
+#include "include/vxt/vxt.h"
 #include "testing.h"
 
-// Chain v20.inl, i8088.inl, exec.inl for better editor support.
+#include "exec.inl"
+#include "8088.inl"
 #include "v20.inl"
+#include "286.inl"
 
 #ifndef VXT_NO_PREFETCH
    static void prefetch(CONSTSP(cpu) p, int num) {
@@ -134,7 +137,7 @@ static void do_exec(CONSTSP(cpu) p) {
 void cpu_init(CONSTSP(cpu) p, vxt_system *s, enum vxt_cpu_type ty) {
    p->s = s;
    p->cpu_type = ty;
-   p->opcode_table = (ty == VXT_CPU_V20) ? opcode_table_v20 : opcode_table_8088;
+   p->opcode_table = (ty == VXT_CPU_8088) ? opcode_table_8088 : opcode_table_v20;
 }
 
 int cpu_step(CONSTSP(cpu) p) {
@@ -163,8 +166,16 @@ void cpu_reset_cycle_count(CONSTSP(cpu) p) {
 void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
 	vxt_memclear(&p->regs, sizeof(p->regs));
-	p->regs.flags = 0xF002;
-	p->regs.cs = 0xFFFF;
+
+	if (p->cpu_type == VXT_CPU_286) {
+		p->regs.flags = 2;
+		p->regs.cs = 0xF000;
+		p->regs.ip = 0xFFF0;
+	} else {
+		p->regs.flags = 0xF002;
+		p->regs.cs = 0xFFFF;
+	}
+
 	p->regs.debug = false;
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);

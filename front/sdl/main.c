@@ -192,7 +192,7 @@ static int emu_loop(void *ptr) {
 						SDL_AtomicSet(&running, 0);
 					else
 						printf("step error: %s", vxt_error_str(res.err));
-				} else if (res.halted || res.int28) { // Assume int28 is DOS waiting for input.
+				} else if (!args.no_idle && (res.halted || res.int28)) { // Assume int28 is DOS waiting for input.
 					SDL_Delay(1); // Yield CPU time to other processes.
 				}
 				num_cycles += res.cycles;
@@ -552,10 +552,15 @@ static int load_config(void *user, const char *section, const char *name, const 
 			args.halt |= atoi(value);
 		else if (!strcmp("mute", name))
 			args.mute |= atoi(value);
-		else if (!strcmp("v20", name))
-			args.v20 |= atoi(value);
+		else if (!strcmp("cpu", name))
+		{
+			if (!strcmp("v20", value)) args.cpu = "v20";
+			else if (!strcmp("286", value)) args.cpu = "286";
+		}
 		else if (!strcmp("no-activity", name))
 			args.no_activity |= atoi(value);
+		else if (!strcmp("no-idle", name))
+			args.no_idle |= atoi(value);
 		else if (!strcmp("harddrive", name) && !args.harddrive) {
 			static char harddrive_image_path[FILENAME_MAX + 2] = {0};
 			strncpy(harddrive_image_path, resolve_path(FRONTEND_ANY_PATH, value), FILENAME_MAX + 1);
@@ -680,7 +685,7 @@ static bool write_default_config(const char *path, bool clean) {
 		";gdb=1234\n"
 		"\n[args]\n"
 		";halt=1\n"
-		";v20=1\n"
+		";cpu=v20\n"
 		";hdboot=1\n"
 		";harddrive=boot/freedos_hd.img\n"
 		"\n[ch36x_isa]\n"
@@ -753,12 +758,15 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (args.v20) {
+	if (!strcmp(args.cpu, "v20")) {
 		cpu_type = VXT_CPU_V20;
-		printf("CPU type: V20\n");
+		args.cpu = "V20";
+	} else if (!strcmp(args.cpu, "286")) {
+		cpu_type = VXT_CPU_286;
 	} else {
-		printf("CPU type: 8088\n");
+		args.cpu = "8088";
 	}
+	printf("CPU type: %s\n", args.cpu);
 
 	if (args.frequency)
 		cpu_frequency = strtod(args.frequency, NULL);
@@ -1120,14 +1128,9 @@ int main(int argc, char *argv[]) {
 				num_cycles = 0;
 				turbo = vxtu_ppi_turbo_enabled(ppi_device);
 			);
-
-			const char *name = "8088";
-			if (cpu_type == VXT_CPU_V20) {
-				name = "V20";
-			}
 			
 			if (ticks > 10000) {
-				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz%s", name, mhz, turbo ? " (Turbo)" : "");
+				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz%s", args.cpu, mhz, turbo ? " (Turbo)" : "");
 			} else {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
 			}
