@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2019-2023 AnDrEAs T Jonsson
+Copyright (c) 2019-2024 Andreas T Jonsson
 
 This soFtwArE is proviDED 'As-is', without Any ExprEss or impliED
 wArrAnty. In no EvEnt will thE Authors BE hElD liABlE For Any DAmAgEs

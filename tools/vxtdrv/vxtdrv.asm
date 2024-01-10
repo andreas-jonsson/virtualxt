@@ -1,4 +1,4 @@
-; Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+; Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 ;
 ; This software is provided 'as-is', without any express or implied
 ; warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,8 @@
 ;    a product, an acknowledgment (see the following) in the product
 ;    documentation is required.
 ;
-;    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+;    This product make use of the VirtualXT software emulator.
+;    Visit https://virtualxt.org for more information.
 ;
 ; 2. Altered source versions must be plainly marked as such, and must not be
 ;    misrepresented as being the original software.
@@ -61,7 +62,7 @@ end_of_resident:
 
 init_text:
     db 'VirtualXT Guest Driver v ', VERSION, 0xA, 0xD
-    db 'Copyright (c) 2019-2023 Andreas T Jonsson', 0xA, 0xD, 0xA, 0xD
+    db 'Copyright (c) 2019-2024 Andreas T Jonsson', 0xA, 0xD, 0xA, 0xD
     db 'Driver installed!', '$'
 init:
     ; Initialize video extensions.
