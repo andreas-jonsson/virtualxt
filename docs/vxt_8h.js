@@ -47,7 +47,8 @@ var vxt_8h =
     [ "vxt_word", "vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12", null ],
     [ "vxt_cpu_type", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951", [
       [ "VXT_CPU_8088", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951a517058a91eed3a471ef1d7b988f83814", null ],
-      [ "VXT_CPU_V20", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951aa3c356fdfd749ea2ef4b110bebbfb804", null ]
+      [ "VXT_CPU_V20", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951aa3c356fdfd749ea2ef4b110bebbfb804", null ],
+      [ "VXT_CPU_286", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951a64f8412c38ca3a0190a03d5e47e97911", null ]
     ] ],
     [ "vxt_error", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047", [
       [ "VXT_NO_ERROR", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a303639ce6216d5df97fd907ec6be0bef", null ],
