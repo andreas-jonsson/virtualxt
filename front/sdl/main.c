@@ -412,8 +412,7 @@ static const char *resolve_path(enum frontend_path_type type, const char *path) 
 }
 
 static vxt_byte emu_control(enum frontend_ctrl_command cmd, vxt_byte data, void *userdata) {
-	(void)userdata;
-
+	vxt_system *s = (vxt_system*)userdata;
 	switch (cmd) {
 		case FRONTEND_CTRL_RESET:
 			emuctrl_buffer_len = 0;
@@ -497,6 +496,9 @@ static vxt_byte emu_control(enum frontend_ctrl_command cmd, vxt_byte data, void 
 				return 1;
 			}
 			emuctrl_buffer_len = 0;
+			break;
+		case FRONTEND_CTRL_DEBUG:
+			vxt_system_registers(s)->debug = true;
 			break;
 	}
 	return 0;
@@ -916,6 +918,9 @@ int main(int argc, char *argv[]) {
 		printf("Could not create system!\n");
 		return -1;
 	}
+
+	// Initializing this here is a bit late. But it works.
+	front_interface.ctrl.userdata = vxt;
 
 	if (ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &configure_pirepherals, vxt)) {
 		printf("ERROR: Could not configure all pirepherals!\n");

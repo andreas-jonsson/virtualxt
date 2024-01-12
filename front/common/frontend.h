@@ -123,7 +123,8 @@ enum frontend_ctrl_command {
 	FRONTEND_CTRL_PCLOSE,
 	FRONTEND_CTRL_FCLOSE,
 	FRONTEND_CTRL_PUSH,
-	FRONTEND_CTRL_PULL
+	FRONTEND_CTRL_PULL,
+	FRONTEND_CTRL_DEBUG
 };
 
 struct frontend_ctrl_interface {
