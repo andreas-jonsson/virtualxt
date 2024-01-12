@@ -931,6 +931,11 @@ int main(int argc, char *argv[]) {
 		}
 	#endif
 
+	#ifdef VXTU_MODULE_GDB
+		if (args.halt)
+			vxt_system_configure(vxt, "gdb", "halt", "1");
+	#endif
+
 	if (args.trace) {
 		if (!(trace_op_output = fopen(args.trace, "wb"))) {
 			printf("Could not open: %s\n", args.trace);

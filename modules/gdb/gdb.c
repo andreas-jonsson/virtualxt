@@ -88,6 +88,7 @@ struct gdb {
 
     vxt_word port;
     int server;
+	bool wait_on_startup;
     vxt_timer_id reconnect_timer;
     struct gdb_state state;
 };
@@ -162,7 +163,7 @@ static bool open_server_socket(struct gdb *dbg) {
 }
 
 static bool has_data(int fd) {
-	if (fd < 0)
+	if (fd == -1)
 		return false;
 
 	fd_set fds;
@@ -189,6 +190,12 @@ static bool accept_client(struct gdb *dbg, vxt_system *sys) {
     return true;
 }
 
+static vxt_error config(struct gdb *dbg, const char *section, const char *key, const char *value) {
+    if (!strcmp("gdb", section) && !strcmp("halt", key))
+        dbg->wait_on_startup = atoi(value) != 0;
+    return VXT_NO_ERROR;
+}
+
 static vxt_error install(struct gdb *dbg, vxt_system *s) {
     struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(dbg);
 
@@ -211,16 +218,24 @@ static vxt_error install(struct gdb *dbg, vxt_system *s) {
     vxt_system_install_timer(s, p, 0);
     dbg->reconnect_timer = vxt_system_install_timer(s, p, 1000000);
 
+	if (dbg->wait_on_startup) {
+		VXT_LOG("Wait for client to connect...");
+		while (!accept_client(dbg, s));
+	}
     return VXT_NO_ERROR;
 }
 
 static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
     (void)cycles;
+
     vxt_system *s = vxt_pirepheral_system(VXT_GET_PIREPHERAL(dbg));
     if (id == dbg->reconnect_timer) {
         accept_client(dbg, s);
         return VXT_NO_ERROR;
     }
+
+	if (dbg->state.client == -1)
+		return VXT_NO_ERROR;
 
     struct vxt_registers *vreg = vxt_system_registers(s);
     for (int i = 0; i < dbg->state.num_bps; i++) {
@@ -233,18 +248,15 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
 
 	if (!vreg->debug && has_data(dbg->state.client)) {
 		if (gdb_sys_getc(&dbg->state) == 3) {
-			VXT_LOG("Ctrl+C received from GDB!");
+			VXT_LOG("Ctrl+C received from GDB client!");
 			vreg->debug = true;
 		} else {
-			VXT_LOG("WARNING: Unexpected data received from GDB!");
+			VXT_LOG("WARNING: Unexpected data received from GDB client!");
 		}
 	}
     
 	if (vreg->debug) {
         VXT_LOG("Debug trap!");
-
-        while (dbg->state.client == -1)
-            accept_client(dbg, s);
 
         dbg->state.signum = 5;
         reg *r = dbg->state.registers;
@@ -335,11 +347,15 @@ int gdb_sys_putchar(struct gdb_state *state, int ch) {
 }
 
 int gdb_sys_mem_readb(struct gdb_state *state, address addr, char *val) {
+	if (addr > 0xFFFFF)
+		return GDB_EOF;
     *val = (char)vxt_system_read_byte(state->sys, addr);
     return 0;
 }
 
 int gdb_sys_mem_writeb(struct gdb_state *state, address addr, char val) {
+	if (addr > 0xFFFFF)
+		return GDB_EOF;
     vxt_system_write_byte(state->sys, addr, (vxt_byte)val);
     return 0;
 }
@@ -387,6 +403,7 @@ VXTU_MODULE_CREATE(gdb, {
     DEVICE->server = DEVICE->state.client = -1; 
 
     PIREPHERAL->install = &install;
+	PIREPHERAL->config = &config;
     PIREPHERAL->timer = &timer;
     PIREPHERAL->pclass = &pclass;
     PIREPHERAL->name = &name;
