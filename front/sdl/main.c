@@ -1128,17 +1128,7 @@ int main(int argc, char *argv[]) {
 						}
 						break;
 					} else if (e.key.keysym.sym == SDLK_F12) {
-						if (e.key.keysym.mod & KMOD_ALT) {
-							SDL_SetWindowFullscreen(window, 0);
-							SDL_SetRelativeMouseMode(false);
-
-							printf("Debug break!\n");
-							SYNC(vxt_system_registers(vxt)->debug = true);
-						} else if ((e.key.keysym.mod & KMOD_CTRL)) {
-							open_window(ctx, "Monitors");
-						} else {
-							open_window(ctx, "Help");
-						}
+						open_window(ctx, (e.key.keysym.mod & KMOD_CTRL) ? "Monitors" : "Help");
 						break;
 					}
 

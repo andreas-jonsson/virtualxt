@@ -67,7 +67,6 @@ void help_window(mu_Context *ctx) {
 			"<Alt+F11>\n"
 			"<Ctrl+F11>\n"
 			"<F12>\n"
-			"<Alt+F12>\n"
 			"<Ctrl+F12>\n"
 			"<Drag & Drop>\n"
 			"<Middle Mouse>";
@@ -77,7 +76,6 @@ void help_window(mu_Context *ctx) {
 			"Toggle CPU turbo mode\n"
 			"Eject floppy disk image\n"
 			"Show this help screen\n"
-			"Debug break, if GDB module is loaded\n"
 			"Show debug monitors\n"
 			"Drop floppy image file on window to mount\n"
 			"Release or capture mouse";

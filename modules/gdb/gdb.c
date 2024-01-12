@@ -34,6 +34,7 @@
     #include <unistd.h>
     #include <fcntl.h>
     #include <sys/socket.h>
+	#include <sys/select.h>
     #include <netinet/in.h>
 #endif
 
@@ -160,6 +161,18 @@ static bool open_server_socket(struct gdb *dbg) {
     return true;
 }
 
+static bool has_data(int fd) {
+	if (fd < 0)
+		return false;
+
+	fd_set fds;
+	FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+	struct timeval timeout = {0};
+
+    return select(fd + 1, &fds, NULL, NULL, &timeout) > 0;
+}
+
 static bool accept_client(struct gdb *dbg, vxt_system *sys) {
     if (dbg->state.client != -1)
         return false;
@@ -217,8 +230,17 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
             break;
         }
     }
+
+	if (!vreg->debug && has_data(dbg->state.client)) {
+		if (gdb_sys_getc(&dbg->state) == 3) {
+			VXT_LOG("Ctrl+C received from GDB!");
+			vreg->debug = true;
+		} else {
+			VXT_LOG("WARNING: Unexpected data received from GDB!");
+		}
+	}
     
-    if (vreg->debug) {
+	if (vreg->debug) {
         VXT_LOG("Debug trap!");
 
         while (dbg->state.client == -1)

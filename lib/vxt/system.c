@@ -154,7 +154,7 @@ VXT_API vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, unsigned reg_size
 }
 
 TEST(system_initialize,
-    CONSTP(vxt_system) sp = vxt_system_create(TALLOC, VXT_CPU_V20, VXT_DEFAULT_FREQUENCY, NULL);
+    CONSTP(vxt_system) sp = vxt_system_create(TALLOC, VXT_CPU_8088, VXT_DEFAULT_FREQUENCY, NULL);
     TENSURE(sp);
     TENSURE_NO_ERR(vxt_system_initialize(sp));
     vxt_system_destroy(sp);
