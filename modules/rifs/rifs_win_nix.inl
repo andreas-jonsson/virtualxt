@@ -169,7 +169,7 @@ static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
                 time_and_data(&stbuf.st_mtime, (vxt_word*)&data[0x16], (vxt_word*)&data[0x18]);
 
                 snprintf(full_path, MAX_PATH_LEN + 256, "%s/%s", proc->dir_path, dire->d_name);
-                *(vxt_dword*)&data[0x1A] = (vxt_dword)(((stbuf.st_size > 0xFFFFFFFF) || !S_ISREG(stbuf.st_mode)) ? 0 : stbuf.st_size);
+                *(vxt_dword*)&data[0x1A] = (vxt_dword)(((stbuf.st_size > 0x7FFFFFFF) || !S_ISREG(stbuf.st_mode)) ? 0 : stbuf.st_size);
 
                 char *dst = (char*)&data[0x1E];
                 int ln = (int)strlen(dire->d_name);
@@ -241,7 +241,7 @@ static vxt_word rifs_openfile(struct dos_proc *proc, vxt_word attrib, const char
 
                 *(vxt_word*)data = time; data += 2; // Time
                 *(vxt_word*)data = date; data += 2; // Date
-                COPY_VALUE(data, (stbuf.st_size > 0xFFFFFFFF) ? 0 : (vxt_dword)stbuf.st_size, vxt_dword); // Size
+                COPY_VALUE(data, (stbuf.st_size > 0x7FFFFFFF) ? 0 : (vxt_dword)stbuf.st_size, vxt_dword); // Size
                 return 0;
             }
         }
