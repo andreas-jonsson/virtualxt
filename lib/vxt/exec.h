@@ -82,10 +82,10 @@ static vxt_word read_opcode16(CONSTSP(cpu) p) {
    return WORD(h, l);
 }
 
-static vxt_pointer get_effective_address(CONSTSP(cpu) p) {
+static vxt_word get_ea_offset(CONSTSP(cpu) p) {
    CONSTSP(vxt_registers) r = &p->regs;
    CONSTSP(address_mode) m = &p->mode;
-	vxt_pointer	ea = 0;
+   vxt_word ea = 0;
    int cycles = 0;
 
 	switch (m->mod) {
@@ -164,7 +164,7 @@ static vxt_pointer get_effective_address(CONSTSP(cpu) p) {
          break;
 	}
    p->ea_cycles = cycles;
-	return VXT_POINTER(p->seg, ea);
+	return ea;
 }
 
 static vxt_byte reg_read8(CONSTSP(vxt_registers) r, int reg) {
@@ -310,24 +310,24 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
    }
 }
 
-#define RM_FUNC(a, b)                                                \
-   static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                  \
-      if (MOD_TARGET_MEM(p->mode)) {                                 \
-         vxt_pointer ea = get_effective_address(p);                  \
-         return cpu_read_ ## a (p, ea);                              \
-      } else {                                                       \
-         return reg_read ## b (&p->regs, p->mode.rm);                \
-      }                                                              \
-   }                                                                 \
-                                                                     \
-   static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {      \
-      if (MOD_TARGET_MEM(p->mode)) {                                 \
-         vxt_pointer ea = get_effective_address(p);                  \
-         cpu_write_ ## a (p, ea, data);                              \
-      } else {                                                       \
-         reg_write ## b (&p->regs, p->mode.rm, data);                \
-      }                                                              \
-   }                                                                 \
+#define RM_FUNC(a, b)                                               \
+   static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                 \
+      if (MOD_TARGET_MEM(p->mode)) {                                \
+         vxt_pointer ea = VXT_POINTER(p->seg, get_ea_offset(p));	\
+         return cpu_read_ ## a (p, ea);                             \
+      } else {                                                      \
+         return reg_read ## b (&p->regs, p->mode.rm);               \
+      }                                                             \
+   }                                                                \
+                                                                	\
+   static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {     \
+      if (MOD_TARGET_MEM(p->mode)) {                                \
+         vxt_pointer ea = VXT_POINTER(p->seg, get_ea_offset(p));	\
+         cpu_write_ ## a (p, ea, data);                             \
+      } else {                                                      \
+         reg_write ## b (&p->regs, p->mode.rm, data);               \
+      }                                                             \
+   }                                                                \
 
 #define NARROW(f) f(byte, 8)
 #define WIDE(f) f(word, 16)
