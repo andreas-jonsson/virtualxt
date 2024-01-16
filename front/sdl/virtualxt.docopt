@@ -15,6 +15,6 @@ Options:
   --config=PATH           Set config directory.
   --trace=FILE            Write CPU trace to file.
   --cpu=TYPE              Types are 8088, v20 and 286. [default: 8088]
-  --frequency=MHZ         CPU frequency. [default: 8.0]
+  --frequency=MHZ         CPU frequency. [default: 12.0]
   -a --floppy=FILE        Mount floppy image as drive A.
   -c --harddrive=FILE     Mount harddrive image as drive C.

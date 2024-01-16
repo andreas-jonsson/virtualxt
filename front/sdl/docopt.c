@@ -304,7 +304,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, (char *) "8088", NULL, (char *)
-        "8.0", NULL, NULL, NULL,
+        "12.0", NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -323,7 +323,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --config=PATH           Set config directory.",
               "  --trace=FILE            Write CPU trace to file.",
               "  --cpu=TYPE              Types are 8088, v20 and 286. [default: 8088]",
-              "  --frequency=MHZ         CPU frequency. [default: 8.0]",
+              "  --frequency=MHZ         CPU frequency. [default: 12.0]",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
               "  -c --harddrive=FILE     Mount harddrive image as drive C."}
     };
@@ -359,13 +359,13 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;
-	/*
+    /*
     if (argc == 1) {
         argv[argc++] = "--help";
         argv[argc++] = NULL;
         return_code = EXIT_FAILURE;
     }
-	*/
+    */
     {
         struct Tokens ts = tokens_new(argc, argv);
         if (parse_args(&ts, &elements))
