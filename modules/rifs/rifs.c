@@ -481,12 +481,14 @@ static void out(struct rifs *fs, vxt_word port, vxt_byte data) {
 
 static vxt_error install(struct rifs *fs, vxt_system *s) {
     vxt_system_install_io(s, VXT_GET_PIREPHERAL(fs), fs->base_port, fs->base_port + 7);
+
+    VXT_LOG("Root: '%s'", fs->root_path);
     if (!rifs_is_dir(fs->root_path)) {
-        VXT_LOG("ERROR: '%s' is not a valid directory path.", fs->root_path);
+        VXT_LOG("ERROR: The root path is not a valid directory.");
         return VXT_USER_ERROR(0);
     }
     if (fs->readonly)
-        VXT_LOG("WARNING: '%s' is set to readonly. The guest OS won't be able to write files at that location.", fs->root_path);
+        VXT_LOG("WARNING: Root is set to readonly! The guest OS won't be able to write files at that location.");
     return VXT_NO_ERROR;
 }
 
@@ -525,7 +527,12 @@ static vxt_error config(struct rifs *fs, const char *section, const char *key, c
 VXTU_MODULE_CREATE(rifs, {
     DEVICE->readonly = false;
     DEVICE->base_port = 0x178;
-    rifs_copy_root(DEVICE->root_path, ".");
+
+    const char *home = getenv("HOME");
+    if (!home || (*home == 0))
+        rifs_copy_root(DEVICE->root_path, ".");
+    else
+        rifs_copy_root(DEVICE->root_path, home);
     
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;
