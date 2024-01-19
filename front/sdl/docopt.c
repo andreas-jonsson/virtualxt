@@ -319,7 +319,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --clean                 Remove config file and write a new default one.",
               "  --edit                  Open config file in system text editor.",
               "  --locate                Locate the configuration directory.",
-              "  --rifs=PATH             Enable experimental RIFS support. (Shared folders)",
+              "  --rifs=PATH             Share directory with guest OS via RIFS. (Experimental)",
               "  --config=PATH           Set config directory.",
               "  --trace=FILE            Write CPU trace to file.",
               "  --cpu=TYPE              Types are 8088, v20 and 286. [default: 8088]",

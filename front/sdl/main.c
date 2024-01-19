@@ -928,12 +928,10 @@ int main(int argc, char *argv[]) {
 	}
 
 	#ifdef VXTU_MODULE_RIFS
-		if (args.rifs) {
-			bool wr = *args.rifs == '*';
-			const char *root = wr ? &args.rifs[1] : args.rifs;
-			vxt_system_configure(vxt, "rifs", "writable", wr ? "1" : "0");
-			vxt_system_configure(vxt, "rifs", "root", root);
-		}
+		if (args.rifs)
+			vxt_system_configure(vxt, "rifs", "root", args.rifs);
+		else
+			vxt_system_configure(vxt, "rifs", "readonly", "1");
 	#endif
 
 	#ifdef VXTU_MODULE_GDB

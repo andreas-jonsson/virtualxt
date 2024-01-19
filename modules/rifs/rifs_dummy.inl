@@ -30,6 +30,11 @@ static bool rifs_exists(const char *path) {
     return false;
 }
 
+static bool rifs_is_dir(const char *path) {
+    (void)path;
+    return false;
+}
+
 static const char *rifs_copy_root(char *dest, const char *path) {
     (void)path;
     *dest = 0;
