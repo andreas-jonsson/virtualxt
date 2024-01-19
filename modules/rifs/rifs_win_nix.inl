@@ -158,8 +158,12 @@ static bool rifs_exists(const char *path) {
 }
 
 static bool rifs_is_dir(const char *path) {
+    char *new_path = alloca(strlen(path) + 2);
+    if (!case_path(path, new_path))
+        return false;
+
     struct stat s;
-    return !stat(path, &s) && S_ISDIR(s.st_mode);
+    return !stat(new_path, &s) && S_ISDIR(s.st_mode);
 }
 
 static const char *rifs_copy_root(char *dest, const char *path) {
@@ -238,7 +242,7 @@ static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
 
             invalid_filename:
 
-                VXT_LOG("WARNING: Invalid filename: %s", dire->d_name);
+                VXT_LOG("Invalid DOS filename: '%s'", dire->d_name);
                 continue;
             }
         }
