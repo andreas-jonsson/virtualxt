@@ -22,6 +22,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 #include <vxt/vxtu.h>
+#include <frontend.h>
 #include "crc32.h"
 
 #include <assert.h>
@@ -112,6 +113,9 @@ struct rifs {
     char root_path[MAX_PATH_LEN];
     bool dlab;
     bool readonly;
+
+    void (*activity_callback)(int num, void *userdata);
+    void *activity_callback_userdata;
 
     vxt_byte buffer_input[BUFFER_SIZE];
     int buffer_input_len;
@@ -206,6 +210,9 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
         return;
     }
 
+    if (fs->activity_callback)
+        fs->activity_callback(0xFF, fs->activity_callback_userdata);
+
     #define BREAK_RO(size) {                    \
         if (fs->readonly) {                     \
             pk->cmd = 5;                        \
@@ -213,8 +220,6 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
             break;                              \
         }                                       \
     }                                           \
-
-    //VXT_LOG("CMD: 0x%X", pk->cmd);
 
     switch (pk->cmd) {
         case IFS_RMDIR: BREAK_RO(0)
@@ -533,6 +538,12 @@ VXTU_MODULE_CREATE(rifs, {
         rifs_copy_root(DEVICE->root_path, ".");
     else
         rifs_copy_root(DEVICE->root_path, home);
+
+    struct frontend_interface *fi = (struct frontend_interface*)FRONTEND;
+    if (fi) {
+        DEVICE->activity_callback = fi->disk.activity_callback;
+        DEVICE->activity_callback_userdata = fi->disk.userdata;
+    }
     
     PIREPHERAL->install = &install;
     PIREPHERAL->name = &name;

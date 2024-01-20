@@ -304,7 +304,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, (char *) "8088", NULL, (char *)
-        "12.0", NULL, NULL, NULL,
+        "10.0", NULL, NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -323,7 +323,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --config=PATH           Set config directory.",
               "  --trace=FILE            Write CPU trace to file.",
               "  --cpu=TYPE              Types are 8088, v20 and 286. [default: 8088]",
-              "  --frequency=MHZ         CPU frequency. [default: 12.0]",
+              "  --frequency=MHZ         CPU frequency. [default: 10.0]",
               "  -a --floppy=FILE        Mount floppy image as drive A.",
               "  -c --harddrive=FILE     Mount harddrive image as drive C."}
     };

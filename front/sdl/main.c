@@ -181,6 +181,7 @@ static int emu_loop(void *ptr) {
 	vxt_system *vxt = (vxt_system*)ptr;
 	Sint64 penalty = 0;
 	double frequency = cpu_frequency;
+	int frequency_hz = (int)(cpu_frequency * 1000000.0);
 	Uint64 start = SDL_GetPerformanceCounter();
 
 	while (SDL_AtomicGet(&running)) {
@@ -198,11 +199,14 @@ static int emu_loop(void *ptr) {
 				}
 				num_cycles += res.cycles;
 			}
+			
 			frequency = vxtu_ppi_turbo_enabled(ppi_device) ? cpu_frequency : ((double)VXT_DEFAULT_FREQUENCY / 1000000.0);
+			frequency_hz = (int)(frequency * 1000000.0);
+			vxt_system_set_frequency(vxt, frequency_hz);
 		);
 
 		for (;;) {
-			const Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)(frequency * 1000000.0);
+			const Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)frequency_hz;
 			if (!f) {
 				penalty = 0;
 				break;
