@@ -136,9 +136,18 @@ static void do_exec(CONSTSP(cpu) p) {
 }
 
 void cpu_init(CONSTSP(cpu) p, vxt_system *s, enum vxt_cpu_type ty) {
-   p->s = s;
-   p->cpu_type = ty;
-   p->opcode_table = (ty == VXT_CPU_8088) ? opcode_table_8088 : opcode_table_v20;
+	p->s = s;
+	p->cpu_type = ty;
+	switch (ty) {
+		case VXT_CPU_V20:
+			p->opcode_table = opcode_table_v20;
+			break;
+		case VXT_CPU_286:
+			p->opcode_table = opcode_table_286;
+			break;
+		default:
+			p->opcode_table = opcode_table_8088;
+	}	
 }
 
 int cpu_step(CONSTSP(cpu) p) {
