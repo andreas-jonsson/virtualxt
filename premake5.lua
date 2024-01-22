@@ -108,6 +108,7 @@ workspace "virtualxt"
         sanitize { "Address", "Fuzzer" }
 
     local modules = {}
+    local modules_link_callback = {}
     local module_opt = _OPTIONS["modules"]
 
     if module_opt then
@@ -141,6 +142,16 @@ workspace "virtualxt"
                 defines { "VXTU_MODULE_" .. string.upper(name) }
             end
         end
+        
+        module_link_callback = function(f)
+			if _OPTIONS["static"] then
+				table.insert(modules_link_callback, f)
+			else
+				filter {}
+				f()
+				filter {}
+			end
+		end
 
         for _,name in ipairs(mod_list) do
             table.insert(modules, name)
@@ -171,6 +182,8 @@ workspace "virtualxt"
     
             dofile("modules/" .. name .. "/premake5.lua")
         end
+        
+        module_link_callback = nil
     end
 
     -- This is just a dummy project.
@@ -313,6 +326,10 @@ workspace "virtualxt"
         if _OPTIONS["modules"] then
             if _OPTIONS["static"] then
                 links(modules)
+                for _,f in ipairs(modules_link_callback) do
+					f()
+					filter {}
+                end
             else
                 dependson "modules"
             end
@@ -340,11 +357,12 @@ workspace "virtualxt"
         filter "options:validator"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
 
-        filter "toolset:clang or gcc"
-            buildoptions "-Wno-unused-parameter"
-            linkoptions "-Wl,-rpath,'$$ORIGIN'/../lib"
+		filter "toolset:clang or gcc"
+			links "m"
+			buildoptions "-Wno-unused-parameter"
+			linkoptions "-Wl,-rpath,'$$ORIGIN'/../lib"
 
-        filter "toolset:clang"
+		filter "toolset:clang"
             buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
 
         filter "toolset:gcc"
