@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define VERSION "1.0.0"
+#define VERSION "1.1.0"
 #define COMMAND_PORT 0xB4
 #define DATA_PORT 0xB5
+#define PPI_PORT 0x61
 
 #if !defined(__BCC__) || !defined(__MSDOS__)
 	#error Use BCC to produce MSDOS executable!
@@ -73,12 +74,29 @@ static unsigned char read_data(void) {
 #endasm
 }
 
+static void turbo_on(void) {
+#asm
+	in al, PPI_PORT
+	or al, #0x4
+	out PPI_PORT, al
+#endasm
+}
+
+static void turbo_off(void) {
+#asm
+	in al, PPI_PORT
+	and al, #0xFB
+	out PPI_PORT, al
+#endasm
+}
+
 static void print_help(void) {
 	printf(
 		"Usage: emuctrl [cmd] <args...>\n\n"
 		"  version                 Display software information\n"
 		"  shutdown                Terminates the emulator\n"
 		"  popen     <args...>     Execute command on host and pipe input to guest\n"
+		"  turbo     <on/off>      Set CPU turbo mode\n"
 		"  push      [src] [dest]  Upload file from guest to host\n"
 		"  pull      [src] [dest]  Download file from host to guest\n"
 		"\n"
@@ -104,6 +122,11 @@ int main(int argc, char *argv[]) {
 	if (!strcmp(argv[1], "shutdown")) {
 		reset();
 		write_command(FRONTEND_CTRL_SHUTDOWN);
+	} else if (!strcmp(argv[1], "turbo")) {
+		if ((argc > 2) && !strcmp(argv[2], "off"))
+			turbo_off();
+		else
+			turbo_on();
 	} else if (!strcmp(argv[1], "popen")) {
 		if (argc < 3) {
 			printf("Host Command: ");
