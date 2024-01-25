@@ -324,13 +324,13 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
         }
         case IFS_GETSPACE:
         {
-            // TODO: We just fake this and say we always have 63Mb of free space. :D
+            // TODO: We just fake this and say we always have 32Mb of free space. :D
 
             vxt_word *dest = (vxt_word*)pk->data;
-            dest[0] = 63; // Available clusters
-            dest[1] = 64; // Total clusters
-            dest[2] = 1024; // Bytes per sector
-            dest[3] = 1024; // Sectors per cluster
+			dest[0] = 1024;	// Sectors per cluster
+			dest[1] = 64;	// Total clusters
+			dest[2] = 512;	// Bytes per sector
+			dest[3] = 63;	// Available clusters
 
             pk->cmd = 0;
             server_response(fs, pk, 8);
