@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,8 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+//    This product make use of the VirtualXT software emulator.
+//    Visit https://virtualxt.org for more information.
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -100,20 +101,53 @@ static bool case_path(char const *path, char *new_path) {
     return true;
 }
 
-static bool pattern_comp(const char *pattern, const char *name, bool root) {
+static bool to_dos_name(char *buffer, const char *name) {
+    bool lf = strlen(name) > 12;
+
+    // Buffer should always be 13 bytes or more.
+    memset(buffer, ' ', 12);
+
+    // Name, 8 bytes
+    int i;
+    for (i = 0; (i < 8) && *name; i++) {
+        if (*name == '.')
+            break;
+        buffer[i] = toupper(*name);
+        name++;
+    }
+
+    // Try to find extension if we are too long.
+    while (strlen(name) > 4)
+        name++;
+
+    // Extension, 4 bytes including initial dot.
+    for (i = 8; (i < 12) && *name; i++) {
+        buffer[i] = toupper(*name);
+        name++;
+    }
+    buffer[12] = 0;
+
+    return !lf;
+}
+
+static bool pattern_comp(const char *pattern, const char *name) {
     // TODO: Improve this! Might only work in FreeDOS.
     // Reference: https://devblogs.microsoft.com/oldnewthing/20071217-00/?p=24143
 
-    if (!strcmp(name, ".") || !strcmp(name, "..")) {
-        if (root)
-            return false;
-    } else if (*name == '.') {
-        return false;
-    }
+    char full_pattern[13];
+    char dos_name[13];
 
-    if (!strcmp(pattern, "????????.???"))
-        return true;
-    return !strcasecmp(pattern, name);
+    to_dos_name(dos_name, name);
+    to_dos_name(full_pattern, pattern);
+
+    for (int i = 0; i < 12; i++) {
+        char pch = full_pattern[i];
+        if ((i == 8) && (pch == '.'))
+            continue;
+        if ((pch != '?') && (dos_name[i] != pch))
+            return false;
+    }
+    return true;
 }
 
 static bool rifs_exists(const char *path) {
@@ -121,6 +155,15 @@ static bool rifs_exists(const char *path) {
     if (case_path(path, new_path))
         return access(new_path, F_OK) == 0;
     return false;
+}
+
+static bool rifs_is_dir(const char *path) {
+    char *new_path = alloca(strlen(path) + 2);
+    if (!case_path(path, new_path))
+        return false;
+
+    struct stat s;
+    return !stat(new_path, &s) && S_ISDIR(s.st_mode);
 }
 
 static const char *rifs_copy_root(char *dest, const char *path) {
@@ -146,11 +189,19 @@ static const char *rifs_copy_root(char *dest, const char *path) {
 }
 
 static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
+    // Are we looking for the disk lable?
+    if (proc->find_attrib & 0x8) {
+        memset(data, 0, 43);
+        data[0x15] = 0x8;
+        strcpy((char*)&data[0x1E], "HOST");
+        return 0;
+    }
+
     if (proc->dir_it) {
         char *full_path = alloca(MAX_PATH_LEN + 257);
 
         for (struct dirent *dire = readdir((DIR*)proc->dir_it); dire; dire = readdir((DIR*)proc->dir_it)) {
-            if (pattern_comp(proc->dir_pattern, dire->d_name, proc->is_root)) {
+            if (pattern_comp(proc->dir_pattern, dire->d_name)) {
                 memset(data, 0, 43);
                 snprintf(full_path, MAX_PATH_LEN + 256, "%s/%s", proc->dir_path, dire->d_name);
 
@@ -160,33 +211,39 @@ static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
                 stat(full_path, &stbuf);
                 bool is_dir = S_ISDIR(stbuf.st_mode);
 
+                // Handle normal-attribute files.
+                // Reference: https://jeffpar.github.io/kbarchive/kb/043/Q43144/
+
                 if (is_dir && !(proc->find_attrib & 0x10))
                     continue;
 
                 data[0x15] = is_dir ? 0x10 : 0x0;
-                time_and_data(&stbuf.st_mtime, (vxt_word*)&data[0x16], (vxt_word*)&data[0x18]);
+                time_and_date(&stbuf.st_mtime, (vxt_word*)&data[0x16], (vxt_word*)&data[0x18]);
+ 
+                *(vxt_dword*)&data[0x1A] = (vxt_dword)(((stbuf.st_size > 0x7FFFFFFF) || !S_ISREG(stbuf.st_mode)) ? 0 : stbuf.st_size);
 
-                snprintf(full_path, MAX_PATH_LEN + 256, "%s/%s", proc->dir_path, dire->d_name);
-                *(vxt_word*)&data[0x1A] = (vxt_word)(((stbuf.st_size > 0xFFFF) || !S_ISREG(stbuf.st_mode)) ? 0xFFFF : stbuf.st_size);
-
-                char *dst = (char*)&data[0x1E];
                 int ln = (int)strlen(dire->d_name);
-                int max_ln = is_dir ? 8 : 12;
-                int cap_ln = (ln > max_ln) ? max_ln : ln;
-                memset(dst, 0, 13);
+                char *dst = (char*)&data[0x1E];
 
-                for (int i = 0; i < cap_ln; i++)
-                    dst[i] = (vxt_byte)toupper(dire->d_name[i]);
-                if (ln > max_ln) {
-                    dst[7] = '~';
-                    if (!is_dir) {
-                        dst[8] = '.';
-                        dst[9] = (char)toupper(dire->d_name[ln - 3]);
-                        dst[10] = (char)toupper(dire->d_name[ln - 2]);
-                        dst[11] = (char)toupper(dire->d_name[ln - 1]);
-                    }
+                if (ln > (is_dir ? 8 : 12))
+                    goto invalid_filename;
+
+                // Special case?
+                if (!strcmp(".", dire->d_name) || !strcmp("..", dire->d_name)) {
+                    if (proc->is_root)
+                        continue;
+                    strcpy(dst, dire->d_name);
+                } else if (*dire->d_name == '.') {
+                    goto invalid_filename;
+                } else if (!to_dos_name(dst, dire->d_name)) {
+                    goto invalid_filename;
                 }
                 return 0;
+
+            invalid_filename:
+
+                VXT_LOG("Invalid DOS filename: '%s'", dire->d_name);
+                continue;
             }
         }
         CLOSE_DIR(proc);
@@ -201,12 +258,18 @@ static vxt_word rifs_findfirst(struct dos_proc *proc, vxt_word attrib, const cha
     if (case_path(path, new_path)) {
         const char *pattern = strrchr(path, '/'); // Use path because dirname may modify new_path.
         const char *dir_path = dirname(new_path);
+
+        if (pattern) {
+            pattern = pattern + 1;
+        } else {
+            VXT_LOG("WARNING: No pattern supplied to findfirst!");
+            pattern = "????????.???";
+        }
         
         if ((proc->dir_it = opendir(dir_path))) {
             proc->is_root = root;
             proc->find_attrib = attrib;
             strncpy(proc->dir_path, dir_path, sizeof(proc->dir_path) - 1);
-            pattern = pattern ? pattern + 1 : "????????.???";
             strncpy(proc->dir_pattern, pattern, sizeof(proc->dir_pattern));
             return rifs_findnext(proc, data);
         }
@@ -235,11 +298,11 @@ static vxt_word rifs_openfile(struct dos_proc *proc, vxt_word attrib, const char
                 struct stat stbuf;
                 stat(new_path, &stbuf);
                 vxt_word time, date;
-                time_and_data(&stbuf.st_mtime, &time, &date);
+                time_and_date(&stbuf.st_mtime, &time, &date);
 
                 *(vxt_word*)data = time; data += 2; // Time
                 *(vxt_word*)data = date; data += 2; // Date
-                COPY_VALUE(data, (stbuf.st_size > 0xFFFF) ? 0 : (vxt_dword)stbuf.st_size, vxt_dword); // Size
+                COPY_VALUE(data, (stbuf.st_size > 0x7FFFFFFF) ? 0 : (vxt_dword)stbuf.st_size, vxt_dword); // Size
                 return 0;
             }
         }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,8 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+//    This product make use of the VirtualXT software emulator.
+//    Visit https://virtualxt.org for more information.
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -114,6 +115,12 @@ char new_floppy_image_path[FILENAME_MAX] = {0};
 
 bool config_updated = false;
 
+#define EMUCTRL_BUFFER_SIZE 1024
+vxt_byte emuctrl_buffer[EMUCTRL_BUFFER_SIZE] = {0};
+int emuctrl_buffer_len = 0;
+FILE *emuctrl_file_handle = NULL;
+bool emuctrl_is_popen_handle = false;
+
 int str_buffer_len = 0;
 char *str_buffer = NULL;
 
@@ -174,6 +181,7 @@ static int emu_loop(void *ptr) {
 	vxt_system *vxt = (vxt_system*)ptr;
 	Sint64 penalty = 0;
 	double frequency = cpu_frequency;
+	int frequency_hz = (int)(cpu_frequency * 1000000.0);
 	Uint64 start = SDL_GetPerformanceCounter();
 
 	while (SDL_AtomicGet(&running)) {
@@ -186,16 +194,19 @@ static int emu_loop(void *ptr) {
 						SDL_AtomicSet(&running, 0);
 					else
 						printf("step error: %s", vxt_error_str(res.err));
-				} else if (res.halted) {
-					SDL_Delay(0); // Yield CPU time to other processes.
+				} else if (!args.no_idle && (res.halted || res.int28)) { // Assume int28 is DOS waiting for input.
+					SDL_Delay(1); // Yield CPU time to other processes.
 				}
 				num_cycles += res.cycles;
 			}
+			
 			frequency = vxtu_ppi_turbo_enabled(ppi_device) ? cpu_frequency : ((double)VXT_DEFAULT_FREQUENCY / 1000000.0);
+			frequency_hz = (int)(frequency * 1000000.0);
+			vxt_system_set_frequency(vxt, frequency_hz);
 		);
 
 		for (;;) {
-			const Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)(frequency * 1000000.0);
+			const Uint64 f = SDL_GetPerformanceFrequency() / (Uint64)frequency_hz;
 			if (!f) {
 				penalty = 0;
 				break;
@@ -404,11 +415,95 @@ static const char *resolve_path(enum frontend_path_type type, const char *path) 
 	return buffer;
 }
 
-static vxt_byte emu_control(enum frontend_ctrl_command cmd, void *userdata) {
-	(void)userdata;
-	if (cmd == FRONTEND_CTRL_SHUTDOWN) {
-		printf("Guest OS shutdown!\n");
-		SDL_AtomicSet(&running, 0);
+static vxt_byte emu_control(enum frontend_ctrl_command cmd, vxt_byte data, void *userdata) {
+	vxt_system *s = (vxt_system*)userdata;
+	switch (cmd) {
+		case FRONTEND_CTRL_RESET:
+			emuctrl_buffer_len = 0;
+			if (emuctrl_file_handle) {
+				if (emuctrl_is_popen_handle)
+					#ifdef _WIN32
+						_pclose
+					#else
+						pclose
+					#endif
+					(emuctrl_file_handle);
+				else
+					fclose(emuctrl_file_handle);
+			}
+			emuctrl_file_handle = NULL;
+			emuctrl_is_popen_handle = false;
+			break;
+		case FRONTEND_CTRL_SHUTDOWN:
+			printf("Guest OS shutdown!\n");
+			SDL_AtomicSet(&running, 0);
+			break;
+		case FRONTEND_CTRL_HAS_DATA:
+			if (emuctrl_file_handle) {
+				int ch = fgetc(emuctrl_file_handle);
+				if (ch & ~0xFF) {
+					return 0;
+				} else {
+					ungetc(ch, emuctrl_file_handle);
+					return 1;
+				}
+			}
+			return emuctrl_buffer_len ? 1 : 0;
+		case FRONTEND_CTRL_READ_DATA:
+			if (emuctrl_file_handle)
+				return (vxt_byte)fgetc(emuctrl_file_handle);
+			else if (emuctrl_buffer_len)
+				return emuctrl_buffer[--emuctrl_buffer_len];
+			break;
+		case FRONTEND_CTRL_WRITE_DATA:
+			if (emuctrl_file_handle && !emuctrl_is_popen_handle)
+				return (fputc(data, emuctrl_file_handle) == data) ? 0 : 1;
+			if (emuctrl_buffer_len >= EMUCTRL_BUFFER_SIZE)
+				return 1;
+			emuctrl_buffer[emuctrl_buffer_len++] = data;
+			break;
+		case FRONTEND_CTRL_POPEN:
+			if (!(emuctrl_file_handle = 
+				#ifdef _WIN32
+					_popen
+				#else
+					popen
+				#endif
+					((char*)emuctrl_buffer, "r"))
+			) {
+				printf("FRONTEND_CTRL_POPEN: popen failed!\n");
+				return 1;
+			}
+			printf("FRONTEND_CTRL_POPEN: \"%s\"\n", (char*)emuctrl_buffer);
+			emuctrl_buffer_len = 0;
+			emuctrl_is_popen_handle = true;
+			break;
+		case FRONTEND_CTRL_PCLOSE:
+			if (!emuctrl_is_popen_handle)
+				return 1;
+			if (emuctrl_file_handle)
+				pclose(emuctrl_file_handle);
+			emuctrl_file_handle = NULL;
+			emuctrl_is_popen_handle = false;
+			break;
+		case FRONTEND_CTRL_FCLOSE:
+			if (emuctrl_is_popen_handle)
+				return 1;
+			if (emuctrl_file_handle)
+				fclose(emuctrl_file_handle);
+			emuctrl_file_handle = NULL;
+			break;
+		case FRONTEND_CTRL_PUSH:
+		case FRONTEND_CTRL_PULL:
+			if (!(emuctrl_file_handle = fopen((char*)emuctrl_buffer, (cmd == FRONTEND_CTRL_PUSH) ? "wb" : "rb"))) {
+				printf("FRONTEND_CTRL_PUSH/PULL: fopen failed!\n");
+				return 1;
+			}
+			emuctrl_buffer_len = 0;
+			break;
+		case FRONTEND_CTRL_DEBUG:
+			vxt_system_registers(s)->debug = true;
+			break;
 	}
 	return 0;
 }
@@ -464,10 +559,15 @@ static int load_config(void *user, const char *section, const char *name, const 
 			args.halt |= atoi(value);
 		else if (!strcmp("mute", name))
 			args.mute |= atoi(value);
-		else if (!strcmp("v20", name))
-			args.v20 |= atoi(value);
+		else if (!strcmp("cpu", name))
+		{
+			if (!strcmp("v20", value)) args.cpu = "v20";
+			else if (!strcmp("286", value)) args.cpu = "286";
+		}
 		else if (!strcmp("no-activity", name))
 			args.no_activity |= atoi(value);
+		else if (!strcmp("no-idle", name))
+			args.no_idle |= atoi(value);
 		else if (!strcmp("harddrive", name) && !args.harddrive) {
 			static char harddrive_image_path[FILENAME_MAX + 2] = {0};
 			strncpy(harddrive_image_path, resolve_path(FRONTEND_ANY_PATH, value), FILENAME_MAX + 1);
@@ -550,6 +650,37 @@ static int configure_pirepherals(void *user, const char *section, const char *na
 	return (vxt_system_configure(user, section, name, value) == VXT_NO_ERROR) ? 1 : 0;
 }
 
+static void print_memory_map(vxt_system *s)	{
+	int prev_idx = 0;
+	const vxt_byte *map = vxt_system_io_map(s);
+
+	printf("IO map:\n");
+	for (int i = 0; i < VXT_IO_MAP_SIZE; i++) {
+		int idx = map[i];
+		if (idx && (idx != prev_idx)) {
+			printf("[0x%.4X-", i);
+			while (map[++i] == idx);
+			printf("0x%.4X] %s\n", i - 1, vxt_pirepheral_name(vxt_system_pirepheral(s, idx)));
+			prev_idx = idx;
+		}			
+	}
+
+	prev_idx = 0;
+	map = vxt_system_mem_map(s);
+
+	printf("Memory map:\n");
+	for (int i = 0; i < VXT_MEM_MAP_SIZE; i++) {
+		int idx = map[i];
+		if (idx != prev_idx) {
+			printf("[0x%.5X-", i << 4);
+			while (map[++i] == idx);
+			printf("0x%.5X] %s\n", (i << 4) - 1, vxt_pirepheral_name(vxt_system_pirepheral(s, idx)));
+			prev_idx = idx;
+			i--;
+		}			
+	}
+}
+
 static bool write_default_config(const char *path, bool clean) {
 	FILE *fp;
 	if (!clean && (fp = fopen(path, "r"))) {
@@ -584,7 +715,7 @@ static bool write_default_config(const char *path, bool clean) {
 		";serial=0x2F8,/dev/ttyUSB0\n"
 		";covox=0x378,disney\n"
 		";network=eth0\n"
-		";arstech_isa=libarsusb4.so\n"
+		";arstech_isa=\n"
 		";ch36x_isa=/dev/ch36xpci0\n"
 		";lua=lua/serial_debug.lua,0x3F8\n"
 		"\n; GDB server module should always be loadad after the others.\n"
@@ -592,7 +723,7 @@ static bool write_default_config(const char *path, bool clean) {
 		";gdb=1234\n"
 		"\n[args]\n"
 		";halt=1\n"
-		";v20=1\n"
+		";cpu=v20\n"
 		";hdboot=1\n"
 		";harddrive=boot/freedos_hd.img\n"
 		"\n[ch36x_isa]\n"
@@ -665,12 +796,15 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (args.v20) {
+	if (!strcmp(args.cpu, "v20")) {
 		cpu_type = VXT_CPU_V20;
-		printf("CPU type: V20\n");
+		args.cpu = "V20";
+	} else if (!strcmp(args.cpu, "286")) {
+		cpu_type = VXT_CPU_286;
 	} else {
-		printf("CPU type: 8088\n");
+		args.cpu = "8088";
 	}
+	printf("CPU type: %s\n", args.cpu);
 
 	if (args.frequency)
 		cpu_frequency = strtod(args.frequency, NULL);
@@ -789,18 +923,24 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
+	// Initializing this here is a bit late. But it works.
+	front_interface.ctrl.userdata = vxt;
+
 	if (ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &configure_pirepherals, vxt)) {
 		printf("ERROR: Could not configure all pirepherals!\n");
 		return -1;
 	}
 
 	#ifdef VXTU_MODULE_RIFS
-		if (args.rifs) {
-			bool wr = *args.rifs == '*';
-			const char *root = wr ? &args.rifs[1] : args.rifs;
-			vxt_system_configure(vxt, "rifs", "writable", wr ? "1" : "0");
-			vxt_system_configure(vxt, "rifs", "root", root);
-		}
+		if (args.rifs)
+			vxt_system_configure(vxt, "rifs", "root", args.rifs);
+		else
+			vxt_system_configure(vxt, "rifs", "readonly", "1");
+	#endif
+
+	#ifdef VXTU_MODULE_GDB
+		if (args.halt)
+			vxt_system_configure(vxt, "gdb", "halt", "1");
 	#endif
 
 	if (args.trace) {
@@ -864,6 +1004,8 @@ int main(int argc, char *argv[]) {
 				disk_controller.set_boot(disk_controller.device, 128);
 		}
 	}
+
+	print_memory_map(vxt);
 
 	vxt_system_reset(vxt);
 	vxt_system_registers(vxt)->debug = args.halt != 0;
@@ -998,17 +1140,7 @@ int main(int argc, char *argv[]) {
 						}
 						break;
 					} else if (e.key.keysym.sym == SDLK_F12) {
-						if (e.key.keysym.mod & KMOD_ALT) {
-							SDL_SetWindowFullscreen(window, 0);
-							SDL_SetRelativeMouseMode(false);
-
-							printf("Debug break!\n");
-							SYNC(vxt_system_registers(vxt)->debug = true);
-						} else if ((e.key.keysym.mod & KMOD_CTRL)) {
-							open_window(ctx, "Monitors");
-						} else {
-							open_window(ctx, "Help");
-						}
+						open_window(ctx, (e.key.keysym.mod & KMOD_CTRL) ? "Monitors" : "Help");
 						break;
 					}
 
@@ -1032,14 +1164,9 @@ int main(int argc, char *argv[]) {
 				num_cycles = 0;
 				turbo = vxtu_ppi_turbo_enabled(ppi_device);
 			);
-
-			const char *name = "8088";
-			if (cpu_type == VXT_CPU_V20) {
-				name = "V20";
-			}
 			
 			if (ticks > 10000) {
-				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz%s", name, mhz, turbo ? " (Turbo)" : "");
+				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz%s", args.cpu, mhz, turbo ? " (Turbo)" : "");
 			} else {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
 			}

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,8 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+//    This product make use of the VirtualXT software emulator.
+//    Visit https://virtualxt.org for more information.
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -25,33 +26,29 @@
 
 struct ctrl {
  	vxt_byte ret;
-    vxt_byte (*callback)(enum frontend_ctrl_command,void*);
+    vxt_byte (*callback)(enum frontend_ctrl_command,vxt_byte,void*);
     void *userdata;
+    
+    int state;
 };
 
 static vxt_byte in(struct ctrl *c, vxt_word port) {
-    (void)port;
-    vxt_byte r = c->ret;
-    c->ret = 0;
-	return r;
+    if (!c->callback) {
+        return 0;
+    }
+	return (port == 0xB5) ? c->callback(FRONTEND_CTRL_READ_DATA, 0, c->userdata) : c->ret;
 }
 
 static void out(struct ctrl *c, vxt_word port, vxt_byte data) {
     (void)port;
-    if (!c->callback)
+    if (!c->callback) {
         return;
-    switch (data) {
-        case 0: // Reset controller
-            c->ret = 0;
-            break;
-        case 1: // Shutdown
-            c->ret = c->callback(FRONTEND_CTRL_SHUTDOWN, c->userdata);
-            break;
-    }
+	}
+	c->ret = (port == 0xB5) ? c->callback(FRONTEND_CTRL_WRITE_DATA, data, c->userdata) : c->callback((enum frontend_ctrl_command)data, 0, c->userdata);
 }
 
 static vxt_error install(struct ctrl *c, vxt_system *s) {
-    vxt_system_install_io_at(s, VXT_GET_PIREPHERAL(c), 0xB4);
+    vxt_system_install_io(s, VXT_GET_PIREPHERAL(c), 0xB4, 0xB5);
     return VXT_NO_ERROR;
 }
 

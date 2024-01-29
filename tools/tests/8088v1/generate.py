@@ -62,6 +62,10 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
         r->sp = regs.sp; r->bp = regs.bp; r->si = regs.si; r->di = regs.di;
         r->ip = regs.ip; r->flags = regs.flags;
 
+		// INT0
+		vxt_system_write_word(s, 0, 0x400);
+		vxt_system_write_word(s, 2, 0);
+
         vxt_word num_mem;
         TENSURE(fread(&num_mem, 2, 1, fp) == 1);
        
@@ -225,7 +229,7 @@ def gen_tests(input_name):
 
 ####################### Start #######################
 
-c_test_name = "lib/vxt/i8088_tests.c"
+c_test_name = "lib/vxt/8088_tests.c"
 data_dir = "tools/tests/8088v1"
 
 skip_opcodes = (
@@ -246,15 +250,17 @@ skip_opcodes = (
     (0xFE, 2), (0xFE, 3), (0xFE, 4), (0xFE, 5), (0xFE, 6), (0xFE, 7),
     (0xFF, 7),
 
-    # BUG: Div zero issue?
+    # BUG: All division
+	#      F6.7, F7.7 - Presence of a REP prefix preceding IDIV will invert the sign of the quotient,
+	#      therefore REP prefixes are prepended to 10% of IDIV tests. This was only recently discovered by reenigne.
     0xD4,
     (0xF6, 6), (0xF6, 7), (0xF7, 6), (0xF7, 7),
 
     # BUG: ?
     0x11,
 
-    # BUG: Possible issue with get_effective_address
-    0xC4,
+    # BUG: Possible issue with get_ea_offset?
+	#      callf word [ss:bp+si-64h]
     (0xFF, 3)
 )
 

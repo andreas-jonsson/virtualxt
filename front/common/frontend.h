@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,8 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+//    This product make use of the VirtualXT software emulator.
+//    Visit https://virtualxt.org for more information.
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -113,12 +114,22 @@ struct frontend_keyboard_controller {
 };
 
 enum frontend_ctrl_command {
-	FRONTEND_CTRL_SHUTDOWN = 0x1
+	FRONTEND_CTRL_RESET,
+	FRONTEND_CTRL_SHUTDOWN,
+	FRONTEND_CTRL_HAS_DATA,
+	FRONTEND_CTRL_READ_DATA,
+	FRONTEND_CTRL_WRITE_DATA,
+	FRONTEND_CTRL_POPEN,
+	FRONTEND_CTRL_PCLOSE,
+	FRONTEND_CTRL_FCLOSE,
+	FRONTEND_CTRL_PUSH,
+	FRONTEND_CTRL_PULL,
+	FRONTEND_CTRL_DEBUG
 };
 
 struct frontend_ctrl_interface {
     void *userdata;
-	vxt_byte (*callback)(enum frontend_ctrl_command cmd, void *userdata);
+	vxt_byte (*callback)(enum frontend_ctrl_command cmd, vxt_byte data, void *userdata);
 };
 
 struct frontend_disk_interface {

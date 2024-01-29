@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,8 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+//    This product make use of the VirtualXT software emulator.
+//    Visit https://virtualxt.org for more information.
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -42,14 +43,11 @@ struct instruction {
    void (*func)(CONSTSP(cpu), INST());
 };
 
-#define SIGNEXT16(v) signe_extend16(v)
-#define SIGNEXT32(v) signe_extend32(v)
-
-static vxt_dword signe_extend32(vxt_word v) {
+static vxt_dword sign_extend32(vxt_word v) {
    return (v & 0x8000) ? ((vxt_dword)v) | 0xFFFF0000 : (vxt_dword)v;
 }
 
-static vxt_word signe_extend16(vxt_byte v) {
+static vxt_word sign_extend16(vxt_byte v) {
    return (v & 0x80) ? ((vxt_word)v) | 0xFF00 : (vxt_word)v;
 }
 
@@ -84,10 +82,10 @@ static vxt_word read_opcode16(CONSTSP(cpu) p) {
    return WORD(h, l);
 }
 
-static vxt_pointer get_effective_address(CONSTSP(cpu) p) {
+static vxt_word get_ea_offset(CONSTSP(cpu) p) {
    CONSTSP(vxt_registers) r = &p->regs;
    CONSTSP(address_mode) m = &p->mode;
-	vxt_pointer	ea = 0;
+   vxt_word ea = 0;
    int cycles = 0;
 
 	switch (m->mod) {
@@ -166,7 +164,7 @@ static vxt_pointer get_effective_address(CONSTSP(cpu) p) {
          break;
 	}
    p->ea_cycles = cycles;
-	return VXT_POINTER(p->seg, ea);
+	return ea;
 }
 
 static vxt_byte reg_read8(CONSTSP(vxt_registers) r, int reg) {
@@ -312,24 +310,24 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
    }
 }
 
-#define RM_FUNC(a, b)                                                \
-   static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                  \
-      if (MOD_TARGET_MEM(p->mode)) {                                 \
-         vxt_pointer ea = get_effective_address(p);                  \
-         return cpu_read_ ## a (p, ea);                              \
-      } else {                                                       \
-         return reg_read ## b (&p->regs, p->mode.rm);                \
-      }                                                              \
-   }                                                                 \
-                                                                     \
-   static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {      \
-      if (MOD_TARGET_MEM(p->mode)) {                                 \
-         vxt_pointer ea = get_effective_address(p);                  \
-         cpu_write_ ## a (p, ea, data);                              \
-      } else {                                                       \
-         reg_write ## b (&p->regs, p->mode.rm, data);                \
-      }                                                              \
-   }                                                                 \
+#define RM_FUNC(a, b)                                               \
+   static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                 \
+      if (MOD_TARGET_MEM(p->mode)) {                                \
+         vxt_pointer ea = VXT_POINTER(p->seg, get_ea_offset(p));	\
+         return cpu_read_ ## a (p, ea);                             \
+      } else {                                                      \
+         return reg_read ## b (&p->regs, p->mode.rm);               \
+      }                                                             \
+   }                                                                \
+                                                                	\
+   static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {     \
+      if (MOD_TARGET_MEM(p->mode)) {                                \
+         vxt_pointer ea = VXT_POINTER(p->seg, get_ea_offset(p));	\
+         cpu_write_ ## a (p, ea, data);                             \
+      } else {                                                      \
+         reg_write ## b (&p->regs, p->mode.rm, data);               \
+      }                                                             \
+   }                                                                \
 
 #define NARROW(f) f(byte, 8)
 #define WIDE(f) f(word, 16)
@@ -392,7 +390,7 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
          override_with_ss(p, (mode.rm == 2) || (mode.rm == 3));
 	      break;
 	   case 1:
-	      mode.disp = SIGNEXT16(read_opcode8(p));
+	      mode.disp = sign_extend16(read_opcode8(p));
          override_with_ss(p, (mode.rm == 2) || (mode.rm == 3) || (mode.rm == 6));
 	      break;
 	   case 2:
@@ -406,17 +404,24 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
 }
 
 static void call_int(CONSTSP(cpu) p, int n) {
-   VALIDATOR_DISCARD(p);
-   CONSTSP(vxt_registers) r = &p->regs;
+	VALIDATOR_DISCARD(p);
+	CONSTSP(vxt_registers) r = &p->regs;
 
-   push(p, (r->flags & ALL_FLAGS) | 0xF002);
-   push(p, r->cs);
-   push(p, r->ip);
+	if (p->cpu_type == VXT_CPU_286)
+		push(p, (r->flags & (ALL_FLAGS | 0xF000)) | 0xF002);
+	else
+		push(p, (r->flags & ALL_FLAGS) | 0xF002);
 
-   r->ip = cpu_read_word(p, (vxt_pointer)n * 4);
-   r->cs = cpu_read_word(p, (vxt_pointer)n * 4 + 2);
-   r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
-   p->inst_queue_dirty = true;
+	push(p, r->cs);
+	push(p, r->ip);
+
+	r->ip = cpu_read_word(p, (vxt_pointer)n * 4);
+	r->cs = cpu_read_word(p, (vxt_pointer)n * 4 + 2);
+	r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
+	p->inst_queue_dirty = true;
+
+	if (n == 0x28)
+		p->int28 = true; 
 }
 
 static void divZero(CONSTSP(cpu) p) {

@@ -7,13 +7,14 @@ Options:
   --halt                  Debug break on startup.
   --mute                  Disable audio.
   --no-activity           Disable disk activity indicator.
-  --v20                   Enable NEC V20 CPU support.
+  --no-idle               Disable CPU idle on INT28.
   --clean                 Remove config file and write a new default one.
   --edit                  Open config file in system text editor.
   --locate                Locate the configuration directory.
-  --rifs=PATH             Enable experimental RIFS support. (Shared folders)
+  --rifs=PATH             Share directory with guest OS via RIFS. (Experimental)
   --config=PATH           Set config directory.
   --trace=FILE            Write CPU trace to file.
-  --frequency=MHZ         CPU frequency. [default: 8.0]
+  --cpu=TYPE              Types are 8088, v20 and 286. [default: 8088]
+  --frequency=MHZ         CPU frequency. [default: 10.0]
   -a --floppy=FILE        Mount floppy image as drive A.
   -c --harddrive=FILE     Mount harddrive image as drive C.

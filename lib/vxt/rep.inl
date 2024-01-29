@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,8 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+//    This product make use of the VirtualXT software emulator.
+//    Visit https://virtualxt.org for more information.
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -110,7 +111,7 @@ REPEAT(scasw_AF, 19, {
 #define LOOP(name, cond, taken, ntaken)                  \
    static void name (CONSTSP(cpu) p, INST(inst)) {       \
       UNUSED(inst);                                      \
-      vxt_word v = SIGNEXT16(read_opcode8(p));           \
+      vxt_word v = sign_extend16(read_opcode8(p));       \
       if (cond) {                                        \
          p->regs.ip += v;                                \
          p->inst_queue_dirty = true;                     \
@@ -127,7 +128,7 @@ LOOP(loop_E2, --p->regs.cx, 17, 5)
 
 static void jcxz_E3(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_word v = SIGNEXT16(read_opcode8(p));
+   vxt_word v = sign_extend16(read_opcode8(p));
    if (!p->regs.cx) {
       p->cycles += 12;
       p->regs.ip += v;

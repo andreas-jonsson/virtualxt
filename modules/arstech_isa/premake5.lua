@@ -1,3 +1,13 @@
+newoption {
+    trigger = "arstech",
+    description = "Link with Arstech USB library (arsusb4)"
+}
+
 files "isa.c"
-filter "toolset:clang or gcc"
-    buildoptions "-Wno-pedantic"
+
+if _OPTIONS["arstech"] then
+	defines "ARSTECH"
+	module_link_callback(function()
+			links(_OPTIONS["arstech"])
+	end)
+end

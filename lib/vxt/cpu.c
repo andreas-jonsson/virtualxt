@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,8 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+//    This product make use of the VirtualXT software emulator.
+//    Visit https://virtualxt.org for more information.
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -22,10 +23,13 @@
 
 #include "common.h"
 #include "cpu.h"
+#include "include/vxt/vxt.h"
 #include "testing.h"
 
-// Chain v20.inl, i8088.inl, exec.inl for better editor support.
+#include "exec.inl"
+#include "8088.inl"
 #include "v20.inl"
+#include "286.inl"
 
 #ifndef VXT_NO_PREFETCH
    static void prefetch(CONSTSP(cpu) p, int num) {
@@ -132,9 +136,18 @@ static void do_exec(CONSTSP(cpu) p) {
 }
 
 void cpu_init(CONSTSP(cpu) p, vxt_system *s, enum vxt_cpu_type ty) {
-   p->s = s;
-   p->cpu_type = ty;
-   p->opcode_table = (ty == VXT_CPU_V20) ? opcode_table_v20 : opcode_table_8088;
+	p->s = s;
+	p->cpu_type = ty;
+	switch (ty) {
+		case VXT_CPU_V20:
+			p->opcode_table = opcode_table_v20;
+			break;
+		case VXT_CPU_286:
+			p->opcode_table = opcode_table_286;
+			break;
+		default:
+			p->opcode_table = opcode_table_8088;
+	}	
 }
 
 int cpu_step(CONSTSP(cpu) p) {
@@ -157,13 +170,22 @@ int cpu_step(CONSTSP(cpu) p) {
 
 void cpu_reset_cycle_count(CONSTSP(cpu) p) {
    p->cycles = 0;
+   p->int28 = false; 
 }
 
 void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
 	vxt_memclear(&p->regs, sizeof(p->regs));
-	p->regs.flags = 0xF002;
-	p->regs.cs = 0xFFFF;
+
+	if (p->cpu_type == VXT_CPU_286) {
+		p->regs.flags = 2;
+		p->regs.cs = 0xF000;
+		p->regs.ip = 0xFFF0;
+	} else {
+		p->regs.flags = 0xF002;
+		p->regs.cs = 0xFFFF;
+	}
+
 	p->regs.debug = false;
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);

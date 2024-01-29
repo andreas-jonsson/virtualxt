@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,8 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+//    This product make use of the VirtualXT software emulator.
+//    Visit https://virtualxt.org for more information.
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -29,6 +30,11 @@ static bool rifs_exists(const char *path) {
     return false;
 }
 
+static bool rifs_is_dir(const char *path) {
+    (void)path;
+    return false;
+}
+
 static const char *rifs_copy_root(char *dest, const char *path) {
     (void)path;
     *dest = 0;
@@ -38,7 +44,7 @@ static const char *rifs_copy_root(char *dest, const char *path) {
 static vxt_word rifs_findnext(struct dos_proc *proc, vxt_byte *data) {
     (void)proc; (void)data;
     time_t t = time(NULL);
-    time_and_data(&t, NULL, NULL);
+    time_and_date(&t, NULL, NULL);
     return 0x16;
 }
 

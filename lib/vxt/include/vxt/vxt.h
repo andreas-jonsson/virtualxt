@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,7 +13,8 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+//    This product make use of the VirtualXT software emulator.
+//    Visit https://virtualxt.org for more information.
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
@@ -28,7 +29,7 @@ extern "C" {
 #endif
 
 #define VXT_VERSION_MAJOR 0
-#define VXT_VERSION_MINOR 11
+#define VXT_VERSION_MINOR 12
 #define VXT_VERSION_PATCH 0
 
 #ifdef VXT_VERSION_RELEASE
@@ -169,7 +170,8 @@ typedef void *vxt_allocator(void*, size_t);
 
 enum vxt_cpu_type {
     VXT_CPU_8088,
-    VXT_CPU_V20
+    VXT_CPU_V20,
+	VXT_CPU_286
 };
 
 enum {
@@ -207,7 +209,7 @@ struct vxt_registers {
 
 struct vxt_step {
     int cycles;
-    bool halted;
+    bool halted, int28;
     vxt_error err;
 };
 

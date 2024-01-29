@@ -31,7 +31,7 @@ __pycache__
 /tools/tests/8088v1/*.json.gz
 /tools/tests/8088v1/*.bin
 /tools/tests/8088v1/8088.json
-/lib/vxt/i8088_tests.c
+/lib/vxt/8088_tests.c
 
 /*.trace*
 /tools/vxtdrv/vxtdrv.com

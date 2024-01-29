@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -13,16 +13,15 @@
 //    a product, an acknowledgment (see the following) in the product
 //    documentation is required.
 //
-//    Portions Copyright (c) 2019-2023 Andreas T Jonsson <mail@andreasjonsson.se>
+//    This product make use of the VirtualXT software emulator.
+//    Visit https://virtualxt.org for more information.
 //
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include "i8088.inl"
-
-static void ext_F(CONSTSP(cpu) p, INST(inst)) {
+static void ext_v20_F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    VALIDATOR_DISCARD(p);
 
@@ -54,7 +53,7 @@ static struct instruction const opcode_table_v20[0x100] = {
    {0xC, "OR AL Ib", false, X, &or_C},
    {0xD, "OR AX Iv", false, X, &or_D},
    {0xE, "PUSH CS", false, X, &push_cs},
-   {0xF, "EXTENDED 0xF", false, X, &ext_F},
+   {0xF, "EXTENDED 0xF", false, X, &ext_v20_F},
    {0x10, "ADC Eb Gb", true, X, &add_0_10},
    {0x11, "ADC Ev Gv", true, X, &add_1_11},
    {0x12, "ADC Gb Eb", true, X, &add_2_12},
