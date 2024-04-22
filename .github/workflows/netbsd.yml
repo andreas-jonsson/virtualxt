@@ -27,7 +27,7 @@ jobs:
           /usr/sbin/pkg_add SDL2 premake5 gmake
 
         run: |
-          pwd
-          ls -lah
-          whoami
-          env
+          premake5 --test gmake
+          make clean test
+          premake5 --modules --static gmake
+          make clean sdl2-frontend
