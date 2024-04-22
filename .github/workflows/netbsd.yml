@@ -1,0 +1,33 @@
+name: NetBSD
+
+on:
+  push:
+    branches: [ "develop", "edge", "release" ]
+  pull_request:
+    branches: [ "develop" ]
+
+  workflow_dispatch:
+
+jobs:
+  netbsd:
+    runs-on: ubuntu-latest
+    name: Build and test on NetBSD 10.0
+    env:
+      VXT_VERSION: 0.13.0
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build & Test
+      id: netbsd
+      uses: vmactions/netbsd-vm@v1
+      with:
+        release: "10.0"
+        envs: VXT_VERSION
+        usesh: true
+        prepare: |
+          /usr/sbin/pkg_add SDL2 premake5 gmake
+
+        run: |
+          pwd
+          ls -lah
+          whoami
+          env
