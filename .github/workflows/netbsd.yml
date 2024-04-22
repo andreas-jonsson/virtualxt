@@ -28,6 +28,6 @@ jobs:
 
         run: |
           premake5 --test gmake
-          make clean test
+          gmake clean test
           premake5 --modules --static gmake
-          make clean sdl2-frontend
+          gmake clean sdl2-frontend
