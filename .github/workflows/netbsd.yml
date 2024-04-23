@@ -14,6 +14,7 @@ jobs:
     name: Build and test on NetBSD 10.0
     env:
       VXT_VERSION: 0.13.0
+      PKGSRC_VERSION: 2024Q1
     steps:
     - uses: actions/checkout@v4
     - name: Build & Test
@@ -21,14 +22,19 @@ jobs:
       uses: vmactions/netbsd-vm@v1
       with:
         release: "10.0"
-        envs: VXT_VERSION
+        envs: "PKGSRC_VERSION VXT_VERSION"
         usesh: true
         copyback: false
         prepare: |
           export PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r | cut -d_ -f1)/All"
           /usr/sbin/pkg_add pkgin
           pkgin -y update
-          pkgin -y in modular-xorg-libs SDL2 premake5 gmake
+          pkgin -y in curl
+          curl -L -o /tmp/pkgsrc.tar.gz https://cdn.NetBSD.org/pub/pkgsrc/pkgsrc-${PKGSRC_VERSION}/pkgsrc.tar.gz
+          tar -xzf /tmp/pkgsrc.tar.gz -C /usr
+          echo X11_TYPE=modular > /etc/mk.conf
+          (cd /usr/pkgsrc/meta-pkgs/modular-xorg; make install)
+          pkgin -y in SDL2 premake5 gmake
 
         run: |
           premake5 --test gmake
