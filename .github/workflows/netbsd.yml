@@ -26,8 +26,7 @@ jobs:
         usesh: true
         copyback: false
         prepare: |
-          export PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r | cut -d_ -f1)/All"
-          /usr/sbin/pkg_add pkgin
+          PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r | cut -d_ -f1)_${PKGSRC_VERSION}/All" /usr/sbin/pkg_add pkgin
           pkgin -y update
           pkgin -y in curl
           curl -L -o /tmp/pkgsrc.tar.gz https://cdn.NetBSD.org/pub/pkgsrc/pkgsrc-${PKGSRC_VERSION}/pkgsrc.tar.gz
