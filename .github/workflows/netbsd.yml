@@ -24,7 +24,7 @@ jobs:
         envs: VXT_VERSION
         usesh: true
         prepare: |
-          /usr/sbin/pkg_add SDL2 premake5 gmake
+          /usr/sbin/pkg_add modular-xorg-libs SDL2 premake5 gmake
 
         run: |
           premake5 --test gmake
