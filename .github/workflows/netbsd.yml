@@ -33,7 +33,7 @@ jobs:
           curl -L -o /tmp/pkgsrc.tar.gz https://cdn.NetBSD.org/pub/pkgsrc/pkgsrc-${PKGSRC_VERSION}/pkgsrc.tar.gz
           tar -xzf /tmp/pkgsrc.tar.gz -C /usr
           echo X11_TYPE=modular > /etc/mk.conf
-          (cd /usr/pkgsrc/meta-pkgs/modular-xorg; make install)
+          (cd /usr/pkgsrc/meta-pkgs/modular-xorg-libs; make install)
           pkgin -y in SDL2 premake5 gmake
 
         run: |
