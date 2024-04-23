@@ -25,8 +25,9 @@ jobs:
         usesh: true
         copyback: false
         prepare: |
+          echo $PATH
           export PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r | cut -d_ -f1)/All"
-          pkg_add pkgin
+          /usr/sbin/pkg_add pkgin
           pkgin update
           pkgin in SDL2 premake5 gmake
 
