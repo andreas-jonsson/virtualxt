@@ -23,8 +23,12 @@ jobs:
         release: "10.0"
         envs: VXT_VERSION
         usesh: true
+        copyback: false
         prepare: |
-          /usr/sbin/pkg_add modular-xorg-libs SDL2 premake5 gmake
+          export PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r | cut -d_ -f1)/All"
+          pkg_add pkgin
+          pkgin update
+          pkgin in SDL2 premake5 gmake
 
         run: |
           premake5 --test gmake
