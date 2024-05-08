@@ -112,7 +112,7 @@ static bool to_dos_name(char *buffer, const char *name) {
     for (i = 0; (i < 8) && *name; i++) {
         if (*name == '.')
             break;
-        buffer[i] = toupper(*name);
+        buffer[i] = toupper((int)*name);
         name++;
     }
 
@@ -122,7 +122,7 @@ static bool to_dos_name(char *buffer, const char *name) {
 
     // Extension, 4 bytes including initial dot.
     for (i = 8; (i < 12) && *name; i++) {
-        buffer[i] = toupper(*name);
+        buffer[i] = toupper((int)*name);
         name++;
     }
     buffer[12] = 0;

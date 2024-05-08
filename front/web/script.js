@@ -451,25 +451,14 @@ function getCanvas() {
     return document.getElementById(urlParams.get("canvas") || defaultCanvas);
 }
 
-function genAudioSamples(samples, delta) {
-    const num = delta * samples.freq;
-    const max = Math.min(samples.len + num, samples.data.length);
-    for (var i = samples.len; i < max; i++)
-        samples.data[samples.len++] = samples.func(samples.freq);
-}
-
-function nextAudioBuffer(ctx, buffer, samples) {
-    for (var i = samples.len; i < samples.data.length; i++)
-        samples.data[i] = samples.func(samples.freq);
-
-    buffer.copyToChannel(samples.data, 0);
-    samples.len = 0;
+function nextAudioBuffer(ctx, buffer, func) {
+    buffer.copyToChannel(func(), 0);
 
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(ctx.destination);
     source.onended = () => {
-        nextAudioBuffer(ctx, buffer, samples);
+        nextAudioBuffer(ctx, buffer, func);
     }
     source.start();
 }
@@ -533,7 +522,10 @@ function startEmulator(binary) {
         };
 
         const initialize = () => {
-            C.wasm_initialize_emulator((urlParams.get("v20") == 1) ? 1 : 0, targetFreq * 1000000);
+			const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
+			const audioBufferSize = audioCtx.sampleRate * defaultAudioLatency;
+
+            C.wasm_initialize_emulator((urlParams.get("v20") == 1) ? 1 : 0, targetFreq * 1000000, audioCtx.sampleRate, audioBufferSize);
 
             if (urlParams.has("storage") && (urlParams.get("storage") != "0")) {
                 initLocalStorage();
@@ -584,20 +576,20 @@ function startEmulator(binary) {
 
             window.requestAnimationFrame(renderFrame);
 
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
-            const audioSamples = {
-                data: new Float32Array(audioCtx.sampleRate * defaultAudioLatency),
-                len: 0,
-                freq: audioCtx.sampleRate,
-                func: C.wasm_generate_sample
-            };
             const audioBuffer = audioCtx.createBuffer(
                 1,
-                audioSamples.data.length,
+                audioBufferSize,
                 audioCtx.sampleRate
             );
 
-            nextAudioBuffer(audioCtx, audioBuffer, audioSamples);
+            nextAudioBuffer(audioCtx, audioBuffer, () => {				
+				const bufferOffset = C.wasm_audio_sampler_memory_pointer();
+				const sampleDataArray = wasmMemoryArray.slice(
+				    bufferOffset,
+				    bufferOffset + audioBufferSize * 4
+				);
+				return new Float32Array(sampleDataArray.buffer);
+			});
 
             const cycleCap = targetFreq * 15000;
             var stepper = { t: performance.now(), c: 0 };
@@ -610,8 +602,6 @@ function startEmulator(binary) {
                 if (cycles > cycleCap) {
                     cycles = cycleCap;
                 }
-
-                genAudioSamples(audioSamples, delta / 1000);
 
                 stepper.c += C.wasm_step_emulation(cycles);
                 stepper.t = t;

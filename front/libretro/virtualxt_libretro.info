@@ -6,7 +6,7 @@ corename = "virtualxt"
 license = "zlib-acknowledgement"
 permissions = ""
 categories = "Emulator"
-display_version = "0.11.0"
+display_version = "1.0.0"
 
 # Hardware Information
 manufacturer = "IBM"

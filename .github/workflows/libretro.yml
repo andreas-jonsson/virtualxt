@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  VXT_VERSION: 0.12.0
+  VXT_VERSION: 1.0.0
   ZIG_VERSION: 0.10.1
   ZIG_ARCHS: "x86_64-linux-gnu i386-linux-gnu aarch64-linux-gnu arm-linux-gnueabi x86_64-macos-none aarch64-macos-none"
   NDK_VERSION: r20

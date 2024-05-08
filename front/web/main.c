@@ -50,12 +50,16 @@ int cga_width = -1;
 int cga_height = -1;
 vxt_dword cga_border = 0;
 
+float *sampler_get_buffer(struct vxt_pirepheral *p);
+struct vxt_pirepheral *sampler_create(vxt_allocator *alloc, int frequency, int num_samples, float (*generate)(int freq));
+
 struct frontend_video_adapter video_adapter = {0};
 struct frontend_mouse_adapter mouse_adapter = {0};
 
 vxt_system *sys = NULL;
 struct vxt_pirepheral *disk = NULL;
 struct vxt_pirepheral *ppi = NULL;
+struct vxt_pirepheral *sampler = NULL;
 
 static int log_wrapper(const char *fmt, ...) {
 	va_list args;
@@ -168,6 +172,10 @@ static int render_callback(int width, int height, const vxt_byte *rgba, void *us
     return 0;
 }
 
+static float generate_sample(int freq) {
+	return (float)vxtu_ppi_generate_sample(ppi, freq) / 32767.0f;
+}
+
 int wasm_video_width(void) {
 	return cga_width;
 }
@@ -215,11 +223,13 @@ int wasm_step_emulation(int cycles) {
 	return s.cycles;
 }
 
-double wasm_generate_sample(int freq) {
-	return (double)vxtu_ppi_generate_sample(ppi, freq) / 32767.0;
+void *wasm_audio_sampler_memory_pointer(void) {
+	if (!sampler)
+		return NULL;
+	return (void*)sampler_get_buffer(sampler);	
 }
 
-void wasm_initialize_emulator(int v20, int freq) {
+void wasm_initialize_emulator(int v20, int freq, int afreq, int bsize) {
 	vxt_set_logger(&log_wrapper);
 
 	struct vxtu_disk_interface intrf = {
@@ -229,6 +239,7 @@ void wasm_initialize_emulator(int v20, int freq) {
 	vxtu_disk_set_activity_callback(disk, &js_disk_activity, NULL);
 	
 	ppi = vxtu_ppi_create(&ALLOCATOR);
+	sampler = sampler_create(ALLOCATOR, afreq, bsize, &generate_sample);
 
 	APPEND_DEVICE(vxtu_memory_create(&ALLOCATOR, 0x0, 0x100000, false));
 	APPEND_DEVICE(load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000));
@@ -238,6 +249,7 @@ void wasm_initialize_emulator(int v20, int freq) {
 	APPEND_DEVICE(vxtu_dma_create(&ALLOCATOR));
 	APPEND_DEVICE(vxtu_pit_create(&ALLOCATOR));
 	APPEND_DEVICE(ppi);
+	APPEND_DEVICE(sampler);
 	APPEND_DEVICE(disk);
 
 	#ifndef VXTU_STATIC_MODULES
