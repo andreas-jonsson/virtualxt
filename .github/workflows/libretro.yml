@@ -63,7 +63,7 @@ jobs:
         shell: msys2 {0}
         run: |
           PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
-          premake5 --cc=gcc gmake
+          premake5 --no-modules --cc=gcc gmake
           make clean libretro-frontend
           mkdir package/virtualxt/x86_64-windows-gnu
           cp build/libretro/*.dll package/virtualxt/x86_64-windows-gnu
@@ -72,7 +72,7 @@ jobs:
         env:
           CLANG_PATH: "./android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/windows-x86_64/bin"
         run: |
-          premake5 --cc=clang --os=android gmake
+          premake5 --no-modules --cc=clang --os=android gmake
           for arch in ${NDK_ARCHS}; do
             echo Building ${arch}...
             rm -rf build/libretro
@@ -83,7 +83,7 @@ jobs:
 
       - name: Build (Unix)
         run: |
-          premake5 --cc=clang --os=linux gmake
+          premake5 --no-modules --cc=clang --os=linux gmake
           for arch in ${ZIG_ARCHS}; do
             echo Building ${arch}...
             rm -rf build/libretro
