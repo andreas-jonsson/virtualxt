@@ -43,10 +43,6 @@ struct instruction {
    void (*func)(CONSTSP(cpu), INST());
 };
 
-static vxt_dword sign_extend32(vxt_word v) {
-   return (v & 0x8000) ? ((vxt_dword)v) | 0xFFFF0000 : (vxt_dword)v;
-}
-
 static vxt_word sign_extend16(vxt_byte v) {
    return (v & 0x80) ? ((vxt_word)v) | 0xFF00 : (vxt_word)v;
 }
@@ -407,11 +403,7 @@ static void call_int(CONSTSP(cpu) p, int n) {
 	VALIDATOR_DISCARD(p);
 	CONSTSP(vxt_registers) r = &p->regs;
 
-	if (p->cpu_type == VXT_CPU_286)
-		push(p, (r->flags & (ALL_FLAGS | 0xF000)) | 0xF002);
-	else
-		push(p, (r->flags & ALL_FLAGS) | 0xF002);
-
+	push(p, (r->flags & ALL_FLAGS) | 0xF002);
 	push(p, r->cs);
 	push(p, r->ip);
 
@@ -429,12 +421,10 @@ static void divZero(CONSTSP(cpu) p) {
    call_int(p, 0);
 }
 
-static bool valid_repeat(CONSTSP(cpu) p, vxt_byte opcode) {
+static bool valid_repeat(vxt_byte opcode) {
    if ((opcode >= 0xA4) && (opcode <= 0xA7))
       return true;
    if ((opcode >= 0xAA) && (opcode <= 0xAF))
-      return true;
-   if ((p->cpu_type != VXT_CPU_8088) && (opcode >= 0x6C) && (opcode <= 0x6F))
       return true;
    return false;
 }

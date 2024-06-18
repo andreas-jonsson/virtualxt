@@ -32,12 +32,7 @@ typedef size_t bool;
 
 #include <sys/limits.h>
 
-// This is a FreeBSD hack.
-#elif defined(__NetBSD__) || defined(__OpenBSD__) || defined(__bsdi__) || defined(__DragonFly__) || defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
-//#elif defined(__FreeBSD__) || defined(__NetBSD__)
-//|| defined(__OpenBSD__) || defined(__bsdi__)
-//|| defined(__DragonFly__) || defined(macintosh)
-//|| defined(__APPLE__) || defined(__APPLE_CC__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__bsdi__) || defined(__DragonFly__) || defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
 
 #include <sys/syslimits.h>
 
@@ -97,7 +92,6 @@ struct DocoptArgs {
     size_t version;
     /* options with arguments */
     char *config;
-    char *cpu;
     char *floppy;
     char *frequency;
     char *harddrive;
@@ -105,7 +99,7 @@ struct DocoptArgs {
     char *rifs;
     /* special */
     const char *usage_pattern;
-    const char *help_message[18];
+    const char *help_message[17];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

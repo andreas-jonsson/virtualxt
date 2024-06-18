@@ -168,12 +168,6 @@ typedef struct system vxt_system;
 
 typedef void *vxt_allocator(void*, size_t);
 
-enum vxt_cpu_type {
-    VXT_CPU_8088,
-    VXT_CPU_V20,
-	VXT_CPU_286
-};
-
 enum {
     VXT_CARRY     = 0x001,
     VXT_PARITY    = 0x004,
@@ -347,7 +341,7 @@ VXT_API int vxt_lib_version_patch(void);
 VXT_API const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
 VXT_API enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
 
-VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]);
+VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struct vxt_pirepheral * const devs[]);
 VXT_API vxt_error vxt_system_configure(vxt_system *s, const char *section, const char *key, const char *value);
 VXT_API vxt_error vxt_system_destroy(vxt_system *s);
 VXT_API struct vxt_step vxt_system_step(vxt_system *s, int cycles);

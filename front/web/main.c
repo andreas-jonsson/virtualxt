@@ -229,7 +229,7 @@ void *wasm_audio_sampler_memory_pointer(void) {
 	return (void*)sampler_get_buffer(sampler);	
 }
 
-void wasm_initialize_emulator(int v20, int freq, int afreq, int bsize) {
+void wasm_initialize_emulator(int freq, int afreq, int bsize) {
 	vxt_set_logger(&log_wrapper);
 
 	struct vxtu_disk_interface intrf = {
@@ -270,7 +270,7 @@ void wasm_initialize_emulator(int v20, int freq, int afreq, int bsize) {
 	e = _vxtu_module_mouse_entry(&log_wrapper);
 	if (e) APPEND_DEVICE((*e)(&ALLOCATOR, &fi, "0x3F8"));
 
-	sys = vxt_system_create(&ALLOCATOR, v20 ? VXT_CPU_V20 : VXT_CPU_8088, freq, devices);
+	sys = vxt_system_create(&ALLOCATOR, freq, devices);
 	vxt_system_initialize(sys);
 	
 	LOG("Installed pirepherals:\n");

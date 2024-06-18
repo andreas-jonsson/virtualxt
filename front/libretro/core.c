@@ -83,7 +83,6 @@ struct retro_vfs_file_handle *disk_image_files[256] = {NULL};
 struct retro_vfs_file_handle *hd_image = NULL;
 
 int cpu_frequency = VXT_DEFAULT_FREQUENCY;
-enum vxt_cpu_type cpu_type = VXT_CPU_8088;
 
 vxt_system *sys = NULL;
 struct vxt_pirepheral *disk = NULL;
@@ -311,12 +310,6 @@ static void check_variables(void) {
         )
     }
 
-    var = (struct retro_variable){ .key = "virtualxt_v20" };
-    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
-        cpu_type = strcmp(var.value, "false") ? VXT_CPU_V20 : VXT_CPU_8088;
-        if (sys) SYNC(vxt_system_configure(sys, "libretro", var.key, var.value));
-    }
-
     var = (struct retro_variable){ .key = "virtualxt_led" };
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
         use_led_interface = strcmp(var.value, "false") != 0;
@@ -368,10 +361,9 @@ void retro_init(void) {
 
         vxtu_disk_set_activity_callback(disk, &disk_activity_cb, NULL);
 
-        sys = vxt_system_create(&realloc, cpu_type, cpu_frequency, devices);
+        sys = vxt_system_create(&realloc, cpu_frequency, devices);
         vxt_system_initialize(sys);
 
-        LOG("CPU Type: %s\n", (cpu_type == VXT_CPU_8088) ? "Intel 8088" : "NEC V20");
         LOG("CPU Frequency: %.2fMHz\n", (double)cpu_frequency / 1000000.0);
         LOG("Installed pirepherals:\n");
         for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
@@ -446,7 +438,6 @@ void retro_set_environment(retro_environment_t cb) {
 
     static const struct retro_variable vars[] = {
         { "virtualxt_led", "LED Interface; false|true" },
-        { "virtualxt_v20", "NEC V20; false|true" },
         { "virtualxt_cpu_frequency", "CPU Frequency; 4.77MHz|6MHz|8MHz|10MHz|12MHz|16MHz" },
         { NULL, NULL }
     };

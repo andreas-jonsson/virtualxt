@@ -98,7 +98,6 @@ struct DocoptArgs args = {0};
 Uint32 last_title_update = 0;
 int num_cycles = 0;
 double cpu_frequency = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
-enum vxt_cpu_type cpu_type = VXT_CPU_8088;
 bool cpu_paused = false;
 
 int num_devices = 0;
@@ -564,11 +563,6 @@ static int load_config(void *user, const char *section, const char *name, const 
 			args.halt |= atoi(value);
 		else if (!strcmp("mute", name))
 			args.mute |= atoi(value);
-		else if (!strcmp("cpu", name))
-		{
-			if (!strcmp("v20", value)) args.cpu = "v20";
-			else if (!strcmp("286", value)) args.cpu = "286";
-		}
 		else if (!strcmp("no-activity", name))
 			args.no_activity |= atoi(value);
 		else if (!strcmp("no-idle", name))
@@ -728,7 +722,6 @@ static bool write_default_config(const char *path, bool clean) {
 		";gdb=1234\n"
 		"\n[args]\n"
 		";halt=1\n"
-		";cpu=v20\n"
 		";hdboot=1\n"
 		";harddrive=boot/freedos_hd.img\n"
 		"\n[ch36x_isa]\n"
@@ -800,16 +793,6 @@ int main(int argc, char *argv[]) {
 			args.harddrive = harddrive_image_path_buffer;
 		}
 	}
-
-	if (!strcmp(args.cpu, "v20")) {
-		cpu_type = VXT_CPU_V20;
-		args.cpu = "V20";
-	} else if (!strcmp(args.cpu, "286")) {
-		cpu_type = VXT_CPU_286;
-	} else {
-		args.cpu = "8088";
-	}
-	printf("CPU type: %s\n", args.cpu);
 
 	if (args.frequency)
 		cpu_frequency = strtod(args.frequency, NULL);
@@ -922,7 +905,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	vxt_system *vxt = vxt_system_create(&realloc, cpu_type, (int)(cpu_frequency * 1000000.0), devices);
+	vxt_system *vxt = vxt_system_create(&realloc, (int)(cpu_frequency * 1000000.0), devices);
 	if (!vxt) {
 		printf("Could not create system!\n");
 		return -1;
@@ -1171,7 +1154,7 @@ int main(int argc, char *argv[]) {
 			);
 			
 			if (ticks > 10000) {
-				snprintf(buffer, sizeof(buffer), "VirtualXT - %s@%.2f MHz%s", args.cpu, mhz, turbo ? " (Turbo)" : "");
+				snprintf(buffer, sizeof(buffer), "VirtualXT - %.2f MHz%s", mhz, turbo ? " (Turbo)" : "");
 			} else {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
 			}

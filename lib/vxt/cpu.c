@@ -27,9 +27,7 @@
 #include "testing.h"
 
 #include "exec.inl"
-#include "8088.inl"
-#include "v20.inl"
-#include "286.inl"
+#include "optab.inl"
 
 #ifndef VXT_NO_PREFETCH
    static void prefetch(CONSTSP(cpu) p, int num) {
@@ -75,7 +73,7 @@ static void read_opcode(CONSTSP(cpu) p) {
             p->cycles += 2;
             break;
          default:
-            if (p->repeat && !valid_repeat(p, p->opcode))
+            if (p->repeat && !valid_repeat(p->opcode))
                p->repeat = 0;
             return;
       }
@@ -114,7 +112,7 @@ static void prep_exec(CONSTSP(cpu) p) {
 }
 
 static void do_exec(CONSTSP(cpu) p) {
-   const CONSTSP(instruction) inst = &p->opcode_table[p->opcode];
+   const CONSTSP(instruction) inst = &opcode_table[p->opcode];
    ENSURE(inst->opcode == p->opcode);
 
    p->ea_cycles = 0;
@@ -123,8 +121,7 @@ static void do_exec(CONSTSP(cpu) p) {
    inst->func(p, inst);
    
    p->cycles += inst->cycles;
-   if (LIKELY(p->cpu_type == VXT_CPU_8088))
-      p->cycles += p->ea_cycles;
+   p->cycles += p->ea_cycles;
 
    if (UNLIKELY(p->inst_queue_dirty)) {
       p->inst_queue_count = 0;
@@ -133,21 +130,6 @@ static void do_exec(CONSTSP(cpu) p) {
          prefetch(p, (p->cycles / 2) - p->bus_transfers); // TODO: Round up or down?
       #endif
    }
-}
-
-void cpu_init(CONSTSP(cpu) p, vxt_system *s, enum vxt_cpu_type ty) {
-	p->s = s;
-	p->cpu_type = ty;
-	switch (ty) {
-		case VXT_CPU_V20:
-			p->opcode_table = opcode_table_v20;
-			break;
-		case VXT_CPU_286:
-			p->opcode_table = opcode_table_286;
-			break;
-		default:
-			p->opcode_table = opcode_table_8088;
-	}	
 }
 
 int cpu_step(CONSTSP(cpu) p) {
@@ -161,7 +143,7 @@ int cpu_step(CONSTSP(cpu) p) {
       p->cycles++;
    }
 
-   const CONSTSP(instruction) inst = &p->opcode_table[p->opcode];
+   const CONSTSP(instruction) inst = &opcode_table[p->opcode];
    VALIDATOR_END(p, inst->name, p->opcode, inst->modregrm, p->cycles, &p->regs);
    
    ENSURE(p->cycles > 0);
@@ -177,16 +159,10 @@ void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
 	vxt_memclear(&p->regs, sizeof(p->regs));
 
-	if (p->cpu_type == VXT_CPU_286) {
-		p->regs.flags = 2;
-		p->regs.cs = 0xF000;
-		p->regs.ip = 0xFFF0;
-	} else {
-		p->regs.flags = 0xF002;
-		p->regs.cs = 0xFFFF;
-	}
-
+	p->regs.flags = 0xF002;
+	p->regs.cs = 0xFFFF;
 	p->regs.debug = false;
+	
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);
 }

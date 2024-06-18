@@ -57,7 +57,6 @@
 #endif
 
 double cpu_frequency = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
-enum vxt_cpu_type cpu_type = VXT_CPU_8088;
 
 struct DocoptArgs args = {0};
 
@@ -293,11 +292,6 @@ static int load_config(void *user, const char *section, const char *name, const 
 			args.hdboot |= atoi(value);
 		else if (!strcmp("halt", name))
 			args.halt |= atoi(value);
-		else if (!strcmp("cpu", name))
-		{
-			if (!strcmp("v20", value)) args.cpu = "v20";
-			else if (!strcmp("286", value)) args.cpu = "286";
-		}
 		else if (!strcmp("no-idle", name))
 			args.no_idle |= atoi(value);
 		else if (!strcmp("harddrive", name) && !args.harddrive) {
@@ -561,16 +555,6 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (!strcmp(args.cpu, "v20")) {
-		cpu_type = VXT_CPU_V20;
-		args.cpu = "V20";
-	} else if (!strcmp(args.cpu, "286")) {
-		cpu_type = VXT_CPU_286;
-	} else {
-		args.cpu = "8088";
-	}
-	VXT_LOG("CPU type: %s", args.cpu);
-
 	if (args.frequency)
 		cpu_frequency = strtod(args.frequency, NULL);
 	VXT_LOG("CPU frequency: %.2f MHz", cpu_frequency);
@@ -600,7 +584,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	vxt_system *vxt = vxt_system_create(&realloc, cpu_type, (int)(cpu_frequency * 1000000.0), devices);
+	vxt_system *vxt = vxt_system_create(&realloc, (int)(cpu_frequency * 1000000.0), devices);
 	if (!vxt) {
 		VXT_LOG("Could not create system!");
 		return -1;
