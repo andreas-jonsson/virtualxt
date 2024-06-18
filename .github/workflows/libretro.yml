@@ -66,7 +66,7 @@ jobs:
           premake5 --cc=gcc gmake
           make clean libretro-frontend
           mkdir package/virtualxt/x86_64-windows-gnu
-          cp build/lib/*.dll package/virtualxt/x86_64-windows-gnu
+          cp build/libretro/*.dll package/virtualxt/x86_64-windows-gnu
 
       - name: Build (Android)
         env:
@@ -75,10 +75,10 @@ jobs:
           premake5 --cc=clang --os=android gmake
           for arch in ${NDK_ARCHS}; do
             echo Building ${arch}...
-            rm -rf build/lib
+            rm -rf build/libretro
             make CC="${CLANG_PATH}/${arch}21-clang" LD="${CLANG_PATH}/llvm-ld" AR="${CLANG_PATH}/llvm-ar" clean libretro-frontend
             mkdir package/virtualxt/${arch}
-            cp build/lib/*.so package/virtualxt/${arch}
+            cp build/libretro/*.so package/virtualxt/${arch}
           done
 
       - name: Build (Unix)
@@ -86,10 +86,10 @@ jobs:
           premake5 --cc=clang --os=linux gmake
           for arch in ${ZIG_ARCHS}; do
             echo Building ${arch}...
-            rm -rf build/lib
+            rm -rf build/libretro
             make CC="zig cc -target ${arch}" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
             mkdir package/virtualxt/${arch}
-            cp build/lib/*.so package/virtualxt/${arch}
+            cp build/libretro/*.so package/virtualxt/${arch}
           done
 
       - name: Package & Deploy
