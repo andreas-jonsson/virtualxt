@@ -38,7 +38,7 @@ jobs:
 
       - name: Build
         run: |
-          premake5 --modules=ctrl,cga,mouse --static gmake
+          premake5 --modules=ctrl,cga,mouse gmake
           make config=release_web clean web-frontend
 
       - name: Package
