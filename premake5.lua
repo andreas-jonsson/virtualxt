@@ -368,6 +368,45 @@ workspace "virtualxt"
         filter "toolset:gcc"
             buildoptions "-Wno-maybe-uninitialized"
 
+    project "terminal-frontend"
+        kind "ConsoleApp"
+        targetname "vxterm"
+        targetdir "build/bin"
+        
+        files "modules/modules.h"
+        includedirs "modules"
+
+        if _OPTIONS["modules"] then
+            if _OPTIONS["static"] then
+                links(modules)
+            else
+                dependson "modules"
+            end
+        end
+
+		defines { "_DEFAULT_SOURCE", "_XOPEN_SOURCE" }
+        files { "front/terminal/*.h", "front/terminal/*.c" }
+        includedirs { "lib/vxt/include", "lib/inih", "lib/termbox2", "front/common" }
+        links { "m", "vxt", "inih" }
+
+        cleancommands {
+            "{RMDIR} build/bin",
+            "make clean %{cfg.buildcfg}"
+        }
+
+        filter "options:validator"
+            files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
+
+        filter "toolset:clang or gcc"
+            buildoptions "-Wno-unused-parameter"
+            linkoptions "-Wl,-rpath,'$$ORIGIN'/../lib"
+
+        filter "toolset:clang"
+            buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
+
+        filter "toolset:gcc"
+            buildoptions "-Wno-maybe-uninitialized"
+
 if _OPTIONS["test"] then
     project "test"
         kind "ConsoleApp"
