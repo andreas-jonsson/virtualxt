@@ -74,9 +74,9 @@ typedef size_t bool;
 
 #include <sys/limits.h>
 
-#elif defined(__FreeBSD__) || defined(__NetBSD__)
-|| defined(__OpenBSD__) || defined(__bsdi__)
-|| defined(__DragonFly__) || defined(macintosh)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) \
+|| defined(__OpenBSD__) || defined(__bsdi__) \
+|| defined(__DragonFly__) || defined(macintosh) \
 || defined(__APPLE__) || defined(__APPLE_CC__)
 
 #include <sys/syslimits.h>
@@ -413,13 +413,13 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;
-
+    /*
     if (argc == 1) {
         argv[argc++] = "--help";
         argv[argc++] = NULL;
         return_code = EXIT_FAILURE;
     }
-
+    */
     {
         struct Tokens ts = tokens_new(argc, argv);
         if (parse_args(&ts, &elements))
