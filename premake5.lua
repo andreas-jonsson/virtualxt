@@ -450,9 +450,9 @@ if _OPTIONS["test"] then
 end
 
 io.writefile("modules/modules.h", (function()
-    local is_static = _OPTIONS["static"]
+    local is_dynamic = _OPTIONS["dynamic"]
     local str = "#include <vxt/vxtu.h>\n\nstruct vxtu_module_entry {\n\tconst char *name;\n\tvxtu_module_entry_func *(*entry)(int(*)(const char*, ...));\n};\n\n"
-    if is_static then
+    if not is_dynamic then
         for _,mod in ipairs(modules) do
             str = string.format("%s#ifdef VXTU_MODULE_%s\n\textern vxtu_module_entry_func *_vxtu_module_%s_entry(int(*)(const char*, ...));\n#endif\n", str, string.upper(mod), mod)
         end
@@ -460,10 +460,10 @@ io.writefile("modules/modules.h", (function()
     end
     str = string.format("%sconst struct vxtu_module_entry vxtu_module_table[] = {\n", str)
     for _,mod in ipairs(modules) do
-        if is_static then
-            str = string.format('%s\t#ifdef VXTU_MODULE_%s\n\t\t{ "%s", _vxtu_module_%s_entry },\n\t#endif\n', str, string.upper(mod), mod, mod)
-        else
+        if is_dynamic then
             str = string.format('%s\t{ "%s", NULL },\n', str, mod)  
+        else
+            str = string.format('%s\t#ifdef VXTU_MODULE_%s\n\t\t{ "%s", _vxtu_module_%s_entry },\n\t#endif\n', str, string.upper(mod), mod, mod)
         end
     end
     return str .. "\t{ NULL, NULL }\n};\n"
