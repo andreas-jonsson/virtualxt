@@ -6,7 +6,7 @@
 [![Forum](https://img.shields.io/badge/forum-itch.io-blue)](https://phix.itch.io/virtualxt/community)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)
 
-VirtualXT is a Turbo PC/XT (8088/V20) emulator that runs on modern hardware and operating systems.
+VirtualXT is a PC/XT (8088) emulator that runs on modern hardware and operating systems.
 It is designed to be simple and lightweight yet still capable enough to run a large
 library of old application and games.
 
@@ -14,14 +14,14 @@ Browser version is avalible [here](https://realmode.games).
 
 ## Features
 
-* Intel 8088 or NEC V20 CPU
+* Intel 8088 processor
 * Hardware CPU validator
-* VGA and CGA compatible graphics
+* CGA or VGA compatible graphics
 * GLaBIOS or Turbo XT BIOS 3.1 with extensions
 * Keyboard controller with 83-key XT-style keyboard
 * Serial port with Microsoft 2-button mouse
-* Floppy and hard disk controller
-* ISA passthrough​ using Arstech USB2ISA adapter
+* Floppy and hard disk emulation
+* ISA passthrough​using Arstech USB2ISA adapter
 * Direct file share with host
 * Flexible module system
 * Integerated GDB server
