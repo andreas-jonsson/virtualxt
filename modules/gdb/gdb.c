@@ -32,7 +32,6 @@
     #define close closesocket
 #else
     #include <unistd.h>
-    #include <fcntl.h>
     #include <sys/socket.h>
 	#include <sys/select.h>
     #include <netinet/in.h>
@@ -143,13 +142,6 @@ static bool open_server_socket(struct gdb *dbg) {
         return false;
     }
 
-    #ifdef _WIN32
-        unsigned long mode = 1;
-        ioctlsocket(dbg->server, FIONBIO, &mode);
-    #else
-        fcntl(dbg->server, F_SETFL, O_NONBLOCK);
-    #endif
-
     if (bind(dbg->server, (struct sockaddr*)&addr, sizeof(addr))) {
         VXT_LOG("ERROR: Could not bind GDB server socket!");
         return false;
@@ -175,8 +167,8 @@ static bool has_data(int fd) {
 }
 
 static bool accept_client(struct gdb *dbg, vxt_system *sys) {
-    if (dbg->state.client != -1)
-        return false;
+    if ((dbg->state.client != -1) || !has_data(dbg->server))
+		return false;
 
     struct sockaddr_in addr;
     socklen_t ln = sizeof(addr);
