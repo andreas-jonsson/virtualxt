@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  push:
+    branches: [ "develop", "edge", "release" ]
+  pull_request:
+    branches: [ "develop" ]
+
+  workflow_dispatch:
+
+env:
+  VXT_VERSION: 1.1.0
+
+jobs:
+  netbsd-build:
+    name: Build (NetBSD AMD64)
+    runs-on: ubuntu-latest
+    env:
+      VXT_VERSION: 1.1.0
+    steps:
+    - uses: actions/checkout@v4
+    - name: Test and Build
+      timeout-minutes: 10
+      uses: vmactions/netbsd-vm@v1
+      with:
+        release: "10.0"
+        envs: VXT_VERSION
+        usesh: true
+        copyback: false
+        prepare: |
+          PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r | cut -d_ -f1)/All" /usr/sbin/pkg_add pkgin
+          pkgin -y in premake5 gmake SDL2-2.30.1 libpcap-1.10.4
+        run: |
+          git config --global --add safe.directory $(pwd)
+          premake5 --test gmake
+          gmake clean test
+          premake5 gmake
+          gmake clean terminal-frontend
