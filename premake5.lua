@@ -277,6 +277,10 @@ workspace "virtualxt"
 
         if not _OPTIONS["no-modules"] and not _OPTIONS["dynamic"] then
             links(modules)
+            for _,f in ipairs(modules_link_callback) do
+				f()
+				filter {}
+            end
         end
 
         -- Perhaps move this to options?
@@ -321,7 +325,7 @@ workspace "virtualxt"
                 for _,f in ipairs(modules_link_callback) do
 					f()
 					filter {}
-                end      
+                end
             end
         end
 
@@ -371,13 +375,16 @@ workspace "virtualxt"
                 dependson "modules"
             else
                 links(modules)
+                for _,f in ipairs(modules_link_callback) do
+					f()
+					filter {}
+                end
             end
         end
 
-		defines { "_DEFAULT_SOURCE", "_XOPEN_SOURCE" }
-        files { "front/terminal/*.h", "front/terminal/*.c" }
-        includedirs { "lib/vxt/include", "lib/inih", "lib/termbox2", "front/common" }
-        links { "m", "vxt", "inih" }
+		files { "front/terminal/*.h", "front/terminal/*.c" }
+		includedirs { "lib/vxt/include", "lib/inih", "lib/termbox2", "front/common" }
+		links { "m", "vxt", "inih" }
 
         cleancommands {
             "{RMDIR} build/terminal",
@@ -388,7 +395,7 @@ workspace "virtualxt"
             files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
 
         filter "toolset:clang or gcc"
-            buildoptions "-Wno-unused-parameter"
+            buildoptions { "-Wno-unused-parameter", "-Wno-implicit-function-declaration", "-Wno-incompatible-pointer-types" }
             linkoptions "-Wl,-rpath,'$$ORIGIN'/../lib"
 
         filter "toolset:clang"

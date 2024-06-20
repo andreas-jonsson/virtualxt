@@ -21,6 +21,11 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
+/* The Mac OS X libc API selection is broken (tested with Xcode 15.0.1) */
+#ifndef __APPLE__
+#define _POSIX_C_SOURCE 2 /* select POSIX.2-1992 to expose popen & pclose */
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
