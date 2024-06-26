@@ -43,7 +43,7 @@ Browser version is avalible [here](https://realmode.games).
 The emulator is written in C11 and can be compiled with most modern C compilers. In order to generate a Makefile you need to install [Premake](https://premake.github.io/). You also need to have [SDL2](https://www.libsdl.org/) installed on your system or pass `--sdl-path=<path to lib>` to the premake script.
 
 ```
-git clone https://github.com/andreas-jonsson/virtualxt.git
+git clone -b release https://github.com/andreas-jonsson/virtualxt.git
 cd virtualxt
 premake5 --modules gmake
 make sdl2-frontend
