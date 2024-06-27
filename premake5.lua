@@ -133,19 +133,22 @@ workspace "virtualxt"
             end
         end
         
-        module_link_callback = function(f)
-			if _OPTIONS["dynamic"] then
-				filter {}
-				f()
-				filter {}
-			else
-				table.insert(modules_link_callback, f)
-			end
-		end
-
         for _,name in ipairs(mod_list) do
-            table.insert(modules, name)
-
+			module_link_callback = function(f)
+				if _OPTIONS["dynamic"] then
+					filter {}
+					f()
+					filter {}
+				else
+					table.insert(modules_link_callback, f)
+				end
+			end
+			
+			module_ignore = function()
+				module_ignore = nil
+				module_link_callback = function() end
+			end
+						
             project(name)
                 if _OPTIONS["dynamic"] then
 					kind "SharedLib"
@@ -169,11 +172,15 @@ workspace "virtualxt"
                 }
 
                 filter {}
-    
-            dofile("modules/" .. name .. "/premake5.lua")
+
+    		dofile("modules/" .. name .. "/premake5.lua")
+            if module_ignore then
+            	table.insert(modules, name)
+            end
+
+			module_ignore = nil
+        	module_link_callback = nil
         end
-        
-        module_link_callback = nil
     end
 
     -- This is just a dummy project.

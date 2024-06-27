@@ -1,3 +1,6 @@
+-- Disable this module by default.
+module_ignore()
+
 files "network.c"
 
 filter "system:windows"
