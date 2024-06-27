@@ -895,8 +895,8 @@ int main(int argc, char *argv[]) {
 		front_interface.disk.userdata = &icon_fade;
 	}
 
-	#ifdef VXTU_STATIC_MODULES
-		printf("Modules are staticlly linked!\n");
+	#ifndef VXTU_STATIC_MODULES
+		printf("Modules are dynamically linked!\n");
 	#endif
 	printf("Loaded modules:\n");
 
