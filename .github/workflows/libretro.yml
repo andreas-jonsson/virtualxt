@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  VXT_VERSION: 1.0.0
+  VXT_VERSION: 1.1.0
   ZIG_VERSION: 0.10.1
   ZIG_ARCHS: "x86_64-linux-gnu i386-linux-gnu aarch64-linux-gnu arm-linux-gnueabi x86_64-macos-none aarch64-macos-none"
   NDK_VERSION: r20
@@ -63,33 +63,33 @@ jobs:
         shell: msys2 {0}
         run: |
           PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
-          premake5 --cc=gcc gmake
+          premake5 --no-modules --cc=gcc gmake
           make clean libretro-frontend
           mkdir package/virtualxt/x86_64-windows-gnu
-          cp build/lib/*.dll package/virtualxt/x86_64-windows-gnu
+          cp build/libretro/*.dll package/virtualxt/x86_64-windows-gnu
 
       - name: Build (Android)
         env:
           CLANG_PATH: "./android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/windows-x86_64/bin"
         run: |
-          premake5 --cc=clang --os=android gmake
+          premake5 --no-modules --cc=clang --os=android gmake
           for arch in ${NDK_ARCHS}; do
             echo Building ${arch}...
-            rm -rf build/lib
+            rm -rf build/libretro
             make CC="${CLANG_PATH}/${arch}21-clang" LD="${CLANG_PATH}/llvm-ld" AR="${CLANG_PATH}/llvm-ar" clean libretro-frontend
             mkdir package/virtualxt/${arch}
-            cp build/lib/*.so package/virtualxt/${arch}
+            cp build/libretro/*.so package/virtualxt/${arch}
           done
 
       - name: Build (Unix)
         run: |
-          premake5 --cc=clang --os=linux gmake
+          premake5 --no-modules --cc=clang --os=linux gmake
           for arch in ${ZIG_ARCHS}; do
             echo Building ${arch}...
-            rm -rf build/lib
+            rm -rf build/libretro
             make CC="zig cc -target ${arch}" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
             mkdir package/virtualxt/${arch}
-            cp build/lib/*.so package/virtualxt/${arch}
+            cp build/libretro/*.so package/virtualxt/${arch}
           done
 
       - name: Package & Deploy

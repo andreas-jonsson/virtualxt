@@ -34,7 +34,7 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
         NULL
     }};
 
-    vxt_system *s = vxt_system_create(&TALLOC, VXT_CPU_8088, VXT_DEFAULT_FREQUENCY, devices);
+    vxt_system *s = vxt_system_create(&TALLOC, VXT_DEFAULT_FREQUENCY, devices);
     TENSURE(s);
     TENSURE_NO_ERR(vxt_system_initialize(s));
 

@@ -21,9 +21,9 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#define _DEFAULT_SOURCE	1
-
 #include <vxt/vxtu.h>
+
+#ifdef LIBPACAP
 
 #include <string.h>
 #include <stdlib.h>
@@ -221,3 +221,10 @@ VXTU_MODULE_CREATE(network, {
 	PIREPHERAL->io.in = &in;
 	PIREPHERAL->io.out = &out;
 })
+
+#else
+
+struct network { int _; };
+VXTU_MODULE_CREATE(network, { return NULL; })
+
+#endif

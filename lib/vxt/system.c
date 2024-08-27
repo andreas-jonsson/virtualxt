@@ -77,12 +77,12 @@ VXT_API void vxt_set_logger(int (*f)(const char*, ...)) {
     _vxt_logger = f;
 }
 
-VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, enum vxt_cpu_type ty, int frequency, struct vxt_pirepheral * const devs[]) {
+VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struct vxt_pirepheral * const devs[]) {
     vxt_system *s = (vxt_system*)alloc(NULL, sizeof(struct system));
     vxt_memclear(s, sizeof(struct system));
     s->alloc = alloc;
     s->frequency = frequency;
-    cpu_init(&s->cpu, s, ty);
+	s->cpu.s = s;
     
     int i = 1;
     for (; devs && devs[i-1]; i++) {
@@ -154,7 +154,7 @@ VXT_API vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, unsigned reg_size
 }
 
 TEST(system_initialize,
-    CONSTP(vxt_system) sp = vxt_system_create(TALLOC, VXT_CPU_8088, VXT_DEFAULT_FREQUENCY, NULL);
+    CONSTP(vxt_system) sp = vxt_system_create(TALLOC, VXT_DEFAULT_FREQUENCY, NULL);
     TENSURE(sp);
     TENSURE_NO_ERR(vxt_system_initialize(sp));
     vxt_system_destroy(sp);

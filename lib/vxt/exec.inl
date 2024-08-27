@@ -84,25 +84,24 @@ PUSH_POP(di)
 
 static void push_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   if (p->cpu_type == VXT_CPU_286) {
-      push(p, p->regs.sp);
-      return;
-   }
    p->regs.sp -= 2;
    cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
 }
 
 static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   if (p->cpu_type == VXT_CPU_286)
-      p->regs.sp = pop(p);
-   else
-      p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
+   p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
 }
 
 static void push_cs(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    push(p, p->regs.cs);
+}
+
+static void pop_cs(CONSTSP(cpu) p, INST(inst)) {
+   UNUSED(inst);
+   p->regs.cs = pop(p);
+   p->inst_queue_dirty = true;
 }
 
 static void or_8(CONSTSP(cpu) p, INST(inst)) {
@@ -141,13 +140,8 @@ static void or_D(CONSTSP(cpu) p, INST(inst)) {
 
 static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
    VALIDATOR_DISCARD(p);
-   if (p->cpu_type != VXT_CPU_8088) {
-      p->regs.ip = p->inst_start;
-      call_int(p, 6);
-   } else {
-      PRINT("invalid opcode: 0x%X", inst->opcode);
-      p->regs.debug = true;
-   }
+   PRINT("invalid opcode: 0x%X", inst->opcode);
+   p->regs.debug = true;
 }
 
 static void invalid_prefix(CONSTSP(cpu) p, INST(inst)) {
@@ -365,90 +359,6 @@ static void dec_reg(CONSTSP(cpu) p, INST(inst)) {
    vxt_word r = inst->opcode - 0x48;
    reg_write16(&p->regs, r, op_sub_sbb16(&p->regs, reg_read16(&p->regs, r), 1, 0));
    SET_FLAG(p->regs.flags, VXT_CARRY, c);
-}
-
-static void pusha_60(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   vxt_word sp = p->regs.sp;
-   push(p, p->regs.ax);
-   push(p, p->regs.cx);
-   push(p, p->regs.dx);
-   push(p, p->regs.bx);
-   push(p, sp);
-   push(p, p->regs.bp);
-   push(p, p->regs.si);
-   push(p, p->regs.di);
-}
-
-static void popa_61(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   p->regs.di = pop(p);
-   p->regs.si = pop(p);
-   p->regs.bp = pop(p);
-   pop(p);
-   p->regs.bx = pop(p);
-   p->regs.dx = pop(p);
-   p->regs.cx = pop(p);
-   p->regs.ax = pop(p);
-}
-
-static void bound_62(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   vxt_dword idx = sign_extend32(reg_read16(&p->regs, p->mode.reg));
-   vxt_word offset = get_ea_offset(p);
-
-   if ((idx < sign_extend32(cpu_segment_read_word(p, p->seg, offset))) || (idx > sign_extend32(cpu_segment_read_word(p, p->seg, offset + 2)))) {
-      p->regs.ip = p->inst_start;
-      call_int(p, 5);
-   }
-}
-
-static void push_68(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   push(p, read_opcode16(p));
-}
-
-static void imul_69_6B(CONSTSP(cpu) p, INST(inst)) {
-   vxt_int32 a = sign_extend32(rm_read16(p));
-   vxt_int32 b = (inst->opcode == 69) ? sign_extend32(sign_extend16(read_opcode8(p))) : sign_extend32(read_opcode16(p));
-
-   vxt_int32 res = a * b;
-   vxt_word res16 = (vxt_word)(res & 0xFFFF);
-
-   flag_szp16(&p->regs, res16);
-   SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int16)res));
-   rm_write16(p, res16);
-}
-
-static void push_6A(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   push(p, (vxt_word)read_opcode8(p));
-}
-
-static void insb_6C(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   cpu_write_byte(p, VXT_POINTER(p->regs.ds, p->regs.si), system_in(p->s, p->regs.dx));
-   update_di_si(p, 1);
-}
-
-static void insw_6D(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   cpu_segment_write_word(p, p->regs.ds, p->regs.si, WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
-   update_di_si(p, 2);
-}
-
-static void outsb_6E(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   system_out(p->s, p->regs.dx, cpu_read_byte(p, VXT_POINTER(p->regs.ds, p->regs.si)));
-   update_di_si(p, 1);
-}
-
-static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   vxt_word data = cpu_segment_read_word(p, p->regs.ds, p->regs.si);
-   system_out(p->s, p->regs.dx, (vxt_byte)(data & 0xFF));
-   system_out(p->s, p->regs.dx + 1, (vxt_byte)(data >> 8));
-   update_di_si(p, 2);
 }
 
 #define JUMP(name, cond)                                       \
@@ -681,18 +591,12 @@ static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
 
 static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   if (p->cpu_type == VXT_CPU_286)
-      push(p, (p->regs.flags & (ALL_FLAGS | 0xF000)) | 2);
-   else
-      push(p, (p->regs.flags & ALL_FLAGS) | 0xF002);
+   push(p, (p->regs.flags & ALL_FLAGS) | 0xF002);
 }
 
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   if (p->cpu_type == VXT_CPU_286)
-      p->regs.flags = (pop(p) & (ALL_FLAGS | 0xF000)) | 2;
-   else
-      p->regs.flags = (pop(p) & ALL_FLAGS) | 0xF002;
+   p->regs.flags = (pop(p) & ALL_FLAGS) | 0xF002;
 }
 
 static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
@@ -745,16 +649,6 @@ static void mov_reg16(CONSTSP(cpu) p, INST(inst)) {
    reg_write16(&p->regs, inst->opcode - 0xB8, read_opcode16(p));
 }
 
-static void shl_C0(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   rm_write8(p, bitshift_8(p, rm_read8(p), read_opcode8(p)));
-}
-
-static void shl_C1(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   rm_write16(p, bitshift_16(p, rm_read16(p), (vxt_byte)read_opcode16(p)));
-}
-
 static void ret_C2(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word ip = pop(p);
@@ -791,32 +685,6 @@ static void mov_C7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write16(p, read_opcode16(p));
    ADD_CYCLE_MOD_MEM(p, 10);
-}
-
-static void enter_C8(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   vxt_word size = read_opcode16(p);
-   vxt_byte level = read_opcode8(p);
-
-   push(p, p->regs.bp);
-   vxt_word sp = p->regs.sp;
-
-   if (level) {
-      for (vxt_byte i = 0; i < level; i++) {
-         p->regs.bp -= 2;
-         push(p, p->regs.bp);
-      }
-      push(p, p->regs.sp);
-   }
-
-   p->regs.bp = sp;
-   p->regs.sp -= size;
-}
-
-static void leave_C9(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   p->regs.sp = p->regs.bp;
-   p->regs.bp = pop(p);
 }
 
 static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
@@ -859,14 +727,8 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    p->inst_queue_dirty = true;
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
-
-   if (p->cpu_type == VXT_CPU_286) {
-      p->regs.flags = pop(p) & (ALL_FLAGS | 0xF000);
-	  p->regs.flags |= 2;
-   } else {
-      p->regs.flags = pop(p) & ALL_FLAGS;
-      p->regs.flags |= 0xF002;
-   }
+   p->regs.flags = pop(p) & ALL_FLAGS;
+   p->regs.flags |= 0xF002;
 }
 
 static void grp2_D0(CONSTSP(cpu) p, INST(inst)) {
@@ -905,9 +767,6 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
 static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word imm = (vxt_word)read_opcode8(p);
-   if (p->cpu_type == VXT_CPU_V20)
-      imm = 10;
-
    p->regs.ax = ((vxt_word)p->regs.ah * imm + (vxt_word)p->regs.al) & 0xFF;
    flag_szp8(&p->regs, p->regs.al);
 }
@@ -918,10 +777,8 @@ static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
 }
 
 static void salc_D6(CONSTSP(cpu) p, INST(inst)) {
-   if (p->cpu_type == VXT_CPU_V20)
-      xlat_D7(p, inst);
-   else
-      p->regs.al = (p->regs.flags & VXT_CARRY) ? 0xFF : 0x0;
+   UNUSED(inst);
+   p->regs.al = (p->regs.flags & VXT_CARRY) ? 0xFF : 0x0;
 }
 
 static void fpu_dummy(CONSTSP(cpu) p, INST(inst)) {
@@ -1040,8 +897,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = ((vxt_word)v) * ((vxt_word)p->regs.al);
          flag_szp8(&p->regs, p->regs.al);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
-         if (p->cpu_type == VXT_CPU_8088)
-            p->regs.flags &= ~VXT_ZERO;
+         p->regs.flags &= ~VXT_ZERO;
          break;
       }
       case 5: // IMUL
@@ -1053,8 +909,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
 
          p->regs.ax = res;
          flag_szp8(&p->regs, res8);
-         if (p->cpu_type == VXT_CPU_8088)
-            p->regs.flags &= ~VXT_ZERO;
+         p->regs.flags &= ~VXT_ZERO;
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int8)res));
          break;
       }
@@ -1135,8 +990,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          flag_szp16(&p->regs, p->regs.ax);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.dx);
-         if (p->cpu_type == VXT_CPU_8088)
-            p->regs.flags &= ~VXT_ZERO;
+         p->regs.flags &= ~VXT_ZERO;
          break;
       }
       case 5: // IMUL
@@ -1149,8 +1003,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          p->regs.dx = (vxt_word)(res >> 16);
 
          flag_szp16(&p->regs, p->regs.ax);
-         if (p->cpu_type == VXT_CPU_8088)
-            p->regs.flags &= ~VXT_ZERO;
+         p->regs.flags &= ~VXT_ZERO;
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int16)res));
          break;
       }

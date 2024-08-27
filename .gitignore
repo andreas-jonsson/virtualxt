@@ -33,6 +33,7 @@ __pycache__
 /tools/tests/8088v1/8088.json
 /lib/vxt/8088_tests.c
 
+/*.log
 /*.trace*
 /tools/vxtdrv/vxtdrv.com
 /tools/shutdown/shutdown.com

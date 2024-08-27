@@ -1,14 +1,3 @@
-require "tools/premake-export-compile-commands/export-compile-commands"
-
-newaction {
-    trigger = 'export-compile-commands',
-    description = 'Export compiler commands in JSON Compilation Database Format',
-    execute = function()
-        export_compile_commands_execute()
-        os.copyfile("compile_commands/release_native.json", "compile_commands.json")
-    end
-}
-
 newoption {
     trigger = "sdl-config",
     value = "PATH",
@@ -17,17 +6,22 @@ newoption {
 
 newoption {
     trigger = "test",
-    description = "Generate make files for libvxt tests"
+    description = "Generate makefiles for libvxt tests"
 }
 
 newoption {
     trigger = "modules",
-    description = "Generate make files for all modules"
+    description = "Only generate makefiles for listed modules"
 }
 
 newoption {
-    trigger = "static",
-    description = "Use static modules"
+    trigger = "no-modules",
+    description = "Don't generate makefiles for modules"
+}
+
+newoption {
+    trigger = "dynamic",
+    description = "Use dynamic modules"
 }
 
 newoption {
@@ -105,70 +99,63 @@ workspace "virtualxt"
 
     filter { "toolset:clang or gcc", "configurations:debug" }
         buildoptions "-Wno-error"
-        sanitize { "Address", "Fuzzer" }
 
     local modules = {}
     local modules_link_callback = {}
-    local module_opt = _OPTIONS["modules"]
 
-    if module_opt then
+    if not _OPTIONS["no-modules"] then
         filter {}
 
         defines "VXTU_MODULES"
-        if _OPTIONS["static"] then
+        if not _OPTIONS["dynamic"] then
             defines "VXTU_STATIC_MODULES"
         end
 
         local mod_list = {}
-        local inclusive = true;
- 
-        if string.sub(module_opt, 1, 1) == "-" then
-            inclusive = false
-            module_opt = string.sub(module_opt, 2)
-        end
-
         for _,f in ipairs(os.matchfiles("modules/**/premake5.lua")) do
-            local enable = module_opt == "" or not inclusive
+            local enable = true
             local name = path.getname(path.getdirectory(f))
 
-            for mod in string.gmatch(module_opt, "[%w%-]+") do
-                if mod == name then
-                    enable = inclusive
-                    break
-                end
+			if _OPTIONS["modules"] then
+				enable = false
+	            for mod in string.gmatch(_OPTIONS["modules"], "[%w_]+") do
+	                if mod == name then
+	                    enable = true
+	                    break
+	                end
+	            end
             end
+            
             if enable then
                 table.insert(mod_list, name)
                 defines { "VXTU_MODULE_" .. string.upper(name) }
             end
         end
         
-        module_link_callback = function(f)
-			if _OPTIONS["static"] then
-				table.insert(modules_link_callback, f)
-			else
+		module_link_callback = function(f)
+			if _OPTIONS["dynamic"] then
 				filter {}
 				f()
 				filter {}
+			else
+				table.insert(modules_link_callback, f)
 			end
 		end
 
         for _,name in ipairs(mod_list) do
-            table.insert(modules, name)
-
             project(name)
-                if _OPTIONS["static"] then
-                    kind "StaticLib"
-                    basedir "."
+                if _OPTIONS["dynamic"] then
+					kind "SharedLib"
+					targetdir "modules"
+					targetprefix ""
+					targetextension ".vxt"
+					basedir "."
+					links "vxt"
+					pic "On"
                 else
-                    kind "SharedLib"
-                    targetdir "modules"
-                    targetprefix ""
-                    targetextension ".vxt"
-                    basedir "."
-                    links "vxt"
-                    pic "On"
-                end
+					kind "StaticLib"
+					basedir "."
+				end
 
                 includedirs { "lib/vxt/include", "front/common" }
                 defines { "VXTU_MODULE_NAME=" .. name }
@@ -179,10 +166,11 @@ workspace "virtualxt"
                 }
 
                 filter {}
-    
-            dofile("modules/" .. name .. "/premake5.lua")
+
+    		dofile("modules/" .. name .. "/premake5.lua")
+			table.insert(modules, name)
         end
-        
+
         module_link_callback = nil
     end
 
@@ -220,9 +208,9 @@ workspace "virtualxt"
         }
 
     project "vxt"
-        if _OPTIONS["modules"] and not _OPTIONS["static"] then
+        if not _OPTIONS["no-modules"] and _OPTIONS["dynamic"] then
             kind "SharedLib"
-            targetdir "build/bin"
+            targetdir "build/sdl2"
             pic "On"
         else
             kind "StaticLib"
@@ -237,7 +225,7 @@ workspace "virtualxt"
         kind "SharedLib"
         targetname "virtualxt_libretro"
         targetprefix ""
-        targetdir "build/lib"
+        targetdir "build/libretro"
         pic "On"
 
         includedirs { "lib/libretro", "front/common" }
@@ -253,7 +241,7 @@ workspace "virtualxt"
         defines "ZIP2IMG"
 
         cleancommands {
-            "{RMDIR} build/lib",
+            "{RMDIR} build/libretro",
             "make clean %{cfg.buildcfg}"
         }
 
@@ -262,7 +250,7 @@ workspace "virtualxt"
 
         -- TODO: Remove this filter! This is here to fix an issue with the GitHub builder.
         filter "not system:windows"
-            postbuildcommands "{COPYFILE} front/libretro/virtualxt_libretro.info build/lib/"
+            postbuildcommands "{COPYFILE} front/libretro/virtualxt_libretro.info build/libretro/"
 
     project "web-frontend"
         kind "ConsoleApp"
@@ -285,8 +273,12 @@ workspace "virtualxt"
         files "modules/modules.h"
         includedirs "modules"
 
-        if _OPTIONS["modules"] and _OPTIONS["static"] then
+        if not _OPTIONS["no-modules"] and not _OPTIONS["dynamic"] then
             links(modules)
+            for _,f in ipairs(modules_link_callback) do
+				f()
+				filter {}
+            end
         end
 
         -- Perhaps move this to options?
@@ -318,20 +310,20 @@ workspace "virtualxt"
     project "sdl2-frontend"
         kind "ConsoleApp"
         targetname "virtualxt"
-        targetdir "build/bin"
+        targetdir "build/sdl2"
         
         files "modules/modules.h"
         includedirs "modules"
 
-        if _OPTIONS["modules"] then
-            if _OPTIONS["static"] then
+        if not _OPTIONS["no-modules"] then
+            if _OPTIONS["dynamic"] then
+				dependson "modules"
+			else
                 links(modules)
                 for _,f in ipairs(modules_link_callback) do
 					f()
 					filter {}
                 end
-            else
-                dependson "modules"
             end
         end
 
@@ -340,7 +332,7 @@ workspace "virtualxt"
         links { "vxt", "inih", "microui" }
 
         cleancommands {
-            "{RMDIR} build/bin",
+            "{RMDIR} build/sdl2",
             "make clean %{cfg.buildcfg}"
         }
 
@@ -368,6 +360,48 @@ workspace "virtualxt"
         filter "toolset:gcc"
             buildoptions "-Wno-maybe-uninitialized"
 
+    project "terminal-frontend"
+        kind "ConsoleApp"
+        targetname "vxterm"
+        targetdir "build/terminal"
+        
+        files "modules/modules.h"
+        includedirs "modules"
+
+        if not _OPTIONS["no-modules"] then
+            if _OPTIONS["dynamic"] then
+                dependson "modules"
+            else
+                links(modules)
+                for _,f in ipairs(modules_link_callback) do
+					f()
+					filter {}
+                end
+            end
+        end
+
+		files { "front/terminal/*.h", "front/terminal/*.c" }
+		includedirs { "lib/vxt/include", "lib/inih", "lib/termbox2", "front/common" }
+		links { "m", "vxt", "inih" }
+
+        cleancommands {
+            "{RMDIR} build/terminal",
+            "make clean %{cfg.buildcfg}"
+        }
+
+        filter "options:validator"
+            files { "tools/validator/pi8088/pi8088.c", "tools/validator/pi8088/udmask.h" }
+
+        filter "toolset:clang or gcc"
+            buildoptions { "-Wno-unused-parameter", "-Wno-implicit-function-declaration", "-Wno-incompatible-pointer-types" }
+            linkoptions "-Wl,-rpath,'$$ORIGIN'/../lib"
+
+        filter "toolset:clang"
+            buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
+
+        filter "toolset:gcc"
+            buildoptions "-Wno-maybe-uninitialized"
+
 if _OPTIONS["test"] then
     project "test"
         kind "ConsoleApp"
@@ -378,7 +412,6 @@ if _OPTIONS["test"] then
 
         optimize "Off"
         symbols "On"
-        sanitize { "Address", "Fuzzer" }
 
         postbuildcommands "./test/test"
         cleancommands "{RMDIR} test"
@@ -421,9 +454,9 @@ if _OPTIONS["test"] then
 end
 
 io.writefile("modules/modules.h", (function()
-    local is_static = _OPTIONS["static"]
+    local is_dynamic = _OPTIONS["dynamic"]
     local str = "#include <vxt/vxtu.h>\n\nstruct vxtu_module_entry {\n\tconst char *name;\n\tvxtu_module_entry_func *(*entry)(int(*)(const char*, ...));\n};\n\n"
-    if is_static then
+    if not is_dynamic then
         for _,mod in ipairs(modules) do
             str = string.format("%s#ifdef VXTU_MODULE_%s\n\textern vxtu_module_entry_func *_vxtu_module_%s_entry(int(*)(const char*, ...));\n#endif\n", str, string.upper(mod), mod)
         end
@@ -431,10 +464,10 @@ io.writefile("modules/modules.h", (function()
     end
     str = string.format("%sconst struct vxtu_module_entry vxtu_module_table[] = {\n", str)
     for _,mod in ipairs(modules) do
-        if is_static then
-            str = string.format('%s\t#ifdef VXTU_MODULE_%s\n\t\t{ "%s", _vxtu_module_%s_entry },\n\t#endif\n', str, string.upper(mod), mod, mod)
-        else
+        if is_dynamic then
             str = string.format('%s\t{ "%s", NULL },\n', str, mod)  
+        else
+            str = string.format('%s\t#ifdef VXTU_MODULE_%s\n\t\t{ "%s", _vxtu_module_%s_entry },\n\t#endif\n', str, string.upper(mod), mod, mod)
         end
     end
     return str .. "\t{ NULL, NULL }\n};\n"

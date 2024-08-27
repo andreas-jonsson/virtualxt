@@ -525,7 +525,7 @@ function startEmulator(binary) {
 			const audioCtx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: "interactive"});
 			const audioBufferSize = audioCtx.sampleRate * defaultAudioLatency;
 
-            C.wasm_initialize_emulator((urlParams.get("v20") == 1) ? 1 : 0, targetFreq * 1000000, audioCtx.sampleRate, audioBufferSize);
+            C.wasm_initialize_emulator(targetFreq * 1000000, audioCtx.sampleRate, audioBufferSize);
 
             if (urlParams.has("storage") && (urlParams.get("storage") != "0")) {
                 initLocalStorage();

@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  VXT_VERSION: 1.0.0
+  VXT_VERSION: 1.1.0
 
 jobs:
   web-build:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Build
         run: |
-          premake5 --modules=ctrl,cga,mouse --static gmake
+          premake5 --modules=ctrl,cga,mouse gmake
           make config=release_web clean web-frontend
 
       - name: Package

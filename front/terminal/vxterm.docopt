@@ -1,0 +1,17 @@
+Usage: vxterm [options]
+
+Options:
+  -h --help               Show this screen.
+  -v --version            Display version.
+  --hdboot                Prefer booting from harddrive.
+  --halt                  Debug break on startup.
+  --no-idle               Disable CPU idle on INT28.
+  --clean                 Remove config file and write a new default one.
+  --edit                  Open config file in system text editor.
+  --locate                Locate the configuration directory.
+  --rifs=PATH             Share directory with guest OS via RIFS. (Experimental)
+  --config=PATH           Path to config file.
+  --log=PATH              Output log file.
+  --frequency=MHZ         CPU frequency. [default: 4.77]
+  -a --floppy=FILE        Mount floppy image as drive A.
+  -c --harddrive=FILE     Mount harddrive image as drive C.
