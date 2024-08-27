@@ -23,7 +23,7 @@
 
 #include <vxt/vxtu.h>
 
-#ifdef LIBPACAP
+#ifdef LIBPCAP
 
 #include <string.h>
 #include <stdlib.h>
@@ -68,7 +68,7 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 		case 1: // Send packet of CX at DS:SI
 			for (int i = 0; i < (int)r->cx; i++)
 				n->buffer[i] = vxt_system_read_byte(s, VXT_POINTER(r->ds, r->si + i));
-			
+
 			if (pcap_sendpacket(n->handle, n->buffer, r->cx))
 				VXT_LOG("Could not send packet!");
 			break;
@@ -112,7 +112,7 @@ static vxt_error timer(struct network *n, vxt_timer_id id, int cycles) {
 
 	if (header->len > sizeof(n->buffer))
 		return VXT_NO_ERROR;
-	
+
 	n->can_recv = false;
 	n->pkg_len = header->len;
 
@@ -178,7 +178,7 @@ static bool list_devices(int *prefered) {
 		printf("%d - %s", ++i, dev->name);
 		if (dev->description)
 			printf(" (%s)", dev->description);
-		
+
 		if (!(dev->flags & PCAP_IF_LOOPBACK) && ((dev->flags & PCAP_IF_CONNECTION_STATUS) == PCAP_IF_CONNECTION_STATUS_CONNECTED)) {
 			for (struct pcap_addr *pa = dev->addresses; pa; pa = pa->next) {
 				if (pa->addr->sa_family == AF_INET) {
