@@ -45,11 +45,6 @@ var vxt_8h =
     [ "vxt_system", "vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802", null ],
     [ "vxt_timer_id", "vxt_8h.html#a05691a5b6a191969b75e371ad5d5fd0d", null ],
     [ "vxt_word", "vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12", null ],
-    [ "vxt_cpu_type", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951", [
-      [ "VXT_CPU_8088", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951a517058a91eed3a471ef1d7b988f83814", null ],
-      [ "VXT_CPU_V20", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951aa3c356fdfd749ea2ef4b110bebbfb804", null ],
-      [ "VXT_CPU_286", "vxt_8h.html#ab242ae1796be2cfe4e593c4d2c1c0951a64f8412c38ca3a0190a03d5e47e97911", null ]
-    ] ],
     [ "vxt_error", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047", [
       [ "VXT_NO_ERROR", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a303639ce6216d5df97fd907ec6be0bef", null ],
       [ "VXT_INVALID_VERSION", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047ae0b9ce2aef425ed0ed1e06daf943d9c2", null ],
@@ -98,7 +93,7 @@ var vxt_8h =
     [ "vxt_set_logger", "vxt_8h.html#a4d327d924617c19d379d817215e4dd8c", null ],
     [ "vxt_system_allocator", "vxt_8h.html#a88a8617594cfb312554382efb8baed19", null ],
     [ "vxt_system_configure", "vxt_8h.html#a648a908ab11a263d24a9dc33d02c0290", null ],
-    [ "vxt_system_create", "vxt_8h.html#a7722f3376afc0654081b7102d62c7d7b", null ],
+    [ "vxt_system_create", "vxt_8h.html#aa4dfcd9c100ac0919b2bcf7a33980f84", null ],
     [ "vxt_system_destroy", "vxt_8h.html#aab46aa8b0fe37425725ad3ba5bbc6398", null ],
     [ "vxt_system_frequency", "vxt_8h.html#a283bd06c7d32d955206b2d78d28e6aa0", null ],
     [ "vxt_system_install_io", "vxt_8h.html#af36fe4cffa814bd3f3b8543eb11a33c8", null ],
