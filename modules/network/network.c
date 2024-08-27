@@ -23,8 +23,9 @@
 
 #include <vxt/vxtu.h>
 
-#ifdef LIBPACAP
+#ifdef LIBPCAP
 
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <pcap/pcap.h>
@@ -35,12 +36,35 @@
 	#include <arpa/inet.h>
 #endif
 
+enum pkt_driver_error {
+	BAD_HANDLE = 1,		// Invalid handle number.
+	NO_CLASS,			// No interfaces of specified class found.
+	NO_TYPE,			// No interfaces of specified type found.
+	NO_NUMBER,			// No interfaces of specified number found.
+	BAD_TYPE,			// Bad packet type specified.
+	NO_MULTICAST,		// This interface does not support multicast.
+	CANT_TERMINATE,		// This packet driver cannot terminate.
+	BAD_MODE,			// An invalid receiver mode was specified.
+	NO_SPACE,			// Operation failed because of insufficient space.
+	TYPE_INUSE,			// The type had previously been accessed, and not released.
+	BAD_COMMAND,		// The command was out of range, or not implemented.
+	CANT_SEND,			// The packet couldn't be sent (usually hardware error).
+	CANT_SET,			// Hardware address couldn't be changed (more than 1 handle open).
+	BAD_ADDRESS,		// Hardware address has bad length or format.
+	CANT_RESET			// Couldn't reset interface (more than 1 handle open).
+};
+
 struct network {
 	pcap_t *handle;
 	bool can_recv;
-	int pkg_len;
 	char nif[128];
 	vxt_byte buffer[0x10000];
+
+	int rx_len;
+	const vxt_byte *rx_data;
+
+	vxt_word cb_seg;
+	vxt_word cb_offset;
 };
 
 static vxt_byte in(struct network *n, vxt_word port) {
@@ -49,18 +73,91 @@ static vxt_byte in(struct network *n, vxt_word port) {
 }
 
 static void out(struct network *n, vxt_word port, vxt_byte data) {
-	/*
-		This is the API of Fake86's packet driver.
-
-		References:
-			http://crynwr.com/packet_driver.html
-			http://crynwr.com/drivers/
-	*/
-
 	(void)port; (void)data;
 	vxt_system *s = VXT_GET_SYSTEM(n);
 	struct vxt_registers *r = vxt_system_registers(s);
 
+	VXT_LOG("##### out %d", r->ah);
+
+	// Assume no error
+	r->flags &= ~VXT_CARRY;
+
+	switch (r->ah) {
+		case 2: // access_type
+
+			assert(r->cx == 0);
+
+			// We only support capturing all types.
+			// typelen != any_type
+			if (r->cx != 0) {
+				r->dh = BAD_TYPE;
+				break;
+			}
+
+			n->can_recv = true;
+			n->cb_seg = r->es;
+			n->cb_offset = r->di;
+
+			VXT_LOG("Callback %X:%X", r->es, r->di);
+
+			r->ax = 0; // Handle
+			return;
+		case 3: // release_type
+			assert(r->bx == 0);
+			return;
+		case 4: // send_pkt
+			for (int i = 0; i < (int)r->cx; i++)
+				n->buffer[i] = vxt_system_read_byte(s, VXT_POINTER(r->ds, r->si + i));
+
+			if (pcap_sendpacket(n->handle, n->buffer, r->cx)) {
+				VXT_LOG("Could not send packet!");
+				r->dh = CANT_SEND;
+				break;
+			}
+			return;
+		case 6: // get_address
+			assert(r->bx == 0);
+			assert(r->cx == 6);
+
+			const vxt_byte mac[6] = { 0x00, 0x50, 0x56, 0x33, 0x44, 0x55 };
+			for (int i = 0; i < (int)r->cx; i++)
+				vxt_system_write_byte(s, VXT_POINTER(r->es, r->di + i), mac[i]);
+			return;
+		case 7: // reset_interface
+			assert(r->bx == 0);
+			n->can_recv = false;
+			n->rx_len = 0;
+			return;
+		case 0xFE: // get_callback
+			VXT_LOG("############ get_callback!");
+
+			r->es = n->cb_seg;
+			r->di = n->cb_offset;
+			r->bx = 0; // Handle
+			r->cx = (vxt_word)n->rx_len;
+			return;
+		case 0xFF: // copy_package
+			VXT_LOG("############ copy_package!");
+
+			assert(r->cx == (vxt_word)n->rx_len);
+			for (int i = 0; i < (int)r->cx; i++)
+				vxt_system_write_byte(s, VXT_POINTER(r->es, r->di + i), n->rx_data[i]);
+
+			n->rx_len = 0;
+			n->can_recv = true;
+
+			// Callback expects buffer in DS:SI
+			r->ds = r->es;
+			r->si = r->di;
+			return;
+		default:
+			r->dh = BAD_COMMAND;
+	}
+
+	// Indicate error
+	r->flags |= VXT_CARRY;
+
+	/*
 	switch (r->ah) {
 		case 0: // Enable packet reception
 			n->can_recv = true;
@@ -68,7 +165,7 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 		case 1: // Send packet of CX at DS:SI
 			for (int i = 0; i < (int)r->cx; i++)
 				n->buffer[i] = vxt_system_read_byte(s, VXT_POINTER(r->ds, r->si + i));
-			
+
 			if (pcap_sendpacket(n->handle, n->buffer, r->cx))
 				VXT_LOG("Could not send packet!");
 			break;
@@ -85,16 +182,17 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 			n->can_recv = false;
 			break;
 	}
+	*/
 }
 
 static vxt_error reset(struct network *n) {
 	n->can_recv = false;
-	n->pkg_len = 0;
+	n->rx_len = 0;
 	return VXT_NO_ERROR;
 }
 
 static const char *name(struct network *n) {
-	(void)n; return "Network Adapter (Fake86 Interface)";
+	(void)n; return "Network Adapter";
 }
 
 static vxt_error timer(struct network *n, vxt_timer_id id, int cycles) {
@@ -104,22 +202,17 @@ static vxt_error timer(struct network *n, vxt_timer_id id, int cycles) {
 	if (!n->can_recv)
 		return VXT_NO_ERROR;
 
-	const vxt_byte *data = NULL;
 	struct pcap_pkthdr *header = NULL;
-
-	if (pcap_next_ex(n->handle, &header, &data) <= 0)
+	if (pcap_next_ex(n->handle, &header, &n->rx_data) <= 0)
 		return VXT_NO_ERROR;
 
 	if (header->len > sizeof(n->buffer))
 		return VXT_NO_ERROR;
-	
+
 	n->can_recv = false;
-	n->pkg_len = header->len;
+	n->rx_len = header->len;
 
-	for (int i = 0; i < n->pkg_len; i++)
-		vxt_system_write_byte(s, VXT_POINTER(0xD000, i), data[i]);
 	vxt_system_interrupt(s, 6);
-
 	return VXT_NO_ERROR;
 }
 
@@ -149,7 +242,8 @@ static pcap_t *init_pcap(struct network *n) {
 		return NULL;
 	}
 
-	if (!(handle = pcap_open_live(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, -1, buffer))) {
+	// TODO: Fix timeout
+	if (!(handle = pcap_open_live(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, 1, buffer))) {
 		VXT_LOG("pcap error: %s", buffer);
 		pcap_freealldevs(devs);
 		return NULL;
@@ -178,7 +272,7 @@ static bool list_devices(int *prefered) {
 		printf("%d - %s", ++i, dev->name);
 		if (dev->description)
 			printf(" (%s)", dev->description);
-		
+
 		if (!(dev->flags & PCAP_IF_LOOPBACK) && ((dev->flags & PCAP_IF_CONNECTION_STATUS) == PCAP_IF_CONNECTION_STATUS_CONNECTED)) {
 			for (struct pcap_addr *pa = dev->addresses; pa; pa = pa->next) {
 				if (pa->addr->sa_family == AF_INET) {
