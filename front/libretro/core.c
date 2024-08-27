@@ -47,6 +47,10 @@
     #include "zip2img.h"
 #endif
 
+#ifdef VXTU_MODULES
+	#error Modules are not supported in this frontend. Configure with '--no-modules'.
+#endif
+
 #define AUDIO_FREQUENCY 44100
 
 #define LOG(...) log_cb(RETRO_LOG_INFO, __VA_ARGS__)
@@ -142,7 +146,7 @@ static int tell_file(vxt_system *s, void *fp) {
 }
 
 static bool is_zip(const char *file) {
-    const char *ext = strrchr(file, '.');    
+    const char *ext = strrchr(file, '.');
     return ext && !strcmp(ext, ".zip");
 }
 
@@ -280,7 +284,7 @@ static bool add_image_index(void) {
 }
 
 static const char *process_zip(const char *path) {
-    #ifdef ZIP2IMG 
+    #ifdef ZIP2IMG
         if (is_zip(path)) {
             if (!temp_file_name[0]) {
                 tmpnam(temp_file_name);
@@ -336,7 +340,7 @@ void retro_init(void) {
         struct vxtu_disk_interface intrf = {
             &read_file, &write_file, &seek_file, &tell_file
         };
-        
+
         disk = vxtu_disk_create(&realloc, &intrf);
         ppi = vxtu_ppi_create(&realloc);
         cga = cga_create(&realloc);

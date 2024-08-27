@@ -92,6 +92,16 @@ struct gdb {
     struct gdb_state state;
 };
 
+static vxt_byte in(struct gdb *dbg, vxt_word port) {
+	(void)dbg; (void)port;
+	return 0;	// Indicate that we have a debugger.
+}
+
+static void out(struct gdb *dbg, vxt_word port, vxt_byte data) {
+	(void)dbg; (void)port;
+	vxt_system_registers(vxt_pirepheral_system(VXT_GET_PIREPHERAL(dbg)))->debug = true;
+}
+
 static vxt_byte mem_read(struct gdb *dbg, vxt_pointer addr) {
     vxt_system *s = vxt_pirepheral_system(VXT_GET_PIREPHERAL(dbg));
 
@@ -206,6 +216,7 @@ static vxt_error install(struct gdb *dbg, vxt_system *s) {
     for (int i = 0; i < VXT_MEM_MAP_SIZE; i++)
         dbg->mem_map[i] = mem[i];
 
+    vxt_system_install_io_at(s, p, 0xB3);
     vxt_system_install_mem(s, p, 0, 0xFFFFF);
     vxt_system_install_timer(s, p, 0);
     dbg->reconnect_timer = vxt_system_install_timer(s, p, 1000000);
@@ -246,13 +257,13 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
 			VXT_LOG("WARNING: Unexpected data received from GDB client!");
 		}
 	}
-    
+
 	if (vreg->debug) {
         VXT_LOG("Debug trap!");
 
         dbg->state.signum = 5;
         reg *r = dbg->state.registers;
-        
+
         r[GDB_CPU_I386_REG_EAX] = vreg->ax;
         r[GDB_CPU_I386_REG_EBX] = vreg->bx;
         r[GDB_CPU_I386_REG_ECX] = vreg->cx;
@@ -261,7 +272,7 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
         r[GDB_CPU_I386_REG_EBP] = vreg->bp;
         r[GDB_CPU_I386_REG_ESI] = vreg->si;
         r[GDB_CPU_I386_REG_EDI] = vreg->di;
-        
+
         r[GDB_CPU_I386_REG_CS] = vreg->cs;
         r[GDB_CPU_I386_REG_SS] = vreg->ss;
         r[GDB_CPU_I386_REG_DS] = vreg->ds;
@@ -283,11 +294,11 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
         vreg->bx = (vxt_word)r[GDB_CPU_I386_REG_EBX];
         vreg->cx = (vxt_word)r[GDB_CPU_I386_REG_ECX];
         vreg->dx = (vxt_word)r[GDB_CPU_I386_REG_EDX];
-        
+
         vreg->bp = (vxt_word)r[GDB_CPU_I386_REG_EBP];
         vreg->si = (vxt_word)r[GDB_CPU_I386_REG_ESI];
         vreg->di = (vxt_word)r[GDB_CPU_I386_REG_EDI];
-        
+
         vreg->cs = (vxt_word)r[GDB_CPU_I386_REG_CS];
         vreg->ss = (vxt_word)r[GDB_CPU_I386_REG_SS];
         vreg->ds = (vxt_word)r[GDB_CPU_I386_REG_DS];
@@ -373,7 +384,7 @@ int gdb_sys_insert(struct gdb_state *state, unsigned int ty, address addr, unsig
 
     if (kind > 1)
         VXT_LOG("WARNING: GDB server only supports single byte watches!");
-    
+
     VXT_LOG("Insert breakpoint at: 0x%X", addr);
     return 0;
 }
@@ -392,7 +403,7 @@ int gdb_sys_remove(struct gdb_state *state, unsigned int ty, address addr, unsig
 
 VXTU_MODULE_CREATE(gdb, {
     DEVICE->port = (vxt_word)atoi(ARGS);
-    DEVICE->server = DEVICE->state.client = -1; 
+    DEVICE->server = DEVICE->state.client = -1;
 
     PIREPHERAL->install = &install;
 	PIREPHERAL->config = &config;
@@ -402,4 +413,6 @@ VXTU_MODULE_CREATE(gdb, {
     PIREPHERAL->destroy = &destroy;
     PIREPHERAL->io.read = &mem_read;
     PIREPHERAL->io.write = &mem_write;
+    PIREPHERAL->io.in = &in;
+    PIREPHERAL->io.out = &out;
 })

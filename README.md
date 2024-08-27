@@ -64,6 +64,7 @@ It should be noted that DMA currently not supported and the CH367 board is **VER
 
 A hardware validator was developed to ensure proper CPU behaviour.
 Some additional information about that can be found [here](https://hackaday.io/project/184209-virtualxt-hardware-validator).
+This [talk](https://youtu.be/qatzd0niz9A?si=_NVqQu_zc1KDB8W6) by Daniel Balsom describes the process in details.
 
 ![validator screenshot](screenshots/validator.jpg)
 
