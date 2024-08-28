@@ -83,7 +83,7 @@ VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struc
     s->alloc = alloc;
     s->frequency = frequency;
 	s->cpu.s = s;
-    
+
     int i = 1;
     for (; devs && devs[i-1]; i++) {
         s->devices[i] = devs[i-1];
@@ -198,24 +198,25 @@ VXT_API void vxt_system_reset(CONSTP(vxt_system) s) {
 }
 
 VXT_API struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
-    int oldc = 0;
-    struct vxt_step step = {0};
-    cpu_reset_cycle_count(&s->cpu);
+	int oldc = 0;
+	struct vxt_step step = {0};
+	cpu_reset_cycle_count(&s->cpu);
 
-    for (;;) {
-        int newc = cpu_step(&s->cpu);
-        int c = newc - oldc;
-        oldc = newc;
-        step.cycles += c;
-        step.halted = s->cpu.halt;
+	for (;;) {
+		int newc = cpu_step(&s->cpu);
+		int c = newc - oldc;
+		oldc = newc;
+		step.cycles += c;
+		step.halted = s->cpu.halt;
 		step.int28 = s->cpu.int28;
+		step.invalid = s->cpu.invalid;
 
-        if (UNLIKELY((step.err = update_timers(s, c)) != VXT_NO_ERROR))
-            return step;
+		if (UNLIKELY((step.err = update_timers(s, c)) != VXT_NO_ERROR))
+			return step;
 
-        if (newc >= cycles)
-            return step;
-    }
+		if (newc >= cycles)
+			return step;
+	}
 }
 
 VXT_API void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte)) {

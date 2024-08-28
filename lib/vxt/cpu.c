@@ -119,7 +119,7 @@ static void do_exec(CONSTSP(cpu) p) {
    if (inst->modregrm)
       read_modregrm(p);
    inst->func(p, inst);
-   
+
    p->cycles += inst->cycles;
    p->cycles += p->ea_cycles;
 
@@ -145,14 +145,16 @@ int cpu_step(CONSTSP(cpu) p) {
 
    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
    VALIDATOR_END(p, inst->name, p->opcode, inst->modregrm, p->cycles, &p->regs);
-   
+   p->invalid = inst->arch != ARCH_8086;
+
    ENSURE(p->cycles > 0);
    return p->cycles;
 }
 
 void cpu_reset_cycle_count(CONSTSP(cpu) p) {
    p->cycles = 0;
-   p->int28 = false; 
+   p->int28 = false;
+   p->invalid = false;
 }
 
 void cpu_reset(CONSTSP(cpu) p) {
@@ -162,7 +164,7 @@ void cpu_reset(CONSTSP(cpu) p) {
 	p->regs.flags = 0xF002;
 	p->regs.cs = 0xFFFF;
 	p->regs.debug = false;
-	
+
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);
 }

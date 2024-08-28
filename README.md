@@ -6,7 +6,7 @@
 [![Chat](https://img.shields.io/matrix/virtualxt:matrix.org)](https://matrix.to/#/#virtualxt:matrix.org)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)
 
-VirtualXT is a PC/XT (8088) emulator that runs on modern hardware and operating systems.
+VirtualXT is a Turbo PC/XT emulator that runs on modern hardware and operating systems.
 It is designed to be simple and lightweight yet still capable enough to run a large
 library of old application and games.
 
@@ -14,7 +14,7 @@ Browser version is avalible [here](https://realmode.games).
 
 ## Features
 
-* Intel 8088 processor
+* Intel 8088 (80186) processor
 * Hardware CPU validator
 * CGA or VGA compatible graphics
 * GLaBIOS or Turbo XT BIOS 3.1 with extensions
