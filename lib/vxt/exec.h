@@ -35,13 +35,27 @@
 #define MOD_TARGET_MEM(mode) ((mode).mod < 3)
 #define ADD_CYCLE_MOD_MEM(p, n) { if (MOD_TARGET_MEM((p->mode))) (p)->cycles += (n); }
 
+enum architecture {
+	ARCH_INVALID,
+	ARCH_FPU,
+	ARCH_8086,
+	ARCH_80186,
+	ARCH_80286,
+	ARCH_80386
+};
+
 struct instruction {
    vxt_byte opcode;
    const char *name;
    bool modregrm;
    int cycles;
+   enum architecture arch;
    void (*func)(CONSTSP(cpu), INST());
 };
+
+static vxt_dword sign_extend32(vxt_word v) {
+   return (v & 0x8000) ? ((vxt_dword)v) | 0xFFFF0000 : (vxt_dword)v;
+}
 
 static vxt_word sign_extend16(vxt_byte v) {
    return (v & 0x80) ? ((vxt_word)v) | 0xFF00 : (vxt_word)v;
@@ -378,7 +392,7 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
       .rm = modregrm & 7,
       .disp = 0
    };
-   
+
 	switch(mode.mod) {
 	   case 0:
 	      if (mode.rm == 6)
@@ -413,7 +427,7 @@ static void call_int(CONSTSP(cpu) p, int n) {
 	p->inst_queue_dirty = true;
 
 	if (n == 0x28)
-		p->int28 = true; 
+		p->int28 = true;
 }
 
 static void divZero(CONSTSP(cpu) p) {
@@ -425,6 +439,8 @@ static bool valid_repeat(vxt_byte opcode) {
    if ((opcode >= 0xA4) && (opcode <= 0xA7))
       return true;
    if ((opcode >= 0xAA) && (opcode <= 0xAF))
+      return true;
+   if ((opcode >= 0x6C) && (opcode <= 0x6F)) // Only valid for 186+
       return true;
    return false;
 }
