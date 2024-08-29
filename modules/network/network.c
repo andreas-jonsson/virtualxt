@@ -73,11 +73,18 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 			n->can_recv = true;
 			break;
 		case 1: // Send packet of CX at DS:SI
+			if (r->cx > MAX_PACKET_SIZE) {
+				VXT_LOG("Can't send! Invalid package size.");
+				break;
+			}
+
 			for (int i = 0; i < (int)r->cx; i++)
 				n->buffer[i] = vxt_system_read_byte(s, VXT_POINTER(r->ds, r->si + i));
 
 			if (pcap_sendpacket(n->handle, n->buffer, r->cx))
 				VXT_LOG("Could not send packet!");
+
+			VXT_LOG("SEND!!!!!!!!!");
 			break;
 		case 2: // Return packet info (packet buffer in DS:SI, length in CX)
 			r->ds = n->buf_seg;
@@ -123,7 +130,7 @@ static vxt_error timer(struct network *n, vxt_timer_id id, int cycles) {
 	if (pcap_next_ex(n->handle, &header, &data) <= 0)
 		return VXT_NO_ERROR;
 
-	if (header->len > sizeof(n->buffer)) {
+	if (header->len > MAX_PACKET_SIZE) {
 		VXT_LOG("Invalid package size!");
 		return VXT_NO_ERROR;
 	}
