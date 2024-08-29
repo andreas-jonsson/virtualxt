@@ -83,8 +83,6 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 
 			if (pcap_sendpacket(n->handle, n->buffer, r->cx))
 				VXT_LOG("Could not send packet!");
-
-			VXT_LOG("SEND!!!!!!!!!");
 			break;
 		case 2: // Return packet info (packet buffer in DS:SI, length in CX)
 			r->ds = n->buf_seg;
