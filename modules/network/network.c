@@ -35,12 +35,18 @@
 	#include <arpa/inet.h>
 #endif
 
+// This is hardcoded in the driver extension.
+#define MAX_PACKET_SIZE 0x3F00
+
 struct network {
 	pcap_t *handle;
 	bool can_recv;
-	int pkg_len;
 	char nif[128];
-	vxt_byte buffer[0x10000];
+
+	int pkg_len;
+	vxt_byte buffer[MAX_PACKET_SIZE];
+	vxt_word buf_seg;
+	vxt_word buf_offset;
 };
 
 static vxt_byte in(struct network *n, vxt_word port) {
@@ -50,7 +56,8 @@ static vxt_byte in(struct network *n, vxt_word port) {
 
 static void out(struct network *n, vxt_word port, vxt_byte data) {
 	/*
-		This is the API of Fake86's packet driver.
+		This is the API of Fake86's packet driver
+		with the VirtualXT extension.
 
 		References:
 			http://crynwr.com/packet_driver.html
@@ -73,16 +80,21 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 				VXT_LOG("Could not send packet!");
 			break;
 		case 2: // Return packet info (packet buffer in DS:SI, length in CX)
-			r->ds = 0xD000;
-			r->si = 0;
+			r->ds = n->buf_seg;
+			r->si = n->buf_offset;
 			r->cx = (vxt_word)n->pkg_len;
 			break;
 		case 3: // Copy packet to final destination (given in ES:DI)
 			for (int i = 0; i < (int)r->cx; i++)
-				vxt_system_write_byte(s, VXT_POINTER(r->es, r->di + i), vxt_system_read_byte(s, VXT_POINTER(0xD000, i)));
+				vxt_system_write_byte(s, VXT_POINTER(r->es, r->di + i), vxt_system_read_byte(s, VXT_POINTER(n->buf_seg, n->buf_offset + i)));
 			break;
 		case 4: // Disable packet reception
 			n->can_recv = false;
+			break;
+		case 0xFF: // Setup packet buffer
+			n->buf_seg = r->cs;
+			n->buf_offset = r->dx;
+			VXT_LOG("Packet buffer is located at %04X:%04X", r->cs, r->dx);
 			break;
 	}
 }
@@ -90,6 +102,7 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 static vxt_error reset(struct network *n) {
 	n->can_recv = false;
 	n->pkg_len = 0;
+	n->buf_seg = n->buf_offset = 0;
 	return VXT_NO_ERROR;
 }
 
@@ -101,7 +114,7 @@ static vxt_error timer(struct network *n, vxt_timer_id id, int cycles) {
 	(void)id; (void)cycles;
 	vxt_system *s = VXT_GET_SYSTEM(n);
 
-	if (!n->can_recv)
+	if (!n->can_recv || !n->buf_seg)
 		return VXT_NO_ERROR;
 
 	const vxt_byte *data = NULL;
@@ -110,14 +123,16 @@ static vxt_error timer(struct network *n, vxt_timer_id id, int cycles) {
 	if (pcap_next_ex(n->handle, &header, &data) <= 0)
 		return VXT_NO_ERROR;
 
-	if (header->len > sizeof(n->buffer))
+	if (header->len > sizeof(n->buffer)) {
+		VXT_LOG("Invalid package size!");
 		return VXT_NO_ERROR;
+	}
 
 	n->can_recv = false;
 	n->pkg_len = header->len;
 
 	for (int i = 0; i < n->pkg_len; i++)
-		vxt_system_write_byte(s, VXT_POINTER(0xD000, i), data[i]);
+		vxt_system_write_byte(s, VXT_POINTER(n->buf_seg, n->buf_offset + i), data[i]);
 	vxt_system_interrupt(s, 6);
 
 	return VXT_NO_ERROR;
@@ -149,7 +164,7 @@ static pcap_t *init_pcap(struct network *n) {
 		return NULL;
 	}
 
-	if (!(handle = pcap_open_live(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, -1, buffer))) {
+	if (!(handle = pcap_open_live(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, 1, buffer))) {
 		VXT_LOG("pcap error: %s", buffer);
 		pcap_freealldevs(devs);
 		return NULL;
