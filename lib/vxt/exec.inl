@@ -782,23 +782,24 @@ static void mov_C7(CONSTSP(cpu) p, INST(inst)) {
 }
 
 static void enter_C8(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   vxt_word size = read_opcode16(p);
-   vxt_byte level = read_opcode8(p);
+	UNUSED(inst);
+	vxt_word size = read_opcode16(p);
+	vxt_byte level = read_opcode8(p) & 0x1F;
 
-   push(p, p->regs.bp);
-   vxt_word sp = p->regs.sp;
+	push(p, p->regs.bp);
+	vxt_word bp = p->regs.bp;
+	vxt_word sp = p->regs.sp;
 
-   if (level) {
-      for (vxt_byte i = 0; i < level; i++) {
-         p->regs.bp -= 2;
-         push(p, p->regs.bp);
-      }
-      push(p, p->regs.sp);
-   }
+	if (level > 0) {
+		while (--level) {
+			bp -= 2;
+			push(p, cpu_segment_read_word(p, p->regs.ss, bp));
+		}
+		push(p, sp);
+	}
 
-   p->regs.bp = sp;
-   p->regs.sp -= size;
+	p->regs.sp -= size;
+	p->regs.bp = sp;
 }
 
 static void leave_C9(CONSTSP(cpu) p, INST(inst)) {
