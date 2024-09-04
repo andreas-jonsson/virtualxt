@@ -26,12 +26,12 @@
 
 #include <vxt/vxt.h>
 
-struct vxt_pirepheral *cga_create(vxt_allocator *alloc);
-vxt_dword cga_border_color(struct vxt_pirepheral *p);
-bool cga_snapshot(struct vxt_pirepheral *p);
+struct vxt_peripheral *cga_create(vxt_allocator *alloc);
+vxt_dword cga_border_color(struct vxt_peripheral *p);
+bool cga_snapshot(struct vxt_peripheral *p);
 
 // This function only operates on snapshot data and is threadsafe.
 // The use of 'vxtu_cga_snapshot' and 'vxtu_cga_render' needs to be coordinated by the user.
-int cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
+int cga_render(struct vxt_peripheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 
 #endif

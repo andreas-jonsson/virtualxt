@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {
+static struct vxt_peripheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {
     vxt_pointer base;
     if (sscanf(args, "%x", &base) != 1) {
 		VXT_LOG("Could not read BIOS address: %s", args);
@@ -52,7 +52,7 @@ static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, 
         return NULL;
     }
 
-    struct vxt_pirepheral *p = vxtu_memory_create(alloc, base, size, true);
+    struct vxt_peripheral *p = vxtu_memory_create(alloc, base, size, true);
     vxtu_memory_device_fill(p, data, size);
     alloc(data, 0);
     return p;

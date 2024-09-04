@@ -45,15 +45,15 @@
 #endif
 
 struct frontend_video_adapter {
-	struct vxt_pirepheral *device;
-	vxt_dword (*border_color)(struct vxt_pirepheral *p);
-	bool (*snapshot)(struct vxt_pirepheral *p);
-	int (*render)(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
+	struct vxt_peripheral *device;
+	vxt_dword (*border_color)(struct vxt_peripheral *p);
+	bool (*snapshot)(struct vxt_peripheral *p);
+	int (*render)(struct vxt_peripheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata);
 };
 
 struct frontend_audio_adapter {
-	struct vxt_pirepheral *device;
-	vxt_int16 (*generate_sample)(struct vxt_pirepheral *p, int freq);
+	struct vxt_peripheral *device;
+	vxt_int16 (*generate_sample)(struct vxt_peripheral *p, int freq);
 };
 
 enum frontend_mouse_button {
@@ -68,15 +68,15 @@ struct frontend_mouse_event {
 };
 
 struct frontend_mouse_adapter {
-	struct vxt_pirepheral *device;
-	bool (*push_event)(struct vxt_pirepheral *p, const struct frontend_mouse_event *ev);
+	struct vxt_peripheral *device;
+	bool (*push_event)(struct vxt_peripheral *p, const struct frontend_mouse_event *ev);
 };
 
 struct frontend_disk_controller {
-	struct vxt_pirepheral *device;
-	vxt_error (*mount)(struct vxt_pirepheral *p, int num, void *fp);
-	bool (*unmount)(struct vxt_pirepheral *p, int num);
-	void (*set_boot)(struct vxt_pirepheral *p, int num);
+	struct vxt_peripheral *device;
+	vxt_error (*mount)(struct vxt_peripheral *p, int num, void *fp);
+	bool (*unmount)(struct vxt_peripheral *p, int num);
+	void (*set_boot)(struct vxt_peripheral *p, int num);
 };
 
 enum frontend_path_type {
@@ -104,13 +104,13 @@ struct frontend_joystick_event {
 };
 
 struct frontend_joystick_controller {
-    struct vxt_pirepheral *device;
-	bool (*push_event)(struct vxt_pirepheral *p, const struct frontend_joystick_event *ev);
+    struct vxt_peripheral *device;
+	bool (*push_event)(struct vxt_peripheral *p, const struct frontend_joystick_event *ev);
 };
 
 struct frontend_keyboard_controller {
-    struct vxt_pirepheral *device;
-	bool (*push_event)(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force);
+    struct vxt_peripheral *device;
+	bool (*push_event)(struct vxt_peripheral *p, enum vxtu_scancode key, bool force);
 };
 
 enum frontend_ctrl_command {

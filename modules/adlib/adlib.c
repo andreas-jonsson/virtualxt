@@ -30,7 +30,7 @@ struct adlib {
     int freq;
     vxt_byte index;
     vxt_byte reg4;
-    
+
     bool (*set_audio_adapter)(const struct frontend_audio_adapter *adapter);
 };
 
@@ -56,7 +56,7 @@ static void out(struct adlib *a, vxt_word port, vxt_byte data) {
     }
 }
 
-static vxt_int16 generate_sample(struct vxt_pirepheral *p, int freq) {
+static vxt_int16 generate_sample(struct vxt_peripheral *p, int freq) {
     struct adlib *a = VXT_GET_DEVICE(adlib, p);
     if (a->freq != freq) {
         a->freq = freq;
@@ -69,7 +69,7 @@ static vxt_int16 generate_sample(struct vxt_pirepheral *p, int freq) {
 }
 
 static vxt_error install(struct adlib *a, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(a);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(a);
     if (a->set_audio_adapter) {
         struct frontend_audio_adapter adapter = { p, &generate_sample };
         a->set_audio_adapter(&adapter);
@@ -93,9 +93,9 @@ VXTU_MODULE_CREATE(adlib, {
     if (FRONTEND)
         DEVICE->set_audio_adapter = ((struct frontend_interface*)FRONTEND)->set_audio_adapter;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })

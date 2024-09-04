@@ -124,7 +124,7 @@ static vxt_error destroy(struct lua_env *e) {
 		lua_pop(e->L, 1);
 
 	lua_close(e->L);
-	vxt_system_allocator(VXT_GET_SYSTEM(e))(VXT_GET_PIREPHERAL(e), 0);
+	vxt_system_allocator(VXT_GET_SYSTEM(e))(VXT_GET_PERIPHERAL(e), 0);
     return VXT_NO_ERROR;
 }
 
@@ -164,25 +164,25 @@ static int lua_error_handle(lua_State *L) {
 
 static int lua_install_io(lua_State *L) {
 	GET_DEV
-	vxt_system_install_io(VXT_GET_SYSTEM(e), VXT_GET_PIREPHERAL(e), (vxt_word)lua_tointeger(L, -2), (vxt_word)lua_tointeger(L, -1));
+	vxt_system_install_io(VXT_GET_SYSTEM(e), VXT_GET_PERIPHERAL(e), (vxt_word)lua_tointeger(L, -2), (vxt_word)lua_tointeger(L, -1));
 	return 0;
 }
 
 static int lua_install_io_at(lua_State *L) {
 	GET_DEV
-	vxt_system_install_io_at(VXT_GET_SYSTEM(e), VXT_GET_PIREPHERAL(e), (vxt_word)lua_tointeger(L, -1));
+	vxt_system_install_io_at(VXT_GET_SYSTEM(e), VXT_GET_PERIPHERAL(e), (vxt_word)lua_tointeger(L, -1));
 	return 0;
 }
 
 static int lua_install_mem(lua_State *L) {
 	GET_DEV
-	vxt_system_install_mem(VXT_GET_SYSTEM(e), VXT_GET_PIREPHERAL(e), (vxt_pointer)lua_tointeger(L, -2), (vxt_pointer)lua_tointeger(L, -1));
+	vxt_system_install_mem(VXT_GET_SYSTEM(e), VXT_GET_PERIPHERAL(e), (vxt_pointer)lua_tointeger(L, -2), (vxt_pointer)lua_tointeger(L, -1));
 	return 0;
 }
 
 static int lua_install_timer(lua_State *L) {
 	GET_DEV
-	lua_pushinteger(L, vxt_system_install_timer(VXT_GET_SYSTEM(e), VXT_GET_PIREPHERAL(e), (unsigned int)lua_tointeger(L, -1)));
+	lua_pushinteger(L, vxt_system_install_timer(VXT_GET_SYSTEM(e), VXT_GET_PERIPHERAL(e), (unsigned int)lua_tointeger(L, -1)));
 	return 1;
 }
 
@@ -264,7 +264,7 @@ static int lua_os_stat(lua_State *L) {
 		struct stat stbuf;
         if (stat(lua_tostring(L, -1), &stbuf))
 			return 0;
-		
+
 		lua_pushinteger(L, stbuf.st_size);
         lua_pushboolean(L, S_ISDIR(stbuf.st_mode) ? 1 : 0);
 
@@ -309,7 +309,7 @@ static int lua_os_mkdir(lua_State *L) {
 static int lua_math_crc32(lua_State *L) {
 	if (!lua_isstring(L, -1))
 		return 0;
-	
+
 	const char *data = lua_tostring(L, -1);
 	lua_pushinteger(L, crc32((const vxt_byte*)data, (int)luaL_len(L, -1)));
 	return 1;
@@ -404,14 +404,14 @@ VXTU_MODULE_CREATE(lua_env, {
 	if (!initialize_environement(DEVICE, ARGS, FRONTEND))
 		return NULL;
 
-    PIREPHERAL->install = &install;
-	PIREPHERAL->destroy = &destroy;
-	PIREPHERAL->reset = &reset;
-    PIREPHERAL->config = &config;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
-    PIREPHERAL->io.read = &mem_read;
-    PIREPHERAL->io.write = &mem_write;
+    PERIPHERAL->install = &install;
+	PERIPHERAL->destroy = &destroy;
+	PERIPHERAL->reset = &reset;
+    PERIPHERAL->config = &config;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->timer = &timer;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
+    PERIPHERAL->io.read = &mem_read;
+    PERIPHERAL->io.write = &mem_write;
 })

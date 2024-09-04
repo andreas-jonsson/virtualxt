@@ -99,11 +99,11 @@ static vxt_byte in(struct gdb *dbg, vxt_word port) {
 
 static void out(struct gdb *dbg, vxt_word port, vxt_byte data) {
 	(void)dbg; (void)port;
-	vxt_system_registers(vxt_pirepheral_system(VXT_GET_PIREPHERAL(dbg)))->debug = true;
+	vxt_system_registers(vxt_peripheral_system(VXT_GET_PERIPHERAL(dbg)))->debug = true;
 }
 
 static vxt_byte mem_read(struct gdb *dbg, vxt_pointer addr) {
-    vxt_system *s = vxt_pirepheral_system(VXT_GET_PIREPHERAL(dbg));
+    vxt_system *s = vxt_peripheral_system(VXT_GET_PERIPHERAL(dbg));
 
     if (dbg->state.client != -1) {
         struct vxt_registers *vreg = vxt_system_registers(s);
@@ -117,12 +117,12 @@ static vxt_byte mem_read(struct gdb *dbg, vxt_pointer addr) {
         }
     }
 
-    struct vxt_pirepheral *p = vxt_system_pirepheral(s, dbg->mem_map[addr >> 4]);
+    struct vxt_peripheral *p = vxt_system_peripheral(s, dbg->mem_map[addr >> 4]);
     return p->io.read(VXT_GET_DEVICE_PTR(p), addr);
 }
 
 static void mem_write(struct gdb *dbg, vxt_pointer addr, vxt_byte data) {
-    vxt_system *s = vxt_pirepheral_system(VXT_GET_PIREPHERAL(dbg));
+    vxt_system *s = vxt_peripheral_system(VXT_GET_PERIPHERAL(dbg));
 
     if (dbg->state.client != -1) {
         struct vxt_registers *vreg = vxt_system_registers(s);
@@ -136,7 +136,7 @@ static void mem_write(struct gdb *dbg, vxt_pointer addr, vxt_byte data) {
         }
     }
 
-    struct vxt_pirepheral *p = vxt_system_pirepheral(s, dbg->mem_map[addr >> 4]);
+    struct vxt_peripheral *p = vxt_system_peripheral(s, dbg->mem_map[addr >> 4]);
     p->io.write(VXT_GET_DEVICE_PTR(p), addr, data);
 }
 
@@ -199,7 +199,7 @@ static vxt_error config(struct gdb *dbg, const char *section, const char *key, c
 }
 
 static vxt_error install(struct gdb *dbg, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(dbg);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(dbg);
 
     #ifdef _WIN32
         WSADATA ws_data;
@@ -231,7 +231,7 @@ static vxt_error install(struct gdb *dbg, vxt_system *s) {
 static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
     (void)cycles;
 
-    vxt_system *s = vxt_pirepheral_system(VXT_GET_PIREPHERAL(dbg));
+    vxt_system *s = vxt_peripheral_system(VXT_GET_PERIPHERAL(dbg));
     if (id == dbg->reconnect_timer) {
         accept_client(dbg, s);
         return VXT_NO_ERROR;
@@ -324,7 +324,7 @@ static vxt_error destroy(struct gdb *dbg) {
         close(dbg->state.client);
     if (dbg->server != -1)
         close(dbg->server);
-    vxt_system_allocator(VXT_GET_SYSTEM(dbg))(VXT_GET_PIREPHERAL(dbg), 0);
+    vxt_system_allocator(VXT_GET_SYSTEM(dbg))(VXT_GET_PERIPHERAL(dbg), 0);
     return VXT_NO_ERROR;
 }
 
@@ -405,14 +405,14 @@ VXTU_MODULE_CREATE(gdb, {
     DEVICE->port = (vxt_word)atoi(ARGS);
     DEVICE->server = DEVICE->state.client = -1;
 
-    PIREPHERAL->install = &install;
-	PIREPHERAL->config = &config;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->destroy = &destroy;
-    PIREPHERAL->io.read = &mem_read;
-    PIREPHERAL->io.write = &mem_write;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+	PERIPHERAL->config = &config;
+    PERIPHERAL->timer = &timer;
+    PERIPHERAL->pclass = &pclass;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->destroy = &destroy;
+    PERIPHERAL->io.read = &mem_read;
+    PERIPHERAL->io.write = &mem_write;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })

@@ -33,7 +33,7 @@ struct dma {
         bool request;
 
         vxt_byte operation;
-        vxt_byte mode;		
+        vxt_byte mode;
 
         vxt_dword count;
         vxt_dword reload_count;
@@ -158,7 +158,7 @@ static void out(struct dma *c, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(struct dma *c, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
     vxt_system_install_io(s, p, 0x0, 0xF);
     vxt_system_install_io(s, p, 0x80, 0x8F);
     return VXT_NO_ERROR;
@@ -196,13 +196,13 @@ static void dma_write(struct dma *c, vxt_byte ch, vxt_byte data) {
     update_count(c, ch);
 }
 
-VXT_API struct vxt_pirepheral *vxtu_dma_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, dma, {
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
-    PIREPHERAL->dma.read = &dma_read;
-    PIREPHERAL->dma.write = &dma_write;
+VXT_API struct vxt_peripheral *vxtu_dma_create(vxt_allocator *alloc) VXT_PERIPHERAL_CREATE(alloc, dma, {
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->pclass = &pclass;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
+    PERIPHERAL->dma.read = &dma_read;
+    PERIPHERAL->dma.write = &dma_write;
 })

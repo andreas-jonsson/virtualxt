@@ -23,10 +23,10 @@
 
 #include "../../modules/joystick/joystick.c"
 
-bool joystick_push_event(struct vxt_pirepheral *p, const struct frontend_joystick_event *ev) {
+bool joystick_push_event(struct vxt_peripheral *p, const struct frontend_joystick_event *ev) {
     return push_event(p, ev);
 }
 
-struct vxt_pirepheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args) {
+struct vxt_peripheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args) {
     return create(alloc, frontend, args);
 }

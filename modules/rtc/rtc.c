@@ -51,7 +51,7 @@ static vxt_byte in(struct rtc *c, vxt_word port) {
     if (!(port & 1))
         return c->addr;
 
-    vxt_byte data = 0;    
+    vxt_byte data = 0;
     switch (c->addr) {
         case 0x0:
             data = to_bcd(c, (vxt_byte)c->lt.tm_sec);
@@ -115,7 +115,7 @@ static vxt_error timer(struct rtc *c, vxt_timer_id id, int cycles) {
 }
 
 static vxt_error install(struct rtc *c, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
     vxt_system_install_io(s, p, c->base_port, c->base_port + 1);
     vxt_system_install_timer(s, p, 1000000);
     return VXT_NO_ERROR;
@@ -129,9 +129,9 @@ VXTU_MODULE_CREATE(rtc, {
     if (sscanf(ARGS, "%hx", &DEVICE->base_port) != 1)
         DEVICE->base_port = 0x240;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->timer = &timer;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })

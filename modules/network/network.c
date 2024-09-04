@@ -219,7 +219,7 @@ static bool list_devices(int *prefered) {
 }
 
 static vxt_error install(struct network *n, vxt_system *s) {
-	struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(n);
+	struct vxt_peripheral *p = VXT_GET_PERIPHERAL(n);
 	if (!list_devices(NULL))
 		return VXT_USER_ERROR(0);
 
@@ -234,12 +234,12 @@ static vxt_error install(struct network *n, vxt_system *s) {
 VXTU_MODULE_CREATE(network, {
 	strncpy(DEVICE->nif, ARGS, sizeof(DEVICE->nif) - 1);
 
-	PIREPHERAL->install = &install;
-	PIREPHERAL->name = &name;
-	PIREPHERAL->reset = &reset;
-	PIREPHERAL->timer = &timer;
-	PIREPHERAL->io.in = &in;
-	PIREPHERAL->io.out = &out;
+	PERIPHERAL->install = &install;
+	PERIPHERAL->name = &name;
+	PERIPHERAL->reset = &reset;
+	PERIPHERAL->timer = &timer;
+	PERIPHERAL->io.in = &in;
+	PERIPHERAL->io.out = &out;
 })
 
 #else

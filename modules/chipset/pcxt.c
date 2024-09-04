@@ -27,23 +27,23 @@
 #include <stdio.h>
 #include <string.h>
 
-static struct vxt_pirepheral *pic_create(vxt_allocator *alloc, void *frontend, const char *args) {
+static struct vxt_peripheral *pic_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)frontend; (void)args;
     return vxtu_pic_create(alloc);
 }
 
-static struct vxt_pirepheral *dma_create(vxt_allocator *alloc, void *frontend, const char *args) {
+static struct vxt_peripheral *dma_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)frontend; (void)args;
     return vxtu_dma_create(alloc);
 }
 
-static struct vxt_pirepheral *pit_create(vxt_allocator *alloc, void *frontend, const char *args) {
+static struct vxt_peripheral *pit_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)frontend; (void)args;
     return vxtu_pit_create(alloc);
 }
 
 static vxt_error ppi_config(void *dev, const char *section, const char *key, const char *value) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(dev);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(dev);
     vxt_byte v = 0xFF;
     vxt_byte sw = vxtu_ppi_xt_switches(p);
 
@@ -65,10 +65,10 @@ static vxt_error ppi_config(void *dev, const char *section, const char *key, con
     return VXT_NO_ERROR;
 }
 
-static struct vxt_pirepheral *ppi_create(vxt_allocator *alloc, void *frontend, const char *args) {
+static struct vxt_peripheral *ppi_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)args;
-    
-    struct vxt_pirepheral *p = vxtu_ppi_create(alloc);
+
+    struct vxt_peripheral *p = vxtu_ppi_create(alloc);
     if (!p) return NULL;
 
 	if (frontend) {

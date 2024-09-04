@@ -58,17 +58,17 @@ static vxt_error destroy(void *p) {
 }
 
 static vxt_error install(void *p, vxt_system *s) {
-    struct vxt_pirepheral *pi = VXT_GET_PIREPHERAL(p);
+    struct vxt_peripheral *pi = VXT_GET_PERIPHERAL(p);
     vxt_system_install_io(s, pi, 0x0, 0xFFFF);
     vxt_system_install_mem(s, pi, 0x0, 0xFFFFF);
     return VXT_NO_ERROR;
 }
 
 void init_dummy_device(vxt_system *s) {
-    struct _vxt_pirepheral *dummy = &((struct system*)s)->dummy;
+    struct _vxt_peripheral *dummy = &((struct system*)s)->dummy;
     dummy->s = s;
 
-    struct vxt_pirepheral *d = &dummy->p;
+    struct vxt_peripheral *d = &dummy->p;
 
     d->install = &install;
     d->destroy = &destroy;

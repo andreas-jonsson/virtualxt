@@ -37,7 +37,7 @@
 struct serial {
 	vxt_word base_port;
 	char name[FILENAME_MAX];
-    struct vxt_pirepheral *uart;
+    struct vxt_peripheral *uart;
 
 	vxt_byte tx_data;
 	vxt_byte rx_data;
@@ -57,7 +57,7 @@ static void setup_serial(struct serial *c) {
 		VXT_LOG("Error %i from tcgetattr: %s\n", errno, strerror(errno));
 		return;
 	}
-	
+
 	// Clear all bits that set the data size.
 	c->tty.c_cflag &= ~CSIZE;
 	switch (lcr & 3) {
@@ -66,7 +66,7 @@ static void setup_serial(struct serial *c) {
 		case 2: c->tty.c_cflag |= CS7; break;
 		case 3: c->tty.c_cflag |= CS8; break;
 	};
-	
+
 	// Clear stop field.
 	c->tty.c_cflag &= ~CSTOPB;
 	if (lcr & 4)
@@ -107,7 +107,7 @@ static void setup_serial(struct serial *c) {
 	}
 }
 
-static void uart_config_cb(struct vxt_pirepheral *uart, const struct vxtu_uart_registers *regs, int idx, void *udata) {
+static void uart_config_cb(struct vxt_peripheral *uart, const struct vxtu_uart_registers *regs, int idx, void *udata) {
 	(void)uart; (void)regs;
     struct serial *c = (struct serial*)udata;
 	if (idx == 0 || idx == 3)
@@ -125,7 +125,7 @@ static void write_data(struct serial *c) {
 	}
 }
 
-static void uart_data_cb(struct vxt_pirepheral *uart, vxt_byte data, void *udata) {
+static void uart_data_cb(struct vxt_peripheral *uart, vxt_byte data, void *udata) {
 	struct serial *c = (struct serial*)udata; (void)uart;
 	while (c->has_tx_data)
 		write_data(c);
@@ -151,9 +151,9 @@ static vxt_error timer(struct serial *c, vxt_timer_id id, int cycles) {
 }
 
 static vxt_error install(struct serial *c, vxt_system *s) {
-    for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
-        struct vxt_pirepheral *ip = vxt_system_pirepheral(s, (vxt_byte)i);
-        if (ip && (vxt_pirepheral_class(ip) == VXT_PCLASS_UART) && (vxtu_uart_address(ip) == c->base_port)) {
+    for (int i = 0; i < VXT_MAX_PERIPHERALS; i++) {
+        struct vxt_peripheral *ip = vxt_system_peripheral(s, (vxt_byte)i);
+        if (ip && (vxt_peripheral_class(ip) == VXT_PCLASS_UART) && (vxtu_uart_address(ip) == c->base_port)) {
             struct vxtu_uart_interface intrf = {
                 .config = &uart_config_cb,
 				.data = &uart_data_cb,
@@ -176,7 +176,7 @@ static vxt_error install(struct serial *c, vxt_system *s) {
 		return VXT_USER_ERROR(1);
 	}
 
-	vxt_system_install_timer(s, VXT_GET_PIREPHERAL(c), 0);
+	vxt_system_install_timer(s, VXT_GET_PERIPHERAL(c), 0);
     return VXT_NO_ERROR;
 }
 
@@ -187,7 +187,7 @@ static vxt_error reset(struct serial *c) {
 
 static vxt_error destroy(struct serial *c) {
     close(c->serial_port);
-    vxt_system_allocator(VXT_GET_SYSTEM(c))(VXT_GET_PIREPHERAL(c), 0);
+    vxt_system_allocator(VXT_GET_SYSTEM(c))(VXT_GET_PERIPHERAL(c), 0);
     return VXT_NO_ERROR;
 }
 
@@ -208,11 +208,11 @@ VXTU_MODULE_CREATE(serial, {
 	}
 	strncpy(DEVICE->name, dev + 1, FILENAME_MAX - 1);
 
-    PIREPHERAL->install = &install;
-	PIREPHERAL->destroy = &destroy;
-	PIREPHERAL->timer = &timer;
-	PIREPHERAL->reset = &reset;
-    PIREPHERAL->name = &name;
+    PERIPHERAL->install = &install;
+	PERIPHERAL->destroy = &destroy;
+	PERIPHERAL->timer = &timer;
+	PERIPHERAL->reset = &reset;
+    PERIPHERAL->name = &name;
 })
 
 #else

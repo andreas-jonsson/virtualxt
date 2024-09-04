@@ -82,7 +82,7 @@ static void blit_char(struct vga_video *v, int ch, vxt_byte attr, int x, int y) 
 	}
 }
 
-static bool snapshot(struct vxt_pirepheral *p) {
+static bool snapshot(struct vxt_peripheral *p) {
     struct vga_video *v = VXT_GET_DEVICE(vga_video, p);
     if (!v->is_dirty)
         return false;
@@ -90,7 +90,7 @@ static bool snapshot(struct vxt_pirepheral *p) {
     memcpy(v->snap.mem, v->mem, MEMORY_SIZE);
     memcpy(v->snap.palette, v->palette, sizeof(v->snap.palette));
     memcpy(v->snap.pal_reg, v->reg.attr_reg, 16);
-    
+
     v->snap.width = v->width;
     v->snap.height = v->height;
     v->snap.bpp = v->bpp;
@@ -120,7 +120,7 @@ static bool snapshot(struct vxt_pirepheral *p) {
     return true;
 }
 
-static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
+static int render(struct vxt_peripheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
     struct vga_video *v = VXT_GET_DEVICE(vga_video, p);
     struct snapshot * const snap = &v->snap;
 
@@ -218,7 +218,7 @@ static int render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,voi
         }
         return f(320, 200, snap->rgba_surface, userdata);
     }
-    
+
     if (snap->bpp == 0) // Assume uninitialized. Render junk.
         return f(640, 400, snap->rgba_surface, userdata);
 

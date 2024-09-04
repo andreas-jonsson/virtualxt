@@ -28,7 +28,7 @@ struct ctrl {
  	vxt_byte ret;
     vxt_byte (*callback)(enum frontend_ctrl_command,vxt_byte,void*);
     void *userdata;
-    
+
     int state;
 };
 
@@ -48,7 +48,7 @@ static void out(struct ctrl *c, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(struct ctrl *c, vxt_system *s) {
-    vxt_system_install_io(s, VXT_GET_PIREPHERAL(c), 0xB4, 0xB5);
+    vxt_system_install_io(s, VXT_GET_PERIPHERAL(c), 0xB4, 0xB5);
     return VXT_NO_ERROR;
 }
 
@@ -63,8 +63,8 @@ VXTU_MODULE_CREATE(ctrl, {
         DEVICE->userdata = fi->ctrl.userdata;
     }
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })

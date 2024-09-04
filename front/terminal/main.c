@@ -70,7 +70,7 @@ FILE *log_fp = NULL;
 bool update_screen = true;
 
 int num_devices = 0;
-struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = { NULL };
+struct vxt_peripheral *devices[VXT_MAX_PERIPHERALS] = { NULL };
 #define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
 
 #define EMUCTRL_BUFFER_SIZE 1024
@@ -174,7 +174,7 @@ static const char *resolve_path(enum frontend_path_type type, const char *path) 
 			case FRONTEND_MODULE_PATH: sprintf(buffer, "%s/modules/%s", sp, path); break;
 			default: break;
 		};
-		
+
 		if (file_exist(buffer))
 			return buffer;
 	}
@@ -231,7 +231,7 @@ static vxt_byte emu_control(enum frontend_ctrl_command cmd, vxt_byte data, void 
 			emuctrl_buffer[emuctrl_buffer_len++] = data;
 			break;
 		case FRONTEND_CTRL_POPEN:
-			if (!(emuctrl_file_handle = 
+			if (!(emuctrl_file_handle =
 				#ifdef _WIN32
 					_popen
 				#else
@@ -358,7 +358,7 @@ static int load_modules(void *user, const char *section, const char *name, const
 			}
 
 			for (vxtu_module_entry_func *f = const_func; *f; f++) {
-				struct vxt_pirepheral *p = (*f)(VXTU_CAST(user, void*, vxt_allocator*), (void*)&front_interface, value);
+				struct vxt_peripheral *p = (*f)(VXTU_CAST(user, void*, vxt_allocator*), (void*)&front_interface, value);
 				if (!p)
 					continue; // Assume the module chose not to be loaded.
 				APPEND_DEVICE(p);
@@ -380,7 +380,7 @@ static int load_modules(void *user, const char *section, const char *name, const
 	return 1;
 }
 
-static int configure_pirepherals(void *user, const char *section, const char *name, const char *value) {
+static int configure_peripherals(void *user, const char *section, const char *name, const char *value) {
 	return (vxt_system_configure(user, section, name, value) == VXT_NO_ERROR) ? 1 : 0;
 }
 
@@ -394,9 +394,9 @@ static void print_memory_map(vxt_system *s)	{
 		if (idx && (idx != prev_idx)) {
 			VXT_PRINT("[0x%.4X-", i);
 			while (map[++i] == idx) {}
-			VXT_LOG("0x%.4X] %s", i - 1, vxt_pirepheral_name(vxt_system_pirepheral(s, idx)));
+			VXT_LOG("0x%.4X] %s", i - 1, vxt_peripheral_name(vxt_system_peripheral(s, idx)));
 			prev_idx = idx;
-		}			
+		}
 	}
 
 	prev_idx = 0;
@@ -408,10 +408,10 @@ static void print_memory_map(vxt_system *s)	{
 		if (idx != prev_idx) {
 			VXT_PRINT("[0x%.5X-", i << 4);
 			while (map[++i] == idx) {}
-			VXT_LOG("0x%.5X] %s", (i << 4) - 1, vxt_pirepheral_name(vxt_system_pirepheral(s, idx)));
+			VXT_LOG("0x%.5X] %s", (i << 4) - 1, vxt_peripheral_name(vxt_system_peripheral(s, idx)));
 			prev_idx = idx;
 			i--;
-		}			
+		}
 	}
 }
 
@@ -526,7 +526,7 @@ int main(int argc, char *argv[]) {
 			VXT_LOG("ERROR: Can't find home directory!");
 			return -1;
 		}
-		
+
 		const char *path = args.config;
 		if (!path)
 			path = sprint("%s/" CONFIG_FILE_NAME, home);
@@ -542,7 +542,7 @@ int main(int argc, char *argv[]) {
 			VXT_LOG("Open config file!");
 			return system(sprint(EDIT_CONFIG "%s", path));
 		}
-	
+
 		write_default_config(path, args.clean != 0);
 
 		if (ini_parse(path, &load_config, NULL)) {
@@ -550,7 +550,7 @@ int main(int argc, char *argv[]) {
 			return -1;
 		}
 	}
-	
+
 	if (!args.harddrive && !args.floppy) {
 		args.harddrive = getenv("VXT_DEFAULT_HD_IMAGE");
 		if (!args.harddrive) {
@@ -565,7 +565,7 @@ int main(int argc, char *argv[]) {
 	VXT_LOG("CPU frequency: %.2f MHz", cpu_frequency);
 
 	APPEND_DEVICE(vxtu_memory_create(&realloc, 0x0, 0x100000, false));
-	struct vxt_pirepheral *mda_device = vxtu_mda_create(&realloc);
+	struct vxt_peripheral *mda_device = vxtu_mda_create(&realloc);
 	APPEND_DEVICE(mda_device);
 
 	struct vxtu_disk_interface disk_interface = {
@@ -598,8 +598,8 @@ int main(int argc, char *argv[]) {
 	// Initializing this here is a bit late. But it works.
 	front_interface.ctrl.userdata = vxt;
 
-	if (ini_parse(sprint("%s/" CONFIG_FILE_NAME, getenv("HOME")), &configure_pirepherals, vxt)) {
-		VXT_LOG("ERROR: Could not configure all pirepherals!");
+	if (ini_parse(sprint("%s/" CONFIG_FILE_NAME, getenv("HOME")), &configure_peripherals, vxt)) {
+		VXT_LOG("ERROR: Could not configure all peripherals!");
 		return -1;
 	}
 
@@ -625,14 +625,14 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	VXT_LOG("Installed pirepherals:");
-	for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
-		struct vxt_pirepheral *device = vxt_system_pirepheral(vxt, (vxt_byte)i);
+	VXT_LOG("Installed peripherals:");
+	for (int i = 1; i < VXT_MAX_PERIPHERALS; i++) {
+		struct vxt_peripheral *device = vxt_system_peripheral(vxt, (vxt_byte)i);
 		if (device) {
-			VXT_LOG("%d - %s", i, vxt_pirepheral_name(device));
+			VXT_LOG("%d - %s", i, vxt_peripheral_name(device));
 
 			// Setup MDA video
-			if (vxt_pirepheral_class(device) == VXT_PCLASS_PPI)
+			if (vxt_peripheral_class(device) == VXT_PCLASS_PPI)
         		vxtu_ppi_set_xt_switches(device, vxtu_ppi_xt_switches(device) | 0x30);
         }
 	}
@@ -667,16 +667,16 @@ int main(int argc, char *argv[]) {
 	if (tb_init())
 		return -1;
 	atexit(&termbox_shutdown);
-			
+
 	while (running) {
 		struct tb_event ev;
 		while (tb_peek_event(&ev, 0) == TB_OK) {
 	        switch (ev.type) {
 		        case TB_EVENT_KEY:
-		        	VXT_LOG("Ch %c", ev.ch);		        	
+		        	VXT_LOG("Ch %c", ev.ch);
 		        	VXT_LOG("Key %X", ev.key);
 		        	VXT_LOG("Mod %X", ev.mod);
-		        						
+
 		            if (ev.key == TB_KEY_F12)
 		            	running = false;
 
@@ -705,7 +705,7 @@ int main(int argc, char *argv[]) {
 
 		vxt_system_step(vxt, MIN_CLOCKS_PER_STEP);
 	}
-	
+
 	vxt_system_destroy(vxt);
 	if (str_buffer)
 		free(str_buffer);

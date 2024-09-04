@@ -32,7 +32,7 @@
 
 struct timer {
    vxt_timer_id id;
-   struct vxt_pirepheral *dev;
+   struct vxt_peripheral *dev;
    INT64 ticks;
    double interval;
 };
@@ -54,8 +54,8 @@ struct system {
    struct vxt_monitor monitors[VXT_MAX_MONITORS];
 
    int num_devices;
-   struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS];
-   struct _vxt_pirepheral dummy;
+   struct vxt_peripheral *devices[VXT_MAX_PERIPHERALS];
+   struct _vxt_peripheral dummy;
 };
 
 void init_dummy_device(vxt_system *s);

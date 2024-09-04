@@ -67,7 +67,7 @@ struct cpu {
 
    void (*tracer)(vxt_system*,vxt_pointer,vxt_byte);
    const struct vxt_validator *validator;
-   struct vxt_pirepheral *pic;
+   struct vxt_peripheral *pic;
    vxt_system *s;
 };
 

@@ -472,22 +472,22 @@ static vxt_error timer(struct vga_video *v, vxt_timer_id id, int cycles) {
     return VXT_NO_ERROR;
 }
 
-static vxt_dword border_color(struct vxt_pirepheral *p) {
+static vxt_dword border_color(struct vxt_peripheral *p) {
     (void)p;
     return 0;
 }
 
 static vxt_error install(struct vga_video *v, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(v);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(v);
     if (v->set_video_adapter) {
         struct frontend_video_adapter a = { p, &border_color, &snapshot, &render };
         v->set_video_adapter(&a);
     }
 
     // Try to set XT switches to VGA.
-    for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
-        struct vxt_pirepheral *ip = vxt_system_pirepheral(s, (vxt_byte)i);
-        if (vxt_pirepheral_class(ip) == VXT_PCLASS_PPI) {
+    for (int i = 0; i < VXT_MAX_PERIPHERALS; i++) {
+        struct vxt_peripheral *ip = vxt_system_peripheral(s, (vxt_byte)i);
+        if (vxt_peripheral_class(ip) == VXT_PCLASS_PPI) {
             vxtu_ppi_set_xt_switches(ip, vxtu_ppi_xt_switches(ip) & 0xCF);
             break;
         }
@@ -523,7 +523,7 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
     vxt_system_install_io_at(s, p, 0x3CC); // R: Misc Output
     vxt_system_install_io_at(s, p, 0x3CE); // R/W: Graphics Controller Index
     vxt_system_install_io_at(s, p, 0x3CF); // R/W: Graphics Data
-    
+
     vxt_system_install_io_at(s, p, 0x3D8); // R/W: Mode Control
     vxt_system_install_io_at(s, p, 0x3D9); // R/W: Color Control
 
@@ -534,25 +534,25 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static struct vxt_pirepheral *vga_create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PIREPHERAL_CREATE(alloc, vga_video, {
+static struct vxt_peripheral *vga_create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PERIPHERAL_CREATE(alloc, vga_video, {
     (void)args;
-	vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PIREPHERAL);
+	vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PERIPHERAL);
 
     if (frontend)
         DEVICE->set_video_adapter = ((struct frontend_interface*)frontend)->set_video_adapter;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->pclass = &pclass;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->timer = &timer;
+    PERIPHERAL->io.read = &read;
+    PERIPHERAL->io.write = &write;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })
 
-static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {
+static struct vxt_peripheral *bios_create(vxt_allocator *alloc, void *frontend, const char *args) {
     struct frontend_interface *fi = (struct frontend_interface*)frontend;
     if (fi && fi->resolve_path)
         args = fi->resolve_path(FRONTEND_BIOS_PATH, args);
@@ -564,7 +564,7 @@ static struct vxt_pirepheral *bios_create(vxt_allocator *alloc, void *frontend, 
         return NULL;
     }
 
-    struct vxt_pirepheral *p = vxtu_memory_create(alloc, 0xC0000, size, true);
+    struct vxt_peripheral *p = vxtu_memory_create(alloc, 0xC0000, size, true);
     vxtu_memory_device_fill(p, data, size);
     alloc(data, 0);
     return p;
