@@ -68,7 +68,7 @@ static void write(struct ems *m, vxt_pointer addr, vxt_byte data) {
 }
 
 static vxt_error install(struct ems *m, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(m);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(m);
     vxt_system_install_io(s, p, m->io_base, m->io_base + 3);
     vxt_system_install_mem(s, p, m->mem_base, m->mem_base + 0xFFFF);
     return VXT_NO_ERROR;
@@ -89,17 +89,17 @@ static vxt_error config(struct ems *m, const char *section, const char *key, con
 VXTU_MODULE_CREATE(ems, {
     if (strcmp(ARGS, "lotech_ems"))
         return NULL;
-    
-    vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PIREPHERAL);
+
+    vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PERIPHERAL);
 
     DEVICE->mem_base = 0xE0000;
     DEVICE->io_base = 0x260;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->config = &config;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->config = &config;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->io.read = &read;
+    PERIPHERAL->io.write = &write;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })

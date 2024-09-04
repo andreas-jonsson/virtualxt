@@ -52,12 +52,12 @@ struct ppi {
     enum vxtu_scancode queue[MAX_EVENTS];
 
     INT64 spk_sample_index;
-	bool spk_enabled;    
+	bool spk_enabled;
 
-    void (*speaker_callback)(struct vxt_pirepheral*,double,void*);
+    void (*speaker_callback)(struct vxt_peripheral*,double,void*);
     void *speaker_callback_data;
 
-    struct vxt_pirepheral *pit;
+    struct vxt_peripheral *pit;
 };
 
 static vxt_byte in(struct ppi *c, vxt_word port) {
@@ -86,7 +86,7 @@ static void out(struct ppi *c, vxt_word port, vxt_byte data) {
             c->spk_sample_index = 0;
 
             if (c->speaker_callback)
-                c->speaker_callback(VXT_GET_PIREPHERAL(c), spk_enable ? vxtu_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
+                c->speaker_callback(VXT_GET_PERIPHERAL(c), spk_enable ? vxtu_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
         }
 
         bool turbo_enabled = (data & 4) != 0;
@@ -94,7 +94,7 @@ static void out(struct ppi *c, vxt_word port, vxt_byte data) {
             c->turbo_enabled = turbo_enabled;
             VXT_LOG("Turbo mode %s!", turbo_enabled ? "on" : "off");
         }
-        
+
         bool kb_reset = !(c->port_61 & 0xC0) && (data & 0xC0);
         if (kb_reset) {
             c->queue_size = 0;
@@ -108,14 +108,14 @@ static void out(struct ppi *c, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(struct ppi *c, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
     vxt_system_install_io(s, p, 0x60, 0x62);
     vxt_system_install_io_at(s, p, 0x64);
     vxt_system_install_timer(s, p, 1000);
 
-    for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
-        struct vxt_pirepheral *ip = vxt_system_pirepheral(s, (vxt_byte)i);
-        if (ip && (vxt_pirepheral_class(ip) == VXT_PCLASS_PIT)) {
+    for (int i = 0; i < VXT_MAX_PERIPHERALS; i++) {
+        struct vxt_peripheral *ip = vxt_system_peripheral(s, (vxt_byte)i);
+        if (ip && (vxt_peripheral_class(ip) == VXT_PCLASS_PIT)) {
             c->pit = ip;
             break;
         }
@@ -152,11 +152,11 @@ static vxt_error reset(struct ppi *c) {
 	c->spk_enabled = false;
 
     if (c->speaker_callback)
-        c->speaker_callback(VXT_GET_PIREPHERAL(c), 0.0, c->speaker_callback_data);
+        c->speaker_callback(VXT_GET_PERIPHERAL(c), 0.0, c->speaker_callback_data);
 
     c->keyboard_enable = true;
     c->queue_size = 0;
-    
+
     return VXT_NO_ERROR;
 }
 
@@ -164,21 +164,21 @@ static const char *name(struct ppi *c) {
     (void)c; return "PPI (Intel 8255)";
 }
 
-VXT_API struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, ppi, {
+VXT_API struct vxt_peripheral *vxtu_ppi_create(vxt_allocator *alloc) VXT_PERIPHERAL_CREATE(alloc, ppi, {
     // Reference: https://bochs.sourceforge.io/techspec/PORTS.LST
     //            https://github.com/skiselev/8088_bios/blob/master/bios.asm
     DEVICE->xt_switches = 0x2E; // 640K ram, 80 column CGA, 1 floppy drive, no fpu.
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->timer = &timer;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->pclass = &pclass;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })
 
-VXT_API bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force) {
+VXT_API bool vxtu_ppi_key_event(struct vxt_peripheral *p, enum vxtu_scancode key, bool force) {
     struct ppi *c = VXT_GET_DEVICE(ppi, p);
     if (c->queue_size < MAX_EVENTS) {
         c->queue[c->queue_size++] = key;
@@ -189,17 +189,17 @@ VXT_API bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key
     return false;
 }
 
-VXT_API bool vxtu_ppi_turbo_enabled(struct vxt_pirepheral *p) {
+VXT_API bool vxtu_ppi_turbo_enabled(struct vxt_peripheral *p) {
     return (VXT_GET_DEVICE(ppi, p))->turbo_enabled;
 }
 
-VXT_API void vxtu_ppi_set_speaker_callback(struct vxt_pirepheral *p, void (*f)(struct vxt_pirepheral*,double,void*), void *userdata) {
+VXT_API void vxtu_ppi_set_speaker_callback(struct vxt_peripheral *p, void (*f)(struct vxt_peripheral*,double,void*), void *userdata) {
     struct ppi *c = VXT_GET_DEVICE(ppi, p);
     c->speaker_callback = f;
     c->speaker_callback_data = userdata;
 }
 
-VXT_API vxt_int16 vxtu_ppi_generate_sample(struct vxt_pirepheral *p, int freq) {
+VXT_API vxt_int16 vxtu_ppi_generate_sample(struct vxt_peripheral *p, int freq) {
     struct ppi *c = VXT_GET_DEVICE(ppi, p);
 
     double tone_hz = vxtu_pit_get_frequency(c->pit, 2);
@@ -214,10 +214,10 @@ VXT_API vxt_int16 vxtu_ppi_generate_sample(struct vxt_pirepheral *p, int freq) {
     return ((++c->spk_sample_index / half_square_wave_period) % 2) ? VXTU_PPI_TONE_VOLUME : -VXTU_PPI_TONE_VOLUME;
 }
 
-VXT_API void vxtu_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data) {
+VXT_API void vxtu_ppi_set_xt_switches(struct vxt_peripheral *p, vxt_byte data) {
     (VXT_GET_DEVICE(ppi, p))->xt_switches = data;
 }
 
-VXT_API vxt_byte vxtu_ppi_xt_switches(struct vxt_pirepheral *p) {
+VXT_API vxt_byte vxtu_ppi_xt_switches(struct vxt_peripheral *p) {
     return (VXT_GET_DEVICE(ppi, p))->xt_switches;
 }

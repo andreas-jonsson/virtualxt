@@ -75,12 +75,12 @@ static void out(struct pit *c, vxt_word port, vxt_byte data) {
     // Mode/Command register.
     if (port == 0x43) {
         struct channel *ch = &c->channels[(data >> 6) & 3];
-        
+
         ch->toggle = false;
         ch->mode = (data >> 4) & 3;
         if (ch->mode == MODE_LATCH_COUNT)
             ch->latch = ch->counter;
-        
+
         return;
     }
 
@@ -100,7 +100,7 @@ static void out(struct pit *c, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(struct pit *c, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
     vxt_system_install_io(s, p, 0x40, 0x43);
     vxt_system_install_timer(s, p, 0);
 
@@ -148,17 +148,17 @@ static enum vxt_pclass pclass(struct pit *c) {
     (void)c; return VXT_PCLASS_PIT;
 }
 
-VXT_API struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pit, {
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+VXT_API struct vxt_peripheral *vxtu_pit_create(vxt_allocator *alloc) VXT_PERIPHERAL_CREATE(alloc, pit, {
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->pclass = &pclass;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->timer = &timer;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })
 
-VXT_API double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel) {
+VXT_API double vxtu_pit_get_frequency(struct vxt_peripheral *p, int channel) {
     if ((channel > 2) || (channel < 0))
         return 0.0;
 

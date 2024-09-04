@@ -54,7 +54,7 @@ static void push_data(struct covox *c, vxt_byte data) {
     c->fifo[c->fifo_len++] = data;
 }
 
-static vxt_int16 generate_sample(struct vxt_pirepheral *p, int freq) {
+static vxt_int16 generate_sample(struct vxt_peripheral *p, int freq) {
 	(void)freq;
     return VXT_GET_DEVICE(covox, p)->sample * 64;
 }
@@ -90,7 +90,7 @@ static vxt_error timer(struct covox *c, vxt_timer_id id, int cycles) {
 }
 
 static vxt_error install(struct covox *c, vxt_system *s) {
-	struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
+	struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
     if (c->set_audio_adapter) {
         struct frontend_audio_adapter adapter = { p, &generate_sample };
         c->set_audio_adapter(&adapter);
@@ -137,10 +137,10 @@ VXTU_MODULE_CREATE(covox, {
 	if (FRONTEND)
         DEVICE->set_audio_adapter = ((struct frontend_interface*)FRONTEND)->set_audio_adapter;
 
-    PIREPHERAL->install = &install;
-	PIREPHERAL->reset = &reset;
-	PIREPHERAL->timer = &timer;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+	PERIPHERAL->reset = &reset;
+	PERIPHERAL->timer = &timer;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })

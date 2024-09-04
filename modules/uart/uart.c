@@ -24,11 +24,11 @@
 #include <vxt/vxtu.h>
 #include <stdio.h>
 
-static struct vxt_pirepheral *uart_create(vxt_allocator *alloc, void *frontend, const char *args) {
+static struct vxt_peripheral *uart_create(vxt_allocator *alloc, void *frontend, const char *args) {
 	(void)frontend;
 	vxt_word addr;
 	int irq;
-	
+
 	if (sscanf(args, "%hx,%d", &addr, &irq) != 2) {
 		VXT_LOG("Invalid UART configuration: %s", args);
 		return NULL;

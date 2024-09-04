@@ -90,7 +90,7 @@ static vxt_error timer(struct joystick *g, vxt_timer_id id, int cycles) {
     return VXT_NO_ERROR;
 }
 
-static bool push_event(struct vxt_pirepheral *p, const struct frontend_joystick_event *ev) {
+static bool push_event(struct vxt_peripheral *p, const struct frontend_joystick_event *ev) {
     struct joystick *g = VXT_GET_DEVICE(joystick, p);
     struct gameport_joystick *js = &g->joysticks[ev->id];
     js->buttons = (vxt_byte)ev->buttons;
@@ -100,7 +100,7 @@ static bool push_event(struct vxt_pirepheral *p, const struct frontend_joystick_
 }
 
 static vxt_error install(struct joystick *g, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(g);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(g);
     if (g->set_joystick_controller) {
         struct frontend_joystick_controller jc = { p, &push_event };
         g->set_joystick_controller(&jc);
@@ -115,17 +115,17 @@ static const char *name(struct joystick *g) {
     (void)g; return "Gameport Joystick(s)";
 }
 
-static struct vxt_pirepheral *create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PIREPHERAL_CREATE(alloc, joystick, {
+static struct vxt_peripheral *create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PERIPHERAL_CREATE(alloc, joystick, {
     if (sscanf(args, "%hx", &DEVICE->port) != 1)
         DEVICE->port = 0x201;
 
     if (frontend)
         DEVICE->set_joystick_controller = ((struct frontend_interface*)frontend)->set_joystick_controller;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->timer = &timer;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })
 VXTU_MODULE_ENTRIES(&create)

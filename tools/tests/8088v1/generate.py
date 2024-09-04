@@ -17,7 +17,7 @@ VXT_PACK(struct) registers {{
     vxt_word sp, bp, si, di;
     vxt_word ip, flags;
 }};
-                                                     
+
 VXT_PACK(struct) memory {{
     vxt_dword addr;
     vxt_byte data;
@@ -29,7 +29,7 @@ VXT_PACK(struct) memory {{
 #ifdef TESTING
 
 static int execute_test(struct Test T, int *index, char *name, const char *input) {{
-    struct vxt_pirepheral *devices[] = {{
+    struct vxt_peripheral *devices[] = {{
         vxtu_memory_create(&TALLOC, 0x0, 0x100000, false),
         NULL
     }};
@@ -40,10 +40,10 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
 
     FILE *fp = fopen(input, "rb");
     TENSURE(fp);
-    
+
     int num_tests;
     TENSURE(fread(&num_tests, 4, 1, fp) == 1);
-    
+
     for (int i = 0; i < num_tests; i++) {{
         *index = i;
 
@@ -55,7 +55,7 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
         vxt_system_reset(s);
         struct vxt_registers *r = vxt_system_registers(s);
 
-        struct registers regs;              
+        struct registers regs;
         TENSURE(fread(&regs, sizeof(struct registers), 1, fp) == 1);
         r->ax = regs.ax; r->bx = regs.bx; r->cx = regs.cx; r->dx = regs.dx;
         r->cs = regs.cs; r->ss = regs.ss; r->ds = regs.ds; r->es = regs.es;
@@ -68,13 +68,13 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
 
         vxt_word num_mem;
         TENSURE(fread(&num_mem, 2, 1, fp) == 1);
-       
+
         for (int i = 0; i < (int)num_mem; i++) {{
             struct memory mem;
             TENSURE(fread(&mem, sizeof(struct memory), 1, fp) == 1);
             vxt_system_write_byte(s, mem.addr, mem.data);
         }}
-                                                        
+
         struct vxt_step step = vxt_system_step(s, 0);
         TENSURE_NO_ERR(step.err);
 
@@ -99,20 +99,20 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
         TASSERT((r->flags & flags_mask) == (regs.flags & flags_mask), "Expected flags register to be 0x%X but it was 0x%X", (regs.flags & flags_mask), (r->flags & flags_mask));
 
         TENSURE(fread(&num_mem, 2, 1, fp) == 1);
-       
+
         for (int i = 0; i < (int)num_mem; i++) {{
             struct memory mem;
             TENSURE(fread(&mem, sizeof(struct memory), 1, fp) == 1);
             vxt_byte data = vxt_system_read_byte(s, mem.addr);
             TASSERT(data == mem.data, "Expected memory at address 0x%X to be 0x%X(%d) but it is 0x%X(%d)", mem.addr, mem.data, mem.data, data, data);
         }}
-        
-        vxt_word cycles;        
+
+        vxt_word cycles;
         TENSURE(fread(&cycles, 2, 1, fp) == 1);
         if ({cycles} && cycles != step.cycles)
             TLOG("%d: Expected \\"%s\\" to execute in %d cycles, but it took %d!", i, name, cycles, step.cycles);
-        
-        // Just skip the queue size for now. 
+
+        // Just skip the queue size for now.
         TENSURE(fread(&num_mem, 1, 1, fp) == 1);
     }}
 
@@ -143,7 +143,7 @@ def pack_test(data, output):
         regs["sp"], regs["bp"], regs["si"], regs["di"],
         regs["ip"], regs["flags"]
     ))
-    
+
     ram = data["ram"]
     output.write(struct.pack("H", len(ram)))
     for mem in ram:
@@ -160,7 +160,7 @@ def check_and_download(filename):
     filepath = data_dir + "/" + filename
     if not os.path.exists(filepath):
         print("Downloading: " + filename)
-        
+
         url = "https://github.com/virtualxt/ProcessorTests/raw/main/8088/v1/" + filename
         resp = requests.get(url)
         if resp.status_code != requests.codes.ok:
@@ -195,7 +195,7 @@ def gen_tests(input_name):
         return
 
     print("Generating tests for opcode {}".format(input_name))
-    
+
     output_file = "{}/{}.bin".format(data_dir, input_name)
 
     with open(c_test_name, "a") as f:
@@ -203,7 +203,7 @@ def gen_tests(input_name):
 
     output = open(output_file, "wb")
     output.write(struct.pack("I", 0))
-    
+
     num_tests = 0
     with gzip.open(data_dir + "/" + filename, mode="r") as f:
         data = json.loads(f.read())
@@ -218,7 +218,7 @@ def gen_tests(input_name):
             output.write(struct.pack("H", flags_mask))
 
             #if input_name == "C4" and num_tests == 9495:
-            #    print(json.dumps(test, indent=4))   
+            #    print(json.dumps(test, indent=4))
 
             write_test(test, output)
             num_tests += 1

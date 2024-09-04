@@ -78,7 +78,7 @@ struct dos_proc {
     bool active;
     vxt_word id;
     FILE *files[MAX_OPEN_FILES];
-    
+
     bool is_root;
     vxt_word find_attrib;
 
@@ -173,7 +173,7 @@ static const char *host_path(struct rifs *fs, const char *path) {
         path = path + 2;
     else
         VXT_LOG("WARNING: Path is not absolute!");
-       
+
     strncat(fs->path_scratchpad, path, sizeof(fs->path_scratchpad) - 1);
 
     // Convert slashes.
@@ -295,7 +295,7 @@ static void process_request(struct rifs *fs, struct rifs_packet *pk) {
                 server_response(fs, pk, 2);
                 break;
             }
-            
+
             FILE *fp = proc->files[idx];
             //if (fp && (ln == 0)) {
             //    pos = 0;
@@ -485,7 +485,7 @@ static void out(struct rifs *fs, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(struct rifs *fs, vxt_system *s) {
-    vxt_system_install_io(s, VXT_GET_PIREPHERAL(fs), fs->base_port, fs->base_port + 7);
+    vxt_system_install_io(s, VXT_GET_PERIPHERAL(fs), fs->base_port, fs->base_port + 7);
 
     VXT_LOG("Root: '%s'", fs->root_path);
     if (!rifs_is_dir(fs->root_path)) {
@@ -544,11 +544,11 @@ VXTU_MODULE_CREATE(rifs, {
         DEVICE->activity_callback = fi->disk.activity_callback;
         DEVICE->activity_callback_userdata = fi->disk.userdata;
     }
-    
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->config = &config;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->config = &config;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })

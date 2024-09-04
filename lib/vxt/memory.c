@@ -46,7 +46,7 @@ static void write(struct memory *m, vxt_pointer addr, vxt_byte data) {
 }
 
 static vxt_error install(struct memory *m, vxt_system *s) {
-    vxt_system_install_mem(s, VXT_GET_PIREPHERAL(m), m->base, (m->base + (vxt_pointer)m->size) - 1);
+    vxt_system_install_mem(s, VXT_GET_PERIPHERAL(m), m->base, (m->base + (vxt_pointer)m->size) - 1);
     return VXT_NO_ERROR;
 }
 
@@ -54,35 +54,35 @@ static const char *name(struct memory *m) {
     return m->read_only ? "ROM" : "RAM";
 }
 
-VXT_API struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
-    int size = VXT_PIREPHERAL_SIZE(memory) + amount;
-    struct VXT_PIREPHERAL(struct memory) *PIREPHERAL;
-    *(void**)&PIREPHERAL = alloc(NULL, size);
+VXT_API struct vxt_peripheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
+    int size = VXT_PERIPHERAL_SIZE(memory) + amount;
+    struct VXT_PERIPHERAL(struct memory) *PERIPHERAL;
+    *(void**)&PERIPHERAL = alloc(NULL, size);
 
-    vxt_memclear(PIREPHERAL, size);
-    struct memory *mem = VXT_GET_DEVICE(memory, PIREPHERAL);
+    vxt_memclear(PERIPHERAL, size);
+    struct memory *mem = VXT_GET_DEVICE(memory, PERIPHERAL);
 
     #ifndef VXTU_MEMCLEAR
-        if (!read_only) vxtu_randomize(mem->data, amount, (intptr_t)PIREPHERAL);
+        if (!read_only) vxtu_randomize(mem->data, amount, (intptr_t)PERIPHERAL);
     #endif
 
     mem->base = base;
     mem->read_only = read_only;
-    mem->size = amount;   
+    mem->size = amount;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->io.read = &read;
+    PERIPHERAL->io.write = &write;
 
-    return (struct vxt_pirepheral*)PIREPHERAL;
+    return (struct vxt_peripheral*)PERIPHERAL;
 }
 
-VXT_API void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p) {
+VXT_API void *vxtu_memory_internal_pointer(struct vxt_peripheral *p) {
     return VXT_GET_DEVICE(memory, p)->data;
 }
 
-VXT_API bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size) {
+VXT_API bool vxtu_memory_device_fill(struct vxt_peripheral *p, const vxt_byte *data, int size) {
     struct memory *m = VXT_GET_DEVICE(memory, p);
     ENSURE(data);
     if (m->size < size)

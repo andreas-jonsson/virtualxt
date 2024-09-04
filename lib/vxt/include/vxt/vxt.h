@@ -182,7 +182,7 @@ enum {
 
 #define VXT_IO_MAP_SIZE 0x10000
 #define VXT_MEM_MAP_SIZE 0x10000
-#define VXT_MAX_PIREPHERALS 0xFF
+#define VXT_MAX_PERIPHERALS 0xFF
 #define VXT_MAX_MONITORS 0xFF
 #define VXT_DEFAULT_FREQUENCY 4772726
 
@@ -236,24 +236,24 @@ struct vxt_monitor {
     enum vxt_monitor_flag flags;
 };
 
-#define VXT_GET_DEVICE_PTR(pir) ( (void*)((char*)(pir) + sizeof(struct _vxt_pirepheral)) )
+#define VXT_GET_DEVICE_PTR(pir) ( (void*)((char*)(pir) + sizeof(struct _vxt_peripheral)) )
 #define VXT_GET_DEVICE(type, pir) ( (struct type*)VXT_GET_DEVICE_PTR(pir) )
-#define VXT_GET_PIREPHERAL(dev) ( (struct vxt_pirepheral*)((char*)(dev) - sizeof(struct _vxt_pirepheral)) )
-#define VXT_GET_SYSTEM(dev) ((struct _vxt_pirepheral*)VXT_GET_PIREPHERAL(dev))->s
+#define VXT_GET_PERIPHERAL(dev) ( (struct vxt_peripheral*)((char*)(dev) - sizeof(struct _vxt_peripheral)) )
+#define VXT_GET_SYSTEM(dev) ((struct _vxt_peripheral*)VXT_GET_PERIPHERAL(dev))->s
 
-#define VXT_PIREPHERAL_SIZE(type) ( sizeof(struct _vxt_pirepheral) + sizeof(struct type) )
+#define VXT_PERIPHERAL_SIZE(type) ( sizeof(struct _vxt_peripheral) + sizeof(struct type) )
 
-#define VXT_PIREPHERAL_CREATE(alloc, type, body) {                          \
-        struct VXT_PIREPHERAL(struct type) *PIREPHERAL;                     \
-        *(void**)&PIREPHERAL = (alloc)(NULL, VXT_PIREPHERAL_SIZE(type));    \
-        vxt_memclear(PIREPHERAL, VXT_PIREPHERAL_SIZE(type));                \
-        struct type *DEVICE = VXT_GET_DEVICE(type, PIREPHERAL);             \
+#define VXT_PERIPHERAL_CREATE(alloc, type, body) {                          \
+        struct VXT_PERIPHERAL(struct type) *PERIPHERAL;                     \
+        *(void**)&PERIPHERAL = (alloc)(NULL, VXT_PERIPHERAL_SIZE(type));    \
+        vxt_memclear(PERIPHERAL, VXT_PERIPHERAL_SIZE(type));                \
+        struct type *DEVICE = VXT_GET_DEVICE(type, PERIPHERAL);             \
         { body ; }                                                          \
         (void)DEVICE;                                                       \
-        return (struct vxt_pirepheral*)PIREPHERAL;                          \
+        return (struct vxt_peripheral*)PERIPHERAL;                          \
     }                                                                       \
 
-#define VXT_PIREPHERAL(ty) {                                        \
+#define VXT_PERIPHERAL(ty) {                                        \
 	vxt_error (*install)(ty*, vxt_system*);                         \
     vxt_error (*config)(ty*,const char*,const char*,const char*);   \
     vxt_error (*destroy)(ty*);                                      \
@@ -282,11 +282,11 @@ struct vxt_monitor {
 }                                                                   \
 
 /// Interface for ISA bus devices.
-struct vxt_pirepheral VXT_PIREPHERAL(void);
+struct vxt_peripheral VXT_PERIPHERAL(void);
 
 /// @private
-struct _vxt_pirepheral {
-    struct vxt_pirepheral p;
+struct _vxt_peripheral {
+    struct vxt_peripheral p;
     vxt_device_id id;
     vxt_system *s;
     // User device data is located at the end of this struct.
@@ -338,10 +338,10 @@ VXT_API int vxt_lib_version_major(void);
 VXT_API int vxt_lib_version_minor(void);
 VXT_API int vxt_lib_version_patch(void);
 
-VXT_API const char *vxt_pirepheral_name(struct vxt_pirepheral *p);
-VXT_API enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p);
+VXT_API const char *vxt_peripheral_name(struct vxt_peripheral *p);
+VXT_API enum vxt_pclass vxt_peripheral_class(struct vxt_peripheral *p);
 
-VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struct vxt_pirepheral * const devs[]);
+VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struct vxt_peripheral * const devs[]);
 VXT_API vxt_error vxt_system_configure(vxt_system *s, const char *section, const char *key, const char *value);
 VXT_API vxt_error vxt_system_destroy(vxt_system *s);
 VXT_API struct vxt_step vxt_system_step(vxt_system *s, int cycles);
@@ -359,19 +359,19 @@ VXT_API vxt_allocator *vxt_system_allocator(vxt_system *s);
 VXT_API const vxt_byte *vxt_system_io_map(vxt_system *s);
 VXT_API const vxt_byte *vxt_system_mem_map(vxt_system *s);
 VXT_API const struct vxt_monitor *vxt_system_monitor(vxt_system *s, vxt_byte idx);
-VXT_API struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx);
-VXT_API vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p);
-VXT_API vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p);
+VXT_API struct vxt_peripheral *vxt_system_peripheral(vxt_system *s, vxt_byte idx);
+VXT_API vxt_system *vxt_peripheral_system(const struct vxt_peripheral *p);
+VXT_API vxt_device_id vxt_peripheral_id(const struct vxt_peripheral *p);
 
 VXT_API void vxt_system_interrupt(vxt_system *s, int n);
 VXT_API void vxt_system_wait(vxt_system *s, int cycles);
 
-VXT_API void vxt_system_install_io_at(vxt_system *s, struct vxt_pirepheral *dev, vxt_word addr);
-VXT_API void vxt_system_install_io(vxt_system *s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to);
-VXT_API void vxt_system_install_mem(vxt_system *s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to);
-VXT_API vxt_timer_id vxt_system_install_timer(vxt_system *s, struct vxt_pirepheral *dev, unsigned int us);
+VXT_API void vxt_system_install_io_at(vxt_system *s, struct vxt_peripheral *dev, vxt_word addr);
+VXT_API void vxt_system_install_io(vxt_system *s, struct vxt_peripheral *dev, vxt_word from, vxt_word to);
+VXT_API void vxt_system_install_mem(vxt_system *s, struct vxt_peripheral *dev, vxt_pointer from, vxt_pointer to);
+VXT_API vxt_timer_id vxt_system_install_timer(vxt_system *s, struct vxt_peripheral *dev, unsigned int us);
 VXT_API bool vxt_system_set_timer_interval(vxt_system *s, vxt_timer_id id, unsigned int us);
-VXT_API void vxt_system_install_monitor(vxt_system *s, struct vxt_pirepheral *dev, const char *name, void *reg, enum vxt_monitor_flag flags);
+VXT_API void vxt_system_install_monitor(vxt_system *s, struct vxt_peripheral *dev, const char *name, void *reg, enum vxt_monitor_flag flags);
 
 VXT_API vxt_byte vxt_system_read_byte(vxt_system *s, vxt_pointer addr);
 VXT_API void vxt_system_write_byte(vxt_system *s, vxt_pointer addr, vxt_byte data);

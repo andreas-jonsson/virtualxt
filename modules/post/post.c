@@ -39,7 +39,7 @@ static void out(struct post *c, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(struct post *c, vxt_system *s) {
-	struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
+	struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
     vxt_system_install_io_at(s, p, 0x80);
     return VXT_NO_ERROR;
 }
@@ -54,9 +54,9 @@ static const char *name(struct post *c) {
 }
 
 VXTU_MODULE_CREATE(post, {
-    PIREPHERAL->install = &install;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })

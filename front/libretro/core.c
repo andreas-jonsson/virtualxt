@@ -89,19 +89,19 @@ struct retro_vfs_file_handle *hd_image = NULL;
 int cpu_frequency = VXT_DEFAULT_FREQUENCY;
 
 vxt_system *sys = NULL;
-struct vxt_pirepheral *disk = NULL;
-struct vxt_pirepheral *ppi = NULL;
-struct vxt_pirepheral *cga = NULL;
-struct vxt_pirepheral *mouse = NULL;
-struct vxt_pirepheral *joystick = NULL;
+struct vxt_peripheral *disk = NULL;
+struct vxt_peripheral *ppi = NULL;
+struct vxt_peripheral *cga = NULL;
+struct vxt_peripheral *mouse = NULL;
+struct vxt_peripheral *joystick = NULL;
 
 // From joystick.c
-bool joystick_push_event(struct vxt_pirepheral *p, const struct frontend_joystick_event *ev);
-struct vxt_pirepheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args);
+bool joystick_push_event(struct vxt_peripheral *p, const struct frontend_joystick_event *ev);
+struct vxt_peripheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args);
 
 // From mouse.c
-struct vxt_pirepheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args);
-bool mouse_push_event(struct vxt_pirepheral *p, const struct frontend_mouse_event *ev);
+struct vxt_peripheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args);
+bool mouse_push_event(struct vxt_peripheral *p, const struct frontend_mouse_event *ev);
 
 static void no_log(enum retro_log_level level, const char *fmt, ...) {
     (void)level; (void)fmt;
@@ -321,8 +321,8 @@ static void check_variables(void) {
     }
 }
 
-static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
-	struct vxt_pirepheral *rom = vxtu_memory_create(&realloc, base, size, true);
+static struct vxt_peripheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
+	struct vxt_peripheral *rom = vxtu_memory_create(&realloc, base, size, true);
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		log_cb(RETRO_LOG_ERROR, "vxtu_memory_device_fill() failed!\n");
 		return NULL;
@@ -347,7 +347,7 @@ void retro_init(void) {
         mouse = mouse_create(&realloc, NULL, "0x3F8"); // COM1
         joystick = joystick_create(&realloc, NULL, "0x201");
 
-        struct vxt_pirepheral *devices[] = {
+        struct vxt_peripheral *devices[] = {
             vxtu_memory_create(&realloc, 0x0, 0x100000, false),
             load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000),
             load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000),
@@ -369,11 +369,11 @@ void retro_init(void) {
         vxt_system_initialize(sys);
 
         LOG("CPU Frequency: %.2fMHz\n", (double)cpu_frequency / 1000000.0);
-        LOG("Installed pirepherals:\n");
-        for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
-            struct vxt_pirepheral *device = vxt_system_pirepheral(sys, (vxt_byte)i);
+        LOG("Installed peripherals:\n");
+        for (int i = 1; i < VXT_MAX_PERIPHERALS; i++) {
+            struct vxt_peripheral *device = vxt_system_peripheral(sys, (vxt_byte)i);
             if (device)
-                LOG("%d - %s\n", i, vxt_pirepheral_name(device));
+                LOG("%d - %s\n", i, vxt_peripheral_name(device));
         }
         vxt_system_reset(sys);
     )

@@ -34,7 +34,7 @@ struct sampler {
 
 static vxt_error timer(struct sampler *a, vxt_timer_id id, int cycles) {
 	(void)id; (void)cycles;
-	
+
 	float sample = a->generate(a->frequency);
 	if (a->buffer_len >= a->buffer_size)
 		return VXT_NO_ERROR;
@@ -44,14 +44,14 @@ static vxt_error timer(struct sampler *a, vxt_timer_id id, int cycles) {
 }
 
 static vxt_error install(struct sampler *a, vxt_system *s) {
-    vxt_system_install_timer(s, VXT_GET_PIREPHERAL(a), 1000000 / a->frequency);
+    vxt_system_install_timer(s, VXT_GET_PERIPHERAL(a), 1000000 / a->frequency);
     return VXT_NO_ERROR;
 }
 
 static vxt_error destroy(struct sampler *a) {
-	vxt_allocator *alloc = vxt_system_allocator(VXT_GET_SYSTEM(a));	
+	vxt_allocator *alloc = vxt_system_allocator(VXT_GET_SYSTEM(a));
     alloc(a->buffer, 0);
-    alloc(VXT_GET_PIREPHERAL(a), 0);
+    alloc(VXT_GET_PERIPHERAL(a), 0);
     return VXT_NO_ERROR;
 }
 
@@ -59,7 +59,7 @@ static const char *name(struct sampler *a) {
     (void)a; return "Audio Sampler";
 }
 
-float *sampler_get_buffer(struct vxt_pirepheral *p) {
+float *sampler_get_buffer(struct vxt_peripheral *p) {
 	struct sampler *a = VXT_GET_DEVICE(sampler, p);
 	while (a->buffer_len < a->buffer_size)
 		a->buffer[a->buffer_len++] = a->generate(a->frequency);
@@ -67,16 +67,16 @@ float *sampler_get_buffer(struct vxt_pirepheral *p) {
 	return a->buffer;
 }
 
-struct vxt_pirepheral *sampler_create(vxt_allocator *alloc, int frequency, int num_samples, float (*generate)(int freq)) VXT_PIREPHERAL_CREATE(alloc, sampler, {
+struct vxt_peripheral *sampler_create(vxt_allocator *alloc, int frequency, int num_samples, float (*generate)(int freq)) VXT_PERIPHERAL_CREATE(alloc, sampler, {
 	DEVICE->frequency = frequency;
 	DEVICE->generate = generate;
-	
+
 	DEVICE->buffer_len = 0;
 	DEVICE->buffer_size = num_samples;
 	DEVICE->buffer = (float*)alloc(NULL, num_samples * sizeof(float));
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->timer = &timer;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->destroy = &destroy;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->timer = &timer;
 })

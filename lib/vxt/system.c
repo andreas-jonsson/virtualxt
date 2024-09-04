@@ -77,7 +77,7 @@ VXT_API void vxt_set_logger(int (*f)(const char*, ...)) {
     _vxt_logger = f;
 }
 
-VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struct vxt_pirepheral * const devs[]) {
+VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struct vxt_peripheral * const devs[]) {
     vxt_system *s = (vxt_system*)alloc(NULL, sizeof(struct system));
     vxt_memclear(s, sizeof(struct system));
     s->alloc = alloc;
@@ -87,7 +87,7 @@ VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struc
     int i = 1;
     for (; devs && devs[i-1]; i++) {
         s->devices[i] = devs[i-1];
-        struct _vxt_pirepheral *internal = (struct _vxt_pirepheral*)s->devices[i];
+        struct _vxt_peripheral *internal = (struct _vxt_peripheral*)s->devices[i];
         internal->id = (vxt_device_id)i;
         internal->s = s;
     }
@@ -97,14 +97,14 @@ VXT_API vxt_system *vxt_system_create(vxt_allocator *alloc, int frequency, struc
         s->timers[i].id = VXT_INVALID_TIMER_ID;
 
     // Always init dummy device 0. Depends on memset!
-    s->devices[0] = (struct vxt_pirepheral*)&s->dummy;
+    s->devices[0] = (struct vxt_peripheral*)&s->dummy;
     init_dummy_device(s);
     return s;
 }
 
 VXT_API vxt_error vxt_system_configure(vxt_system *s, const char *section, const char *key, const char *value) {
     for (int i = 0; i < s->num_devices; i++) {
-        CONSTSP(vxt_pirepheral) d = s->devices[i];
+        CONSTSP(vxt_peripheral) d = s->devices[i];
         if (d->config) {
             vxt_error err = d->config(VXT_GET_DEVICE_PTR(d), section, key, value);
             if (err) return err;
@@ -139,12 +139,12 @@ VXT_API vxt_error _vxt_system_initialize(CONSTP(vxt_system) s, unsigned reg_size
     vxt_system_install_monitor(s, NULL, "Flags", &s->cpu.regs.ip, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_BINARY);
 
     for (int i = 0; i < s->num_devices; i++) {
-        CONSTSP(vxt_pirepheral) d = s->devices[i];
+        CONSTSP(vxt_peripheral) d = s->devices[i];
         if (d->install) {
             vxt_error err = d->install(VXT_GET_DEVICE_PTR(d), s);
             if (err) return err;
         }
-        if (vxt_pirepheral_class(d) == VXT_PCLASS_PIC)
+        if (vxt_peripheral_class(d) == VXT_PCLASS_PIC)
             s->cpu.pic = d;
     }
 
@@ -167,7 +167,7 @@ VXT_API vxt_error vxt_system_destroy(CONSTP(vxt_system) s) {
     }
 
     for (int i = 0; i < s->num_devices; i++) {
-        struct vxt_pirepheral *d = s->devices[i];
+        struct vxt_peripheral *d = s->devices[i];
         if (d->destroy) {
             vxt_error (*destroy)(void*) = d->destroy;
             vxt_error err = destroy(VXT_GET_DEVICE_PTR(d));
@@ -191,7 +191,7 @@ VXT_API vxt_allocator *vxt_system_allocator(vxt_system *s) {
 VXT_API void vxt_system_reset(CONSTP(vxt_system) s) {
     cpu_reset(&s->cpu);
     for (int i = 0; i < s->num_devices; i++) {
-        CONSTSP(vxt_pirepheral) d = s->devices[i];
+        CONSTSP(vxt_peripheral) d = s->devices[i];
         if (d->reset)
             d->reset(VXT_GET_DEVICE_PTR(d));
     }
@@ -248,23 +248,23 @@ VXT_API const struct vxt_monitor *vxt_system_monitor(vxt_system *s, vxt_byte idx
     return m->flags ? m : NULL;
 }
 
-VXT_API struct vxt_pirepheral *vxt_system_pirepheral(vxt_system *s, vxt_byte idx) {
+VXT_API struct vxt_peripheral *vxt_system_peripheral(vxt_system *s, vxt_byte idx) {
     return s->devices[idx];
 }
 
-VXT_API vxt_system *vxt_pirepheral_system(const struct vxt_pirepheral *p) {
-    return ((struct _vxt_pirepheral*)p)->s;
+VXT_API vxt_system *vxt_peripheral_system(const struct vxt_peripheral *p) {
+    return ((struct _vxt_peripheral*)p)->s;
 }
 
-VXT_API vxt_device_id vxt_pirepheral_id(const struct vxt_pirepheral *p) {
-    return ((struct _vxt_pirepheral*)p)->id;
+VXT_API vxt_device_id vxt_peripheral_id(const struct vxt_peripheral *p) {
+    return ((struct _vxt_peripheral*)p)->id;
 }
 
-VXT_API const char *vxt_pirepheral_name(struct vxt_pirepheral *p) {
+VXT_API const char *vxt_peripheral_name(struct vxt_peripheral *p) {
     return p->name ? p->name(VXT_GET_DEVICE_PTR(p)) : "unknown device";
 }
 
-VXT_API enum vxt_pclass vxt_pirepheral_class(struct vxt_pirepheral *p) {
+VXT_API enum vxt_pclass vxt_peripheral_class(struct vxt_peripheral *p) {
     return p->pclass ? p->pclass(VXT_GET_DEVICE_PTR(p)) : VXT_PCLASS_GENERIC;
 }
 
@@ -285,12 +285,12 @@ VXT_API void vxt_system_set_frequency(CONSTP(vxt_system) s, int freq) {
     s->frequency = freq;
 }
 
-VXT_API void vxt_system_install_monitor(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, const char *name, void *reg, enum vxt_monitor_flag flags) {
+VXT_API void vxt_system_install_monitor(CONSTP(vxt_system) s, struct vxt_peripheral *dev, const char *name, void *reg, enum vxt_monitor_flag flags) {
     if (s->num_monitors < VXT_MAX_MONITORS)
-        s->monitors[s->num_monitors++] = (struct vxt_monitor){ dev ? vxt_pirepheral_name(dev) : "CPU", name, reg, flags };
+        s->monitors[s->num_monitors++] = (struct vxt_monitor){ dev ? vxt_peripheral_name(dev) : "CPU", name, reg, flags };
 }
 
-VXT_API vxt_timer_id vxt_system_install_timer(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, unsigned int us) {
+VXT_API vxt_timer_id vxt_system_install_timer(CONSTP(vxt_system) s, struct vxt_peripheral *dev, unsigned int us) {
     if (s->num_timers >= MAX_TIMERS)
         return VXT_INVALID_TIMER_ID;
     struct timer *t = &s->timers[s->num_timers];
@@ -314,35 +314,35 @@ VXT_API bool vxt_system_set_timer_interval(vxt_system *s, vxt_timer_id id, unsig
     return true;
 }
 
-VXT_API void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word addr) {
-    s->io_map[addr] = (vxt_byte)vxt_pirepheral_id(dev);
+VXT_API void vxt_system_install_io_at(CONSTP(vxt_system) s, struct vxt_peripheral *dev, vxt_word addr) {
+    s->io_map[addr] = (vxt_byte)vxt_peripheral_id(dev);
 }
 
-VXT_API void vxt_system_install_io(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_word from, vxt_word to) {
+VXT_API void vxt_system_install_io(CONSTP(vxt_system) s, struct vxt_peripheral *dev, vxt_word from, vxt_word to) {
     int i = (int)from;
     while (i <= (int)to)
-        s->io_map[i++] = (vxt_byte)vxt_pirepheral_id(dev);
+        s->io_map[i++] = (vxt_byte)vxt_peripheral_id(dev);
 }
 
-VXT_API void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_pirepheral *dev, vxt_pointer from, vxt_pointer to) {
+VXT_API void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_peripheral *dev, vxt_pointer from, vxt_pointer to) {
     if ((from | (to + 1)) & 0xF)
         VXT_LOG("ERROR: Trying to register unaligned address!");
 
     from = (from >> 4) & 0xFFFF;
     to = (to >> 4) & 0xFFFF;
     while (from <= to)
-        s->mem_map[from++] = (vxt_byte)vxt_pirepheral_id(dev);
+        s->mem_map[from++] = (vxt_byte)vxt_peripheral_id(dev);
 }
 
 VXT_API vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
     addr &= 0xFFFFF;
-    CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr >> 4]];
+    CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
     return dev->io.read(VXT_GET_DEVICE_PTR(dev), addr);
 }
 
 VXT_API void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
     addr &= 0xFFFFF;
-    CONSTSP(vxt_pirepheral) dev = s->devices[s->mem_map[addr >> 4]];
+    CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
     dev->io.write(VXT_GET_DEVICE_PTR(dev), addr, data);
 }
 
@@ -356,14 +356,14 @@ VXT_API void vxt_system_write_word(CONSTP(vxt_system) s, vxt_pointer addr, vxt_w
 }
 
 vxt_byte system_in(CONSTP(vxt_system) s, vxt_word port) {
-    CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
+    CONSTSP(vxt_peripheral) dev = s->devices[s->io_map[port]];
     s->cpu.bus_transfers++;
     VALIDATOR_DISCARD(&s->cpu);
     return dev->io.in(VXT_GET_DEVICE_PTR(dev), port);
 }
 
 void system_out(CONSTP(vxt_system) s, vxt_word port, vxt_byte data) {
-    CONSTSP(vxt_pirepheral) dev = s->devices[s->io_map[port]];
+    CONSTSP(vxt_peripheral) dev = s->devices[s->io_map[port]];
     s->cpu.bus_transfers++;
     VALIDATOR_DISCARD(&s->cpu);
     dev->io.out(VXT_GET_DEVICE_PTR(dev), port, data);

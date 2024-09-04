@@ -215,11 +215,11 @@ static void out(struct cga_video *c, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(struct cga_video *c, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(c);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
     vxt_system_install_mem(s, p, MEMORY_START, (MEMORY_START + MEMORY_SIZE) - 1);
     vxt_system_install_io(s, p, 0x3B0, 0x3BF);
     vxt_system_install_io(s, p, 0x3D0, 0x3DF);
-    
+
     vxt_system_install_timer(s, p, CURSOR_TIMING);
     c->scanline_timer = vxt_system_install_timer(s, p, SCANLINE_TIMING);
 
@@ -240,7 +240,7 @@ static vxt_error reset(struct cga_video *c) {
     c->mode_ctrl_reg = 1;
     c->color_ctrl_reg = 0x20;
     c->status_reg = 0;
-    
+
     c->hgc_enable = 0;
     c->hgc_base = 0;
     c->hgc_mode = false;
@@ -268,7 +268,7 @@ static vxt_error timer(struct cga_video *c, vxt_timer_id id, int cycles) {
         c->status_reg = 6;
         c->status_reg |= (c->retrace == 3) ? 1 : 0;
         c->status_reg |= (c->scanline >= 224) ? 8 : 0;
-        
+
         if (++c->retrace == 4) {
             c->retrace = 0;
             c->scanline++;
@@ -333,25 +333,25 @@ static void blit_char(struct cga_video *c, int ch, vxt_byte attr, int x, int y) 
 	}
 }
 
-struct vxt_pirepheral *cga_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, cga_video, {
-    vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PIREPHERAL);
+struct vxt_peripheral *cga_create(vxt_allocator *alloc) VXT_PERIPHERAL_CREATE(alloc, cga_video, {
+    vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PERIPHERAL);
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->pclass = &pclass;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->timer = &timer;
+    PERIPHERAL->io.read = &read;
+    PERIPHERAL->io.write = &write;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })
 
-vxt_dword cga_border_color(struct vxt_pirepheral *p) {
+vxt_dword cga_border_color(struct vxt_peripheral *p) {
     return cga_palette[(VXT_GET_DEVICE(cga_video, p))->color_ctrl_reg & 0xF];
 }
 
-bool cga_snapshot(struct vxt_pirepheral *p) {
+bool cga_snapshot(struct vxt_peripheral *p) {
     struct cga_video *c = VXT_GET_DEVICE(cga_video, p);
     if (!c->is_dirty)
         return false;
@@ -373,7 +373,7 @@ bool cga_snapshot(struct vxt_pirepheral *p) {
     return true;
 }
 
-int cga_render(struct vxt_pirepheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
+int cga_render(struct vxt_peripheral *p, int (*f)(int,int,const vxt_byte*,void*), void *userdata) {
     struct snapshot *snap = &(VXT_GET_DEVICE(cga_video, p))->snap;
 
     if (snap->hgc_mode) {

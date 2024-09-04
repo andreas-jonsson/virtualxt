@@ -47,7 +47,7 @@ extern "C" {
     }														\
 }															\
 
-typedef struct vxt_pirepheral *(*vxtu_module_entry_func)(vxt_allocator*,void*,const char*);
+typedef struct vxt_peripheral *(*vxtu_module_entry_func)(vxt_allocator*,void*,const char*);
 
 #ifdef VXTU_MODULES
     #define _VXTU_MODULE_ENTRIES(n, ...) VXT_API_EXPORT vxtu_module_entry_func *_vxtu_module_ ## n ## _entry(int (*f)(const char*, ...)) {		\
@@ -55,11 +55,11 @@ typedef struct vxt_pirepheral *(*vxtu_module_entry_func)(vxt_allocator*,void*,co
 		static vxtu_module_entry_func _vxtu_module_ ## n ## _entries[] = { __VA_ARGS__, NULL };									\
 		return _vxtu_module_ ## n ## _entries;																					\
 	}																															\
-    
+
 	#define VXTU_MODULE_ENTRIES(...) _VXT_EVALUATOR(_VXTU_MODULE_ENTRIES, VXTU_MODULE_NAME, __VA_ARGS__)
-    #define VXTU_MODULE_CREATE(name, body) static struct vxt_pirepheral *_vxtu_pirepheral_create(vxt_allocator *ALLOC, void *FRONTEND, const char *ARGS)	\
-		VXT_PIREPHERAL_CREATE(ALLOC, name, { body ; (void)FRONTEND; (void)ARGS; }) VXTU_MODULE_ENTRIES(&_vxtu_pirepheral_create)							\
-    
+    #define VXTU_MODULE_CREATE(name, body) static struct vxt_peripheral *_vxtu_peripheral_create(vxt_allocator *ALLOC, void *FRONTEND, const char *ARGS)	\
+		VXT_PERIPHERAL_CREATE(ALLOC, name, { body ; (void)FRONTEND; (void)ARGS; }) VXTU_MODULE_ENTRIES(&_vxtu_peripheral_create)							\
+
 	#define VXTU_MODULE_NAME_STRING _VXT_EVALUATOR(_VXT_STRINGIFY, VXTU_MODULE_NAME)
 #else
     #define VXTU_MODULE_ENTRIES(...)
@@ -193,9 +193,9 @@ struct vxtu_uart_registers {
 };
 
 struct vxtu_uart_interface {
-    void (*config)(struct vxt_pirepheral *p, const struct vxtu_uart_registers *regs, int idx, void *udata);
-	void (*data)(struct vxt_pirepheral *p, vxt_byte data, void *udata);
-	void (*ready)(struct vxt_pirepheral *p, void *udata);
+    void (*config)(struct vxt_peripheral *p, const struct vxtu_uart_registers *regs, int idx, void *udata);
+	void (*data)(struct vxt_peripheral *p, vxt_byte data, void *udata);
+	void (*ready)(struct vxt_peripheral *p, void *udata);
 	void *udata;
 };
 
@@ -214,42 +214,42 @@ struct vxtu_disk_interface {
 
 VXT_API vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size);
 
-VXT_API struct vxt_pirepheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);
-VXT_API void *vxtu_memory_internal_pointer(struct vxt_pirepheral *p);
-VXT_API bool vxtu_memory_device_fill(struct vxt_pirepheral *p, const vxt_byte *data, int size);
+VXT_API struct vxt_peripheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);
+VXT_API void *vxtu_memory_internal_pointer(struct vxt_peripheral *p);
+VXT_API bool vxtu_memory_device_fill(struct vxt_peripheral *p, const vxt_byte *data, int size);
 
-VXT_API struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc);
+VXT_API struct vxt_peripheral *vxtu_pic_create(vxt_allocator *alloc);
 
-VXT_API struct vxt_pirepheral *vxtu_dma_create(vxt_allocator *alloc);
+VXT_API struct vxt_peripheral *vxtu_dma_create(vxt_allocator *alloc);
 
-VXT_API struct vxt_pirepheral *vxtu_pit_create(vxt_allocator *alloc);
-VXT_API double vxtu_pit_get_frequency(struct vxt_pirepheral *p, int channel);
+VXT_API struct vxt_peripheral *vxtu_pit_create(vxt_allocator *alloc);
+VXT_API double vxtu_pit_get_frequency(struct vxt_peripheral *p, int channel);
 
-VXT_API struct vxt_pirepheral *vxtu_ppi_create(vxt_allocator *alloc);
-VXT_API bool vxtu_ppi_key_event(struct vxt_pirepheral *p, enum vxtu_scancode key, bool force);
-VXT_API bool vxtu_ppi_turbo_enabled(struct vxt_pirepheral *p);
-VXT_API vxt_int16 vxtu_ppi_generate_sample(struct vxt_pirepheral *p, int freq);
-VXT_API void vxtu_ppi_set_speaker_callback(struct vxt_pirepheral *p, void (*f)(struct vxt_pirepheral*,double,void*), void *userdata);
-VXT_API void vxtu_ppi_set_xt_switches(struct vxt_pirepheral *p, vxt_byte data);
-VXT_API vxt_byte vxtu_ppi_xt_switches(struct vxt_pirepheral *p);
+VXT_API struct vxt_peripheral *vxtu_ppi_create(vxt_allocator *alloc);
+VXT_API bool vxtu_ppi_key_event(struct vxt_peripheral *p, enum vxtu_scancode key, bool force);
+VXT_API bool vxtu_ppi_turbo_enabled(struct vxt_peripheral *p);
+VXT_API vxt_int16 vxtu_ppi_generate_sample(struct vxt_peripheral *p, int freq);
+VXT_API void vxtu_ppi_set_speaker_callback(struct vxt_peripheral *p, void (*f)(struct vxt_peripheral*,double,void*), void *userdata);
+VXT_API void vxtu_ppi_set_xt_switches(struct vxt_peripheral *p, vxt_byte data);
+VXT_API vxt_byte vxtu_ppi_xt_switches(struct vxt_peripheral *p);
 
-VXT_API struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc);
-VXT_API void vxtu_mda_invalidate(struct vxt_pirepheral *p);
-VXT_API int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata);
+VXT_API struct vxt_peripheral *vxtu_mda_create(vxt_allocator *alloc);
+VXT_API void vxtu_mda_invalidate(struct vxt_peripheral *p);
+VXT_API int vxtu_mda_traverse(struct vxt_peripheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata);
 
-VXT_API struct vxt_pirepheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf);
-VXT_API void vxtu_disk_set_activity_callback(struct vxt_pirepheral *p, void (*cb)(int,void*), void *ud);
-VXT_API void vxtu_disk_set_boot_drive(struct vxt_pirepheral *p, int num);
-VXT_API vxt_error vxtu_disk_mount(struct vxt_pirepheral *p, int num, void *fp);
-VXT_API bool vxtu_disk_unmount(struct vxt_pirepheral *p, int num);
+VXT_API struct vxt_peripheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf);
+VXT_API void vxtu_disk_set_activity_callback(struct vxt_peripheral *p, void (*cb)(int,void*), void *ud);
+VXT_API void vxtu_disk_set_boot_drive(struct vxt_peripheral *p, int num);
+VXT_API vxt_error vxtu_disk_mount(struct vxt_peripheral *p, int num, void *fp);
+VXT_API bool vxtu_disk_unmount(struct vxt_peripheral *p, int num);
 
-VXT_API struct vxt_pirepheral *vxtu_uart_create(vxt_allocator *alloc, vxt_word base_port, int irq);
-VXT_API const struct vxtu_uart_registers *vxtu_uart_internal_registers(struct vxt_pirepheral *p);
-VXT_API void vxtu_uart_set_callbacks(struct vxt_pirepheral *p, struct vxtu_uart_interface *intrf);
-VXT_API void vxtu_uart_set_error(struct vxt_pirepheral *p, vxt_byte err);
-VXT_API void vxtu_uart_write(struct vxt_pirepheral *p, vxt_byte data);
-VXT_API bool vxtu_uart_ready(struct vxt_pirepheral *p);
-VXT_API vxt_word vxtu_uart_address(struct vxt_pirepheral *p);
+VXT_API struct vxt_peripheral *vxtu_uart_create(vxt_allocator *alloc, vxt_word base_port, int irq);
+VXT_API const struct vxtu_uart_registers *vxtu_uart_internal_registers(struct vxt_peripheral *p);
+VXT_API void vxtu_uart_set_callbacks(struct vxt_peripheral *p, struct vxtu_uart_interface *intrf);
+VXT_API void vxtu_uart_set_error(struct vxt_peripheral *p, vxt_byte err);
+VXT_API void vxtu_uart_write(struct vxt_peripheral *p, vxt_byte data);
+VXT_API bool vxtu_uart_ready(struct vxt_peripheral *p);
+VXT_API vxt_word vxtu_uart_address(struct vxt_peripheral *p);
 
 #ifdef __cplusplus
 }

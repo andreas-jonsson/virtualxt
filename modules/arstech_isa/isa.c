@@ -69,7 +69,7 @@ static void write(struct arstech_isa *d, vxt_pointer addr, vxt_byte data) {
 }
 
 static vxt_error install(struct arstech_isa *d, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(d);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(d);
     if (d->config.io_start || d->config.io_end)
         vxt_system_install_io(s, p, d->config.io_start, d->config.io_end);
     if (d->config.mem_start || d->config.mem_end)
@@ -92,7 +92,7 @@ static vxt_error reset(struct arstech_isa *d) {
 
 static vxt_error destroy(struct arstech_isa *d) {
     ArsExit();
-    vxt_system_allocator(VXT_GET_SYSTEM(d))(VXT_GET_PIREPHERAL(d), 0);
+    vxt_system_allocator(VXT_GET_SYSTEM(d))(VXT_GET_PERIPHERAL(d), 0);
     return VXT_NO_ERROR;
 }
 
@@ -128,16 +128,16 @@ static vxt_error config(struct arstech_isa *d, const char *section, const char *
 VXTU_MODULE_CREATE(arstech_isa, {
     DEVICE->config.irq_poll = -1;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->destroy = &destroy;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->config = &config;
-    PIREPHERAL->timer = &timer;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->destroy = &destroy;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->config = &config;
+    PERIPHERAL->timer = &timer;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
+    PERIPHERAL->io.read = &read;
+    PERIPHERAL->io.write = &write;
 })
 
 #else

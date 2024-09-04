@@ -23,10 +23,10 @@
 
 #include "../../modules/mouse/mouse.c"
 
-struct vxt_pirepheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args) {
+struct vxt_peripheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args) {
     return create(alloc, frontend, args);
 }
 
-bool mouse_push_event(struct vxt_pirepheral *p, const struct frontend_mouse_event *ev) {
+bool mouse_push_event(struct vxt_peripheral *p, const struct frontend_mouse_event *ev) {
     return push_event(p, ev);
 }

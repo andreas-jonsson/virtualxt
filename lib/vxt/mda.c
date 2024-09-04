@@ -90,7 +90,7 @@ static void out(struct mda_video *m, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(struct mda_video *m, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(m);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(m);
     vxt_system_install_mem(s, p, 0xB0000, 0xB7FFF);
     vxt_system_install_io(s, p, 0x3B0, 0x3BF);
     return VXT_NO_ERROR;
@@ -116,24 +116,24 @@ static enum vxt_pclass pclass(struct mda_video *m) {
     (void)m; return VXT_PCLASS_VIDEO;
 }
 
-VXT_API struct vxt_pirepheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, mda_video, {
-    vxtu_randomize(DEVICE->mem, sizeof(DEVICE->mem), (intptr_t)PIREPHERAL);
+VXT_API struct vxt_peripheral *vxtu_mda_create(vxt_allocator *alloc) VXT_PERIPHERAL_CREATE(alloc, mda_video, {
+    vxtu_randomize(DEVICE->mem, sizeof(DEVICE->mem), (intptr_t)PERIPHERAL);
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->io.read = &read;
-    PIREPHERAL->io.write = &write;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->pclass = &pclass;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->io.read = &read;
+    PERIPHERAL->io.write = &write;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })
 
-VXT_API void vxtu_mda_invalidate(struct vxt_pirepheral *p) { 
+VXT_API void vxtu_mda_invalidate(struct vxt_peripheral *p) {
     (VXT_GET_DEVICE(mda_video, p))->is_dirty = true;
 }
 
-VXT_API int vxtu_mda_traverse(struct vxt_pirepheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata) {
+VXT_API int vxtu_mda_traverse(struct vxt_peripheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata) {
     struct mda_video *m = VXT_GET_DEVICE(mda_video, p);
     int cursor = m->cursor_visible ? (m->cursor_offset & 0x7FF) : -1;
 

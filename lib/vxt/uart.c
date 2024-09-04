@@ -26,9 +26,9 @@
 #include <vxt/vxtu.h>
 
 #define DLAB ( (u->regs.lcr >> 7) != 0 )
-#define CONFIGURE(r) { if (u->callbacks.config) u->callbacks.config(VXT_GET_PIREPHERAL(u), &u->regs, (r), u->callbacks.udata); }
-#define PROCESS(d) { if (u->callbacks.data) u->callbacks.data(VXT_GET_PIREPHERAL(u), (d), u->callbacks.udata); }
-#define READY { if (u->callbacks.ready) u->callbacks.ready(VXT_GET_PIREPHERAL(u), u->callbacks.udata); }
+#define CONFIGURE(r) { if (u->callbacks.config) u->callbacks.config(VXT_GET_PERIPHERAL(u), &u->regs, (r), u->callbacks.udata); }
+#define PROCESS(d) { if (u->callbacks.data) u->callbacks.data(VXT_GET_PERIPHERAL(u), (d), u->callbacks.udata); }
+#define READY { if (u->callbacks.ready) u->callbacks.ready(VXT_GET_PERIPHERAL(u), u->callbacks.udata); }
 
 enum pendig_irq {
     PENDING_RX = 0x1,
@@ -139,7 +139,7 @@ static void out(struct uart *u, vxt_word port, vxt_byte data) {
 
             u->tx_data = data_bits_mask[u->regs.lcr & 3] & data;
             if (u->regs.mcr & 0x10) {
-                vxtu_uart_write(VXT_GET_PIREPHERAL(u), u->tx_data);
+                vxtu_uart_write(VXT_GET_PERIPHERAL(u), u->tx_data);
                 return;
             }
 
@@ -176,7 +176,7 @@ static void out(struct uart *u, vxt_word port, vxt_byte data) {
 }
 
 static vxt_error install(struct uart *u, vxt_system *s) {
-    struct vxt_pirepheral *p = VXT_GET_PIREPHERAL(u);
+    struct vxt_peripheral *p = VXT_GET_PERIPHERAL(u);
     vxt_system_install_io(s, p, u->base, u->base + 7);
 
     vxt_system_install_monitor(s, p, "Address", &u->base, VXT_MONITOR_SIZE_WORD|VXT_MONITOR_FORMAT_HEX);
@@ -216,50 +216,50 @@ static enum vxt_pclass pclass(struct uart *u) {
     (void)u; return VXT_PCLASS_UART;
 }
 
-VXT_API struct vxt_pirepheral *vxtu_uart_create(vxt_allocator *alloc, vxt_word base_port, int irq) VXT_PIREPHERAL_CREATE(alloc, uart, {
+VXT_API struct vxt_peripheral *vxtu_uart_create(vxt_allocator *alloc, vxt_word base_port, int irq) VXT_PERIPHERAL_CREATE(alloc, uart, {
     DEVICE->base = base_port;
     DEVICE->irq = irq;
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->pclass = &pclass;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
 })
 
-VXT_API const struct vxtu_uart_registers *vxtu_uart_internal_registers(struct vxt_pirepheral *p) {
+VXT_API const struct vxtu_uart_registers *vxtu_uart_internal_registers(struct vxt_peripheral *p) {
     return &VXT_GET_DEVICE(uart, p)->regs;
 }
 
-VXT_API void vxtu_uart_set_callbacks(struct vxt_pirepheral *p, struct vxtu_uart_interface *intrf) {
+VXT_API void vxtu_uart_set_callbacks(struct vxt_peripheral *p, struct vxtu_uart_interface *intrf) {
     VXT_GET_DEVICE(uart, p)->callbacks = *intrf;
 }
 
-VXT_API void vxtu_uart_set_error(struct vxt_pirepheral *p, vxt_byte err) {
+VXT_API void vxtu_uart_set_error(struct vxt_peripheral *p, vxt_byte err) {
     struct uart *u = VXT_GET_DEVICE(uart, p);
     u->regs.lsr |= err & 0x9E;
 
     if (u->regs.ien & IEN_ENABLE_LSR) {
         u->pending |= IEN_ENABLE_LSR;
-        vxt_system_interrupt(vxt_pirepheral_system(p), u->irq);
+        vxt_system_interrupt(vxt_peripheral_system(p), u->irq);
     }
 }
 
-VXT_API bool vxtu_uart_ready(struct vxt_pirepheral *p) {
+VXT_API bool vxtu_uart_ready(struct vxt_peripheral *p) {
     return !VXT_GET_DEVICE(uart, p)->has_rx_data;
 }
 
-VXT_API void vxtu_uart_write(struct vxt_pirepheral *p, vxt_byte data) {
+VXT_API void vxtu_uart_write(struct vxt_peripheral *p, vxt_byte data) {
     struct uart *u = VXT_GET_DEVICE(uart, p);
     u->rx_data = data;
     u->has_rx_data = true;
     if (u->regs.ien & IEN_ENABLE_RX) {
         u->pending |= PENDING_RX;
-        vxt_system_interrupt(vxt_pirepheral_system(p), u->irq);
+        vxt_system_interrupt(vxt_peripheral_system(p), u->irq);
     }
 }
 
-VXT_API vxt_word vxtu_uart_address(struct vxt_pirepheral *p) {
+VXT_API vxt_word vxtu_uart_address(struct vxt_peripheral *p) {
     return VXT_GET_DEVICE(uart, p)->base;
 }

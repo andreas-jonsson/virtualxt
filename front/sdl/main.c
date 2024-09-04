@@ -101,11 +101,11 @@ double cpu_frequency = (double)VXT_DEFAULT_FREQUENCY / 1000000.0;
 bool cpu_paused = false;
 
 int num_devices = 0;
-struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = { NULL };
+struct vxt_peripheral *devices[VXT_MAX_PERIPHERALS] = { NULL };
 #define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
 
 // Needed for detecting turbo mode.
-struct vxt_pirepheral *ppi_device = NULL;
+struct vxt_peripheral *ppi_device = NULL;
 
 SDL_atomic_t running = {1};
 SDL_mutex *emu_mutex = NULL;
@@ -203,7 +203,7 @@ static int emu_loop(void *ptr) {
 				}
 				num_cycles += res.cycles;
 			}
-			
+
 			frequency = vxtu_ppi_turbo_enabled(ppi_device) ? cpu_frequency : ((double)VXT_DEFAULT_FREQUENCY / 1000000.0);
 			frequency_hz = (int)(frequency * 1000000.0);
 			vxt_system_set_frequency(vxt, frequency_hz);
@@ -236,7 +236,7 @@ void monitors_window(mu_Context *ctx, vxt_system *s) {
 		mu_layout_row(ctx, 2, (int[]){ 120, -1 }, 0);
 		if (mu_button_ex(ctx, cpu_paused ? "Resume" : "Pause", 0, MU_OPT_ALIGNCENTER))
 			cpu_paused = !cpu_paused;
-		
+
 		mu_label(ctx, cpu_paused ? "Halted!" : "Running...");
 
 		for (vxt_byte i = 0; i < VXT_MAX_MONITORS;) {
@@ -252,7 +252,7 @@ void monitors_window(mu_Context *ctx, vxt_system *s) {
 				} else if (!open) {
 					continue;
 				}
-	
+
 				mu_layout_row(ctx, 2, (int[]){ mr_get_text_width(m->name, (int)strlen(m->name)) + 10, -1 }, 0);
 				mu_label(ctx, m->name);
 
@@ -312,7 +312,7 @@ static int render_callback(int width, int height, const vxt_byte *rgba, void *us
 static void audio_callback(void *udata, uint8_t *stream, int len) {
 	(void)udata;
 	len /= 2;
-	
+
 	SYNC(
 		for (int i = 0; i < len; i++) {
 			vxt_word sample = 0;
@@ -383,7 +383,7 @@ static const char *resolve_path(enum frontend_path_type type, const char *path) 
 
 	if (file_exist(buffer))
 		return buffer;
-	
+
 	const char *bp = SDL_GetBasePath();
 	bp = bp ? bp : ".";
 
@@ -410,7 +410,7 @@ static const char *resolve_path(enum frontend_path_type type, const char *path) 
 			case FRONTEND_MODULE_PATH: sprintf(buffer, "%s/modules/%s", sp, path); break;
 			default: break;
 		};
-		
+
 		if (file_exist(buffer))
 			return buffer;
 	}
@@ -467,7 +467,7 @@ static vxt_byte emu_control(enum frontend_ctrl_command cmd, vxt_byte data, void 
 			emuctrl_buffer[emuctrl_buffer_len++] = data;
 			break;
 		case FRONTEND_CTRL_POPEN:
-			if (!(emuctrl_file_handle = 
+			if (!(emuctrl_file_handle =
 				#ifdef _WIN32
 					_popen
 				#else
@@ -626,7 +626,7 @@ static int load_modules(void *user, const char *section, const char *name, const
 			}
 
 			for (vxtu_module_entry_func *f = const_func; *f; f++) {
-				struct vxt_pirepheral *p = (*f)(VXTU_CAST(user, void*, vxt_allocator*), (void*)&front_interface, value);
+				struct vxt_peripheral *p = (*f)(VXTU_CAST(user, void*, vxt_allocator*), (void*)&front_interface, value);
 				if (!p)
 					continue; // Assume the module chose not to be loaded.
 				APPEND_DEVICE(p);
@@ -645,7 +645,7 @@ static int load_modules(void *user, const char *section, const char *name, const
 	return 1;
 }
 
-static int configure_pirepherals(void *user, const char *section, const char *name, const char *value) {
+static int configure_peripherals(void *user, const char *section, const char *name, const char *value) {
 	return (vxt_system_configure(user, section, name, value) == VXT_NO_ERROR) ? 1 : 0;
 }
 
@@ -659,9 +659,9 @@ static void print_memory_map(vxt_system *s)	{
 		if (idx && (idx != prev_idx)) {
 			printf("[0x%.4X-", i);
 			while (map[++i] == idx);
-			printf("0x%.4X] %s\n", i - 1, vxt_pirepheral_name(vxt_system_pirepheral(s, idx)));
+			printf("0x%.4X] %s\n", i - 1, vxt_peripheral_name(vxt_system_peripheral(s, idx)));
 			prev_idx = idx;
-		}			
+		}
 	}
 
 	prev_idx = 0;
@@ -673,10 +673,10 @@ static void print_memory_map(vxt_system *s)	{
 		if (idx != prev_idx) {
 			printf("[0x%.5X-", i << 4);
 			while (map[++i] == idx);
-			printf("0x%.5X] %s\n", (i << 4) - 1, vxt_pirepheral_name(vxt_system_pirepheral(s, idx)));
+			printf("0x%.5X] %s\n", (i << 4) - 1, vxt_peripheral_name(vxt_system_peripheral(s, idx)));
 			prev_idx = idx;
 			i--;
-		}			
+		}
 	}
 }
 
@@ -853,7 +853,7 @@ int main(int argc, char *argv[]) {
 
 	int num_sticks = 0;
 	SDL_Joystick *sticks[2] = {NULL};
-	
+
 	printf("Initialize joysticks:\n");
 	if (!(num_sticks = SDL_NumJoysticks())) {
 		printf("No joystick found!\n");
@@ -888,7 +888,7 @@ int main(int argc, char *argv[]) {
 	front_interface.resolve_path = &resolve_path;
 	front_interface.ctrl.callback = &emu_control;
 	front_interface.disk.di = disk_interface;
-	
+
 	SDL_atomic_t icon_fade = {0};
 	if (!args.no_activity) {
 		front_interface.disk.activity_callback = &disk_activity_cb;
@@ -914,8 +914,8 @@ int main(int argc, char *argv[]) {
 	// Initializing this here is a bit late. But it works.
 	front_interface.ctrl.userdata = vxt;
 
-	if (ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &configure_pirepherals, vxt)) {
-		printf("ERROR: Could not configure all pirepherals!\n");
+	if (ini_parse(sprint("%s/" CONFIG_FILE_NAME, args.config), &configure_peripherals, vxt)) {
+		printf("ERROR: Could not configure all peripherals!\n");
 		return -1;
 	}
 
@@ -955,13 +955,13 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	printf("Installed pirepherals:\n");
-	for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
-		struct vxt_pirepheral *device = vxt_system_pirepheral(vxt, (vxt_byte)i);
+	printf("Installed peripherals:\n");
+	for (int i = 1; i < VXT_MAX_PERIPHERALS; i++) {
+		struct vxt_peripheral *device = vxt_system_peripheral(vxt, (vxt_byte)i);
 		if (device) {
-			printf("%d - %s\n", i, vxt_pirepheral_name(device));
+			printf("%d - %s\n", i, vxt_peripheral_name(device));
 
-			if (vxt_pirepheral_class(device) == VXT_PCLASS_PPI)
+			if (vxt_peripheral_class(device) == VXT_PCLASS_PPI)
 				ppi_device = device;
 		}
 	}
@@ -1152,7 +1152,7 @@ int main(int argc, char *argv[]) {
 				num_cycles = 0;
 				turbo = vxtu_ppi_turbo_enabled(ppi_device);
 			);
-			
+
 			if (ticks > 10000) {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - %.2f MHz%s", mhz, turbo ? " (Turbo)" : "");
 			} else {
@@ -1267,7 +1267,7 @@ int main(int argc, char *argv[]) {
 	mr_destroy(mr);
 	SDL_free(ctx);
 
-	SDL_DestroyTexture(disk_icon_texture); 
+	SDL_DestroyTexture(disk_icon_texture);
 	SDL_DestroyTexture(framebuffer);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);

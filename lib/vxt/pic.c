@@ -85,7 +85,7 @@ static int next(struct pic *c) {
         vxt_byte mask = 1 << i;
         if (!(has & mask))
             continue;
-        
+
         if ((c->request_reg & mask) && !(c->service_reg & mask)) {
             c->request_reg ^= mask;
             c->service_reg |= mask;
@@ -103,7 +103,7 @@ static void irq(struct pic *c, int n) {
 }
 
 static vxt_error install(struct pic *c, vxt_system *s) {
-    vxt_system_install_io(s, VXT_GET_PIREPHERAL(c), 0x20, 0x21);
+    vxt_system_install_io(s, VXT_GET_PERIPHERAL(c), 0x20, 0x21);
     return VXT_NO_ERROR;
 }
 
@@ -120,13 +120,13 @@ static const char *name(struct pic *c) {
     (void)c; return "PIC (Intel 8259)";
 }
 
-VXT_API struct vxt_pirepheral *vxtu_pic_create(vxt_allocator *alloc) VXT_PIREPHERAL_CREATE(alloc, pic, {
-    PIREPHERAL->install = &install;
-    PIREPHERAL->reset = &reset;
-    PIREPHERAL->name = &name;
-    PIREPHERAL->pclass = &pclass;
-    PIREPHERAL->io.in = &in;
-    PIREPHERAL->io.out = &out;
-    PIREPHERAL->pic.next = &next;
-    PIREPHERAL->pic.irq = &irq;
+VXT_API struct vxt_peripheral *vxtu_pic_create(vxt_allocator *alloc) VXT_PERIPHERAL_CREATE(alloc, pic, {
+    PERIPHERAL->install = &install;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->pclass = &pclass;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
+    PERIPHERAL->pic.next = &next;
+    PERIPHERAL->pic.irq = &irq;
 })

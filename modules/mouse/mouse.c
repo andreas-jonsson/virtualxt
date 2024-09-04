@@ -30,7 +30,7 @@
 #define BUFFER_SIZE 128
 
 struct serial_mouse {
-    struct vxt_pirepheral *uart;
+    struct vxt_peripheral *uart;
     vxt_word base_port;
 
     vxt_byte buffer[BUFFER_SIZE];
@@ -56,13 +56,13 @@ static bool push_data(struct serial_mouse *m, vxt_byte data) {
     return true;
 }
 
-static void uart_ready_cb(struct vxt_pirepheral *uart, void *udata) {
+static void uart_ready_cb(struct vxt_peripheral *uart, void *udata) {
     struct serial_mouse *m = (struct serial_mouse*)udata; (void)uart;
     if (m->buffer_len)
         vxtu_uart_write(uart, pop_data(m));
 }
 
-static void uart_config_cb(struct vxt_pirepheral *uart, const struct vxtu_uart_registers *regs, int idx, void *udata) {
+static void uart_config_cb(struct vxt_peripheral *uart, const struct vxtu_uart_registers *regs, int idx, void *udata) {
     struct serial_mouse *m = (struct serial_mouse*)udata; (void)uart;
 
     // Modem Control Register
@@ -74,9 +74,9 @@ static void uart_config_cb(struct vxt_pirepheral *uart, const struct vxtu_uart_r
 }
 
 static vxt_error install(struct serial_mouse *m, vxt_system *s) {
-    for (int i = 0; i < VXT_MAX_PIREPHERALS; i++) {
-        struct vxt_pirepheral *ip = vxt_system_pirepheral(s, (vxt_byte)i);
-        if (ip && (vxt_pirepheral_class(ip) == VXT_PCLASS_UART) && (vxtu_uart_address(ip) == m->base_port)) {
+    for (int i = 0; i < VXT_MAX_PERIPHERALS; i++) {
+        struct vxt_peripheral *ip = vxt_system_peripheral(s, (vxt_byte)i);
+        if (ip && (vxt_peripheral_class(ip) == VXT_PCLASS_UART) && (vxtu_uart_address(ip) == m->base_port)) {
             struct vxtu_uart_interface intrf = {
                 .config = &uart_config_cb,
                 .ready = &uart_ready_cb,
@@ -100,7 +100,7 @@ static const char *name(struct serial_mouse *m) {
     return "Microsoft Serial Mouse";
 }
 
-static bool push_event(struct vxt_pirepheral *p, const struct frontend_mouse_event *ev) {
+static bool push_event(struct vxt_peripheral *p, const struct frontend_mouse_event *ev) {
     struct serial_mouse *m = VXT_GET_DEVICE(serial_mouse, p);
     vxt_byte upper = 0;
     if (ev->xrel < 0)
@@ -113,7 +113,7 @@ static bool push_event(struct vxt_pirepheral *p, const struct frontend_mouse_eve
         push_data(m, (vxt_byte)(ev->yrel & 0x3F));
 }
 
-static struct vxt_pirepheral *create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PIREPHERAL_CREATE(alloc, serial_mouse, {
+static struct vxt_peripheral *create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PERIPHERAL_CREATE(alloc, serial_mouse, {
     if (sscanf(args, "%hx", &DEVICE->base_port) != 1) {
 		VXT_LOG("Invalid UART address: %s", args);
 		return NULL;
@@ -122,12 +122,12 @@ static struct vxt_pirepheral *create(vxt_allocator *alloc, void *frontend, const
     struct frontend_interface *fi = (struct frontend_interface*)frontend;
     if (fi && fi->set_mouse_adapter) {
 		struct frontend_mouse_adapter a;
-        a.device = (struct vxt_pirepheral*)PIREPHERAL;
+        a.device = (struct vxt_peripheral*)PERIPHERAL;
         a.push_event = &push_event;
 		fi->set_mouse_adapter(&a);
     }
 
-    PIREPHERAL->install = &install;
-    PIREPHERAL->name = &name;
+    PERIPHERAL->install = &install;
+    PERIPHERAL->name = &name;
 })
 VXTU_MODULE_ENTRIES(&create)

@@ -26,9 +26,9 @@
 
 #include "cga.h"
 
-static struct vxt_pirepheral *cga_module_create(vxt_allocator *alloc, void *frontend, const char *args) {
+static struct vxt_peripheral *cga_module_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)args;
-    struct vxt_pirepheral *p = cga_create(alloc);
+    struct vxt_peripheral *p = cga_create(alloc);
     if (!p)
         return NULL;
 

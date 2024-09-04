@@ -41,7 +41,7 @@ vxtu_static_allocator(ALLOCATOR, ALLOCATOR_SIZE)
 #define LOG(...) ( log_wrapper(__VA_ARGS__) )
 
 int num_devices = 0;
-struct vxt_pirepheral *devices[VXT_MAX_PIREPHERALS] = { NULL };
+struct vxt_peripheral *devices[VXT_MAX_PERIPHERALS] = { NULL };
 #define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
 
 int disk_head = 0;
@@ -50,16 +50,16 @@ int cga_width = -1;
 int cga_height = -1;
 vxt_dword cga_border = 0;
 
-float *sampler_get_buffer(struct vxt_pirepheral *p);
-struct vxt_pirepheral *sampler_create(vxt_allocator *alloc, int frequency, int num_samples, float (*generate)(int freq));
+float *sampler_get_buffer(struct vxt_peripheral *p);
+struct vxt_peripheral *sampler_create(vxt_allocator *alloc, int frequency, int num_samples, float (*generate)(int freq));
 
 struct frontend_video_adapter video_adapter = {0};
 struct frontend_mouse_adapter mouse_adapter = {0};
 
 vxt_system *sys = NULL;
-struct vxt_pirepheral *disk = NULL;
-struct vxt_pirepheral *ppi = NULL;
-struct vxt_pirepheral *sampler = NULL;
+struct vxt_peripheral *disk = NULL;
+struct vxt_peripheral *ppi = NULL;
+struct vxt_peripheral *sampler = NULL;
 
 static int log_wrapper(const char *fmt, ...) {
 	va_list args;
@@ -132,8 +132,8 @@ static int tell_file(vxt_system *s, void *fp) {
 	return disk_head;
 }
 
-static struct vxt_pirepheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
-	struct vxt_pirepheral *rom = vxtu_memory_create(&ALLOCATOR, base, size, true);
+static struct vxt_peripheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
+	struct vxt_peripheral *rom = vxtu_memory_create(&ALLOCATOR, base, size, true);
 	if (!vxtu_memory_device_fill(rom, data, size)) {
 		LOG("vxtu_memory_device_fill() failed!\n");
 		return NULL;
@@ -226,7 +226,7 @@ int wasm_step_emulation(int cycles) {
 void *wasm_audio_sampler_memory_pointer(void) {
 	if (!sampler)
 		return NULL;
-	return (void*)sampler_get_buffer(sampler);	
+	return (void*)sampler_get_buffer(sampler);
 }
 
 void wasm_initialize_emulator(int freq, int afreq, int bsize) {
@@ -235,9 +235,9 @@ void wasm_initialize_emulator(int freq, int afreq, int bsize) {
 	struct vxtu_disk_interface intrf = {
 		&read_file, &write_file, &seek_file, &tell_file
 	};
-	struct vxt_pirepheral *disk = vxtu_disk_create(&ALLOCATOR, &intrf);
+	struct vxt_peripheral *disk = vxtu_disk_create(&ALLOCATOR, &intrf);
 	vxtu_disk_set_activity_callback(disk, &js_disk_activity, NULL);
-	
+
 	ppi = vxtu_ppi_create(&ALLOCATOR);
 	sampler = sampler_create(ALLOCATOR, afreq, bsize, &generate_sample);
 
@@ -272,12 +272,12 @@ void wasm_initialize_emulator(int freq, int afreq, int bsize) {
 
 	sys = vxt_system_create(&ALLOCATOR, freq, devices);
 	vxt_system_initialize(sys);
-	
-	LOG("Installed pirepherals:\n");
-	for (int i = 1; i < VXT_MAX_PIREPHERALS; i++) {
-		struct vxt_pirepheral *device = vxt_system_pirepheral(sys, (vxt_byte)i);
+
+	LOG("Installed peripherals:\n");
+	for (int i = 1; i < VXT_MAX_PERIPHERALS; i++) {
+		struct vxt_peripheral *device = vxt_system_peripheral(sys, (vxt_byte)i);
 		if (device)
-			LOG("%d - %s\n", i, vxt_pirepheral_name(device));
+			LOG("%d - %s\n", i, vxt_peripheral_name(device));
 	}
 
 	int drive_num = (js_disk_size() > 1474560) ? 128 : 0;
