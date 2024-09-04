@@ -95,12 +95,15 @@ static void push_cs(CONSTSP(cpu) p, INST(inst)) {
 }
 
 static void extended_F(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(p); UNUSED(inst);
-   //p->regs.cs = pop(p);
-   //p->inst_queue_dirty = true;
-
-   // 286 extended instruction
-   //p->invalid = true;
+    UNUSED(inst);
+    #ifdef TESTING
+        // 8086 - pop cs
+        p->regs.cs = pop(p);
+        p->inst_queue_dirty = true;
+    #else
+        UNUSED(p);
+        // 286 extended instruction
+    #endif
 }
 
 static void or_8(CONSTSP(cpu) p, INST(inst)) {
