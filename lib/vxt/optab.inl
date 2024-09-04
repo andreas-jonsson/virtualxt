@@ -30,12 +30,12 @@
 //             http://aturing.umcs.maine.edu/~meadow/courses/cos335/80x86-Integer-Instruction-Set-Clocks.pdf
 
 static struct instruction const opcode_table[0x100] = {
-   {0x0, "ADD Eb Gb", true, 3, ARCH_8086, &add_0_10},
-   {0x1, "ADD Ev Gv", true, 3, ARCH_8086, &add_1_11},
-   {0x2, "ADD Gb Eb", true, 3, ARCH_8086, &add_2_12},
-   {0x3, "ADD Gv Ev", true, 3, ARCH_8086, &add_3_13},
-   {0x4, "ADD AL Ib", false, 4, ARCH_8086, &add_4_14},
-   {0x5, "ADD AX Iv", false, 4, ARCH_8086, &add_5_15},
+   {0x0, "ADD Eb Gb", true, 2, ARCH_8086, &add_0_10},
+   {0x1, "ADD Ev Gv", true, 2, ARCH_8086, &add_1_11},
+   {0x2, "ADD Gb Eb", true, 2, ARCH_8086, &add_2_12},
+   {0x3, "ADD Gv Ev", true, 2, ARCH_8086, &add_3_13},
+   {0x4, "ADD AL Ib", false, 2, ARCH_8086, &add_4_14},
+   {0x5, "ADD AX Iv", false, 2, ARCH_8086, &add_5_15},
    {0x6, "PUSH ES", false, 10, ARCH_8086, &push_es},
    {0x7, "POP ES", false, 8, ARCH_8086, &pop_es},
    {0x8, "OR Eb Gb", true, 3, ARCH_8086, &or_8},
@@ -45,7 +45,7 @@ static struct instruction const opcode_table[0x100] = {
    {0xC, "OR AL Ib", false, 4, ARCH_8086, &or_C},
    {0xD, "OR AX Iv", false, 4, ARCH_8086, &or_D},
    {0xE, "PUSH CS", false, 10, ARCH_8086, &push_cs},
-   {0xF, "POP CS", false, 8, ARCH_80286, &pop_cs},
+   {0xF, "EXTENDED", false, 8, ARCH_80286, &extended_F},
    {0x10, "ADC Eb Gb", true, 3, ARCH_8086, &add_0_10},
    {0x11, "ADC Ev Gv", true, 3, ARCH_8086, &add_1_11},
    {0x12, "ADC Gb Eb", true, 3, ARCH_8086, &add_2_12},

@@ -33,7 +33,6 @@
 #define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq(VXT_GET_DEVICE_PTR((p)->pic), (n)); }
 #define INST(n) const struct instruction * const n
 #define MOD_TARGET_MEM(mode) ((mode).mod < 3)
-#define ADD_CYCLE_MOD_MEM(p, n) { if (MOD_TARGET_MEM((p->mode))) (p)->cycles += (n); }
 
 enum architecture {
 	ARCH_INVALID,
@@ -96,42 +95,33 @@ static vxt_word get_ea_offset(CONSTSP(cpu) p) {
    CONSTSP(vxt_registers) r = &p->regs;
    CONSTSP(address_mode) m = &p->mode;
    vxt_word ea = 0;
-   int cycles = 0;
 
 	switch (m->mod) {
       case 0:
          switch (m->rm) {
             case 0:
                ea = r->bx + r->si;
-               cycles = 7;
                break;
             case 1:
                ea = r->bx + r->di;
-               cycles = 8;
                break;
             case 2:
                ea = r->bp + r->si;
-               cycles = 8;
                break;
             case 3:
                ea = r->bp + r->di;
-               cycles = 7;
                break;
             case 4:
                ea = r->si;
-               cycles = 5;
                break;
             case 5:
                ea = r->di;
-               cycles = 5;
                break;
             case 6:
                ea = m->disp;
-               cycles = 6;
                break;
             case 7:
                ea = r->bx;
-               cycles = 5;
                break;
          }
          break;
@@ -140,40 +130,31 @@ static vxt_word get_ea_offset(CONSTSP(cpu) p) {
          switch (m->rm) {
             case 0:
                ea = r->bx + r->si + m->disp;
-               cycles = 11;
                break;
             case 1:
                ea = r->bx + r->di + m->disp;
-               cycles = 12;
                break;
             case 2:
                ea = r->bp + r->si + m->disp;
-               cycles = 12;
                break;
             case 3:
                ea = r->bp + r->di + m->disp;
-               cycles = 11;
                break;
             case 4:
                ea = r->si + m->disp;
-               cycles = 9;
                break;
             case 5:
                ea = r->di + m->disp;
-               cycles = 9;
                break;
             case 6:
                ea = r->bp + m->disp;
-               cycles = 9;
                break;
             case 7:
                ea = r->bx + m->disp;
-               cycles = 9;
                break;
          }
          break;
 	}
-   p->ea_cycles = cycles;
 	return ea;
 }
 

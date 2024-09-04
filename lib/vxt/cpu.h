@@ -49,7 +49,7 @@ struct address_mode {
 struct cpu {
    struct vxt_registers regs;
    bool trap, halt, int28, invalid;
-   int cycles, ea_cycles;
+   int cycles;
    vxt_word inst_start;
 
    vxt_byte opcode, repeat;
