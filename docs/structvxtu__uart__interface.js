@@ -1,7 +1,7 @@
 var structvxtu__uart__interface =
 [
-    [ "config", "structvxtu__uart__interface.html#a96885b6cbc7fb9c81ee037a6f36d338a", null ],
-    [ "data", "structvxtu__uart__interface.html#a8ca7b06e203747ba4d4b1187df514eba", null ],
-    [ "ready", "structvxtu__uart__interface.html#ae0243397bb4a29a78057d7153bb56312", null ],
+    [ "config", "structvxtu__uart__interface.html#ad0f96ec6396dc0f42c81e66eda82885c", null ],
+    [ "data", "structvxtu__uart__interface.html#ab9a08ec5d26ace5b5f73fd344c4ccce0", null ],
+    [ "ready", "structvxtu__uart__interface.html#acbd192ac7e2084a087168d81d5d018c9", null ],
     [ "udata", "structvxtu__uart__interface.html#a697ce711b67313990d351b5c95f87aed", null ]
 ];
