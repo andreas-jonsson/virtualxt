@@ -171,8 +171,12 @@ void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
 	vxt_memclear(&p->regs, sizeof(p->regs));
 
-	//p->regs.flags = 0xF002;
-	p->regs.flags = 2; // 286 flag setup
+	p->regs.flags = 2;
+	#ifdef TESTING
+	   // 8086 flags
+	   p->regs.flags |= 0xF000;
+	#endif
+
 	p->regs.cs = 0xFFFF;
 	p->regs.debug = false;
 

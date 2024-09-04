@@ -652,7 +652,11 @@ static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.flags = (pop(p) & ALL_FLAGS) | 2;
-   p->regs.flags &= 0x0FFF; // 286 flags
+   #ifdef TESTING
+      p->regs.flags |= 0xF000; // 8086 flags
+   #else
+      p->regs.flags &= 0x0FFF; // 286 flags
+   #endif
 }
 
 static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
@@ -819,7 +823,11 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
    p->regs.flags = (pop(p) & ALL_FLAGS) | 2;
-   p->regs.flags &= 0x0FFF; // 286 flags
+   #ifdef TESTING
+      p->regs.flags |= 0xF000; // 8086 flags
+   #else
+      p->regs.flags &= 0x0FFF; // 286 flags
+   #endif
 }
 
 static void grp2_D0(CONSTSP(cpu) p, INST(inst)) {
