@@ -34,6 +34,11 @@
 #define INST(n) const struct instruction * const n
 #define MOD_TARGET_MEM(mode) ((mode).mod < 3)
 
+#define CR0_PE 0x0  // Protected mode enable
+#define CR0_MP 0x1  // Monitor processor extension
+#define CR0_EM 0x2  // Emulate processor extension
+#define CR0_TS 0x4  // Task switched
+
 enum architecture {
 	ARCH_INVALID,
 	ARCH_FPU,

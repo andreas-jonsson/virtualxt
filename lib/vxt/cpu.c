@@ -26,6 +26,7 @@
 #include "testing.h"
 
 #include "exec.inl"
+#include "exec_ext.inl"
 #include "optab.inl"
 
 #ifndef VXT_NO_PREFETCH
@@ -172,13 +173,15 @@ void cpu_reset(CONSTSP(cpu) p) {
 	vxt_memclear(&p->regs, sizeof(p->regs));
 
 	p->regs.flags = 2;
-	#ifdef TESTING
+	#ifdef FLAG8086
 	   // 8086 flags
 	   p->regs.flags |= 0xF000;
 	#endif
 
 	p->regs.cs = 0xFFFF;
 	p->regs.debug = false;
+
+	p->cr0 = p->cr3 = 0;
 
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);

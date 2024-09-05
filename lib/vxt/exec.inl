@@ -94,18 +94,6 @@ static void push_cs(CONSTSP(cpu) p, INST(inst)) {
    push(p, p->regs.cs);
 }
 
-static void extended_F(CONSTSP(cpu) p, INST(inst)) {
-    UNUSED(inst);
-    #ifdef TESTING
-        // 8086 - pop cs
-        p->regs.cs = pop(p);
-        p->inst_queue_dirty = true;
-    #else
-        UNUSED(p);
-        // 286 extended instruction
-    #endif
-}
-
 static void or_8(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    rm_write8(p, op_or8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));
@@ -377,6 +365,15 @@ static void bound_62(CONSTSP(cpu) p, INST(inst)) {
       p->regs.ip = p->inst_start;
       call_int(p, 5);
    }
+}
+
+static void arpl_63(CONSTSP(cpu) p, INST(inst)) {
+   VALIDATOR_DISCARD(p);
+   UNUSED(inst);
+
+   // TODO: Implement
+   VXT_LOG("ARPL is not implemented!");
+   p->regs.flags &= ~VXT_ZERO;
 }
 
 static void push_68(CONSTSP(cpu) p, INST(inst)) {
@@ -652,7 +649,7 @@ static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
 static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.flags = (pop(p) & ALL_FLAGS) | 2;
-   #ifdef TESTING
+   #ifdef FLAG8086
       p->regs.flags |= 0xF000; // 8086 flags
    #else
       p->regs.flags &= 0x0FFF; // 286 flags
@@ -823,7 +820,7 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
    p->regs.flags = (pop(p) & ALL_FLAGS) | 2;
-   #ifdef TESTING
+   #ifdef FLAG8086
       p->regs.flags |= 0xF000; // 8086 flags
    #else
       p->regs.flags &= 0x0FFF; // 286 flags
