@@ -493,7 +493,7 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
     // Try to set XT switches to VGA.
     for (int i = 0; i < VXT_MAX_PERIPHERALS; i++) {
         struct vxt_peripheral *ip = vxt_system_peripheral(s, (vxt_byte)i);
-        if (vxt_peripheral_class(ip) == VXT_PCLASS_PPI) {
+        if (ip && vxt_peripheral_class(ip) == VXT_PCLASS_PPI) {
             vxtu_ppi_set_xt_switches(ip, vxtu_ppi_xt_switches(ip) & 0xCF);
             break;
         }
