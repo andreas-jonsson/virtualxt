@@ -23,10 +23,10 @@
 
 #include "common.h"
 #include "cpu.h"
-#include "include/vxt/vxt.h"
 #include "testing.h"
 
 #include "exec.inl"
+#include "exec_ext.inl"
 #include "optab.inl"
 
 #ifndef VXT_NO_PREFETCH
@@ -112,43 +112,54 @@ static void prep_exec(CONSTSP(cpu) p) {
 }
 
 static void do_exec(CONSTSP(cpu) p) {
-   const CONSTSP(instruction) inst = &opcode_table[p->opcode];
-   ENSURE(inst->opcode == p->opcode);
+    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
+    ENSURE(inst->opcode == p->opcode);
 
-   p->ea_cycles = 0;
-   if (inst->modregrm)
-      read_modregrm(p);
-   inst->func(p, inst);
+    switch (inst->arch) {
+        case ARCH_8086:
+        case ARCH_80186:
+        case ARCH_80286:
+        case ARCH_FPU:
+            p->invalid = false;
+            break;
+        default:
+            p->invalid = true;
+    }
 
-   p->cycles += inst->cycles;
-   p->cycles += p->ea_cycles;
+    if (inst->modregrm)
+        read_modregrm(p);
+    inst->func(p, inst);
 
-   if (UNLIKELY(p->inst_queue_dirty)) {
-      p->inst_queue_count = 0;
-   } else {
-      #ifndef VXT_NO_PREFETCH
-         prefetch(p, (p->cycles / 2) - p->bus_transfers); // TODO: Round up or down?
-      #endif
-   }
+    if (p->invalid)
+        call_int(p, 6);
+
+    p->cycles += inst->cycles;
+
+    if (UNLIKELY(p->inst_queue_dirty)) {
+        p->inst_queue_count = 0;
+    } else {
+        #ifndef VXT_NO_PREFETCH
+            prefetch(p, (p->cycles / 2) - p->bus_transfers); // TODO: Round up or down?
+        #endif
+    }
 }
 
 int cpu_step(CONSTSP(cpu) p) {
-   VALIDATOR_BEGIN(p, &p->regs);
+    VALIDATOR_BEGIN(p, &p->regs);
 
-   prep_exec(p);
-   if (LIKELY(!p->halt)) {
-      read_opcode(p);
-      do_exec(p);
-   } else {
-      p->cycles++;
-   }
+    prep_exec(p);
+    if (LIKELY(!p->halt)) {
+        read_opcode(p);
+        do_exec(p);
+    } else {
+        p->cycles++;
+    }
 
-   const CONSTSP(instruction) inst = &opcode_table[p->opcode];
-   VALIDATOR_END(p, inst->name, p->opcode, inst->modregrm, p->cycles, &p->regs);
-   p->invalid = inst->arch != ARCH_8086;
+    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
+    VALIDATOR_END(p, inst->name, p->opcode, inst->modregrm, p->cycles, &p->regs);
 
-   ENSURE(p->cycles > 0);
-   return p->cycles;
+    ENSURE(p->cycles > 0);
+    return p->cycles;
 }
 
 void cpu_reset_cycle_count(CONSTSP(cpu) p) {
@@ -161,9 +172,16 @@ void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
 	vxt_memclear(&p->regs, sizeof(p->regs));
 
-	p->regs.flags = 0xF002;
+	p->regs.flags = 2;
+	#ifdef FLAG8086
+	   // 8086 flags
+	   p->regs.flags |= 0xF000;
+	#endif
+
 	p->regs.cs = 0xFFFF;
 	p->regs.debug = false;
+
+	p->cr0 = p->cr3 = 0;
 
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);

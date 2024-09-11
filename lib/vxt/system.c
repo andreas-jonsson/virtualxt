@@ -273,6 +273,7 @@ VXT_API void vxt_system_wait(CONSTP(vxt_system) s, int cycles) {
 }
 
 VXT_API void vxt_system_interrupt(CONSTP(vxt_system) s, int n) {
+	s->cpu.halt = false;
     if (s->cpu.pic)
         s->cpu.pic->pic.irq(VXT_GET_DEVICE_PTR(s->cpu.pic), n);
 }

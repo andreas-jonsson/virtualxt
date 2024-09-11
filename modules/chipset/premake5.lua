@@ -1,3 +1,4 @@
 files {
-    "pcxt.c"
+    "chipset.c",
+    "kbc.c"
 }

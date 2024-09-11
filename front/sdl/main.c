@@ -104,7 +104,7 @@ int num_devices = 0;
 struct vxt_peripheral *devices[VXT_MAX_PERIPHERALS] = { NULL };
 #define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
 
-// Needed for detecting turbo mode.
+// Needed for detecting turbo mode on XT machines.
 struct vxt_peripheral *ppi_device = NULL;
 
 SDL_atomic_t running = {1};
@@ -204,7 +204,7 @@ static int emu_loop(void *ptr) {
 				num_cycles += res.cycles;
 			}
 
-			frequency = vxtu_ppi_turbo_enabled(ppi_device) ? cpu_frequency : ((double)VXT_DEFAULT_FREQUENCY / 1000000.0);
+			frequency = (!ppi_device || vxtu_ppi_turbo_enabled(ppi_device)) ? cpu_frequency : ((double)VXT_DEFAULT_FREQUENCY / 1000000.0);
 			frequency_hz = (int)(frequency * 1000000.0);
 			vxt_system_set_frequency(vxt, frequency_hz);
 		);
@@ -699,8 +699,8 @@ static bool write_default_config(const char *path, bool clean) {
 		"bios=0xFE000,GLABIOS.ROM\n"
 		"uart=0x3F8,4 \t;COM1\n"
 		"uart=0x2F8,3 \t;COM2\n"
-		"cga=\n"
-		";vga=vgabios.bin\n"
+		";cga=\n"
+		"vga=vgabios.bin\n"
 		"disk=\n"
 		"bios=0xE0000,vxtx.bin \t;DISK\n"
 		"rtc=0x240\n"
@@ -968,7 +968,7 @@ int main(int argc, char *argv[]) {
 
 	if (!ppi_device) {
 		printf("No PPI device!\n");
-		return -1;
+		//return -1;
 	}
 
 	if (!disk_controller.device) {
@@ -1109,7 +1109,7 @@ int main(int argc, char *argv[]) {
 					break;
 				case SDL_KEYUP:
 					if (e.key.keysym.sym == SDLK_F11) {
-						if (e.key.keysym.mod & KMOD_ALT) {
+						if (ppi_device && (e.key.keysym.mod & KMOD_ALT)) {
 							printf("Toggle turbo!\n");
 							SYNC(
 								vxt_byte data = ppi_device->io.in(VXT_GET_DEVICE_PTR(ppi_device), 0x61);
@@ -1150,7 +1150,7 @@ int main(int argc, char *argv[]) {
 			SYNC(
 				mhz = (double)num_cycles / 500000.0;
 				num_cycles = 0;
-				turbo = vxtu_ppi_turbo_enabled(ppi_device);
+				turbo = ppi_device && vxtu_ppi_turbo_enabled(ppi_device);
 			);
 
 			if (ticks > 10000) {

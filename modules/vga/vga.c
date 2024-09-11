@@ -37,6 +37,7 @@ References: https://www.scs.stanford.edu/10wi-cs140/pintos/specs/freevga/vga/vga
 #define MEMORY_START 0xA0000
 #define CGA_BASE 0x18000
 #define CURSOR_TIMING 333333
+#define VGA_WAITSTATES 1
 
 #define MEMORY(p, i) ((p)[(i) & (MEMORY_SIZE - 1)])
 
@@ -203,6 +204,7 @@ static void update_video_mode(struct vga_video *v) {
 
 static vxt_byte read(struct vga_video *v, vxt_pointer addr) {
     addr -= MEMORY_START;
+    vxt_system_wait(VXT_GET_SYSTEM(v), VGA_WAITSTATES);
 
 	if (v->textmode || (v->bpp != 4))
         return MEMORY(v->mem, addr);
@@ -233,6 +235,7 @@ static vxt_byte read(struct vga_video *v, vxt_pointer addr) {
 static void write(struct vga_video *v, vxt_pointer addr, vxt_byte data) {
     addr -= MEMORY_START;
     v->is_dirty = true;
+    vxt_system_wait(VXT_GET_SYSTEM(v), VGA_WAITSTATES);
 
 	if (v->textmode || (v->bpp != 4)) {
         MEMORY(v->mem, addr) = data;
@@ -287,6 +290,7 @@ static void write(struct vga_video *v, vxt_pointer addr, vxt_byte data) {
 }
 
 static vxt_byte in(struct vga_video *v, vxt_word port) {
+    vxt_system_wait(VXT_GET_SYSTEM(v), VGA_WAITSTATES);
     switch (port) {
         case 0x3C0:
             return v->reg.attr_addr;
@@ -346,6 +350,8 @@ static vxt_byte in(struct vga_video *v, vxt_word port) {
 
 static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
     v->is_dirty = true;
+    vxt_system_wait(VXT_GET_SYSTEM(v), VGA_WAITSTATES);
+
     switch (port) {
         case 0x3C0:
         case 0x3C1:
@@ -487,7 +493,7 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
     // Try to set XT switches to VGA.
     for (int i = 0; i < VXT_MAX_PERIPHERALS; i++) {
         struct vxt_peripheral *ip = vxt_system_peripheral(s, (vxt_byte)i);
-        if (vxt_peripheral_class(ip) == VXT_PCLASS_PPI) {
+        if (ip && vxt_peripheral_class(ip) == VXT_PCLASS_PPI) {
             vxtu_ppi_set_xt_switches(ip, vxtu_ppi_xt_switches(ip) & 0xCF);
             break;
         }
