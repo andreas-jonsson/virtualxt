@@ -25,6 +25,7 @@ VXT_PACK(struct) memory {{
 
 #define NAME_SIZE 256
 #define CHECK_REG(reg) TASSERT(r->reg == regs.reg, "Expected the value of register '" #reg "' to be 0x%X(%d) but it was 0x%X(%d)", regs.reg, regs.reg, r->reg, r->reg)
+#define CHECK_SEG_REG(reg) TASSERT(r->reg.seg == regs.reg, "Expected the value of segment register '" #reg "' to be 0x%X(%d) but it was 0x%X(%d)", regs.reg, regs.reg, r->reg.seg, r->reg.seg)
 
 #ifdef TESTING
 
@@ -58,7 +59,7 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
         struct registers regs;
         TENSURE(fread(&regs, sizeof(struct registers), 1, fp) == 1);
         r->ax = regs.ax; r->bx = regs.bx; r->cx = regs.cx; r->dx = regs.dx;
-        r->cs = regs.cs; r->ss = regs.ss; r->ds = regs.ds; r->es = regs.es;
+        r->cs.seg = regs.cs; r->ss.seg = regs.ss; r->ds.seg = regs.ds; r->es.seg = regs.es;
         r->sp = regs.sp; r->bp = regs.bp; r->si = regs.si; r->di = regs.di;
         r->ip = regs.ip; r->flags = regs.flags;
 
@@ -85,10 +86,10 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
         CHECK_REG(cx);
         CHECK_REG(dx);
 
-        CHECK_REG(cs);
-        CHECK_REG(ss);
-        CHECK_REG(ds);
-        CHECK_REG(es);
+        CHECK_SEG_REG(cs);
+        CHECK_SEG_REG(ss);
+        CHECK_SEG_REG(ds);
+        CHECK_SEG_REG(es);
 
         CHECK_REG(sp);
         CHECK_REG(bp);

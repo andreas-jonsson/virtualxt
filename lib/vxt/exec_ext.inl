@@ -31,7 +31,7 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
     #ifdef TESTING
 
         // 8086 - pop cs
-        p->regs.cs = pop(p);
+        p->regs.cs.seg = pop(p);
         p->inst_queue_dirty = true;
 
     #else
