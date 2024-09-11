@@ -245,7 +245,7 @@ void wasm_initialize_emulator(int freq, int afreq, int bsize) {
 	APPEND_DEVICE(load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000));
 	APPEND_DEVICE(load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000));
 	APPEND_DEVICE(vxtu_uart_create(&ALLOCATOR, 0x3F8, 4));
-	APPEND_DEVICE(vxtu_pic_create(&ALLOCATOR));
+	APPEND_DEVICE(vxtu_pic_create(&ALLOCATOR, NULL));
 	APPEND_DEVICE(vxtu_dma_create(&ALLOCATOR));
 	APPEND_DEVICE(vxtu_pit_create(&ALLOCATOR));
 	APPEND_DEVICE(ppi);
