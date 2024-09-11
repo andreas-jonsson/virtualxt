@@ -27,9 +27,14 @@
 #include <stdio.h>
 #include <string.h>
 
+// AT kbc controller
+struct vxt_peripheral *kbc_create(vxt_allocator *alloc);
+bool kbc_key_event(struct vxt_peripheral *p, enum vxtu_scancode key, bool force);
+vxt_int16 kbc_generate_sample(struct vxt_peripheral *p, int freq);
+
 static struct vxt_peripheral *pic_create(vxt_allocator *alloc, void *frontend, const char *args) {
-    (void)frontend; (void)args;
-    return vxtu_pic_create(alloc);
+    (void)frontend;
+	return vxtu_pic_create(alloc, strcmp(args, "at") ? NULL : vxtu_pic_create(alloc, NULL));
 }
 
 static struct vxt_peripheral *dma_create(vxt_allocator *alloc, void *frontend, const char *args) {
@@ -65,26 +70,43 @@ static vxt_error ppi_config(void *dev, const char *section, const char *key, con
     return VXT_NO_ERROR;
 }
 
-static struct vxt_peripheral *ppi_create(vxt_allocator *alloc, void *frontend, const char *args) {
+static struct vxt_peripheral *ppi_kbc_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)args;
+	
+	struct vxt_peripheral *p = NULL;
+	bool (*key_event)(struct vxt_peripheral*,enum vxtu_scancode,bool) = NULL;
+	vxt_int16 (*generate_sample)(struct vxt_peripheral*,int) = NULL;
+	
+	if (!strcmp(args, "at")) {
+		VXT_LOG("AT Chipset selected!");
+		if (!(p = kbc_create(alloc)))
+			return NULL;
 
-    struct vxt_peripheral *p = vxtu_ppi_create(alloc);
-    if (!p) return NULL;
-
+		key_event = &kbc_key_event;
+		generate_sample = &kbc_generate_sample;
+	} else {
+		VXT_LOG("PC/XT Chipset selected!");
+		if (!(p = vxtu_ppi_create(alloc)))
+			return NULL;
+		
+		p->config = &ppi_config;
+		
+		key_event = &vxtu_ppi_key_event;
+		generate_sample = &vxtu_ppi_generate_sample;
+	}
+	
 	if (frontend) {
 		struct frontend_interface *fi = (struct frontend_interface*)frontend;
 		if (fi->set_keyboard_controller) {
-			struct frontend_keyboard_controller controller = { p, &vxtu_ppi_key_event };
+			struct frontend_keyboard_controller controller = { p, key_event };
 			fi->set_keyboard_controller(&controller);
 		}
 		if (fi->set_audio_adapter) {
-			struct frontend_audio_adapter adapter = { p, &vxtu_ppi_generate_sample };
+			struct frontend_audio_adapter adapter = { p, generate_sample };
 			fi->set_audio_adapter(&adapter);
 		}
 	}
-
-    p->config = &ppi_config;
     return p;
 }
 
-VXTU_MODULE_ENTRIES(&pic_create, &dma_create, &pit_create, &ppi_create)
+VXTU_MODULE_ENTRIES(&pic_create, &dma_create, &pit_create, &ppi_kbc_create)
