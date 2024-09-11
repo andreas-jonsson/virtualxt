@@ -29,7 +29,7 @@
 #include "cpu.h"
 #include "flags.h"
 
-#define TRACE(p, ip, data) { if ((p)->tracer) (p)->tracer((p)->s, VXT_POINTER((p)->regs.cs, (ip)), (data)); }
+#define TRACE(p, ip, data) { if ((p)->tracer) (p)->tracer((p)->s, VXT_POINTER((p)->regs.cs.seg, (ip)), (data)); }
 #define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq(VXT_GET_DEVICE_PTR((p)->pic), (n)); }
 #define INST(n) const struct instruction * const n
 #define MOD_TARGET_MEM(mode) ((mode).mod < 3)
@@ -68,7 +68,7 @@ static vxt_word sign_extend16(vxt_byte v) {
 static vxt_byte read_opcode8(CONSTSP(cpu) p) {
    vxt_byte data;
    vxt_word ip = p->regs.ip;
-   vxt_pointer ptr = VXT_POINTER(p->regs.cs, ip);
+   vxt_pointer ptr = VXT_POINTER(p->regs.cs.seg, ip);
 
    if (p->inst_queue_count > 0) {
       data = *p->inst_queue;
@@ -273,43 +273,43 @@ static vxt_word seg_read16(CONSTSP(cpu) p) {
    CONSTSP(vxt_registers) r = &p->regs;
    switch (p->mode.reg & 3) {
 		case 0:
-         return r->es;
+         return r->es.seg;
 		case 1:
-         return r->cs;
+         return r->cs.seg;
 		case 2:
-			return r->ss;
+			return r->ss.seg;
 		case 3:
-			return r->ds;
+			return r->ds.seg;
 		default:
          UNREACHABLE(0); // Not sure what should happen here?
    }
 }
 
 static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
-   CONSTSP(vxt_registers) r = &p->regs;
-   switch (p->mode.reg & 3) {
+	CONSTSP(vxt_registers) r = &p->regs;
+	switch (p->mode.reg & 3) {
 		case 0:
-         r->es = data;
-         return;
+			r->es.seg = data;
+			return;
 		case 1:
-         r->cs = data;
-         p->inst_queue_dirty = true;
-         return;
+			r->cs.seg = data;
+			p->inst_queue_dirty = true;
+			return;
 		case 2:
-			r->ss = data;
-         return;
+			r->ss.seg = data;
+			return;
 		case 3:
-			r->ds = data;
-         return;
+			r->ds.seg = data;
+			return;
 		default:
-         UNREACHABLE(); // Not sure what should happen here?
-   }
+			UNREACHABLE(); // Not sure what should happen here?
+	}
 }
 
 #define RM_FUNC(a, b)                                               \
    static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                 \
       if (MOD_TARGET_MEM(p->mode)) {                                \
-         vxt_pointer ea = VXT_POINTER(p->seg, get_ea_offset(p));	\
+         vxt_pointer ea = VXT_POINTER(p->seg.seg, get_ea_offset(p));\
          return cpu_read_ ## a (p, ea);                             \
       } else {                                                      \
          return reg_read ## b (&p->regs, p->mode.rm);               \
@@ -318,7 +318,7 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
                                                                 	\
    static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {     \
       if (MOD_TARGET_MEM(p->mode)) {                                \
-         vxt_pointer ea = VXT_POINTER(p->seg, get_ea_offset(p));	\
+         vxt_pointer ea = VXT_POINTER(p->seg.seg, get_ea_offset(p));\
          cpu_write_ ## a (p, ea, data);                             \
       } else {                                                      \
          reg_write ## b (&p->regs, p->mode.rm, data);               \
@@ -404,11 +404,11 @@ static void call_int(CONSTSP(cpu) p, int n) {
 	CONSTSP(vxt_registers) r = &p->regs;
 
 	push(p, (r->flags & ALL_FLAGS) | 0xF002);
-	push(p, r->cs);
+	push(p, r->cs.seg);
 	push(p, r->ip);
 
 	r->ip = cpu_read_word(p, (vxt_pointer)n * 4);
-	r->cs = cpu_read_word(p, (vxt_pointer)n * 4 + 2);
+	r->cs.seg = cpu_read_word(p, (vxt_pointer)n * 4 + 2);
 	r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
 	p->inst_queue_dirty = true;
 

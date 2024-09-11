@@ -95,7 +95,7 @@ static void execute_and_set(vxt_system *s, struct disk *c, bool read) {
         r->ah = 1;
         r->flags |= VXT_CARRY;
 	} else {
-        r->al = execute_operation(s, c, r->dl, read, VXT_POINTER(r->es, r->bx), (vxt_word)r->ch + (r->cl / 64) * 256, (vxt_word)r->cl & 0x3F, (vxt_word)r->dh, r->al);
+        r->al = execute_operation(s, c, r->dl, read, VXT_POINTER(r->es.seg, r->bx), (vxt_word)r->ch + (r->cl / 64) * 256, (vxt_word)r->cl & 0x3F, (vxt_word)r->dh, r->al);
         r->ah = 0;
         r->flags &= ~VXT_CARRY;
 	}

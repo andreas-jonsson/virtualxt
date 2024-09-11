@@ -109,7 +109,7 @@ static vxt_byte mem_read(struct gdb *dbg, vxt_pointer addr) {
         struct vxt_registers *vreg = vxt_system_registers(s);
         for (int i = 0; i < dbg->state.num_bps; i++) {
             struct breakpoint *bp = &dbg->state.bps[i];
-            if (VXT_POINTER(vreg->cs, vreg->ip) == bp->addr && bp->ty > 2) {
+            if (VXT_POINTER(vreg->cs.seg, vreg->ip) == bp->addr && bp->ty > 2) {
                 VXT_LOG("Trigger memory read watch: 0x%X", addr);
                 vreg->debug = true;
                 break;
@@ -128,7 +128,7 @@ static void mem_write(struct gdb *dbg, vxt_pointer addr, vxt_byte data) {
         struct vxt_registers *vreg = vxt_system_registers(s);
         for (int i = 0; i < dbg->state.num_bps; i++) {
             struct breakpoint *bp = &dbg->state.bps[i];
-            if (VXT_POINTER(vreg->cs, vreg->ip) == bp->addr && (bp->ty == 2 || bp->ty == 4)) {
+            if (VXT_POINTER(vreg->cs.seg, vreg->ip) == bp->addr && (bp->ty == 2 || bp->ty == 4)) {
                 VXT_LOG("Trigger memory write watch: 0x%X", addr);
                 vreg->debug = true;
                 break;
@@ -243,7 +243,7 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
     struct vxt_registers *vreg = vxt_system_registers(s);
     for (int i = 0; i < dbg->state.num_bps; i++) {
         struct breakpoint *bp = &dbg->state.bps[i];
-        if (VXT_POINTER(vreg->cs, vreg->ip) == bp->addr && bp->ty < 2) {
+        if (VXT_POINTER(vreg->cs.seg, vreg->ip) == bp->addr && bp->ty < 2) {
             vreg->debug = true;
             break;
         }
@@ -273,14 +273,14 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
         r[GDB_CPU_I386_REG_ESI] = vreg->si;
         r[GDB_CPU_I386_REG_EDI] = vreg->di;
 
-        r[GDB_CPU_I386_REG_CS] = vreg->cs;
-        r[GDB_CPU_I386_REG_SS] = vreg->ss;
-        r[GDB_CPU_I386_REG_DS] = vreg->ds;
-        r[GDB_CPU_I386_REG_ES] = vreg->es;
+        r[GDB_CPU_I386_REG_CS] = vreg->cs.seg;
+        r[GDB_CPU_I386_REG_SS] = vreg->ss.seg;
+        r[GDB_CPU_I386_REG_DS] = vreg->ds.seg;
+        r[GDB_CPU_I386_REG_ES] = vreg->es.seg;
 
         r[GDB_CPU_I386_REG_PS] = vreg->flags;
-        r[GDB_CPU_I386_REG_PC] = vreg->cs * 16 + vreg->ip;
-        r[GDB_CPU_I386_REG_ESP] = vreg->ss * 16 + vreg->sp;
+        r[GDB_CPU_I386_REG_PC] = vreg->cs.seg * 16 + vreg->ip;
+        r[GDB_CPU_I386_REG_ESP] = vreg->ss.seg * 16 + vreg->sp;
         r[GDB_CPU_I386_REG_FS] = r[GDB_CPU_I386_REG_GS] = 0;
 
         if (gdb_main(&dbg->state)) {
@@ -299,10 +299,10 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
         vreg->si = (vxt_word)r[GDB_CPU_I386_REG_ESI];
         vreg->di = (vxt_word)r[GDB_CPU_I386_REG_EDI];
 
-        vreg->cs = (vxt_word)r[GDB_CPU_I386_REG_CS];
-        vreg->ss = (vxt_word)r[GDB_CPU_I386_REG_SS];
-        vreg->ds = (vxt_word)r[GDB_CPU_I386_REG_DS];
-        vreg->es = (vxt_word)r[GDB_CPU_I386_REG_ES];
+        vreg->cs.seg = (vxt_word)r[GDB_CPU_I386_REG_CS];
+        vreg->ss.seg = (vxt_word)r[GDB_CPU_I386_REG_SS];
+        vreg->ds.seg = (vxt_word)r[GDB_CPU_I386_REG_DS];
+        vreg->es.seg = (vxt_word)r[GDB_CPU_I386_REG_ES];
 
         vreg->flags = (vxt_word)(r[GDB_CPU_I386_REG_PS] & ALL_FLAGS) | 0xF002;
         vreg->ip = (vxt_word)(r[GDB_CPU_I386_REG_PC] - r[GDB_CPU_I386_REG_CS] * 16);

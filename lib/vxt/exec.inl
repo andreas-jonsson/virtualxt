@@ -55,27 +55,27 @@ static void add_5_15(CONSTSP(cpu) p, INST(inst)) {
 
 #undef CARRY
 
-#define PUSH_POP(r)                                            \
-   static void push_ ## r (CONSTSP(cpu) p, INST(inst)) {       \
+#define PUSH_POP(n, r)                                         \
+   static void push_ ## n (CONSTSP(cpu) p, INST(inst)) {       \
       UNUSED(inst);                                            \
       push(p, p->regs.r);                                      \
    }                                                           \
                                                                \
-   static void pop_ ## r (CONSTSP(cpu) p, INST(inst)) {        \
+   static void pop_ ## n (CONSTSP(cpu) p, INST(inst)) {        \
       UNUSED(inst);                                            \
       p->regs.r = pop(p);                                      \
    }                                                           \
 
-PUSH_POP(es)
-PUSH_POP(ss)
-PUSH_POP(ds)
-PUSH_POP(ax)
-PUSH_POP(bx)
-PUSH_POP(cx)
-PUSH_POP(dx)
-PUSH_POP(bp)
-PUSH_POP(si)
-PUSH_POP(di)
+PUSH_POP(es, es.seg)
+PUSH_POP(ss, ss.seg)
+PUSH_POP(ds, ds.seg)
+PUSH_POP(ax, ax)
+PUSH_POP(bx, bx)
+PUSH_POP(cx, cx)
+PUSH_POP(dx, dx)
+PUSH_POP(bp, bp)
+PUSH_POP(si, si)
+PUSH_POP(di, di)
 #undef PUSH_POP
 
 static void push_sp(CONSTSP(cpu) p, INST(inst)) {
@@ -91,7 +91,7 @@ static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
 
 static void push_cs(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   push(p, p->regs.cs);
+   push(p, p->regs.cs.seg);
 }
 
 static void or_8(CONSTSP(cpu) p, INST(inst)) {
@@ -400,7 +400,7 @@ static void push_6A(CONSTSP(cpu) p, INST(inst)) {
 
 static void insb_6C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_write_byte(p, VXT_POINTER(p->regs.ds, p->regs.si), system_in(p->s, p->regs.dx));
+   cpu_write_byte(p, VXT_POINTER(p->regs.ds.seg, p->regs.si), system_in(p->s, p->regs.dx));
    update_di_si(p, 1);
 }
 
@@ -412,7 +412,7 @@ static void insw_6D(CONSTSP(cpu) p, INST(inst)) {
 
 static void outsb_6E(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   system_out(p->s, p->regs.dx, cpu_read_byte(p, VXT_POINTER(p->regs.ds, p->regs.si)));
+   system_out(p->s, p->regs.dx, cpu_read_byte(p, VXT_POINTER(p->regs.ds.seg, p->regs.si)));
    update_di_si(p, 1);
 }
 
@@ -581,7 +581,7 @@ static void mov_8C(CONSTSP(cpu) p, INST(inst)) {
 
 static void lea_8D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   reg_write16(&p->regs, p->mode.reg, VXT_POINTER(p->seg, get_ea_offset(p)) - (p->seg << 4));
+   reg_write16(&p->regs, p->mode.reg, VXT_POINTER(p->seg.seg, get_ea_offset(p)) - (p->seg.seg << 4));
 }
 
 static void mov_8E(CONSTSP(cpu) p, INST(inst)) {
@@ -629,10 +629,10 @@ static void call_9A(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word ip = read_opcode16(p);
    vxt_word cs = read_opcode16(p);
-   push(p, p->regs.cs);
+   push(p, p->regs.cs.seg);
    push(p, p->regs.ip);
    p->regs.ip = ip;
-   p->regs.cs = cs;
+   p->regs.cs.seg = cs;
    p->inst_queue_dirty = true;
 }
 
@@ -668,7 +668,7 @@ static void lahf_9F(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A0(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, read_opcode16(p)));
+   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg.seg, read_opcode16(p)));
 }
 
 static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
@@ -678,7 +678,7 @@ static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_write_byte(p, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.al);
+   cpu_write_byte(p, VXT_POINTER(p->seg.seg, read_opcode16(p)), p->regs.al);
 }
 
 static void mov_A3(CONSTSP(cpu) p, INST(inst)) {
@@ -735,7 +735,7 @@ static void ret_C3(CONSTSP(cpu) p, INST(inst)) {
       UNUSED(inst);                                                  				\
       vxt_word offset = get_ea_offset(p);                     						\
       reg_write16(&p->regs, p->mode.reg, cpu_segment_read_word(p, p->seg, offset));	\
-      p->regs.r = cpu_segment_read_word(p, p->seg, offset + 2);						\
+      p->regs.r.seg = cpu_segment_read_word(p, p->seg, offset + 2);					\
    }                                                                 				\
 
 LOAD(les_C4, es)
@@ -783,7 +783,7 @@ static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word sp = read_opcode16(p);
    p->regs.ip = pop(p);
-   p->regs.cs = pop(p);
+   p->regs.cs.seg = pop(p);
    p->regs.sp += sp;
    p->inst_queue_dirty = true;
 }
@@ -791,7 +791,7 @@ static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
 static void retf_CB(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ip = pop(p);
-   p->regs.cs = pop(p);
+   p->regs.cs.seg = pop(p);
    p->inst_queue_dirty = true;
 }
 
@@ -818,7 +818,7 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    VALIDATOR_DISCARD(p);
    p->inst_queue_dirty = true;
    p->regs.ip = pop(p);
-   p->regs.cs = pop(p);
+   p->regs.cs.seg = pop(p);
    p->regs.flags = (pop(p) & ALL_FLAGS) | 2;
    #ifdef FLAG8086
       p->regs.flags |= 0xF000; // 8086 flags
@@ -869,7 +869,7 @@ static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
 
 static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.bx + p->regs.al));
+   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg.seg, p->regs.bx + p->regs.al));
 }
 
 static void salc_D6(CONSTSP(cpu) p, INST(inst)) {
@@ -921,7 +921,7 @@ static void jmp_E9(CONSTSP(cpu) p, INST(inst)) {
 static void jmp_EA(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word ip = read_opcode16(p);
-   p->regs.cs = read_opcode16(p);
+   p->regs.cs.seg = read_opcode16(p);
    p->regs.ip = ip;
    p->inst_queue_dirty = true;
 }
@@ -1230,12 +1230,12 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
          break;
       case 3: // CALL Mp
       {
-         push(p, p->regs.cs);
+         push(p, p->regs.cs.seg);
          push(p, p->regs.ip);
 
          vxt_word offset = get_ea_offset(p);
          p->regs.ip = cpu_segment_read_word(p, p->seg, offset);
-         p->regs.cs = cpu_segment_read_word(p, p->seg, offset + 2);
+         p->regs.cs.seg = cpu_segment_read_word(p, p->seg, offset + 2);
          p->inst_queue_dirty = true;
          p->cycles += 53;
          break;
@@ -1249,7 +1249,7 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
       {
          vxt_word offset = get_ea_offset(p);
          p->regs.ip = cpu_segment_read_word(p, p->seg, offset);
-         p->regs.cs = cpu_segment_read_word(p, p->seg, offset + 2);
+         p->regs.cs.seg = cpu_segment_read_word(p, p->seg, offset + 2);
          p->inst_queue_dirty = true;
          p->cycles += 24;
          break;

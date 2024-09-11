@@ -186,6 +186,13 @@ enum {
 #define VXT_MAX_MONITORS 0xFF
 #define VXT_DEFAULT_FREQUENCY 4772726
 
+#define VXT_SEGMENT_DESCRIPTOR_SIZE 1
+
+struct vxt_selector {
+	vxt_word seg;
+	vxt_byte desc[VXT_SEGMENT_DESCRIPTOR_SIZE];
+};
+
 #define _VXT_REG(r) VXT_PACK(union {VXT_PACK(struct {vxt_byte r ## l; vxt_byte r ## h;}); vxt_word r ## x;})
 struct vxt_registers {
     _VXT_REG(a);
@@ -193,7 +200,8 @@ struct vxt_registers {
     _VXT_REG(c);
     _VXT_REG(d);
 
-    vxt_word cs, ss, ds, es;
+    struct vxt_selector cs, ss, ds, es;
+
     vxt_word sp, bp, si, di;
     vxt_word ip, flags;
 
