@@ -119,7 +119,7 @@ var vxtu_8h =
     [ "vxtu_memory_create", "vxtu_8h.html#aae62bfd1db77555e53da85420515e347", null ],
     [ "vxtu_memory_device_fill", "vxtu_8h.html#a4b3c0dfde96ad875cee62563a8a85e17", null ],
     [ "vxtu_memory_internal_pointer", "vxtu_8h.html#a8e392eb5258075dcaac95f2c681bc920", null ],
-    [ "vxtu_pic_create", "vxtu_8h.html#a90b14daa61f63b4a92e28e01732b48b9", null ],
+    [ "vxtu_pic_create", "vxtu_8h.html#a9f7a2d49abdd26f57a28b11b89dc3d97", null ],
     [ "vxtu_pit_create", "vxtu_8h.html#a912fc2d55001b7aaa3eeffbd63bee41c", null ],
     [ "vxtu_pit_get_frequency", "vxtu_8h.html#a362073b6698c14cefdc69885db1eb931", null ],
     [ "vxtu_ppi_create", "vxtu_8h.html#a1ce452dbfa12e7871185d253e9365e05", null ],
