@@ -55,43 +55,56 @@ static void add_5_15(CONSTSP(cpu) p, INST(inst)) {
 
 #undef CARRY
 
-#define PUSH_POP(n, r)                                         \
-   static void push_ ## n (CONSTSP(cpu) p, INST(inst)) {       \
+#define PUSH_POP(r)                                            \
+   static void push_ ## r (CONSTSP(cpu) p, INST(inst)) {       \
       UNUSED(inst);                                            \
       push(p, p->regs.r);                                      \
    }                                                           \
                                                                \
-   static void pop_ ## n (CONSTSP(cpu) p, INST(inst)) {        \
+   static void pop_ ## r (CONSTSP(cpu) p, INST(inst)) {        \
       UNUSED(inst);                                            \
       p->regs.r = pop(p);                                      \
    }                                                           \
 
-PUSH_POP(es, es.seg)
-PUSH_POP(ss, ss.seg)
-PUSH_POP(ds, ds.seg)
-PUSH_POP(ax, ax)
-PUSH_POP(bx, bx)
-PUSH_POP(cx, cx)
-PUSH_POP(dx, dx)
-PUSH_POP(bp, bp)
-PUSH_POP(si, si)
-PUSH_POP(di, di)
+PUSH_POP(ax)
+PUSH_POP(bx)
+PUSH_POP(cx)
+PUSH_POP(dx)
+PUSH_POP(bp)
+PUSH_POP(si)
+PUSH_POP(di)
 #undef PUSH_POP
+
+#define PUSH_POP_SEG(n, r)                                     \
+   static void push_ ## n (CONSTSP(cpu) p, INST(inst)) {       \
+      UNUSED(inst);                                            \
+      push(p, p->sreg[VXT_SEGMENT_ ## r].raw);                 \
+   }                                                           \
+                                                               \
+   static void pop_ ## n (CONSTSP(cpu) p, INST(inst)) {        \
+      UNUSED(inst);                                            \
+      load_segment_register(p, VXT_SEGMENT_ ## r, pop(p));     \
+   }                                                           \
+
+PUSH_POP_SEG(es, ES)
+PUSH_POP_SEG(ss, SS)
+PUSH_POP_SEG(ds, DS)
+#undef PUSH_POP_SEG
 
 static void push_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.sp -= 2;
-   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
+   cpu_segment_write_word(p, VXT_SEGMENT_SS, p->regs.sp, p->regs.sp);
 }
 
 static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
+   p->regs.sp = cpu_segment_read_word(p, VXT_SEGMENT_SS, p->regs.sp);
 }
 
 static void push_cs(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   push(p, p->regs.cs.seg);
+   push(p, p->sreg[VXT_SEGMENT_CS].raw);
 }
 
 static void or_8(CONSTSP(cpu) p, INST(inst)) {
@@ -400,25 +413,25 @@ static void push_6A(CONSTSP(cpu) p, INST(inst)) {
 
 static void insb_6C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_write_byte(p, VXT_POINTER(p->regs.ds.seg, p->regs.si), system_in(p->s, p->regs.dx));
+   cpu_segment_write_byte(p, VXT_SEGMENT_DS, p->regs.si, system_in(p->s, p->regs.dx));
    update_di_si(p, 1);
 }
 
 static void insw_6D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_segment_write_word(p, p->regs.ds, p->regs.si, WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
+   cpu_segment_write_word(p, VXT_SEGMENT_DS, p->regs.si, WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
    update_di_si(p, 2);
 }
 
 static void outsb_6E(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   system_out(p->s, p->regs.dx, cpu_read_byte(p, VXT_POINTER(p->regs.ds.seg, p->regs.si)));
+   system_out(p->s, p->regs.dx, cpu_segment_read_byte(p, VXT_SEGMENT_DS, p->regs.si));
    update_di_si(p, 1);
 }
 
 static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   vxt_word data = cpu_segment_read_word(p, p->regs.ds, p->regs.si);
+   vxt_word data = cpu_segment_read_word(p, VXT_SEGMENT_DS, p->regs.si);
    system_out(p->s, p->regs.dx, (vxt_byte)(data & 0xFF));
    system_out(p->s, p->regs.dx + 1, (vxt_byte)(data >> 8));
    update_di_si(p, 2);
@@ -581,7 +594,7 @@ static void mov_8C(CONSTSP(cpu) p, INST(inst)) {
 
 static void lea_8D(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   reg_write16(&p->regs, p->mode.reg, VXT_POINTER(p->seg.seg, get_ea_offset(p)) - (p->seg.seg << 4));
+   reg_write16(&p->regs, p->mode.reg, VXT_POINTER(p->sreg[p->seg].raw, get_ea_offset(p)) - (p->sreg[p->seg].raw << 4));
 }
 
 static void mov_8E(CONSTSP(cpu) p, INST(inst)) {
@@ -629,10 +642,10 @@ static void call_9A(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word ip = read_opcode16(p);
    vxt_word cs = read_opcode16(p);
-   push(p, p->regs.cs.seg);
+   push(p, p->sreg[VXT_SEGMENT_CS].raw);
    push(p, p->regs.ip);
    p->regs.ip = ip;
-   p->regs.cs.seg = cs;
+   load_segment_register(p, VXT_SEGMENT_CS, cs);
    p->inst_queue_dirty = true;
 }
 
@@ -668,7 +681,7 @@ static void lahf_9F(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A0(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg.seg, read_opcode16(p)));
+   p->regs.al = cpu_segment_read_byte(p, p->seg, read_opcode16(p));
 }
 
 static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
@@ -678,7 +691,7 @@ static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_write_byte(p, VXT_POINTER(p->seg.seg, read_opcode16(p)), p->regs.al);
+   cpu_segment_write_byte(p, p->seg, read_opcode16(p), p->regs.al);
 }
 
 static void mov_A3(CONSTSP(cpu) p, INST(inst)) {
@@ -730,16 +743,16 @@ static void ret_C3(CONSTSP(cpu) p, INST(inst)) {
    p->inst_queue_dirty = true;
 }
 
-#define LOAD(name, r)                                                				\
-   static void name (CONSTSP(cpu) p, INST(inst)) {                   				\
-      UNUSED(inst);                                                  				\
-      vxt_word offset = get_ea_offset(p);                     						\
-      reg_write16(&p->regs, p->mode.reg, cpu_segment_read_word(p, p->seg, offset));	\
-      p->regs.r.seg = cpu_segment_read_word(p, p->seg, offset + 2);					\
-   }                                                                 				\
+#define LOAD(name, r)                                                								\
+   static void name (CONSTSP(cpu) p, INST(inst)) {                   								\
+      UNUSED(inst);                                                  								\
+      vxt_word offset = get_ea_offset(p);                     										\
+      reg_write16(&p->regs, p->mode.reg, cpu_segment_read_word(p, p->seg, offset));					\
+      load_segment_register(p, VXT_SEGMENT_ ## r, cpu_segment_read_word(p, p->seg, offset + 2));	\
+   }                                                                 								\
 
-LOAD(les_C4, es)
-LOAD(lds_C5, ds)
+LOAD(les_C4, ES)
+LOAD(lds_C5, DS)
 #undef LOAD
 
 static void mov_C6(CONSTSP(cpu) p, INST(inst)) {
@@ -764,7 +777,7 @@ static void enter_C8(CONSTSP(cpu) p, INST(inst)) {
 	if (level > 0) {
 		while (--level) {
 			bp -= 2;
-			push(p, cpu_segment_read_word(p, p->regs.ss, bp));
+			push(p, cpu_segment_read_word(p, VXT_SEGMENT_SS, bp));
 		}
 		push(p, sp);
 	}
@@ -783,7 +796,7 @@ static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word sp = read_opcode16(p);
    p->regs.ip = pop(p);
-   p->regs.cs.seg = pop(p);
+   load_segment_register(p, VXT_SEGMENT_CS, pop(p));
    p->regs.sp += sp;
    p->inst_queue_dirty = true;
 }
@@ -791,7 +804,7 @@ static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
 static void retf_CB(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    p->regs.ip = pop(p);
-   p->regs.cs.seg = pop(p);
+   load_segment_register(p, VXT_SEGMENT_CS, pop(p));
    p->inst_queue_dirty = true;
 }
 
@@ -818,7 +831,7 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    VALIDATOR_DISCARD(p);
    p->inst_queue_dirty = true;
    p->regs.ip = pop(p);
-   p->regs.cs.seg = pop(p);
+   load_segment_register(p, VXT_SEGMENT_CS, pop(p));
    p->regs.flags = (pop(p) & ALL_FLAGS) | 2;
    #ifdef FLAG8086
       p->regs.flags |= 0xF000; // 8086 flags
@@ -869,7 +882,7 @@ static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
 
 static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg.seg, p->regs.bx + p->regs.al));
+   p->regs.al = cpu_segment_read_byte(p, p->seg, p->regs.bx + p->regs.al);
 }
 
 static void salc_D6(CONSTSP(cpu) p, INST(inst)) {
@@ -921,7 +934,7 @@ static void jmp_E9(CONSTSP(cpu) p, INST(inst)) {
 static void jmp_EA(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    vxt_word ip = read_opcode16(p);
-   p->regs.cs.seg = read_opcode16(p);
+   load_segment_register(p, VXT_SEGMENT_CS, read_opcode16(p));
    p->regs.ip = ip;
    p->inst_queue_dirty = true;
 }
@@ -1230,12 +1243,12 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
          break;
       case 3: // CALL Mp
       {
-         push(p, p->regs.cs.seg);
+         push(p, p->sreg[VXT_SEGMENT_CS].raw);
          push(p, p->regs.ip);
 
          vxt_word offset = get_ea_offset(p);
          p->regs.ip = cpu_segment_read_word(p, p->seg, offset);
-         p->regs.cs.seg = cpu_segment_read_word(p, p->seg, offset + 2);
+         load_segment_register(p, VXT_SEGMENT_CS, cpu_segment_read_word(p, p->seg, offset + 2));
          p->inst_queue_dirty = true;
          p->cycles += 53;
          break;
@@ -1249,7 +1262,7 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
       {
          vxt_word offset = get_ea_offset(p);
          p->regs.ip = cpu_segment_read_word(p, p->seg, offset);
-         p->regs.cs.seg = cpu_segment_read_word(p, p->seg, offset + 2);
+         load_segment_register(p, VXT_SEGMENT_CS, cpu_segment_read_word(p, p->seg, offset + 2));
          p->inst_queue_dirty = true;
          p->cycles += 24;
          break;
@@ -1258,7 +1271,7 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
       case 7:
          p->regs.sp -= 2;
          v = rm_read16(p);
-         cpu_segment_write_word(p, p->regs.ss, p->regs.sp, v);
+         cpu_segment_write_word(p, VXT_SEGMENT_SS, p->regs.sp, v);
          p->cycles += 15;
          break;
       default:

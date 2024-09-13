@@ -31,7 +31,7 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
     #ifdef TESTING
 
         // 8086 - pop cs
-        p->regs.cs.seg = pop(p);
+        load_segment_register(p, VXT_SEGMENT_CS, pop(p));
         p->inst_queue_dirty = true;
 
     #else
@@ -94,9 +94,9 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
   		case 5: // LOADALL - Load All of the CPU Registers
  			VXT_LOG("LOADALL - Load All of the CPU Registers");
  			return;
-  		case 6: // CLTS - Clear Task-Switched Flag in CR0
- 			VXT_LOG("CLTS - Clear Task-Switched Flag in CR0");
-            p->cr0 &= ~CR0_TS;
+  		case 6: // CLTS - Clear Task-Switched Flag in MSW
+ 			VXT_LOG("CLTS - Clear Task-Switched Flag in MSW");
+            p->msw &= ~MSW_TS;
  			return;
    	}
 

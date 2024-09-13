@@ -79,27 +79,28 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 			}
 
 			for (int i = 0; i < (int)r->cx; i++)
-				n->buffer[i] = vxt_system_read_byte(s, VXT_POINTER(r->ds.seg, r->si + i));
+				n->buffer[i] = vxt_system_read_byte(s, VXT_POINTER(r->ds, r->si + i));
 
 			if (pcap_sendpacket(n->handle, n->buffer, r->cx))
 				VXT_LOG("Could not send packet!");
 			break;
 		case 2: // Return packet info (packet buffer in DS:SI, length in CX)
-			r->ds.seg = n->buf_seg;
+			r->ds = n->buf_seg;
 			r->si = n->buf_offset;
 			r->cx = (vxt_word)n->pkg_len;
+			vxt_system_reload_segments(s);
 			break;
 		case 3: // Copy packet to final destination (given in ES:DI)
 			for (int i = 0; i < (int)r->cx; i++)
-				vxt_system_write_byte(s, VXT_POINTER(r->es.seg, r->di + i), vxt_system_read_byte(s, VXT_POINTER(n->buf_seg, n->buf_offset + i)));
+				vxt_system_write_byte(s, VXT_POINTER(r->es, r->di + i), vxt_system_read_byte(s, VXT_POINTER(n->buf_seg, n->buf_offset + i)));
 			break;
 		case 4: // Disable packet reception
 			n->can_recv = false;
 			break;
 		case 0xFF: // Setup packet buffer
-			n->buf_seg = r->cs.seg;
+			n->buf_seg = r->cs;
 			n->buf_offset = r->dx;
-			VXT_LOG("Packet buffer is located at %04X:%04X", r->cs.seg, r->dx);
+			VXT_LOG("Packet buffer is located at %04X:%04X", r->cs, r->dx);
 			break;
 	}
 }

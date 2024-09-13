@@ -23,6 +23,7 @@
 
 #include "common.h"
 #include "cpu.h"
+#include "desc.h"
 #include "testing.h"
 
 #include "exec.inl"
@@ -36,7 +37,7 @@
          if (p->inst_queue_count >= 6)
             return;
 
-         vxt_pointer ptr = VXT_POINTER(p->regs.cs.seg, p->regs.ip + p->inst_queue_count);
+         vxt_pointer ptr = VXT_POINTER(p->sreg[VXT_SEGMENT_CS].raw, p->regs.ip + p->inst_queue_count);
          p->inst_queue_debug[p->inst_queue_count] = ptr;
          p->inst_queue[p->inst_queue_count++] = vxt_system_read_byte(p->s, ptr);
       }
@@ -48,22 +49,22 @@ static void read_opcode(CONSTSP(cpu) p) {
    for (;;) {
       switch (p->opcode = read_opcode8(p)) {
          case 0x26:
-            p->seg = p->regs.es;
+            p->seg = VXT_SEGMENT_ES;
             p->seg_override = p->opcode;
             p->cycles += 2;
             break;
          case 0x2E:
-            p->seg = p->regs.cs;
+            p->seg = VXT_SEGMENT_CS;
             p->seg_override = p->opcode;
             p->cycles += 2;
             break;
          case 0x36:
-            p->seg = p->regs.ss;
+            p->seg = VXT_SEGMENT_SS;
             p->seg_override = p->opcode;
             p->cycles += 2;
             break;
          case 0x3E:
-            p->seg = p->regs.ds;
+            p->seg = VXT_SEGMENT_DS;
             p->seg_override = p->opcode;
             p->cycles += 2;
             break;
@@ -105,7 +106,7 @@ static void prep_exec(CONSTSP(cpu) p) {
       p->inst_queue_dirty = false;
    }
 
-   p->seg = p->regs.ds;
+   p->seg = VXT_SEGMENT_DS;
    p->seg_override = 0;
    p->repeat = 0;
    p->inst_start = p->regs.ip;
@@ -129,10 +130,11 @@ static void do_exec(CONSTSP(cpu) p) {
     if (inst->modregrm)
         read_modregrm(p);
     inst->func(p, inst);
-
+    
     if (p->invalid)
         call_int(p, 6);
-
+    
+    cpu_reflect_segment_registers(p);
     p->cycles += inst->cycles;
 
     if (UNLIKELY(p->inst_queue_dirty)) {
@@ -142,6 +144,13 @@ static void do_exec(CONSTSP(cpu) p) {
             prefetch(p, (p->cycles / 2) - p->bus_transfers); // TODO: Round up or down?
         #endif
     }
+}
+
+void cpu_reflect_segment_registers(CONSTSP(cpu) p) {
+	p->regs.cs = p->sreg[VXT_SEGMENT_CS].raw;
+	p->regs.ds = p->sreg[VXT_SEGMENT_DS].raw;
+	p->regs.es = p->sreg[VXT_SEGMENT_ES].raw;
+	p->regs.ss = p->sreg[VXT_SEGMENT_SS].raw;
 }
 
 int cpu_step(CONSTSP(cpu) p) {
@@ -178,44 +187,53 @@ void cpu_reset(CONSTSP(cpu) p) {
 	   p->regs.flags |= 0xF000;
 	#endif
 
-	p->regs.cs.seg = 0xFFFF;
 	p->regs.debug = false;
-
-	p->cr0 = p->cr3 = 0;
+	p->msw = 0;
+	
+	load_segment_register(p, VXT_SEGMENT_CS, 0xFFFF);
 
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);
 }
 
-vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr) {
+static vxt_byte read_byte(CONSTSP(cpu) p, vxt_pointer addr) {
    vxt_byte data = vxt_system_read_byte(p->s, addr);
    p->bus_transfers++;
    VALIDATOR_READ(p, addr, data);
    return data;
 }
 
-void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data) {
+static void write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data) {
    vxt_system_write_byte(p->s, addr, data);
    p->bus_transfers++;
    VALIDATOR_WRITE(p, addr, data);
 }
 
-vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr) {
-   return WORD(cpu_read_byte(p, addr + 1), cpu_read_byte(p, addr));
+vxt_byte cpu_segment_read_byte(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset) {
+	// TODO: Segment check here.
+	return read_byte(p, DESCRIPTOR(p, seg)->base + offset);
 }
 
-vxt_word cpu_segment_read_word(CONSTSP(cpu) p, struct vxt_selector selector, vxt_word offset) {
-   return WORD(cpu_read_byte(p, VXT_POINTER(selector.seg, offset + 1)), cpu_read_byte(p, VXT_POINTER(selector.seg, offset)));
+vxt_word cpu_segment_read_word(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset) {
+	// TODO: Segment check here.
+	vxt_pointer base = DESCRIPTOR(p, seg)->base;
+	return WORD(read_byte(p, base + ((offset + 1) & 0xFFFF)), read_byte(p, base + offset));
 }
 
-void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data) {
-   cpu_write_byte(p, addr, LBYTE(data));
-   cpu_write_byte(p, addr + 1, HBYTE(data));
+void cpu_segment_write_byte(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset, vxt_byte data) {
+	// TODO: Segment check here.
+	write_byte(p, DESCRIPTOR(p, seg)->base + offset, data);
 }
 
-void cpu_segment_write_word(CONSTSP(cpu) p, struct vxt_selector selector, vxt_word offset, vxt_word data) {
-   cpu_write_byte(p, VXT_POINTER(selector.seg, offset), LBYTE(data));
-   cpu_write_byte(p, VXT_POINTER(selector.seg, offset + 1), HBYTE(data));
+void cpu_segment_write_word(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset, vxt_word data) {
+	// TODO: Segment check here.
+	vxt_pointer base = DESCRIPTOR(p, seg)->base;
+	write_byte(p, base + offset, LBYTE(data));
+	write_byte(p, base + ((offset + 1) & 0xFFFF), HBYTE(data));
+}
+
+bool cpu_is_protected(CONSTSP(cpu) p) {
+	return (p->msw & MSW_PE) != 0;
 }
 
 TEST(register_layout,

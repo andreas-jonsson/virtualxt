@@ -25,6 +25,7 @@
 #define _CPU_H_
 
 #include "common.h"
+#include "desc.h"
 
 // TODO: This need some more work.
 #if !defined(VXT_NO_PREFETCH) && defined(PI8088)
@@ -45,47 +46,53 @@
 #define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr), (data), (p)->validator->userdata); }
 #define VALIDATOR_DISCARD(p) { if ((p)->validator) (p)->validator->discard((p)->validator->userdata); }
 
+struct segment_register {
+	vxt_word raw;
+	struct segment_descriptor desc;
+};
+
 struct address_mode {
-   vxt_byte mod, reg, rm;
-   vxt_word disp;
+	vxt_byte mod, reg, rm;
+	vxt_word disp;
 };
 
 struct cpu {
-   struct vxt_registers regs;
-   bool trap, halt, int28, invalid;
-   int cycles;
-   vxt_word inst_start;
+	struct vxt_registers regs;
+	struct segment_register sreg[4];
+	
+	bool trap, halt, int28, invalid;
+	int cycles;
+	vxt_word inst_start;
 
-   vxt_byte opcode, repeat;
-   struct address_mode mode;
+	vxt_byte opcode, repeat;
+	struct address_mode mode;
 
-   struct vxt_selector seg;
-   vxt_byte seg_override;
+	enum vxt_segment seg;
+	vxt_byte seg_override;
 
-   vxt_word cr0;
-   vxt_word cr3;
+	vxt_word msw;
 
-   int bus_transfers;
+	int bus_transfers;
 
-   bool inst_queue_dirty;
-   int inst_queue_count;
-   vxt_byte inst_queue[6];
-   vxt_pointer inst_queue_debug[6];
+	bool inst_queue_dirty;
+	int inst_queue_count;
+	vxt_byte inst_queue[6];
+	vxt_pointer inst_queue_debug[6];
 
-   void (*tracer)(vxt_system*,vxt_pointer,vxt_byte);
-   const struct vxt_validator *validator;
-   struct vxt_peripheral *pic;
-   vxt_system *s;
+	void (*tracer)(vxt_system*,vxt_pointer,vxt_byte);
+	const struct vxt_validator *validator;
+	struct vxt_peripheral *pic;
+	vxt_system *s;
 };
 
-vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr);
-void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data);
-vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr);
-vxt_word cpu_segment_read_word(CONSTSP(cpu) p, struct vxt_selector selector, vxt_word offset);
-void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data);
-void cpu_segment_write_word(CONSTSP(cpu) p, struct vxt_selector selector, vxt_word offset, vxt_word data);
+vxt_byte cpu_segment_read_byte(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset);
+vxt_word cpu_segment_read_word(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset);
+void cpu_segment_write_byte(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset, vxt_byte data);
+void cpu_segment_write_word(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset, vxt_word data);
 void cpu_reset(CONSTSP(cpu) p);
 void cpu_reset_cycle_count(CONSTSP(cpu) p);
+void cpu_reflect_segment_registers(CONSTSP(cpu) p);
 int cpu_step(CONSTSP(cpu) p);
+bool cpu_is_protected(CONSTSP(cpu) p);
 
 #endif

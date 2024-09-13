@@ -29,15 +29,15 @@
 #include "cpu.h"
 #include "flags.h"
 
-#define TRACE(p, ip, data) { if ((p)->tracer) (p)->tracer((p)->s, VXT_POINTER((p)->regs.cs.seg, (ip)), (data)); }
+#define TRACE(p, ip, data) { if ((p)->tracer) (p)->tracer((p)->s, VXT_POINTER((p)->sreg[VXT_SEGMENT_CS].raw, (ip)), (data)); }
 #define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq(VXT_GET_DEVICE_PTR((p)->pic), (n)); }
 #define INST(n) const struct instruction * const n
 #define MOD_TARGET_MEM(mode) ((mode).mod < 3)
 
-#define CR0_PE 0x0  // Protected mode enable
-#define CR0_MP 0x1  // Monitor processor extension
-#define CR0_EM 0x2  // Emulate processor extension
-#define CR0_TS 0x4  // Task switched
+#define MSW_PE 0x0  // Protected mode enable
+#define MSW_MP 0x1  // Monitor processor extension
+#define MSW_EM 0x2  // Emulate processor extension
+#define MSW_TS 0x4  // Task switched
 
 enum architecture {
 	ARCH_INVALID,
@@ -68,13 +68,13 @@ static vxt_word sign_extend16(vxt_byte v) {
 static vxt_byte read_opcode8(CONSTSP(cpu) p) {
    vxt_byte data;
    vxt_word ip = p->regs.ip;
-   vxt_pointer ptr = VXT_POINTER(p->regs.cs.seg, ip);
-
+   
    if (p->inst_queue_count > 0) {
       data = *p->inst_queue;
       memmove(p->inst_queue, &p->inst_queue[1], --p->inst_queue_count);
 
       #if defined(VXT_DEBUG_PREFETCH) && !defined(VXT_NO_PREFETCH)
+         vxt_pointer ptr = VXT_POINTER(p->sregs[VXT_SEGMENT_CS].raw, ip);
          if (*p->inst_queue_debug != ptr) {
             VXT_LOG("FATAL: Broken prefetch queue detected! Expected 0x%X but got 0x%X.", *p->inst_queue_debug, ptr);
             p->regs.debug = true;
@@ -82,7 +82,7 @@ static vxt_byte read_opcode8(CONSTSP(cpu) p) {
          memmove(p->inst_queue_debug, &p->inst_queue_debug[1], p->inst_queue_count * sizeof(vxt_pointer));
       #endif
    } else {
-      data = cpu_read_byte(p, ptr);
+      data = cpu_segment_read_byte(p, VXT_SEGMENT_CS, ip);
    }
    p->regs.ip++;
 
@@ -270,60 +270,27 @@ static void reg_write16(CONSTSP(vxt_registers) r, int reg, vxt_word data) {
 }
 
 static vxt_word seg_read16(CONSTSP(cpu) p) {
-   CONSTSP(vxt_registers) r = &p->regs;
-   switch (p->mode.reg & 3) {
-		case 0:
-         return r->es.seg;
-		case 1:
-         return r->cs.seg;
-		case 2:
-			return r->ss.seg;
-		case 3:
-			return r->ds.seg;
-		default:
-         UNREACHABLE(0); // Not sure what should happen here?
-   }
+	return p->sreg[p->mode.reg & 3].raw;
 }
 
 static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
-	CONSTSP(vxt_registers) r = &p->regs;
-	switch (p->mode.reg & 3) {
-		case 0:
-			r->es.seg = data;
-			return;
-		case 1:
-			r->cs.seg = data;
-			p->inst_queue_dirty = true;
-			return;
-		case 2:
-			r->ss.seg = data;
-			return;
-		case 3:
-			r->ds.seg = data;
-			return;
-		default:
-			UNREACHABLE(); // Not sure what should happen here?
-	}
+	load_segment_register(p, p->mode.reg & 3, data);
 }
 
-#define RM_FUNC(a, b)                                               \
-   static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                 \
-      if (MOD_TARGET_MEM(p->mode)) {                                \
-         vxt_pointer ea = VXT_POINTER(p->seg.seg, get_ea_offset(p));\
-         return cpu_read_ ## a (p, ea);                             \
-      } else {                                                      \
-         return reg_read ## b (&p->regs, p->mode.rm);               \
-      }                                                             \
-   }                                                                \
-                                                                	\
-   static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {     \
-      if (MOD_TARGET_MEM(p->mode)) {                                \
-         vxt_pointer ea = VXT_POINTER(p->seg.seg, get_ea_offset(p));\
-         cpu_write_ ## a (p, ea, data);                             \
-      } else {                                                      \
-         reg_write ## b (&p->regs, p->mode.rm, data);               \
-      }                                                             \
-   }                                                                \
+#define RM_FUNC(a, b)                                                  \
+   static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                    \
+      if (MOD_TARGET_MEM(p->mode))                                     \
+         return cpu_segment_read_ ## a (p, p->seg, get_ea_offset(p));  \
+      else                                                             \
+         return reg_read ## b (&p->regs, p->mode.rm);                  \
+   }                                                                   \
+                                                                       \
+   static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {        \
+      if (MOD_TARGET_MEM(p->mode))                                     \
+         cpu_segment_write_ ## a (p, p->seg, get_ea_offset(p), data);  \
+      else                                                             \
+         reg_write ## b (&p->regs, p->mode.rm, data);                  \
+   }                                                                   \
 
 #define NARROW(f) f(byte, 8)
 #define WIDE(f) f(word, 16)
@@ -338,11 +305,11 @@ WIDE(RM_FUNC)
 // Don't use this function for pushing SP in 8086.
 static void push(CONSTSP(cpu) p, vxt_word data) {
    p->regs.sp -= 2;
-   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, data);
+   cpu_segment_write_word(p, VXT_SEGMENT_SS, p->regs.sp, data);
 }
 
 static vxt_word pop(CONSTSP(cpu) p) {
-   vxt_word data = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
+   vxt_word data = cpu_segment_read_word(p, VXT_SEGMENT_SS, p->regs.sp);
    p->regs.sp += 2;
    return data;
 }
@@ -367,7 +334,7 @@ static void update_di_si(CONSTSP(cpu) p, vxt_word n) {
 
 static void override_with_ss(CONSTSP(cpu) p, bool cond) {
    if (!p->seg_override && cond)
-	   p->seg = p->regs.ss;
+	   p->seg = VXT_SEGMENT_SS;
 }
 
 static vxt_byte read_modregrm(CONSTSP(cpu) p) {
@@ -404,11 +371,11 @@ static void call_int(CONSTSP(cpu) p, int n) {
 	CONSTSP(vxt_registers) r = &p->regs;
 
 	push(p, (r->flags & ALL_FLAGS) | 0xF002);
-	push(p, r->cs.seg);
+	push(p, p->sreg[VXT_SEGMENT_CS].raw);
 	push(p, r->ip);
 
-	r->ip = cpu_read_word(p, (vxt_pointer)n * 4);
-	r->cs.seg = cpu_read_word(p, (vxt_pointer)n * 4 + 2);
+	r->ip = vxt_system_read_word(p->s, (vxt_pointer)n * 4);
+	load_segment_register(p, VXT_SEGMENT_CS, vxt_system_read_word(p->s, (vxt_pointer)n * 4 + 2));
 	r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
 	p->inst_queue_dirty = true;
 

@@ -23,6 +23,7 @@
 
 #include "common.h"
 #include "system.h"
+#include "desc.h"
 #include "testing.h"
 
 #if !defined(VXT_NO_LIBC) && !defined(VXT_NO_LOGGING)
@@ -181,6 +182,7 @@ VXT_API vxt_error vxt_system_destroy(CONSTP(vxt_system) s) {
 }
 
 VXT_API struct vxt_registers *vxt_system_registers(CONSTP(vxt_system) s) {
+	cpu_reflect_segment_registers(&s->cpu);
     return &s->cpu.regs;
 }
 
@@ -284,6 +286,18 @@ VXT_API int vxt_system_frequency(CONSTP(vxt_system) s) {
 
 VXT_API void vxt_system_set_frequency(CONSTP(vxt_system) s, int freq) {
     s->frequency = freq;
+}
+
+VXT_API bool vxt_system_cpu_protected(CONSTP(vxt_system) s) {
+	return cpu_is_protected(&s->cpu);
+}
+
+VXT_API void vxt_system_reload_segments(vxt_system *s) {
+	struct vxt_registers *regs = &s->cpu.regs;
+	load_segment_register(&s->cpu, VXT_SEGMENT_CS, regs->cs);
+	load_segment_register(&s->cpu, VXT_SEGMENT_DS, regs->ds);
+	load_segment_register(&s->cpu, VXT_SEGMENT_ES, regs->es);
+	load_segment_register(&s->cpu, VXT_SEGMENT_SS, regs->ss);
 }
 
 VXT_API void vxt_system_install_monitor(CONSTP(vxt_system) s, struct vxt_peripheral *dev, const char *name, void *reg, enum vxt_monitor_flag flags) {
