@@ -23,36 +23,117 @@
 
 #include "desc.h"
 #include "cpu.h"
+#include "exception.h"
+
+#define DESC_TYPE_INVALID		0x0
+#define DESC_TYPE_AVAIL_TSS		0x1
+#define DESC_TYPE_LDT_DESC		0x2
+#define DESC_TYPE_BUSY_TSS		0x3
+#define DESC_TYPE_CALL_GATE		0x4
+#define DESC_TYPE_TASK_GATE		0x5
+#define DESC_TYPE_INTR_GATE		0x6
+#define DESC_TYPE_TRAP_GATE		0x7
+
+#define TSS_BUSY_BIT   0x2
+#define DESC_GATE_MASK 0x4
+
+#define SEG_ACCESSED	0x1
+#define SEG_READWRITE	0x2
+#define SEG_CONFORMING	0x4
+#define SEG_EXP_DOWN	0x4
+#define SEG_EXECUTABLE	0x8
+#define SEG_CODE		0x8
+#define SEG_SEGMENT		0x10
+#define SEG_PRESENT		0x80
+
+#define SELECTOR_RPL_MASK 0xFFFC
 
 void load_segment_register(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word v) {
 	p->sreg[seg].raw = v;
 	
 	if (cpu_is_protected(p)) {
 		// TODO: Protected mode.
+		struct segment_selector *sel = SELECTOR(p, seg);
+		sel->rpl = v & 3;
+		sel->ti = (v >> 2) & 1;
+		sel->index = v >> 3;
 	} else {
 		struct segment_descriptor *desc = DESCRIPTOR(p, seg);
 		
 		desc->base = ((vxt_pointer)v) << 4;
-		desc->cpl = 0;
 		desc->present = true;
 		desc->segment = true;
 		desc->valid = true;
 		
-		/*
-		switch (seg) {
-			case VXT_SEGMENT_CS:
-				p->regs.cs = v;
-				break;
-			case VXT_SEGMENT_DS:
-				p->regs.ds = v;
-				break;
-			case VXT_SEGMENT_ES:
-				p->regs.es = v;
-				break;
-			case VXT_SEGMENT_SS:
-				p->regs.ss = v;
-				break;
-		}
-		*/
+		SELECTOR(p, seg)->cpl = 0;
+	}
+}
+
+vxt_byte get_descriptor_access(struct segment_descriptor *desc) {
+	vxt_byte ar = desc->segment << 4 | desc->dpl << 5 | desc->present << 7;
+	return ar | (desc->segment ? desc->type << 1 | desc->accessed : desc->type);
+}
+
+void set_descriptor_access(struct segment_descriptor *desc, vxt_byte ar) {
+	desc->valid = true;
+	desc->segment = ar & SEG_SEGMENT;
+	desc->type = (ar >> 1) & 7;
+	
+	if (desc->segment) 	// Code or Data Segment Descriptor
+		desc->accessed = ar & 1;
+	else 				// System Segment Descriptor or Gate Descriptor
+		desc->valid = desc->type == DESC_TYPE_INVALID;
+	
+	desc->dpl = (ar >> 5) & 3;
+	desc->present = ar & 0x80;
+}
+
+void load_segment_descriptor(struct segment_descriptor *desc, uint64_t v) {
+	set_descriptor_access(desc, (vxt_byte)(v >> 40));
+
+	if (desc->segment || !(desc->type & DESC_GATE_MASK)) {
+		desc->limit = v & 0xFFFF;
+		desc->base_15_0 = v >> 16;
+		desc->base_23_16 = v >> 32;
+		desc->base = ((vxt_pointer)(desc->base_23_16) << 16) | desc->base_15_0;
+	} else {
+		// Call gates only
+		desc->offset = v & 0xFFFF;
+		desc->selector = v >> 16;
+		desc->word_count = (v >> 32) & 0x1F;
+	}
+}
+
+UINT64 fetch_segment_descriptor(CONSTSP(cpu) p, enum vxt_segment seg, vxt_byte exvec) {
+	struct segment_selector *sel = SELECTOR(p, seg);
+	vxt_word offset = sel->index * 8;
+	enum vxt_segment table;
+	
+	if (sel->ti) { // LDT
+		table = _VXT_REG_LDTR;
+		if (!DESCRIPTOR(p, table)->valid)
+			throw_exception(p, exvec, p->sreg[seg].raw & SELECTOR_RPL_MASK);
+	} else { // GDT
+		table = _VXT_REG_GDTR;
+	}
+	
+	struct segment_descriptor *desc = DESCRIPTOR(p, table);
+	if ((offset + 7u) > desc->limit)
+		throw_exception(p, exvec, p->sreg[seg].raw & SELECTOR_RPL_MASK);
+
+	vxt_pointer addr = desc->base + offset;
+	return ((UINT64)vxt_system_read_word(p->s, addr + 2) << 32) | (UINT64)vxt_system_read_word(p->s, addr);
+}
+
+void update_segment_descriptor(CONSTSP(cpu) p, enum vxt_segment seg) {
+	struct segment_selector *sel = SELECTOR(p, seg);
+	struct segment_descriptor *desc = DESCRIPTOR(p, seg);
+	
+	if (!desc->accessed) {
+		desc->accessed = true;
+		vxt_byte ar = get_descriptor_access(desc);
+		enum vxt_segment r = sel->ti ? _VXT_REG_LDTR : _VXT_REG_GDTR;
+
+		vxt_system_write_byte(p->s, DESCRIPTOR(p, r)->base + sel->index * 8 + 5, ar);
 	}
 }

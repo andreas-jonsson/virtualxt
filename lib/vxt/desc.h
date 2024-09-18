@@ -27,19 +27,49 @@
 #include "common.h"
 
 #define DESCRIPTOR(p, seg) ( &(p)->sreg[(seg)].desc )
+#define SELECTOR(p, seg) ( &(p)->sreg[(seg)].sel )
 
 struct cpu;
 
+struct segment_selector
+{
+	union {
+		vxt_byte rpl;	// Requested Privilege Level
+		vxt_byte cpl;	// Current Privilege Level
+	};
+	
+	vxt_byte ti;		// Table indicator
+	vxt_word index;		// Segment index
+};
+
 struct segment_descriptor {
+	union {
+		vxt_word limit;			// Segment / TSS
+		vxt_word offset;		// Call Gate / Trap-Int Gate
+	};
+	
+	union {
+		vxt_word base_15_0;		// Segment / System / TSS
+		vxt_word selector;		// Call Gate / Task Gate / Trap-Int Gate
+	};
+	
+	union {
+		vxt_word base_23_16;	// Segment / System / TSS
+		vxt_word word_count;	// Call Gate
+	};
+	
 	vxt_pointer base;
-	bool present;
-	bool segment;
 	bool valid;
 	
-	vxt_byte cpl;
+	bool accessed;
+	vxt_byte type;
+	bool segment;
+	vxt_byte dpl;
+	bool present;
 };
 
 void load_segment_register(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word v);
+UINT64 fetch_segment_descriptor(CONSTSP(cpu) p, enum vxt_segment seg, vxt_byte exvec);
 
 #endif
 

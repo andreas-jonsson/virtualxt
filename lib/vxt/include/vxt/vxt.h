@@ -190,7 +190,13 @@ enum vxt_segment {
 	VXT_SEGMENT_ES,
 	VXT_SEGMENT_CS,
 	VXT_SEGMENT_SS,
-	VXT_SEGMENT_DS
+	VXT_SEGMENT_DS,
+	
+	// For internal reference only.
+	_VXT_REG_TR,
+	_VXT_REG_IDTR,
+	_VXT_REG_LDTR,
+	_VXT_REG_GDTR
 };
 
 #define _VXT_REG(r) VXT_PACK(union {VXT_PACK(struct {vxt_byte r ## l; vxt_byte r ## h;}); vxt_word r ## x;})

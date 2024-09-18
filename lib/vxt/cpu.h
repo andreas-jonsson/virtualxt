@@ -48,6 +48,7 @@
 
 struct segment_register {
 	vxt_word raw;
+	struct segment_selector sel;
 	struct segment_descriptor desc;
 };
 
@@ -58,7 +59,7 @@ struct address_mode {
 
 struct cpu {
 	struct vxt_registers regs;
-	struct segment_register sreg[4];
+	struct segment_register sreg[4 + 4];
 	
 	bool trap, halt, int28, invalid;
 	int cycles;

@@ -26,6 +26,11 @@
 
 #include <vxt/vxt.h>
 
+#define INT64 long long
+#define UINT64 unsigned long long
+
+_Static_assert(sizeof(INT64) == 8 && sizeof(UINT64) == 8, "invalid (u)int64 integer size");
+
 #ifdef _MSC_VER
    #define LIKELY(x) (x)
    #define UNLIKELY(x) (x)

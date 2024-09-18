@@ -28,7 +28,6 @@
 #include "cpu.h"
 
 #define MAX_TIMERS 256
-#define INT64 long long
 
 struct timer {
    vxt_timer_id id;
