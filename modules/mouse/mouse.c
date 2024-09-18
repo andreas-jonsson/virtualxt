@@ -49,10 +49,8 @@ static bool push_data(struct serial_mouse *m, vxt_byte data) {
     m->buffer[m->buffer_len++] = data;
 
     // If UART is busy, then we will get a ready callback instead.
-    if (vxtu_uart_ready(m->uart)) {
-        vxtu_uart_write(m->uart, *m->buffer);
-        pop_data(m);
-    }
+    if (vxtu_uart_ready(m->uart))
+        vxtu_uart_write(m->uart, pop_data(m));
     return true;
 }
 

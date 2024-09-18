@@ -66,6 +66,10 @@ static void add_5_15(CONSTSP(cpu) p, INST(inst)) {
       p->regs.r = pop(p);                                      \
    }                                                           \
 
+#ifdef TESTING
+	PUSH_POP(sp)
+#endif
+
 PUSH_POP(es)
 PUSH_POP(ss)
 PUSH_POP(ds)
@@ -78,16 +82,20 @@ PUSH_POP(si)
 PUSH_POP(di)
 #undef PUSH_POP
 
-static void push_sp(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   p->regs.sp -= 2;
-   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
-}
+// This is the 286 behaviour compared to 8086.
+#ifndef TESTING
+	static void push_sp(CONSTSP(cpu) p, INST(inst)) {
+	   UNUSED(inst);
+	   vxt_word sp = p->regs.sp;
+	   p->regs.sp -= 2;
+	   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, sp);
+	}
 
-static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
-}
+	static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
+	   UNUSED(inst);
+	   p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
+	}
+#endif
 
 static void push_cs(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
