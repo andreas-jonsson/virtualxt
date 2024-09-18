@@ -1230,12 +1230,16 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
          break;
       case 3: // CALL Mp
       {
-         push(p, p->regs.cs);
-         push(p, p->regs.ip);
+         vxt_word cs = p->regs.cs;
+         vxt_word ip = p->regs.ip;
 
          vxt_word offset = get_ea_offset(p);
          p->regs.ip = cpu_segment_read_word(p, p->seg, offset);
-         p->regs.cs = cpu_segment_read_word(p, p->seg, offset + 2);
+         p->regs.cs = cpu_segment_read_word(p, p->seg, (offset + 2) & 0xFFFF);
+         
+         push(p, cs);
+         push(p, ip);
+         
          p->inst_queue_dirty = true;
          p->cycles += 53;
          break;
@@ -1249,7 +1253,7 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
       {
          vxt_word offset = get_ea_offset(p);
          p->regs.ip = cpu_segment_read_word(p, p->seg, offset);
-         p->regs.cs = cpu_segment_read_word(p, p->seg, offset + 2);
+         p->regs.cs = cpu_segment_read_word(p, p->seg, (offset + 2) & 0xFFFF);
          p->inst_queue_dirty = true;
          p->cycles += 24;
          break;

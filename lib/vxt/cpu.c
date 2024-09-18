@@ -209,7 +209,7 @@ vxt_word cpu_segment_read_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset
 }
 
 vxt_word cpu_segment_read_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset) {
-   return WORD(cpu_read_byte(p, VXT_POINTER(segment, offset + (vxt_word)1)), cpu_read_byte(p, VXT_POINTER(segment, offset)));
+   return WORD(cpu_read_byte(p, VXT_POINTER(segment, (offset + 1) & 0xFFFF)), cpu_read_byte(p, VXT_POINTER(segment, offset)));
 }
 
 void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data) {
@@ -223,7 +223,7 @@ void cpu_segment_write_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, v
 
 void cpu_segment_write_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data) {
    cpu_write_byte(p, VXT_POINTER(segment, offset), LBYTE(data));
-   cpu_write_byte(p, VXT_POINTER(segment, offset + (vxt_word)1), HBYTE(data));
+   cpu_write_byte(p, VXT_POINTER(segment, (offset + 1) & 0xFFFF), HBYTE(data));
 }
 
 TEST(register_layout,
