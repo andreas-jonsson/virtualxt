@@ -24,6 +24,7 @@
 #include <vxt/vxtu.h>
 
 #define SECTOR_SIZE 512
+#define WAIT_STATES 1000
 
 struct drive {
     void *fp;
@@ -129,6 +130,9 @@ static void out(struct disk *c, vxt_word port, vxt_byte data) {
     vxt_system *s = VXT_GET_SYSTEM(c);
     struct vxt_registers *r = vxt_system_registers(s);
 
+    // Simulate delay for accessing disk controller.
+    vxt_system_wait(s, WAIT_STATES);
+
     switch (port) {
         case 0xB0:
             bootstrap(s, c);
@@ -199,7 +203,6 @@ static vxt_error install(struct disk *c, vxt_system *s) {
 }
 
 static vxt_error reset(struct disk *c) {
-    vxt_system_write_byte(VXT_GET_SYSTEM(c), VXT_POINTER(0x40, 0x75), c->num_hd);
     for (int i = 0; i < 0x100; i++) {
         struct drive *d = &c->disks[i];
         d->ah = 0; d->cf = 0;
