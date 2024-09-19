@@ -88,8 +88,10 @@ struct cpu {
 
 vxt_byte cpu_segment_read_byte(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset);
 vxt_word cpu_segment_read_word(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset);
+
 void cpu_segment_write_byte(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset, vxt_byte data);
 void cpu_segment_write_word(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word offset, vxt_word data);
+
 void cpu_reset(CONSTSP(cpu) p);
 void cpu_reset_cycle_count(CONSTSP(cpu) p);
 void cpu_reflect_segment_registers(CONSTSP(cpu) p);

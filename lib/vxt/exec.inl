@@ -66,6 +66,10 @@ static void add_5_15(CONSTSP(cpu) p, INST(inst)) {
       p->regs.r = pop(p);                                      \
    }                                                           \
 
+#ifndef TESTING
+	PUSH_POP(sp)
+#endif
+
 PUSH_POP(ax)
 PUSH_POP(bx)
 PUSH_POP(cx)
@@ -91,16 +95,19 @@ PUSH_POP_SEG(ss, SS)
 PUSH_POP_SEG(ds, DS)
 #undef PUSH_POP_SEG
 
-static void push_sp(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   p->regs.sp -= 2;
-   cpu_segment_write_word(p, VXT_SEGMENT_SS, p->regs.sp, p->regs.sp);
-}
+// This is the 8086 behaviour. 286 pushes the old value of SP.
+#ifdef TESTING
+	static void push_sp(CONSTSP(cpu) p, INST(inst)) {
+	   UNUSED(inst);
+	   p->regs.sp -= 2;
+	   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
+	}
 
-static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-   p->regs.sp = cpu_segment_read_word(p, VXT_SEGMENT_SS, p->regs.sp);
-}
+	static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
+	   UNUSED(inst);
+	   p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
+	}
+#endif
 
 static void push_cs(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
@@ -1243,12 +1250,16 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
          break;
       case 3: // CALL Mp
       {
-         push(p, p->sreg[VXT_SEGMENT_CS].raw);
-         push(p, p->regs.ip);
+         vxt_word cs = p->sreg[VXT_SEGMENT_CS].raw;
+         vxt_word ip = p->regs.ip;
 
          vxt_word offset = get_ea_offset(p);
          p->regs.ip = cpu_segment_read_word(p, p->seg, offset);
-         load_segment_register(p, VXT_SEGMENT_CS, cpu_segment_read_word(p, p->seg, offset + 2));
+         load_segment_register(p, VXT_SEGMENT_CS, cpu_segment_read_word(p, p->seg, (offset + 2) & 0xFFFF));
+         
+         push(p, cs);
+         push(p, ip);
+
          p->inst_queue_dirty = true;
          p->cycles += 53;
          break;
@@ -1262,7 +1273,7 @@ static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
       {
          vxt_word offset = get_ea_offset(p);
          p->regs.ip = cpu_segment_read_word(p, p->seg, offset);
-         load_segment_register(p, VXT_SEGMENT_CS, cpu_segment_read_word(p, p->seg, offset + 2));
+         load_segment_register(p, VXT_SEGMENT_CS, cpu_segment_read_word(p, p->seg, (offset + 2) & 0xFFFF));
          p->inst_queue_dirty = true;
          p->cycles += 24;
          break;

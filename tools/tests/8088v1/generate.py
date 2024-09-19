@@ -257,13 +257,6 @@ skip_opcodes = (
 	#      therefore REP prefixes are prepended to 10% of IDIV tests. This was only recently discovered by reenigne.
     0xD4,
     (0xF6, 6), (0xF6, 7), (0xF7, 6), (0xF7, 7),
-
-    # BUG: ?
-    0x11,
-
-    # BUG: Possible issue with get_ea_offset?
-	#      callf word [ss:bp+si-64h]
-    (0xFF, 3)
 )
 
 check_and_download("8088.json")
