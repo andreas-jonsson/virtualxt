@@ -100,12 +100,12 @@ PUSH_POP_SEG(ds, DS)
 	static void push_sp(CONSTSP(cpu) p, INST(inst)) {
 	   UNUSED(inst);
 	   p->regs.sp -= 2;
-	   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
+	   cpu_segment_write_word(p, VXT_SEGMENT_SS, p->regs.sp, p->regs.sp);
 	}
 
 	static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
 	   UNUSED(inst);
-	   p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
+	   p->regs.sp = cpu_segment_read_word(p, VXT_SEGMENT_SS, p->regs.sp);
 	}
 #endif
 
