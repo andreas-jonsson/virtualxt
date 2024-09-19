@@ -66,7 +66,7 @@ static void add_5_15(CONSTSP(cpu) p, INST(inst)) {
       p->regs.r = pop(p);                                      \
    }                                                           \
 
-#ifdef TESTING
+#ifndef TESTING
 	PUSH_POP(sp)
 #endif
 
@@ -82,13 +82,12 @@ PUSH_POP(si)
 PUSH_POP(di)
 #undef PUSH_POP
 
-// This is the 286 behaviour compared to 8086.
-#ifndef TESTING
+// This is the 8086 behaviour. 286 pushes the old value of SP.
+#ifdef TESTING
 	static void push_sp(CONSTSP(cpu) p, INST(inst)) {
 	   UNUSED(inst);
-	   vxt_word sp = p->regs.sp;
 	   p->regs.sp -= 2;
-	   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, sp);
+	   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
 	}
 
 	static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
