@@ -25,7 +25,8 @@
 #define _EXCEPTION_H_
 
 #include "common.h"
-#include "cpu.h"
+
+struct cpu;
 
 enum exception_vector {
 	CPU_DIV_ER_EXC      = 0,	// #DE Divide Error exception
@@ -49,11 +50,8 @@ enum exception_vector {
 	//                    15	//     Reserved
 	CPU_NPX_ERR_INT     = 16,	//     NPX error interrupt
 	CPU_MF_EXC          = 16,	// #MF Math Fault exception (pmode)
+	CPU_INVALID_EXC
 };
-
-static void throw_exception(CONSTSP(cpu) p, vxt_byte exc_vec, vxt_word err) {
-	(void)p; (void)exc_vec; (void)err;
-}
 
 #endif
 

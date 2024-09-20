@@ -25,6 +25,7 @@
 #include "cpu.h"
 #include "desc.h"
 #include "testing.h"
+#include "exception.h"
 
 #include "exec.inl"
 #include "exec_ext.inl"
@@ -84,6 +85,9 @@ static void read_opcode(CONSTSP(cpu) p) {
 static void prep_exec(CONSTSP(cpu) p) {
    p->inst_queue_dirty = false;
    p->bus_transfers = 0;
+   
+   p->exc_vector = CPU_INVALID_EXC;
+   p->error_code = 0;
 
    bool trap = (p->regs.flags & VXT_TRAP) != 0;
    bool interrupt = (p->regs.flags & VXT_INTERRUPT) != 0;
@@ -153,7 +157,28 @@ void cpu_reflect_segment_registers(CONSTSP(cpu) p) {
 	p->regs.ss = p->sreg[VXT_SEGMENT_SS].raw;
 }
 
+void cpu_throw_exception(CONSTSP(cpu) p, vxt_byte exc_vec, vxt_word err) {
+	#ifdef VXT_NO_LIBC
+		PANIC("Protected mode is not supported!");
+	#else
+		ENSURE(cpu_is_protected(p));
+		p->exc_vector = exc_vec;
+		p->error_code = err;
+		longjmp(p->jmp_buffer, 1);
+	#endif
+}
+
 int cpu_step(CONSTSP(cpu) p) {
+#ifdef VXT_NO_LIBC
+	if (0)
+#else
+	if (setjmp(p->jmp_buffer))
+#endif
+	{
+		VXT_LOG("Protected mode exception! %X - %d", p->exc_vector, p->error_code);
+		call_int(p, p->exc_vector);
+	}
+
     VALIDATOR_BEGIN(p, &p->regs);
 
     prep_exec(p);

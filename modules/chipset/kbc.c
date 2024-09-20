@@ -42,6 +42,7 @@ struct kbc {
 	vxt_byte data_port;
     vxt_byte command_port;
     vxt_byte port_61;
+    vxt_byte port_92;
 
     vxt_byte command;
     bool keyboard_enable;
@@ -67,6 +68,8 @@ static vxt_byte in(struct kbc *c, vxt_word port) {
             return c->port_61;
         case 0x64:
             return c->command_port;
+        case 0x92:
+            return c->port_92;
 	}
 	return 0;
 }
@@ -88,13 +91,21 @@ static void out(struct kbc *c, vxt_word port, vxt_byte data) {
         }
 
         c->port_61 = data;
-    }
+    } else if (port == 0x92) {
+		bool enable_a20 = (data & 2) != 0;
+		if ((c->port_92 & 2) != (data & 2))
+			VXT_LOG(enable_a20 ? "Enable Fast-A20 line!" : "Disable Fast-A20 line!");
+			
+		vxt_system_set_a20(VXT_GET_SYSTEM(c), enable_a20);
+		c->port_92 = data;
+	}
 }
 
 static vxt_error install(struct kbc *c, vxt_system *s) {
     struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
     vxt_system_install_io(s, p, 0x60, 0x62);
     vxt_system_install_io_at(s, p, 0x64);
+    vxt_system_install_io_at(s, p, 0x92);
     vxt_system_install_timer(s, p, 1000);
 
     for (int i = 0; i < VXT_MAX_PERIPHERALS; i++) {
@@ -126,6 +137,7 @@ static vxt_error timer(struct kbc *c, vxt_timer_id id, int cycles) {
 static vxt_error reset(struct kbc *c) {
     c->command_port = c->data_port = 0;
     c->port_61 = 14;
+    c->port_92 = 0;
 
 	c->spk_sample_index = 0;
 	c->spk_enabled = false;

@@ -27,6 +27,10 @@
 #include "common.h"
 #include "desc.h"
 
+#ifndef VXT_NO_LIBC
+	#include <setjmp.h>
+#endif
+
 // TODO: This need some more work.
 #if !defined(VXT_NO_PREFETCH) && defined(PI8088)
    #define VXT_NO_PREFETCH
@@ -42,8 +46,8 @@
 
 #define VALIDATOR_BEGIN(p, regs) { if ((p)->validator) (p)->validator->begin((regs), (p)->validator->userdata); }
 #define VALIDATOR_END(p, name, op, mod, cycles, regs) { if ((p)->validator) (p)->validator->end((name), (op), (mod), (cycles), (regs), (p)->validator->userdata); }
-#define VALIDATOR_READ(p, addr, data) { if ((p)->validator) (p)->validator->read((addr), (data), (p)->validator->userdata); }
-#define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr), (data), (p)->validator->userdata); }
+#define VALIDATOR_READ(p, addr, data) { if ((p)->validator) (p)->validator->read((addr) & 0xFFFFF, (data), (p)->validator->userdata); }
+#define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr) & 0xFFFFF, (data), (p)->validator->userdata); }
 #define VALIDATOR_DISCARD(p) { if ((p)->validator) (p)->validator->discard((p)->validator->userdata); }
 
 struct segment_register {
@@ -64,6 +68,12 @@ struct cpu {
 	bool trap, halt, int28, invalid;
 	int cycles;
 	vxt_word inst_start;
+	
+	vxt_byte exc_vector;
+	vxt_word error_code;
+	#ifndef VXT_NO_LIBC
+		jmp_buf jmp_buffer;
+	#endif
 
 	vxt_byte opcode, repeat;
 	struct address_mode mode;
@@ -96,6 +106,10 @@ void cpu_reset(CONSTSP(cpu) p);
 void cpu_reset_cycle_count(CONSTSP(cpu) p);
 void cpu_reflect_segment_registers(CONSTSP(cpu) p);
 int cpu_step(CONSTSP(cpu) p);
+
 bool cpu_is_protected(CONSTSP(cpu) p);
+void cpu_throw_exception(CONSTSP(cpu) p, vxt_byte exc_vec, vxt_word err);
+
+bool patch_bios_call(vxt_system *s, struct vxt_registers *r, int n);
 
 #endif

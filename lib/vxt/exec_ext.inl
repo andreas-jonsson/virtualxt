@@ -98,6 +98,8 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
  			VXT_LOG("CLTS - Clear Task-Switched Flag in MSW");
             p->msw &= ~MSW_TS;
  			return;
+ 		default:
+			p->invalid = true;
    	}
 
     #endif

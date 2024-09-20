@@ -146,7 +146,7 @@ static void or_D(CONSTSP(cpu) p, INST(inst)) {
 
 static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
    VALIDATOR_DISCARD(p);
-   PRINT("invalid opcode: 0x%X", inst->opcode);
+   PRINT("invalid opcode: 0x%X @ %X:%X", inst->opcode, p->regs.cs, p->inst_start);
    p->regs.debug = true;
 }
 

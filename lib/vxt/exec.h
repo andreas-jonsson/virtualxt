@@ -74,7 +74,7 @@ static vxt_byte read_opcode8(CONSTSP(cpu) p) {
       memmove(p->inst_queue, &p->inst_queue[1], --p->inst_queue_count);
 
       #if defined(VXT_DEBUG_PREFETCH) && !defined(VXT_NO_PREFETCH)
-         vxt_pointer ptr = VXT_POINTER(p->sregs[VXT_SEGMENT_CS].raw, ip);
+         vxt_pointer ptr = VXT_POINTER(p->sreg[VXT_SEGMENT_CS].raw, ip);
          if (*p->inst_queue_debug != ptr) {
             VXT_LOG("FATAL: Broken prefetch queue detected! Expected 0x%X but got 0x%X.", *p->inst_queue_debug, ptr);
             p->regs.debug = true;
@@ -369,6 +369,10 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
 static void call_int(CONSTSP(cpu) p, int n) {
 	VALIDATOR_DISCARD(p);
 	CONSTSP(vxt_registers) r = &p->regs;
+	
+	// TODO: Fix this hack! Move this to BIOS.
+	if (patch_bios_call(p->s, r, n))
+		return;
 
 	push(p, (r->flags & ALL_FLAGS) | 0xF002);
 	push(p, p->sreg[VXT_SEGMENT_CS].raw);

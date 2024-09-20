@@ -292,6 +292,10 @@ VXT_API bool vxt_system_cpu_protected(CONSTP(vxt_system) s) {
 	return cpu_is_protected(&s->cpu);
 }
 
+VXT_API void vxt_system_set_a20(CONSTP(vxt_system) s, bool enable) {
+	s->a20 = enable;
+}
+
 VXT_API void vxt_system_reload_segments(vxt_system *s) {
 	struct vxt_registers *regs = &s->cpu.regs;
 	load_segment_register(&s->cpu, VXT_SEGMENT_CS, regs->cs);
@@ -350,13 +354,37 @@ VXT_API void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_peripheral 
 }
 
 VXT_API vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
-    addr &= 0xFFFFF;
+	if (!s->a20)
+		addr &= 0xEFFFFF;
+	
+	if (addr >= 0x100000) {
+		#if (EXT_MEM_SIZE == 0)
+			return 0xFF;
+		#else
+			addr -= 0x100000;
+			return (addr >= EXT_MEM_SIZE) ? 0xFF : s->ext_mem[addr];
+		#endif
+	}
+	
     CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
     return dev->io.read(VXT_GET_DEVICE_PTR(dev), addr);
 }
 
 VXT_API void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
-    addr &= 0xFFFFF;
+	if (!s->a20)
+		addr &= 0xEFFFFF;
+	
+	if (addr >= 0x100000) {
+		#if (EXT_MEM_SIZE == 0)
+			return;
+		#else
+			addr -= 0x100000;
+			if (addr < EXT_MEM_SIZE)
+				s->ext_mem[addr] = data;
+		#endif
+		return;
+	}
+
     CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
     dev->io.write(VXT_GET_DEVICE_PTR(dev), addr, data);
 }

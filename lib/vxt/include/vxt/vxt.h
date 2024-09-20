@@ -141,7 +141,12 @@ extern "C" {
     #define VXT_API
 #endif
 
-#define VXT_POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
+// Extended memory in MB
+#ifndef VXT_EXTENDED_MEMORY_SIZE
+	#define VXT_EXTENDED_MEMORY_SIZE 1
+#endif
+
+#define VXT_POINTER(s, o) ( ((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o)) )
 #define VXT_INVALID_POINTER ((vxt_pointer)0xFFFFFFFF)
 #define VXT_INVALID_DEVICE_ID ((vxt_device_id)0xFF)
 #define VXT_INVALID_TIMER_ID ((vxt_timer_id)-1)
@@ -363,6 +368,7 @@ VXT_API void vxt_system_reset(vxt_system *s);
 VXT_API void vxt_system_reload_segments(vxt_system *s);
 VXT_API struct vxt_registers *vxt_system_registers(vxt_system *s);
 VXT_API bool vxt_system_cpu_protected(vxt_system *s);
+VXT_API void vxt_system_set_a20(vxt_system *s, bool enable);
 
 VXT_API int vxt_system_frequency(vxt_system *s);
 VXT_API void vxt_system_set_frequency(vxt_system *s, int freq);
@@ -408,6 +414,9 @@ _Static_assert(sizeof(intptr_t) == sizeof(void*), "invalid intptr_t size");
 
 /// @private
 _Static_assert(sizeof(uintptr_t) == sizeof(void*), "invalid uintptr_t size");
+
+/// @private
+_Static_assert((VXT_EXTENDED_MEMORY_SIZE >= 0) && (VXT_EXTENDED_MEMORY_SIZE <= 16), "invalid memory size");
 
 #ifdef __cplusplus
 }

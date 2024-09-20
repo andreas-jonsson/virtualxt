@@ -49,14 +49,16 @@
 #define SELECTOR_RPL_MASK 0xFFFC
 
 void load_segment_register(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word v) {
-	p->sreg[seg].raw = v;
-	
 	if (cpu_is_protected(p)) {
-		// TODO: Protected mode.
-		struct segment_selector *sel = SELECTOR(p, seg);
-		sel->rpl = v & 3;
-		sel->ti = (v >> 2) & 1;
-		sel->index = v >> 3;
+		struct segment_selector sel = {0};
+		struct segment_descriptor desc = {0};
+		
+		sel.rpl = v & 3;
+		sel.ti = (v >> 2) & 1;
+		sel.index = v >> 3;
+		
+		p->sreg[seg].sel = sel;
+		p->sreg[seg].desc = desc;
 	} else {
 		struct segment_descriptor *desc = DESCRIPTOR(p, seg);
 		
@@ -67,6 +69,8 @@ void load_segment_register(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word v) {
 		
 		SELECTOR(p, seg)->cpl = 0;
 	}
+
+	p->sreg[seg].raw = v;
 }
 
 vxt_byte get_descriptor_access(struct segment_descriptor *desc) {
@@ -112,14 +116,14 @@ UINT64 fetch_segment_descriptor(CONSTSP(cpu) p, enum vxt_segment seg, vxt_byte e
 	if (sel->ti) { // LDT
 		table = _VXT_REG_LDTR;
 		if (!DESCRIPTOR(p, table)->valid)
-			throw_exception(p, exvec, p->sreg[seg].raw & SELECTOR_RPL_MASK);
+			cpu_throw_exception(p, exvec, p->sreg[seg].raw & SELECTOR_RPL_MASK);
 	} else { // GDT
 		table = _VXT_REG_GDTR;
 	}
 	
 	struct segment_descriptor *desc = DESCRIPTOR(p, table);
 	if ((offset + 7u) > desc->limit)
-		throw_exception(p, exvec, p->sreg[seg].raw & SELECTOR_RPL_MASK);
+		cpu_throw_exception(p, exvec, p->sreg[seg].raw & SELECTOR_RPL_MASK);
 
 	vxt_pointer addr = desc->base + offset;
 	return ((UINT64)vxt_system_read_word(p->s, addr + 2) << 32) | (UINT64)vxt_system_read_word(p->s, addr);

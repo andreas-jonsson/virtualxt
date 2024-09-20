@@ -21,50 +21,27 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 
-#ifndef _SYSTEM_H_
-#define _SYSTEM_H_
-
-#include "common.h"
-#include "cpu.h"
-
-#define MAX_TIMERS 256
-#define EXT_MEM_SIZE ( VXT_EXTENDED_MEMORY_SIZE * 1024 * 1024 )
-
-struct timer {
-   vxt_timer_id id;
-   struct vxt_peripheral *dev;
-   INT64 ticks;
-   double interval;
-};
-
-struct system {
-   void *userdata;
-
-   vxt_byte io_map[VXT_IO_MAP_SIZE];
-   vxt_byte mem_map[VXT_MEM_MAP_SIZE];
-   
-   bool a20;
-   #if (EXT_MEM_SIZE > 0)
-      vxt_byte ext_mem[EXT_MEM_SIZE];
-   #endif
-
-   vxt_allocator *alloc;
-   struct cpu cpu;
-   int frequency;
-
-   int num_timers;
-   struct timer timers[MAX_TIMERS];
-
-   int num_monitors;
-   struct vxt_monitor monitors[VXT_MAX_MONITORS];
-
-   int num_devices;
-   struct vxt_peripheral *devices[VXT_MAX_PERIPHERALS];
-   struct _vxt_peripheral dummy;
-};
-
-void init_dummy_device(vxt_system *s);
-vxt_byte system_in(vxt_system *s, vxt_word port);
-void system_out(vxt_system *s, vxt_word port, vxt_byte data);
-
-#endif
+bool patch_bios_call(vxt_system *s, struct vxt_registers *r, int n) {
+	(void)s;
+	if (n == 0x15) {
+		switch (r->ah) {
+			case 0x87:
+				// Reference: https://www.powernet.co.za/info/bios/int/int15/87.htm
+				//            https://www.stanislavs.org/helppc/int_15-87.html
+				VXT_LOG("INT15,87: BIOS Request block from extended memory!");
+				
+				r->flags |= VXT_CARRY; // Set error
+				r->ah = 2; // Just say interrupt error
+				return true;
+			case 0x88:
+				r->ax = VXT_EXTENDED_MEMORY_SIZE * 1024; // Extended memory in KB
+				r->flags &= ~VXT_CARRY; // No error
+				VXT_LOG("INT15,88: Report %dKB of XMS memory.", r->ax);
+				return true;
+			case 0x89:
+				VXT_LOG("INT15,89: BIOS Request switch to protected mode!");
+				return true;
+		}
+	}
+	return false;
+}
