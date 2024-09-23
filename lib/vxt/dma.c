@@ -26,6 +26,7 @@
 struct dma {
     bool flip;
     bool mem_to_mem;
+    vxt_byte extra_regs[0x100];
 
 	struct {
         bool masked;
@@ -41,18 +42,20 @@ struct dma {
         vxt_dword reload_addr;
 		vxt_dword addr_inc;
         vxt_dword page;
-	} channel[4];
+	} channel[8];
 };
 
 static vxt_error reset(struct dma *c) {
     vxt_memclear(c, sizeof(struct dma));
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 8; i++)
         c->channel[i].masked = true;
     return VXT_NO_ERROR;
 }
 
 static vxt_byte in(struct dma *c, vxt_word port) {
-    if (port >= 0x80) {
+    if (port >= 0xC0) {
+        port = (port & 0xF) >> 1;
+    } else if (port >= 0x80) {
         vxt_byte ch;
         switch (port & 0xF) {
             case 0x1:
@@ -67,27 +70,42 @@ static vxt_byte in(struct dma *c, vxt_word port) {
             case 0x7:
                 ch = 0;
                 break;
+            case 0x9:
+                ch = 6;
+                break;
+            case 0xA:
+                ch = 7;
+                break;
+            case 0xB:
+                ch = 5;
+                break;
+            case 0xF:
+                ch = 4;
+                break;
             default:
-                return 0xFF;
+                return c->extra_regs[port & 0xF];
         }
 	    return (vxt_byte)(c->channel[ch].page >> 16);
     } else {
-        port &= 0xF;
-        if (port < 8) {
-            vxt_byte ch = (port >> 1) & 3;
-            vxt_dword *target = (port & 1) ? &c->channel[ch].count : &c->channel[ch].addr;
-            vxt_byte res = (vxt_byte)(*target >> (c->flip ? 8 : 0));
-            c->flip = !c->flip;
-            return res;
-        } else if (port == 8) { // Status Register
-            return 0xF;
-        }
-        return 0xFF;
+        port = port & 0xF;
     }
+    
+	if (port < 8) {
+		vxt_byte ch = (port >> 1) & 7;
+		vxt_dword *target = (port & 1) ? &c->channel[ch].count : &c->channel[ch].addr;
+		vxt_byte res = (vxt_byte)(*target >> (c->flip ? 8 : 0));
+		c->flip = !c->flip;
+		return res;
+	} else if (port == 8) { // Status Register
+		return 0xF;
+	}
+	return 0xFF;
 }
 
 static void out(struct dma *c, vxt_word port, vxt_byte data) {
-    if (port >= 0x80) {
+	if (port >= 0xC0) {
+		port = (port & 0xF) >> 1;
+    } else if (port >= 0x80) {
         vxt_byte ch;
         switch (port & 0xF) {
             case 0x1:
@@ -102,65 +120,82 @@ static void out(struct dma *c, vxt_word port, vxt_byte data) {
             case 0x7:
                 ch = 0;
                 break;
+            case 0x9:
+                ch = 6;
+                break;
+            case 0xA:
+                ch = 7;
+                break;
+            case 0xB:
+                ch = 5;
+                break;
+            case 0xF:
+                ch = 4;
+                break;
             default:
+				c->extra_regs[port & 0xF] = data;
                 return;
         }
         c->channel[ch].page = (vxt_dword)data << 16;
+        return;
     } else {
-        switch ((port &= 0xF)) {
-            case 0x0:
-            case 0x1:
-            case 0x2:
-            case 0x3:
-            case 0x4:
-            case 0x5:
-            case 0x6:
-            case 0x7:
-            {
-                vxt_byte ch = (port >> 1) & 3;
-                vxt_dword *target = (port & 1) ? &c->channel[ch].count : &c->channel[ch].addr;
-                if (c->flip)
-                    *target = (*target & 0xFF) | ((vxt_word)data << 8);
-                else
-                    *target = (*target & 0xFF00) | (vxt_word)data;
+		port = port & 0xF;
+	}
+	
+	switch (port) {
+		case 0x0:
+		case 0x1:
+		case 0x2:
+		case 0x3:
+		case 0x4:
+		case 0x5:
+		case 0x6:
+		case 0x7:
+		{
+			vxt_byte ch = (port >> 1) & 7;
+			vxt_dword *target = (port & 1) ? &c->channel[ch].count : &c->channel[ch].addr;
+			if (c->flip)
+				*target = (*target & 0xFF) | ((vxt_word)data << 8);
+			else
+				*target = (*target & 0xFF00) | (vxt_word)data;
 
-                *((port & 1) ? &c->channel[ch].reload_count : &c->channel[ch].reload_addr) = *target;
-                c->flip = !c->flip;
-                break;
-            }
-            case 0x8: // Command register
-                c->mem_to_mem = (data & 1) != 0;
-                break;
-            case 0x9: // Request register
-                c->channel[data & 3].request = ((data >> 2) & 1) != 0;
-                break;
-            case 0xA: // Mask register
-                c->channel[data & 3].masked = ((data >> 2) & 1) != 0;
-                break;
-            case 0xB: // Mode register
-                c->channel[data & 3].operation = (data >> 2) & 3;
-                c->channel[data & 3].mode = (data >> 6) & 3;
-                c->channel[data & 3].auto_init = ((data >> 4) & 1) != 0;
-                c->channel[data & 3].addr_inc = (data & 0x20) ? 0xFFFFFFFF : 0x1;
-                break;
-            case 0xC: // Clear flip flop
-                c->flip = false;
-                break;
-            case 0xD: // Master reset
-                reset(c);
-                break;
-            case 0xF: // Write mask register
-                for (int i = 0; i < 4; i++)
-                    c->channel[i].masked = ((data >> i) & 1) != 0;
-                break;
-        }
-    }
+			*((port & 1) ? &c->channel[ch].reload_count : &c->channel[ch].reload_addr) = *target;
+			c->flip = !c->flip;
+			break;
+		}
+		case 0x8: // Command register
+			c->mem_to_mem = (data & 1) != 0;
+			break;
+		case 0x9: // Request register
+			c->channel[data & 7].request = ((data >> 2) & 1) != 0;
+			break;
+		case 0xA: // Mask register
+			c->channel[data & 7].masked = ((data >> 2) & 1) != 0;
+			break;
+		case 0xB: // Mode register
+			c->channel[data & 7].operation = (data >> 2) & 3;
+			c->channel[data & 7].mode = (data >> 6) & 3;
+			c->channel[data & 7].auto_init = ((data >> 4) & 1) != 0;
+			c->channel[data & 7].addr_inc = (data & 0x20) ? 0xFFFFFFFF : 0x1;
+			break;
+		case 0xC: // Clear flip flop
+			c->flip = false;
+			break;
+		case 0xD: // Master reset
+			reset(c);
+			break;
+		case 0xF: // Write mask register
+			for (int i = 0; i < 8; i++)
+				c->channel[i].masked = ((data >> i) & 1) != 0;
+			break;
+	}
 }
 
 static vxt_error install(struct dma *c, vxt_system *s) {
     struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
-    vxt_system_install_io(s, p, 0x0, 0xF);
+    vxt_system_install_io(s, p, 0x00, 0x0F);
     vxt_system_install_io(s, p, 0x80, 0x8F);
+    vxt_system_install_io(s, p, 0xC0, 0xDE);
     return VXT_NO_ERROR;
 }
 
@@ -184,14 +219,14 @@ static void update_count(struct dma *c, vxt_byte ch) {
 }
 
 static vxt_byte dma_read(struct dma *c, vxt_byte ch) {
-    ch &= 3;
+    ch &= 7;
     vxt_byte res = vxt_system_read_byte(VXT_GET_SYSTEM(c), c->channel[ch].page + c->channel[ch].addr);
     update_count(c, ch);
     return res;
 }
 
 static void dma_write(struct dma *c, vxt_byte ch, vxt_byte data) {
-    ch &= 3;
+    ch &= 7;
     vxt_system_write_byte(VXT_GET_SYSTEM(c), c->channel[ch].page + c->channel[ch].addr, data);
     update_count(c, ch);
 }

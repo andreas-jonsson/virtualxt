@@ -34,8 +34,8 @@
 #define DESC_TYPE_INTR_GATE		0x6
 #define DESC_TYPE_TRAP_GATE		0x7
 
-#define TSS_BUSY_BIT   0x2
-#define DESC_GATE_MASK 0x4
+#define TSS_BUSY_BIT	0x2
+#define DESC_GATE_MASK	0x4
 
 #define SEG_ACCESSED	0x1
 #define SEG_READWRITE	0x2
@@ -46,6 +46,14 @@
 #define SEG_SEGMENT		0x10
 #define SEG_PRESENT		0x80
 
+#define SEG_TYPE_READWRITE	0x1
+#define SEG_TYPE_READABLE	0x1
+#define SEG_TYPE_WRITABLE	0x1
+#define SEG_TYPE_CONFORMING	0x2
+#define SEG_TYPE_EXP_DOWN	0x2
+#define SEG_TYPE_EXECUTABLE	0x4
+#define SEG_TYPE_CODE		0x4
+
 #define SELECTOR_RPL_MASK 0xFFFC
 
 void load_segment_register(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word v) {
@@ -53,12 +61,93 @@ void load_segment_register(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word v) {
 		struct segment_selector sel = {0};
 		struct segment_descriptor desc = {0};
 		
-		sel.rpl = v & 3;
-		sel.ti = (v >> 2) & 1;
-		sel.index = v >> 3;
-		
-		p->sreg[seg].sel = sel;
-		p->sreg[seg].desc = desc;
+		if (seg == VXT_SEGMENT_SS) {
+			if ((v & SELECTOR_RPL_MASK) == 0) {
+				VXT_LOG("load_segment_register: (v & SELECTOR_RPL_MASK) == 0");
+				cpu_throw_exception(p, CPU_GP_EXC, v & SELECTOR_RPL_MASK);
+			}
+			
+			// Update selector
+			sel.rpl = v & 3;
+			sel.ti = (v >> 2) & 1;
+			sel.index = v >> 3;
+			
+			if (sel.rpl != p->sreg[VXT_SEGMENT_CS].sel.cpl) {
+				VXT_LOG("load_segment_register: sel.rpl != p->sreg[VXT_SEGMENT_CS].sel.cpl");
+				cpu_throw_exception(p, CPU_GP_EXC, v & SELECTOR_RPL_MASK);
+			}
+			
+			load_segment_descriptor(&desc, fetch_segment_descriptor(p, seg, CPU_GP_EXC));
+			
+			if (!desc.valid) {
+				VXT_LOG("load_segment_register: !desc->valid");
+				cpu_throw_exception(p, CPU_GP_EXC, v & SELECTOR_RPL_MASK);
+			}
+			
+			bool is_data = desc.segment && !(desc.type & SEG_TYPE_CODE);
+			bool is_writeable = desc.segment && (desc.type & SEG_TYPE_WRITABLE);
+			
+			if (!is_data || !is_writeable) {
+				VXT_LOG("load_segment_register: !is_data || !is_writeable");
+				cpu_throw_exception(p, CPU_GP_EXC, v & SELECTOR_RPL_MASK);
+			}
+			
+			if (desc.dpl != p->sreg[VXT_SEGMENT_CS].sel.cpl) {
+				VXT_LOG("load_segment_register: desc->dpl != p->sreg[VXT_SEGMENT_CS].sel.cpl");
+				cpu_throw_exception(p, CPU_GP_EXC, v & SELECTOR_RPL_MASK);
+			}
+			
+			if (!desc.present) {
+				VXT_LOG("load_segment_register: !desc->present");
+				cpu_throw_exception(p, CPU_GP_EXC, v & SELECTOR_RPL_MASK);
+			}
+			
+			p->sreg[seg].sel = sel;
+			p->sreg[seg].desc = desc;
+			update_segment_descriptor(p, seg);
+		} else if ((seg == VXT_SEGMENT_DS) || (seg == VXT_SEGMENT_ES)) {
+			sel.rpl = v & 3;
+			sel.ti = (v >> 2) & 1;
+			sel.index = v >> 3;
+				
+			if ((v & SELECTOR_RPL_MASK) == 0) {
+				desc.valid = false;
+				set_descriptor_access(&desc, SEG_SEGMENT);
+			} else {
+				load_segment_descriptor(&desc, fetch_segment_descriptor(p, seg, CPU_GP_EXC));
+			
+				if (!desc.valid) {
+					VXT_LOG("load_segment_register: !desc.valid");
+					cpu_throw_exception(p, CPU_GP_EXC, v & SELECTOR_RPL_MASK);
+				}
+
+				bool is_code_segment = desc.segment && (desc.type & SEG_TYPE_CODE);
+				bool is_readable = desc.segment && (desc.type & SEG_TYPE_READABLE);
+				
+				if (!desc.segment || (is_code_segment && !is_readable)) {
+					VXT_LOG("load_segment_register: is_system_segment || (is_code_segment && !is_readable)");
+					cpu_throw_exception(p, CPU_GP_EXC, v & SELECTOR_RPL_MASK);
+				}
+				
+				bool is_data_segment = desc.segment && !(desc.type & SEG_TYPE_CODE);
+
+				if (is_data_segment && ((sel.rpl > desc.dpl) || (p->sreg[VXT_SEGMENT_CS].sel.cpl > desc.dpl))) {
+					VXT_LOG("load_segment_register: is_data_segment && ((sel.rpl > desc.dpl) || (p->sreg[VXT_SEGMENT_CS].sel.cpl > desc.dpl)");
+					cpu_throw_exception(p, CPU_GP_EXC, v & SELECTOR_RPL_MASK);
+				}
+
+				if (!desc.present) {
+					VXT_LOG("load_segment_register: !desc.present");
+					cpu_throw_exception(p, CPU_GP_EXC, v & SELECTOR_RPL_MASK);
+				}
+			
+				p->sreg[seg].sel = sel;
+				p->sreg[seg].desc = desc;
+				update_segment_descriptor(p, seg);
+			}
+		} else {
+			PANIC("load_segment_register: invalid segment register");
+		}
 	} else {
 		struct segment_descriptor *desc = DESCRIPTOR(p, seg);
 		
@@ -90,6 +179,29 @@ void set_descriptor_access(struct segment_descriptor *desc, vxt_byte ar) {
 	
 	desc->dpl = (ar >> 5) & 3;
 	desc->present = ar & 0x80;
+}
+
+void load_segment_defaults(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word v) {
+	ENSURE(!cpu_is_protected(p));
+	
+	p->sreg[seg].raw = v;
+	SELECTOR(p, seg)->cpl = 0;
+
+	struct segment_descriptor *desc = DESCRIPTOR(p, seg);
+	desc->base = ((vxt_pointer)v) << 4;
+	desc->limit = 0xFFFF;
+	desc->dpl = 0;
+
+	switch (seg) {
+		case _VXT_REG_LDTR:
+			set_descriptor_access(desc, SEG_PRESENT | DESC_TYPE_LDT_DESC);
+			break;
+		case _VXT_REG_TR:
+			set_descriptor_access(desc, SEG_PRESENT);
+			break;
+		default:
+			set_descriptor_access(desc, SEG_SEGMENT | SEG_PRESENT | SEG_ACCESSED | SEG_READWRITE);
+	}
 }
 
 void load_segment_descriptor(struct segment_descriptor *desc, uint64_t v) {

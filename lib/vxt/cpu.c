@@ -135,8 +135,11 @@ static void do_exec(CONSTSP(cpu) p) {
         read_modregrm(p);
     inst->func(p, inst);
     
-    if (p->invalid)
+    if (p->invalid) {
+		p->regs.debug = true;
+		p->regs.ip = p->inst_start;
         call_int(p, 6);
+    }
     
     cpu_reflect_segment_registers(p);
     p->cycles += inst->cycles;
@@ -205,6 +208,7 @@ void cpu_reset_cycle_count(CONSTSP(cpu) p) {
 void cpu_reset(CONSTSP(cpu) p) {
 	p->trap = false;
 	vxt_memclear(&p->regs, sizeof(p->regs));
+	vxt_memclear(&p->sreg, sizeof(p->sreg));
 
 	p->regs.flags = 2;
 	#ifdef FLAG8086
@@ -215,7 +219,19 @@ void cpu_reset(CONSTSP(cpu) p) {
 	p->regs.debug = false;
 	p->msw = 0;
 	
-	load_segment_register(p, VXT_SEGMENT_CS, 0xFFFF);
+	load_segment_defaults(p, VXT_SEGMENT_CS, 0xFFFF);
+	load_segment_defaults(p, VXT_SEGMENT_DS, 0);
+	load_segment_defaults(p, VXT_SEGMENT_ES, 0);
+	load_segment_defaults(p, VXT_SEGMENT_SS, 0);
+	
+	load_segment_defaults(p, _VXT_REG_LDTR, 0);
+	load_segment_defaults(p, _VXT_REG_TR, 0);
+	
+	p->sreg[_VXT_REG_IDTR].desc.base = 0;
+	p->sreg[_VXT_REG_IDTR].desc.limit = 0x3FF;
+
+	p->sreg[_VXT_REG_GDTR].desc.base = 0;
+	p->sreg[_VXT_REG_GDTR].desc.limit = 0;
 
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);

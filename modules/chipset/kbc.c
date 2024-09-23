@@ -40,7 +40,8 @@
 
 struct kbc {
 	vxt_byte data_port;
-    vxt_byte command_port;
+	bool has_data;
+
     vxt_byte port_61;
     vxt_byte port_92;
 
@@ -61,37 +62,45 @@ static vxt_byte in(struct kbc *c, vxt_word port) {
         case 0x60:
         {
             vxt_byte data = c->data_port;
-            c->command_port = c->data_port = 0; // Not sure if the data port should be cleared on read?
+            c->data_port = 0;
+            c->has_data = false;
             return data;
         }
         case 0x61:
+			c->port_61 ^= 0x10; // Toggle RAM refresh bit 0x10
             return c->port_61;
-        case 0x64:
-            return c->command_port;
-        case 0x92:
+        case 0x64: // Read keyboard controller status
+            return c->has_data ? 1 : 0;
+        case 0x92: // Fast A20 etc.
             return c->port_92;
 	}
 	return 0;
 }
 
 static void out(struct kbc *c, vxt_word port, vxt_byte data) {
-    if (port == 0x61) {
+    if (port == 0x60) {
+        VXT_LOG("PORT 60: %X", data);
+    } else if (port == 0x61) {
         bool spk_enable = (data & 3) == 3;
         if (spk_enable != c->spk_enabled) {
             c->spk_enabled = spk_enable;
             c->spk_sample_index = 0;
         }
-
-        bool kb_reset = !(c->port_61 & 0xC0) && (data & 0xC0);
-        if (kb_reset) {
-            c->queue_size = 0;
-            c->data_port = 0xAA;
-            c->command_port = COMMAND_READY | DATA_READY;
-            vxt_system_interrupt(VXT_GET_SYSTEM(c), 1);
-        }
-
         c->port_61 = data;
-    } else if (port == 0x92) {
+    } else if (port == 0x64) {
+		VXT_LOG("PORT 64: %X", data);
+		
+		switch (data) {
+			case 0xAA: // Self test
+				c->data_port = 0x55;
+				c->has_data = true;
+				break;
+			case 0xC0: // Read input port
+				c->data_port = 0x84;
+				c->has_data = true;
+				break;
+		}
+    } else if (port == 0x92) {  // Fast A20 etc.
 		bool enable_a20 = (data & 2) != 0;
 		if ((c->port_92 & 2) != (data & 2))
 			VXT_LOG(enable_a20 ? "Enable Fast-A20 line!" : "Disable Fast-A20 line!");
@@ -103,7 +112,7 @@ static void out(struct kbc *c, vxt_word port, vxt_byte data) {
 
 static vxt_error install(struct kbc *c, vxt_system *s) {
     struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
-    vxt_system_install_io(s, p, 0x60, 0x62);
+    vxt_system_install_io(s, p, 0x60, 0x61);
     vxt_system_install_io_at(s, p, 0x64);
     vxt_system_install_io_at(s, p, 0x92);
     vxt_system_install_timer(s, p, 1000);
@@ -120,6 +129,7 @@ static vxt_error install(struct kbc *c, vxt_system *s) {
 
 static vxt_error timer(struct kbc *c, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
+    /*
     c->command_port |= COMMAND_READY;
     if (c->keyboard_enable) {
         if (c->queue_size && !(c->command_port & DATA_READY)) {
@@ -131,11 +141,15 @@ static vxt_error timer(struct kbc *c, vxt_timer_id id, int cycles) {
     } else if (c->command == READ_INPUT_CMD) {
         c->command_port |= DATA_READY;
     }
+    */
+    (void)c;
     return VXT_NO_ERROR;
 }
 
 static vxt_error reset(struct kbc *c) {
-    c->command_port = c->data_port = 0;
+    c->data_port = 0;
+    c->has_data = false;
+    
     c->port_61 = 14;
     c->port_92 = 0;
 

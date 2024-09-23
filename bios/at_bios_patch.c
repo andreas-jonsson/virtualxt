@@ -36,7 +36,7 @@ bool patch_bios_call(vxt_system *s, struct vxt_registers *r, int n) {
 			case 0x88:
 				r->ax = VXT_EXTENDED_MEMORY_SIZE * 1024; // Extended memory in KB
 				r->flags &= ~VXT_CARRY; // No error
-				VXT_LOG("INT15,88: Report %dKB of XMS memory.", r->ax);
+				VXT_LOG("INT15,88: Report %dKB of extended memory.", r->ax);
 				return true;
 			case 0x89:
 				VXT_LOG("INT15,89: BIOS Request switch to protected mode!");

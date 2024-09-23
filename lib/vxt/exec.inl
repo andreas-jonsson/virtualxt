@@ -392,7 +392,7 @@ static void arpl_63(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
 
    // TODO: Implement
-   VXT_LOG("ARPL is not implemented!");
+   VXT_LOG("Warning! ARPL is not implemented!");
    p->regs.flags &= ~VXT_ZERO;
 }
 

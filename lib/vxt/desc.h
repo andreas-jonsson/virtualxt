@@ -68,8 +68,13 @@ struct segment_descriptor {
 	bool present;
 };
 
+void load_segment_defaults(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word v);
 void load_segment_register(CONSTSP(cpu) p, enum vxt_segment seg, vxt_word v);
 UINT64 fetch_segment_descriptor(CONSTSP(cpu) p, enum vxt_segment seg, vxt_byte exvec);
+void load_segment_descriptor(struct segment_descriptor *desc, uint64_t v);
+void update_segment_descriptor(CONSTSP(cpu) p, enum vxt_segment seg);
+vxt_byte get_descriptor_access(struct segment_descriptor *desc);
+void set_descriptor_access(struct segment_descriptor *desc, vxt_byte ar);
 
 #endif
 

@@ -371,8 +371,8 @@ static void call_int(CONSTSP(cpu) p, int n) {
 	CONSTSP(vxt_registers) r = &p->regs;
 	
 	// TODO: Fix this hack! Move this to BIOS.
-	if (patch_bios_call(p->s, r, n))
-		return;
+	//if (patch_bios_call(p->s, r, n))
+	//	return;
 
 	push(p, (r->flags & ALL_FLAGS) | 0xF002);
 	push(p, p->sreg[VXT_SEGMENT_CS].raw);
