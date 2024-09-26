@@ -387,15 +387,6 @@ static void bound_62(CONSTSP(cpu) p, INST(inst)) {
    }
 }
 
-static void arpl_63(CONSTSP(cpu) p, INST(inst)) {
-   VALIDATOR_DISCARD(p);
-   UNUSED(inst);
-
-   // TODO: Implement
-   VXT_LOG("Warning! ARPL is not implemented!");
-   p->regs.flags &= ~VXT_ZERO;
-}
-
 static void push_68(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
    push(p, read_opcode16(p));

@@ -24,11 +24,65 @@
 #include "common.h"
 #include "exec.h"
 
+static void ext_sldt(CONSTSP(cpu) p, INST(inst)) {
+	UNUSED(inst);
+	UNUSED(p);
+	VXT_LOG("SLDT - Store Local Descriptor Table Register");
+}
+
+static void ext_str(CONSTSP(cpu) p, INST(inst)) {
+	UNUSED(inst);
+	UNUSED(p);
+	VXT_LOG("STR - Store Task Register");
+}
+
+static void ext_ldtr(CONSTSP(cpu) p, INST(inst)) {
+	UNUSED(inst);
+	UNUSED(p);
+	VXT_LOG("LDTR - Load Local Descriptor Table Register");
+}
+
+static void ext_ltr(CONSTSP(cpu) p, INST(inst)) {
+	UNUSED(inst);
+	UNUSED(p);
+	VXT_LOG("LTR - Load Task Register");
+}
+
+static void ext_verr(CONSTSP(cpu) p, INST(inst)) {
+	UNUSED(inst);
+	UNUSED(p);
+	VXT_LOG("VERR - Verify a Segment for Reading");
+}
+
+static void ext_verw(CONSTSP(cpu) p, INST(inst)) {
+	UNUSED(inst);
+	UNUSED(p);
+	VXT_LOG("VERW - Verify a Segment for Writing");
+}
+
+static void ext_lgdt(CONSTSP(cpu) p, INST(inst)) {
+	UNUSED(inst);
+	UNUSED(p);
+	VXT_LOG("LGDT - Load Global Descriptor Table Register");
+}
+
+static void ext_lidt(CONSTSP(cpu) p, INST(inst)) {
+	UNUSED(inst);
+	UNUSED(p);
+	VXT_LOG("LIDT - Load Interrupt Descriptor Table Register");
+}
+
+static void ext_lar(CONSTSP(cpu) p, INST(inst)) {
+	UNUSED(inst);
+	VXT_LOG("LAR - Load Access Rights Byte");
+	read_modregrm(p);
+}
+
 static void extended_F(CONSTSP(cpu) p, INST(inst)) {
     VALIDATOR_DISCARD(p);
-    UNUSED(inst);
-
+    
     #ifdef TESTING
+		UNUSED(inst);
 
         // 8086 - pop cs
         load_segment_register(p, VXT_SEGMENT_CS, pop(p));
@@ -41,22 +95,22 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
  			read_modregrm(p);
  			switch (p->mode.reg) {
 				case 0: // SLDT - Store Local Descriptor Table Register
-   					VXT_LOG("SLDT - Store Local Descriptor Table Register");
+   					ext_sldt(p, inst);
    					return;
 				case 1: // STR - Store Task Register
-   					VXT_LOG("STR - Store Task Register");
+   					ext_str(p, inst);
    					return;
 				case 2: // LDTR - Load Local Descriptor Table Register
-   					VXT_LOG("LDTR - Load Local Descriptor Table Register");
+   					ext_ldtr(p, inst);
    					return;
 				case 3: // LTR - Load Task Register
-   					VXT_LOG("LTR - Load Task Register");
+   					ext_ltr(p, inst);
    					return;
 				case 4: // VERR - Verify a Segment for Reading
-   					VXT_LOG("VERR - Verify a Segment for Reading");
+   					ext_verr(p, inst);
    					return;
 				case 5: // VERW - Verify a Segment for Writing
-   					VXT_LOG("VERW - Verify a Segment for Writing");
+   					ext_verw(p, inst);
    					return;
  			}
  			return;
@@ -70,10 +124,10 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
    					VXT_LOG("SIDT - Store Interrupt Descriptor Table Register");
    					return;
 				case 2: // LGDT - Load Global Descriptor Table Register
-   					VXT_LOG("LGDT - Load Global Descriptor Table Register");
+   					ext_lgdt(p, inst);
    					return;
 				case 3: // LIDT - Load Interrupt Descriptor Table Register
-   					VXT_LOG("LIDT - Load Interrupt Descriptor Table Register");
+   					ext_lidt(p, inst);
    					return;
 				case 4: // SMSW - Store Machine Status Word
    					VXT_LOG("SMSW - Store Machine Status Word");
@@ -84,8 +138,7 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
  			}
  			return;
   		case 2: // LAR - Load Access Rights Byte
- 			VXT_LOG("LAR - Load Access Rights Byte");
- 			read_modregrm(p);
+ 			ext_lar(p, inst);
  			return;
   		case 3: // LSL - Load Segment Limit
  			VXT_LOG("LSL - Load Segment Limit");
@@ -103,6 +156,15 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
    	}
 
     #endif
+}
+
+static void arpl_63(CONSTSP(cpu) p, INST(inst)) {
+   VALIDATOR_DISCARD(p);
+   UNUSED(inst);
+
+   // TODO: Implement
+   VXT_LOG("Warning! ARPL is not implemented!");
+   p->regs.flags &= ~VXT_ZERO;
 }
 
 static void storeall_F1(CONSTSP(cpu) p, INST(inst)) {

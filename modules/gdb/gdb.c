@@ -76,9 +76,11 @@ struct gdb_state {
     int num_bps;
 
     int signum;
+    int noack;
     reg registers[GDB_CPU_NUM_REGISTERS];
 };
 
+#define DEBUG 0
 #include "gdbstub/gdbstub.h"
 
 struct gdb {
