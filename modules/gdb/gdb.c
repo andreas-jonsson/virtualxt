@@ -35,6 +35,7 @@
     #include <sys/socket.h>
 	#include <sys/select.h>
     #include <netinet/in.h>
+    #include <netinet/tcp.h>
 #endif
 
 #define MAX_BREAKPOINTS 64
@@ -185,6 +186,9 @@ static bool accept_client(struct gdb *dbg, vxt_system *sys) {
     socklen_t ln = sizeof(addr);
     if ((dbg->state.client = accept(dbg->server, (struct sockaddr*)&addr, &ln)) == -1)
         return false;
+        
+    int one = 1;
+	setsockopt(dbg->state.client, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 
     dbg->state.num_bps = 0;
     dbg->state.sys = sys;
