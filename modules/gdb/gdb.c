@@ -228,7 +228,8 @@ static vxt_error install(struct gdb *dbg, vxt_system *s) {
 
 	if (dbg->wait_on_startup) {
 		VXT_LOG("Wait for client to connect...");
-		while (!accept_client(dbg, s));
+		while (!accept_client(dbg, s))
+			sleep(1);
 	}
     return VXT_NO_ERROR;
 }

@@ -8,7 +8,7 @@ def main():
 
     next_instruction = 0
 
-    while 1:
+    while True:
         parts = src_fp.readline().split()
         if len(parts) == 0:
             return
