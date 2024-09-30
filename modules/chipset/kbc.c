@@ -62,8 +62,9 @@ static vxt_byte in(struct kbc *c, vxt_word port) {
         case 0x60:
         {
             vxt_byte data = c->data_port;
-            c->data_port = 0;
+            //c->data_port = 0;
             c->has_data = false;
+            VXT_LOG("KB READ DATA PORT 60: %X", data);
             return data;
         }
         case 0x61:

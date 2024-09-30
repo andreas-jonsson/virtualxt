@@ -34,10 +34,10 @@
 #define INST(n) const struct instruction * const n
 #define MOD_TARGET_MEM(mode) ((mode).mod < 3)
 
-#define MSW_PE 0x0  // Protected mode enable
-#define MSW_MP 0x1  // Monitor processor extension
-#define MSW_EM 0x2  // Emulate processor extension
-#define MSW_TS 0x4  // Task switched
+#define MSW_PE 0x1  // Protected mode enable
+#define MSW_MP 0x2  // Monitor processor extension
+#define MSW_EM 0x4  // Emulate processor extension
+#define MSW_TS 0x8  // Task switched
 
 enum architecture {
 	ARCH_INVALID,

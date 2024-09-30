@@ -60,16 +60,26 @@ static void ext_verw(CONSTSP(cpu) p, INST(inst)) {
 	VXT_LOG("VERW - Verify a Segment for Writing");
 }
 
-static void ext_lgdt(CONSTSP(cpu) p, INST(inst)) {
-	UNUSED(inst);
-	UNUSED(p);
-	VXT_LOG("LGDT - Load Global Descriptor Table Register");
+static void ldt(CONSTSP(cpu) p, enum vxt_segment table) {
+	// TODO: Check pmode
+	
+	struct segment_descriptor *desc = DESCRIPTOR(p, table);
+	vxt_word offset = get_ea_offset(p);
+	
+	desc->limit = cpu_segment_read_word(p, p->seg, offset);
+	desc->base = (((vxt_pointer)cpu_segment_read_word(p, p->seg, (offset + 4) & 0xFFFF) << 16) | (vxt_pointer)cpu_segment_read_word(p, p->seg, (offset + 2) & 0xFFFF)) & 0xFFFFFF;
 }
 
-static void ext_lidt(CONSTSP(cpu) p, INST(inst)) {
-	UNUSED(inst);
-	UNUSED(p);
-	VXT_LOG("LIDT - Load Interrupt Descriptor Table Register");
+static void sdt(CONSTSP(cpu) p, enum vxt_segment table) {
+	// TODO: Check pmode
+	
+	struct segment_descriptor *desc = DESCRIPTOR(p, table);
+	vxt_pointer base = desc->base | 0xFF000000;
+	vxt_word offset = get_ea_offset(p);
+		
+	cpu_segment_write_word(p, p->seg, offset, desc->limit);
+	cpu_segment_write_word(p, p->seg, (offset + 2) & 0xFFFF, base & 0xFFFF);
+	cpu_segment_write_word(p, p->seg, (offset + 4) & 0xFFFF, base >> 16);
 }
 
 static void ext_lar(CONSTSP(cpu) p, INST(inst)) {
@@ -118,22 +128,31 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
  			read_modregrm(p);
  			switch (p->mode.reg) {
 				case 0: // SGDT - Store Global Descriptor Table Register
-   					VXT_LOG("SGDT - Store Global Descriptor Table Register");
+   					sdt(p, _VXT_REG_GDTR);
    					return;
 				case 1: // SIDT - Store Interrupt Descriptor Table Register
-   					VXT_LOG("SIDT - Store Interrupt Descriptor Table Register");
+   					sdt(p, _VXT_REG_IDTR);
    					return;
 				case 2: // LGDT - Load Global Descriptor Table Register
-   					ext_lgdt(p, inst);
+   					ldt(p, _VXT_REG_GDTR);
    					return;
 				case 3: // LIDT - Load Interrupt Descriptor Table Register
-   					ext_lidt(p, inst);
+   					ldt(p, _VXT_REG_IDTR);
    					return;
 				case 4: // SMSW - Store Machine Status Word
-   					VXT_LOG("SMSW - Store Machine Status Word");
+   					rm_write16(p, p->msw);
    					return;
 				case 6: // LMSW - Load Machine Status Word
-   					VXT_LOG("LMSW - Load Machine Status Word");
+   					{
+						vxt_word msw = rm_read16(p);
+						if (cpu_is_protected(p) && !(msw & MSW_PE)) {
+							VXT_LOG("CPU enter real mode!");
+							load_segment_defaults(p, VXT_SEGMENT_CS, p->sreg[VXT_SEGMENT_CS].raw);
+						} else if (!cpu_is_protected(p) && (msw & MSW_PE)) {
+							VXT_LOG("CPU enter protected mode!");
+						}
+						p->msw = msw;
+					}
    					return;
  			}
  			return;
@@ -148,7 +167,7 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
  			VXT_LOG("LOADALL - Load All of the CPU Registers");
  			return;
   		case 6: // CLTS - Clear Task-Switched Flag in MSW
- 			VXT_LOG("CLTS - Clear Task-Switched Flag in MSW");
+ 			// TODO: Check pmode
             p->msw &= ~MSW_TS;
  			return;
  		default:
