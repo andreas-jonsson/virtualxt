@@ -30,22 +30,12 @@
 #define MAX_EVENTS 16
 #define INT64 long long
 
-#define DATA_READY 1
-#define COMMAND_READY 2
-
-#define DISABLE_KEYBOARD_CMD 0xAD
-#define ENABLE_KEYBOARD_CMD 0xAE
-#define READ_INPUT_CMD 0xD0
-#define WRITE_OUTPUT_CMD 0xD1
-
 struct ppi {
 	vxt_byte data_port;
-    vxt_byte command_port;
     vxt_byte port_61;
     vxt_byte xt_switches;
 
-    vxt_byte command;
-    bool keyboard_enable;
+    bool kb_reset;
     bool turbo_enabled;
 
     int queue_size;
@@ -65,21 +55,23 @@ static vxt_byte in(struct ppi *c, vxt_word port) {
         case 0x60:
         {
             vxt_byte data = c->data_port;
-            c->command_port = c->data_port = 0; // Not sure if the data port should be cleared on read?
+            if (c->kb_reset) {
+				c->kb_reset = false;
+				c->data_port = 0;
+			}
             return data;
         }
         case 0x61:
+			c->port_61 ^= 0x10; // Toggle refresh bit.
             return c->port_61;
         case 0x62:
             return (c->port_61 & 8) ? (c->xt_switches >> 4) : (c->xt_switches & 0xF);
-        case 0x64:
-            return c->command_port;
 	}
 	return 0;
 }
 
 static void out(struct ppi *c, vxt_word port, vxt_byte data) {
-    if (port == 0x61) {
+	if (port == 0x61) {
         bool spk_enable = (data & 3) == 3;
         if (spk_enable != c->spk_enabled) {
             c->spk_enabled = spk_enable;
@@ -95,22 +87,23 @@ static void out(struct ppi *c, vxt_word port, vxt_byte data) {
             VXT_LOG("Turbo mode %s!", turbo_enabled ? "on" : "off");
         }
 
-        bool kb_reset = !(c->port_61 & 0xC0) && (data & 0xC0);
-        if (kb_reset) {
+		bool do_reset = !(c->port_61 & 0xC0) && (data & 0xC0);
+		c->kb_reset = c->kb_reset || do_reset;
+		
+        if (c->kb_reset && (c->data_port != 0xAA)) {
             c->queue_size = 0;
             c->data_port = 0xAA;
-            c->command_port = COMMAND_READY | DATA_READY;
             vxt_system_interrupt(VXT_GET_SYSTEM(c), 1);
+            VXT_LOG("Keyboard reset!");
         }
-
+        
         c->port_61 = data;
     }
 }
 
 static vxt_error install(struct ppi *c, vxt_system *s) {
     struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
-    vxt_system_install_io(s, p, 0x60, 0x62);
-    vxt_system_install_io_at(s, p, 0x64);
+    vxt_system_install_io(s, p, 0x60, 0x63);
     vxt_system_install_timer(s, p, 1000);
 
     for (int i = 0; i < VXT_MAX_PERIPHERALS; i++) {
@@ -129,22 +122,16 @@ static enum vxt_pclass pclass(struct ppi *c) {
 
 static vxt_error timer(struct ppi *c, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
-    c->command_port |= COMMAND_READY;
-    if (c->keyboard_enable) {
-        if (c->queue_size && !(c->command_port & DATA_READY)) {
-            c->command_port |= DATA_READY;
-            c->data_port = (vxt_byte)c->queue[0];
-            memmove(c->queue, &c->queue[1], --c->queue_size);
-            vxt_system_interrupt(VXT_GET_SYSTEM(c), 1);
-        }
-    } else if (c->command == READ_INPUT_CMD) {
-        c->command_port |= DATA_READY;
-    }
+	if (c->queue_size && !c->kb_reset) {
+		c->data_port = (vxt_byte)c->queue[0];
+		memmove(c->queue, &c->queue[1], --c->queue_size);
+		vxt_system_interrupt(VXT_GET_SYSTEM(c), 1);
+	}
     return VXT_NO_ERROR;
 }
 
 static vxt_error reset(struct ppi *c) {
-    c->command_port = c->data_port = 0;
+    c->data_port = 0;
     c->port_61 = 14;
     c->turbo_enabled = false;
 
@@ -154,7 +141,7 @@ static vxt_error reset(struct ppi *c) {
     if (c->speaker_callback)
         c->speaker_callback(VXT_GET_PERIPHERAL(c), 0.0, c->speaker_callback_data);
 
-    c->keyboard_enable = true;
+    c->kb_reset = false;
     c->queue_size = 0;
 
     return VXT_NO_ERROR;

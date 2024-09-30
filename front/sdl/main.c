@@ -50,6 +50,12 @@
 #include "icons.h"
 
 #if defined(_WIN32)
+	#define sched_yield SwitchToThread
+#else
+	#include <sched.h>
+#endif
+
+#if defined(_WIN32)
 	#define EDIT_CONFIG "notepad "
 #elif defined(__APPLE__)
 	#define EDIT_CONFIG "open -e "
@@ -208,7 +214,7 @@ static int emu_loop(void *ptr) {
 					else
 						printf("step error: %s", vxt_error_str(res.err));
 				} else if (!args.no_idle && (res.halted || res.int28)) { // Assume int28 is DOS waiting for input.
-					SDL_Delay(1); // Yield CPU time to other processes.
+					sched_yield(); // Yield CPU time to other processes.
 				}
 				num_cycles += res.cycles;
 			}
