@@ -50,6 +50,7 @@
 #include "icons.h"
 
 #if defined(_WIN32)
+	#include <Windows.h>
 	#define sched_yield SwitchToThread
 #else
 	#include <sched.h>
