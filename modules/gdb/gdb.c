@@ -35,9 +35,9 @@
     #include <sys/socket.h>
 	#include <sys/select.h>
     #include <netinet/in.h>
+    #include <netinet/tcp.h>
 #endif
 
-#define ALL_FLAGS (VXT_CARRY|VXT_PARITY|VXT_AUXILIARY|VXT_ZERO|VXT_SIGN|VXT_TRAP|VXT_INTERRUPT|VXT_DIRECTION|VXT_OVERFLOW)
 #define MAX_BREAKPOINTS 64
 
 typedef vxt_pointer address;
@@ -77,9 +77,11 @@ struct gdb_state {
     int num_bps;
 
     int signum;
+    int noack;
     reg registers[GDB_CPU_NUM_REGISTERS];
 };
 
+#define DEBUG 0
 #include "gdbstub/gdbstub.h"
 
 struct gdb {
@@ -184,6 +186,9 @@ static bool accept_client(struct gdb *dbg, vxt_system *sys) {
     socklen_t ln = sizeof(addr);
     if ((dbg->state.client = accept(dbg->server, (struct sockaddr*)&addr, &ln)) == -1)
         return false;
+        
+    int one = 1;
+	setsockopt(dbg->state.client, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 
     dbg->state.num_bps = 0;
     dbg->state.sys = sys;
@@ -223,7 +228,8 @@ static vxt_error install(struct gdb *dbg, vxt_system *s) {
 
 	if (dbg->wait_on_startup) {
 		VXT_LOG("Wait for client to connect...");
-		while (!accept_client(dbg, s));
+		while (!accept_client(dbg, s))
+			sleep(1);
 	}
     return VXT_NO_ERROR;
 }
@@ -303,8 +309,9 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
         vreg->ss = (vxt_word)r[GDB_CPU_I386_REG_SS];
         vreg->ds = (vxt_word)r[GDB_CPU_I386_REG_DS];
         vreg->es = (vxt_word)r[GDB_CPU_I386_REG_ES];
+        vxt_system_reload_segments(s);
 
-        vreg->flags = (vxt_word)(r[GDB_CPU_I386_REG_PS] & ALL_FLAGS) | 0xF002;
+        vreg->flags = (vxt_word)(r[GDB_CPU_I386_REG_PS] & 0x0FFF) | 2;
         vreg->ip = (vxt_word)(r[GDB_CPU_I386_REG_PC] - r[GDB_CPU_I386_REG_CS] * 16);
         vreg->sp = (vxt_word)(r[GDB_CPU_I386_REG_ESP] - r[GDB_CPU_I386_REG_SS] * 16);
     }
