@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2016-2022 Matt Borgerson
- * Copyright (c) 2024 Andreas T Jonsson
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +49,6 @@ enum GDB_REGISTER {
 
 struct gdb_state {
     int signum;
-    int noack;
     reg registers[GDB_CPU_NUM_REGISTERS];
 };
 
@@ -109,7 +107,6 @@ enum GDB_REGISTER {
 
 struct gdb_state {
     int signum;
-    int noack;
     reg registers[GDB_CPU_NUM_REGISTERS];
 };
 
@@ -402,9 +399,6 @@ static int gdb_is_printable_char(char ch)
 static int gdb_recv_ack(struct gdb_state *state)
 {
     int response;
-    
-    if (state->noack)
-		return 0;
 
     /* Wait for packet ack */
     switch (response = gdb_sys_getc(state)) {
@@ -1195,16 +1189,6 @@ int gdb_main(struct gdb_state *state)
             return 0;
 
         /*
-         * Continue With Signal
-         * Command Format: C [num]
-         */
-        case 'C':
-            ptr_next += 1;
-            token_expect_integer_arg(status);
-            gdb_send_ok_packet(state, pkt_buf, sizeof(pkt_buf));
-            return status;
-
-        /*
          * Single-step
          * Command Format: s [addr]
          */
@@ -1228,28 +1212,6 @@ int gdb_main(struct gdb_state *state)
             if (gdb_pkt_prefix(pkt_buf, pkt_len, "vKill")) {
                 gdb_send_ok_packet(state, pkt_buf, sizeof(pkt_buf));
                 return -1;
-            }
-            
-            /*
-            * qSupported
-            * Command Format: qSupported [:gdbfeature [;gdbfeature]... ]
-            */
-            else if (gdb_pkt_prefix(pkt_buf, pkt_len, "qSupported")) {
-                gdb_send_packet(state, "QStartNoAckMode+", 16);
-                break;
-            }
-            
-            /*
-            * QStartNoAckMode
-            * Command Format: QStartNoAckMode
-            */
-            else if (gdb_pkt_prefix(pkt_buf, pkt_len, "QStartNoAckMode")) {
-                #if DEBUG
-                    GDB_PRINT("QStartNoAckMode\n");
-                #endif
-                state->noack = 1;
-                gdb_send_ok_packet(state, pkt_buf, sizeof(pkt_buf));
-                break;
             }
 
             /*
