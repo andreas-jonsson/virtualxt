@@ -33,6 +33,7 @@
 struct ppi {
 	vxt_byte data_port;
     vxt_byte port_61;
+    vxt_byte port_92;
     vxt_byte xt_switches;
 
     bool kb_reset;
@@ -66,6 +67,8 @@ static vxt_byte in(struct ppi *c, vxt_word port) {
             return c->port_61;
         case 0x62:
             return (c->port_61 & 8) ? (c->xt_switches >> 4) : (c->xt_switches & 0xF);
+        case 0x92: // Fast A20 etc.
+            return c->port_92;
 	}
 	return 0;
 }
@@ -98,12 +101,20 @@ static void out(struct ppi *c, vxt_word port, vxt_byte data) {
         }
         
         c->port_61 = data;
-    }
+    } else if (port == 0x92) {  // Fast A20 etc.
+		bool enable_a20 = (data & 2) != 0;
+		if ((c->port_92 & 2) != (data & 2))
+			VXT_LOG(enable_a20 ? "Enable Fast-A20 line!" : "Disable Fast-A20 line!");
+			
+		vxt_system_set_a20(VXT_GET_SYSTEM(c), enable_a20);
+		c->port_92 = data;
+	}
 }
 
 static vxt_error install(struct ppi *c, vxt_system *s) {
     struct vxt_peripheral *p = VXT_GET_PERIPHERAL(c);
     vxt_system_install_io(s, p, 0x60, 0x63);
+    vxt_system_install_io_at(s, p, 0x92);
     vxt_system_install_timer(s, p, 1000);
 
     for (int i = 0; i < VXT_MAX_PERIPHERALS; i++) {
@@ -131,7 +142,7 @@ static vxt_error timer(struct ppi *c, vxt_timer_id id, int cycles) {
 }
 
 static vxt_error reset(struct ppi *c) {
-    c->data_port = 0;
+    c->data_port = c->port_92 = 0;
     c->port_61 = 14;
     c->turbo_enabled = false;
 

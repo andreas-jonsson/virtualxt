@@ -190,6 +190,8 @@ VXT_API vxt_allocator *vxt_system_allocator(vxt_system *s) {
 
 VXT_API void vxt_system_reset(CONSTP(vxt_system) s) {
     cpu_reset(&s->cpu);
+	s->a20_mask = 0xEFFFFF;
+    
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_peripheral) d = s->devices[i];
         if (d->reset)
@@ -335,14 +337,31 @@ VXT_API void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_peripheral 
         s->mem_map[from++] = (vxt_byte)vxt_peripheral_id(dev);
 }
 
+VXT_API void vxt_system_set_a20(CONSTP(vxt_system) s, bool enable) {
+	s->a20_mask = enable ? 0xFFFFFF : 0xEFFFFF;
+}
+
 VXT_API vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
-    addr &= 0xFFFFF;
+	addr &= s->a20_mask;
+	if (addr > 0xFFFFF) {
+		addr -= 0x100000;
+		ENSURE(addr < sizeof(s->hma));
+		return s->hma[addr];
+	}
+    
     CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
     return dev->io.read(VXT_GET_DEVICE_PTR(dev), addr);
 }
 
 VXT_API void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
-    addr &= 0xFFFFF;
+	addr &= s->a20_mask;
+	if (addr > 0xFFFFF) {
+		addr -= 0x100000;
+		ENSURE(addr < sizeof(s->hma));
+		s->hma[addr] = data;
+		return;
+	}
+    
     CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
     dev->io.write(VXT_GET_DEVICE_PTR(dev), addr, data);
 }

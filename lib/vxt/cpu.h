@@ -41,8 +41,8 @@
 
 #define VALIDATOR_BEGIN(p, regs) { if ((p)->validator) (p)->validator->begin((regs), (p)->validator->userdata); }
 #define VALIDATOR_END(p, name, op, mod, cycles, regs) { if ((p)->validator) (p)->validator->end((name), (op), (mod), (cycles), (regs), (p)->validator->userdata); }
-#define VALIDATOR_READ(p, addr, data) { if ((p)->validator) (p)->validator->read((addr), (data), (p)->validator->userdata); }
-#define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr), (data), (p)->validator->userdata); }
+#define VALIDATOR_READ(p, addr, data) { if ((p)->validator) (p)->validator->read((addr) & 0xFFFFF, (data), (p)->validator->userdata); }
+#define VALIDATOR_WRITE(p, addr, data) { if ((p)->validator) (p)->validator->write((addr) & 0xFFFFF, (data), (p)->validator->userdata); }
 #define VALIDATOR_DISCARD(p) { if ((p)->validator) (p)->validator->discard((p)->validator->userdata); }
 
 struct address_mode {
@@ -61,9 +61,6 @@ struct cpu {
 
    vxt_word seg;
    vxt_byte seg_override;
-
-   vxt_word cr0;
-   vxt_word cr3;
 
    int bus_transfers;
 

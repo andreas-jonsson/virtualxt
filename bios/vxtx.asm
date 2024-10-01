@@ -27,16 +27,13 @@ org 0
 db 0x55             ; The BIOS...
 db 0xAA             ; Signature!
 db 0x4              ; We're a 2k ROM(4*512 bytes)
-jmp short init
 
-init:
-    pushf
-    cli         ; We don't want to be interrupted now!
-
-    call install_handlers
-
-    popf
-    retf
+; Start of code
+pushf
+cli ; We don't want to be interrupted now!
+call install_handlers
+popf
+retf
 
 int_13_handler:
     out 0xB1, al
@@ -54,6 +51,18 @@ int_13_handler:
     pop ax
 
     iret
+    
+int_15_handler:
+	cmp ah, 0x88
+	je .mem_size
+	mov ah, 0x86
+	stc			; Set carry for error
+	iret
+	
+.mem_size:
+	mov ax, 64	; Extended memory in KB
+	clc			; Clear carry for no error
+	iret
 
 int_19_handler:
     push bp
@@ -75,10 +84,14 @@ install_handlers:
 
     ; Set up our own vectors!
     mov word [INT_13_OFFSET], int_13_handler
-    mov [INT_13_OFFSET+2], cs
+    mov [INT_13_OFFSET + 2], cs
+    
+    ; This will replace ALL 15h services.
+    mov word [INT_15_OFFSET], int_15_handler
+    mov [INT_15_OFFSET + 2], cs
 
     mov word [INT_19_OFFSET], int_19_handler
-    mov [INT_19_OFFSET+2], cs
+    mov [INT_19_OFFSET + 2], cs
     
     ; Update equipment word to reflect virtual floppy controller.
     mov ax, 0x40 		; BDA
@@ -95,6 +108,7 @@ install_handlers:
 ;;;;;;;;;;;;;;;;;; Data ;;;;;;;;;;;;;;;;;;
 
 INT_13_OFFSET  equ 0x4C
+INT_15_OFFSET  equ 0x54
 INT_19_OFFSET  equ 0x64
 
 db 'VXTX - VirtualXT BIOS Extensions', 0xA

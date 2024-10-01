@@ -42,10 +42,12 @@ struct system {
 
    vxt_byte io_map[VXT_IO_MAP_SIZE];
    vxt_byte mem_map[VXT_MEM_MAP_SIZE];
+   vxt_byte hma[0x10000]; // 64k even for simplicity.
 
    vxt_allocator *alloc;
    struct cpu cpu;
    int frequency;
+   vxt_pointer a20_mask;
 
    int num_timers;
    struct timer timers[MAX_TIMERS];

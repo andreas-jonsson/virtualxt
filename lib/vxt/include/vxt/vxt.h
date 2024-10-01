@@ -141,7 +141,7 @@ extern "C" {
     #define VXT_API
 #endif
 
-#define VXT_POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
+#define VXT_POINTER(s, o) ( (((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o) )
 #define VXT_INVALID_POINTER ((vxt_pointer)0xFFFFFFFF)
 #define VXT_INVALID_DEVICE_ID ((vxt_device_id)0xFF)
 #define VXT_INVALID_TIMER_ID ((vxt_timer_id)-1)
@@ -348,6 +348,7 @@ VXT_API struct vxt_step vxt_system_step(vxt_system *s, int cycles);
 VXT_API void vxt_system_reset(vxt_system *s);
 VXT_API struct vxt_registers *vxt_system_registers(vxt_system *s);
 
+VXT_API void vxt_system_set_a20(vxt_system *s, bool enable);
 VXT_API int vxt_system_frequency(vxt_system *s);
 VXT_API void vxt_system_set_frequency(vxt_system *s, int freq);
 VXT_API void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte));
