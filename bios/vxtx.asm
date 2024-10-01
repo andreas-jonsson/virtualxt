@@ -79,7 +79,15 @@ install_handlers:
 
     mov word [INT_19_OFFSET], int_19_handler
     mov [INT_19_OFFSET+2], cs
-
+    
+    ; Update equipment word to reflect virtual floppy controller.
+    mov ax, 0x40 		; BDA
+    mov ds, ax
+    mov ax, [ds:0x10]	; Read equipment word.
+	and ax, 0xC000 		; Indicate 1 floppy drive.
+	or ax, 1 			; Indicate floppy drivers are present.
+	mov [ds:0x10], ax	; Write new equipment word.
+	
     pop ax
     pop ds
     ret

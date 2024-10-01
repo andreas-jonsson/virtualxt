@@ -218,7 +218,7 @@ VXT_API struct vxt_peripheral *vxtu_memory_create(vxt_allocator *alloc, vxt_poin
 VXT_API void *vxtu_memory_internal_pointer(struct vxt_peripheral *p);
 VXT_API bool vxtu_memory_device_fill(struct vxt_peripheral *p, const vxt_byte *data, int size);
 
-VXT_API struct vxt_peripheral *vxtu_pic_create(vxt_allocator *alloc, struct vxt_peripheral *master);
+VXT_API struct vxt_peripheral *vxtu_pic_create(vxt_allocator *alloc);
 
 VXT_API struct vxt_peripheral *vxtu_dma_create(vxt_allocator *alloc);
 

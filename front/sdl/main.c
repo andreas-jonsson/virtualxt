@@ -50,6 +50,13 @@
 #include "icons.h"
 
 #if defined(_WIN32)
+	#include <Windows.h>
+	#define sched_yield SwitchToThread
+#else
+	#include <sched.h>
+#endif
+
+#if defined(_WIN32)
 	#define EDIT_CONFIG "notepad "
 #elif defined(__APPLE__)
 	#define EDIT_CONFIG "open -e "
@@ -175,6 +182,15 @@ static const char *sprint(const char *fmt, ...) {
 	return str_buffer;
 }
 
+static void push_mouse_button_state(struct frontend_mouse_event ev) {
+	Uint32 state = SDL_GetMouseState(NULL, NULL);
+	if (state & SDL_BUTTON_LMASK)
+		ev.buttons |= FRONTEND_MOUSE_LEFT;
+	if (state & SDL_BUTTON_RMASK)
+		ev.buttons |= FRONTEND_MOUSE_RIGHT;
+	SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
+}
+
 static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
 	(void)s; (void)addr;
 	fwrite(&data, 1, 1, trace_op_output);
@@ -199,7 +215,7 @@ static int emu_loop(void *ptr) {
 					else
 						printf("step error: %s", vxt_error_str(res.err));
 				} else if (!args.no_idle && (res.halted || res.int28)) { // Assume int28 is DOS waiting for input.
-					SDL_Delay(1); // Yield CPU time to other processes.
+					sched_yield(); // Yield CPU time to other processes.
 				}
 				num_cycles += res.cycles;
 			}
@@ -1055,13 +1071,8 @@ int main(int argc, char *argv[]) {
 					break;
 				case SDL_MOUSEMOTION:
 					if (mouse_adapter.device && SDL_GetRelativeMouseMode() && !has_open_windows) {
-						Uint32 state = SDL_GetMouseState(NULL, NULL);
 						struct frontend_mouse_event ev = {0, e.motion.xrel, e.motion.yrel};
-						if (state & SDL_BUTTON_LMASK)
-							ev.buttons |= FRONTEND_MOUSE_LEFT;
-						if (state & SDL_BUTTON_RMASK)
-							ev.buttons |= FRONTEND_MOUSE_RIGHT;
-						SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
+						push_mouse_button_state(ev);
 					}
 					break;
 				case SDL_MOUSEBUTTONDOWN:
@@ -1071,14 +1082,12 @@ int main(int argc, char *argv[]) {
 							break;
 						}
 						SDL_SetRelativeMouseMode(true);
-
-						struct frontend_mouse_event ev = {0};
-						if (e.button.button == SDL_BUTTON_LEFT)
-							ev.buttons |= FRONTEND_MOUSE_LEFT;
-						if (e.button.button == SDL_BUTTON_RIGHT)
-							ev.buttons |= FRONTEND_MOUSE_RIGHT;
-						SYNC(mouse_adapter.push_event(mouse_adapter.device, &ev));
+						push_mouse_button_state((struct frontend_mouse_event){0});
 					}
+					break;
+				case SDL_MOUSEBUTTONUP:
+					if (mouse_adapter.device && !has_open_windows)
+						push_mouse_button_state((struct frontend_mouse_event){0});
 					break;
 				case SDL_DROPFILE:
 					strncpy(new_floppy_image_path, e.drop.file, sizeof(new_floppy_image_path) - 1);

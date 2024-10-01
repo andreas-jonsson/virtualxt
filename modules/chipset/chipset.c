@@ -33,8 +33,8 @@ bool kbc_key_event(struct vxt_peripheral *p, enum vxtu_scancode key, bool force)
 vxt_int16 kbc_generate_sample(struct vxt_peripheral *p, int freq);
 
 static struct vxt_peripheral *pic_create(vxt_allocator *alloc, void *frontend, const char *args) {
-    (void)frontend;
-	return vxtu_pic_create(alloc, strcmp(args, "at") ? NULL : vxtu_pic_create(alloc, NULL));
+    (void)frontend; (void)args;
+	return vxtu_pic_create(alloc);
 }
 
 static struct vxt_peripheral *dma_create(vxt_allocator *alloc, void *frontend, const char *args) {

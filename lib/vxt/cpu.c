@@ -181,8 +181,6 @@ void cpu_reset(CONSTSP(cpu) p) {
 	p->regs.cs = 0xFFFF;
 	p->regs.debug = false;
 
-	p->cr0 = p->cr3 = 0;
-
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);
 }
@@ -204,8 +202,12 @@ vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr) {
    return WORD(cpu_read_byte(p, addr + 1), cpu_read_byte(p, addr));
 }
 
+vxt_word cpu_segment_read_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset) {
+   return cpu_read_byte(p, VXT_POINTER(segment, offset));
+}
+
 vxt_word cpu_segment_read_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset) {
-   return WORD(cpu_read_byte(p, VXT_POINTER(segment, offset + 1)), cpu_read_byte(p, VXT_POINTER(segment, offset)));
+   return WORD(cpu_read_byte(p, VXT_POINTER(segment, (offset + 1) & 0xFFFF)), cpu_read_byte(p, VXT_POINTER(segment, offset)));
 }
 
 void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data) {
@@ -213,9 +215,13 @@ void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data) {
    cpu_write_byte(p, addr + 1, HBYTE(data));
 }
 
+void cpu_segment_write_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data) {
+   cpu_write_byte(p, VXT_POINTER(segment, offset), data);
+}
+
 void cpu_segment_write_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data) {
    cpu_write_byte(p, VXT_POINTER(segment, offset), LBYTE(data));
-   cpu_write_byte(p, VXT_POINTER(segment, offset + 1), HBYTE(data));
+   cpu_write_byte(p, VXT_POINTER(segment, (offset + 1) & 0xFFFF), HBYTE(data));
 }
 
 TEST(register_layout,

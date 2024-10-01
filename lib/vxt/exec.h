@@ -306,24 +306,20 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
    }
 }
 
-#define RM_FUNC(a, b)                                               \
-   static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                 \
-      if (MOD_TARGET_MEM(p->mode)) {                                \
-         vxt_pointer ea = VXT_POINTER(p->seg, get_ea_offset(p));	\
-         return cpu_read_ ## a (p, ea);                             \
-      } else {                                                      \
-         return reg_read ## b (&p->regs, p->mode.rm);               \
-      }                                                             \
-   }                                                                \
-                                                                	\
-   static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {     \
-      if (MOD_TARGET_MEM(p->mode)) {                                \
-         vxt_pointer ea = VXT_POINTER(p->seg, get_ea_offset(p));	\
-         cpu_write_ ## a (p, ea, data);                             \
-      } else {                                                      \
-         reg_write ## b (&p->regs, p->mode.rm, data);               \
-      }                                                             \
-   }                                                                \
+#define RM_FUNC(a, b)                                                   \
+   static vxt_ ## a rm_read ## b (CONSTSP(cpu) p) {                     \
+      if (MOD_TARGET_MEM(p->mode))                                      \
+         return cpu_segment_read_ ## a (p, p->seg, get_ea_offset(p));   \
+      else                                                              \
+         return reg_read ## b (&p->regs, p->mode.rm);                   \
+   }                                                                    \
+                                                                        \
+   static void rm_write ## b (CONSTSP(cpu) p, vxt_ ## a data) {         \
+      if (MOD_TARGET_MEM(p->mode))                                      \
+         cpu_segment_write_ ## a (p, p->seg, get_ea_offset(p), data);   \
+      else                                                              \
+         reg_write ## b (&p->regs, p->mode.rm, data);                   \
+   }                                                                    \
 
 #define NARROW(f) f(byte, 8)
 #define WIDE(f) f(word, 16)
@@ -335,7 +331,7 @@ WIDE(RM_FUNC)
 #undef NARROW
 #undef WIDE
 
-// Don't use this function for pushing SP in 8086.
+// Don't use this function for pushing SP on 8086.
 static void push(CONSTSP(cpu) p, vxt_word data) {
    p->regs.sp -= 2;
    cpu_segment_write_word(p, p->regs.ss, p->regs.sp, data);
@@ -402,8 +398,13 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
 static void call_int(CONSTSP(cpu) p, int n) {
 	VALIDATOR_DISCARD(p);
 	CONSTSP(vxt_registers) r = &p->regs;
-
-	push(p, (r->flags & ALL_FLAGS) | 0xF002);
+	
+	vxt_word flags = (r->flags & ALL_FLAGS) | 2;
+	#ifdef FLAG8086
+		flags |= 0xF000;
+	#endif
+	
+	push(p, flags);
 	push(p, r->cs);
 	push(p, r->ip);
 

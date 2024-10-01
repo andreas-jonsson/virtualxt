@@ -35,10 +35,6 @@
    //#define VXT_DEBUG_PREFETCH
 #endif
 
-#ifdef TESTING
-    #define FLAG8086
-#endif
-
 #define VALIDATOR_BEGIN(p, regs) { if ((p)->validator) (p)->validator->begin((regs), (p)->validator->userdata); }
 #define VALIDATOR_END(p, name, op, mod, cycles, regs) { if ((p)->validator) (p)->validator->end((name), (op), (mod), (cycles), (regs), (p)->validator->userdata); }
 #define VALIDATOR_READ(p, addr, data) { if ((p)->validator) (p)->validator->read((addr), (data), (p)->validator->userdata); }
@@ -62,9 +58,6 @@ struct cpu {
    vxt_word seg;
    vxt_byte seg_override;
 
-   vxt_word cr0;
-   vxt_word cr3;
-
    int bus_transfers;
 
    bool inst_queue_dirty;
@@ -81,8 +74,10 @@ struct cpu {
 vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr);
 void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data);
 vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr);
+vxt_word cpu_segment_read_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset);
 vxt_word cpu_segment_read_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset);
 void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data);
+void cpu_segment_write_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data);
 void cpu_segment_write_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data);
 void cpu_reset(CONSTSP(cpu) p);
 void cpu_reset_cycle_count(CONSTSP(cpu) p);

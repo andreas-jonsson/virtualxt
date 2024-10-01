@@ -40,22 +40,23 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
   		case 0:
  			read_modregrm(p);
  			switch (p->mode.reg) {
-				case 0: // SLDT - Store Local Descriptor Table Register
+				case 0: // SLDT - Store Local Descriptor Table Register (pmode only)
    					VXT_LOG("SLDT - Store Local Descriptor Table Register");
+   					rm_write16(p, 0);
    					return;
-				case 1: // STR - Store Task Register
+				case 1: // STR - Store Task Register (pmode only)
    					VXT_LOG("STR - Store Task Register");
    					return;
 				case 2: // LDTR - Load Local Descriptor Table Register
    					VXT_LOG("LDTR - Load Local Descriptor Table Register");
    					return;
-				case 3: // LTR - Load Task Register
+				case 3: // LTR - Load Task Register (pmode only)
    					VXT_LOG("LTR - Load Task Register");
    					return;
-				case 4: // VERR - Verify a Segment for Reading
+				case 4: // VERR - Verify a Segment for Reading (pmode only)
    					VXT_LOG("VERR - Verify a Segment for Reading");
    					return;
-				case 5: // VERW - Verify a Segment for Writing
+				case 5: // VERW - Verify a Segment for Writing (pmode only)
    					VXT_LOG("VERW - Verify a Segment for Writing");
    					return;
  			}
@@ -77,9 +78,17 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
    					return;
 				case 4: // SMSW - Store Machine Status Word
    					VXT_LOG("SMSW - Store Machine Status Word");
+   					rm_write16(p, 0);
    					return;
 				case 6: // LMSW - Load Machine Status Word
-   					VXT_LOG("LMSW - Load Machine Status Word");
+					{
+						vxt_word msw = rm_read16(p);
+						VXT_LOG("LMSW - Load Machine Status Word [%s%s%s%s]",
+							(msw & 1) ? "PE, " : "", (msw & 2) ? "MP, " : "", (msw & 4) ? "EM, " : "", (msw & 8) ? "TS, " : "");
+							
+						if (msw & 1)
+							VXT_LOG("WARNING: Enter protected mode on an XT machine will almost certainly result in system lockup.");
+   					}
    					return;
  			}
  			return;
@@ -96,7 +105,6 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
  			return;
   		case 6: // CLTS - Clear Task-Switched Flag in CR0
  			VXT_LOG("CLTS - Clear Task-Switched Flag in CR0");
-            p->cr0 &= ~CR0_TS;
  			return;
    	}
 
