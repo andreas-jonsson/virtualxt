@@ -181,8 +181,6 @@ void cpu_reset(CONSTSP(cpu) p) {
 	p->regs.cs = 0xFFFF;
 	p->regs.debug = false;
 
-	p->cr0 = p->cr3 = 0;
-
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);
 }

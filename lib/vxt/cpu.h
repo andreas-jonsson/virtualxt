@@ -62,9 +62,6 @@ struct cpu {
    vxt_word seg;
    vxt_byte seg_override;
 
-   vxt_word cr0;
-   vxt_word cr3;
-
    int bus_transfers;
 
    bool inst_queue_dirty;

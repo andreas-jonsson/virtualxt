@@ -25,30 +25,26 @@
 
 struct pic {
 	vxt_byte mask_reg;
-	vxt_byte request_reg;
-	vxt_byte service_reg;
-	vxt_byte icw_step;
-	vxt_byte read_mode;
+    vxt_byte request_reg;
+    vxt_byte service_reg;
+    vxt_byte icw_step;
+    vxt_byte read_mode;
 	vxt_byte icw[5];
-	
-	vxt_word base_port;
-	struct vxt_peripheral *master;
 };
 
 static vxt_byte in(struct pic *c, vxt_word port) {
-	switch (port - c->base_port) {
-        case 0:
+	switch (port) {
+        case 0x20:
             return c->read_mode ? c->service_reg : c->request_reg;
-        case 1:
+        case 0x21:
             return c->mask_reg;
-        default:
-			return c->master->io.in(VXT_GET_DEVICE_PTR(c->master), port);
 	}
+	return 0;
 }
 
 static void out(struct pic *c, vxt_word port, vxt_byte data) {
-	switch (port - c->base_port) {
-        case 0:
+	switch (port) {
+        case 0x20:
             if (data & 0x10) {
                 c->icw_step = 1;
                 c->mask_reg = 0;
@@ -68,7 +64,7 @@ static void out(struct pic *c, vxt_word port, vxt_byte data) {
                 }
             }
             break;
-        case 1:
+        case 0x21:
             if ((c->icw_step == 3) && (c->icw[1] & 2))
                 c->icw_step = 4;
 
@@ -79,25 +75,17 @@ static void out(struct pic *c, vxt_word port, vxt_byte data) {
 
             c->mask_reg = data;
             break;
-        default:
-			c->master->io.out(VXT_GET_DEVICE_PTR(c->master), port, data);
 	}
 }
 
 static int next(struct pic *c) {
-	if (c->master) {
-		int v = c->master->pic.next(VXT_GET_DEVICE_PTR(c->master));
-		if (v >= 0)
-			return v;
-	}
-
     vxt_byte has = c->request_reg & (~c->mask_reg);
-    
+
     for (vxt_byte i = 0; i < 8; i++) {
         vxt_byte mask = 1 << i;
         if (!(has & mask))
             continue;
-
+        
         if ((c->request_reg & mask) && !(c->service_reg & mask)) {
             c->request_reg ^= mask;
             c->service_reg |= mask;
@@ -111,32 +99,17 @@ static int next(struct pic *c) {
 }
 
 static void irq(struct pic *c, int n) {
-	if (c->master) {
-		if (n <= 7) {
-			c->master->pic.irq(VXT_GET_DEVICE_PTR(c->master), n);
-			return;
-		} else {
-			n -= 8;
-		}
-	}
-	c->request_reg |= (vxt_byte)(1 << n);
+    c->request_reg |= (vxt_byte)(1 << n);
 }
 
 static vxt_error install(struct pic *c, vxt_system *s) {
-	vxt_system_install_io(s, VXT_GET_PERIPHERAL(c), 0x20, 0x21);
-	
-	// We should NOT run install on master. All calls are forwarded.
-	if (c->master)
-		vxt_system_install_io(s, VXT_GET_PERIPHERAL(c), 0xA0, 0xA1);
-		
-	return VXT_NO_ERROR;
+    vxt_system_install_io(s, VXT_GET_PERIPHERAL(c), 0x20, 0x21);
+    return VXT_NO_ERROR;
 }
 
 static vxt_error reset(struct pic *c) {
-	c->mask_reg = c->request_reg = c->service_reg = 0;
-    c->icw_step = c->read_mode = 0;
-    vxt_memclear(c->icw, 5);
-    return c->master ? c->master->reset(VXT_GET_DEVICE_PTR(c->master)) : VXT_NO_ERROR;
+    vxt_memclear(c, sizeof(struct pic));
+    return VXT_NO_ERROR;
 }
 
 static enum vxt_pclass pclass(struct pic *c) {
@@ -144,13 +117,10 @@ static enum vxt_pclass pclass(struct pic *c) {
 }
 
 static const char *name(struct pic *c) {
-	return c->master ? "PIC Master/Slave (Intel 8259)" : "PIC (Intel 8259)";
+    (void)c; return "PIC (Intel 8259)";
 }
 
-VXT_API struct vxt_peripheral *vxtu_pic_create(vxt_allocator *alloc, struct vxt_peripheral *master) VXT_PERIPHERAL_CREATE(alloc, pic, {
-	DEVICE->master = master;
-	DEVICE->base_port = master ? 0xA0 : 0x20;
-	
+VXT_API struct vxt_peripheral *vxtu_pic_create(vxt_allocator *alloc) VXT_PERIPHERAL_CREATE(alloc, pic, {
     PERIPHERAL->install = &install;
     PERIPHERAL->reset = &reset;
     PERIPHERAL->name = &name;

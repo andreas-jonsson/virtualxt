@@ -352,7 +352,7 @@ void retro_init(void) {
             load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000),
             load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000),
             vxtu_uart_create(&realloc, 0x3F8, 4),
-            vxtu_pic_create(&realloc, NULL),
+            vxtu_pic_create(&realloc),
             vxtu_dma_create(&realloc),
             vxtu_pit_create(&realloc),
             ppi,

@@ -399,7 +399,7 @@ static void call_int(CONSTSP(cpu) p, int n) {
 	VALIDATOR_DISCARD(p);
 	CONSTSP(vxt_registers) r = &p->regs;
 
-	push(p, (r->flags & ALL_FLAGS) | 0xF002);
+	push(p, (r->flags & ALL_FLAGS) | 2);
 	push(p, r->cs);
 	push(p, r->ip);
 
