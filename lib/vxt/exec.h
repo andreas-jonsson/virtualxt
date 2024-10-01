@@ -398,8 +398,13 @@ static vxt_byte read_modregrm(CONSTSP(cpu) p) {
 static void call_int(CONSTSP(cpu) p, int n) {
 	VALIDATOR_DISCARD(p);
 	CONSTSP(vxt_registers) r = &p->regs;
-
-	push(p, (r->flags & ALL_FLAGS) | 2);
+	
+	vxt_word flags = (r->flags & ALL_FLAGS) | 2;
+	#ifdef FLAG8086
+		flags |= 0xF000;
+	#endif
+	
+	push(p, flags);
 	push(p, r->cs);
 	push(p, r->ip);
 

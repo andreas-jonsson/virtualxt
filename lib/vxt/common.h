@@ -40,6 +40,10 @@
    #define ABORT() { abort(); }
 #endif
 
+#ifdef TESTING
+    #define FLAG8086
+#endif
+
 // Host to 8088 endian conversion.
 #if !defined(VXT_BIGENDIAN) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
    #define HBYTE(w)     ((vxt_byte)(((vxt_word)(w))>>8))
