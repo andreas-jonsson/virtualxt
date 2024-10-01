@@ -328,13 +328,10 @@ static vxt_byte in(struct vga_video *v, vxt_word port) {
             return v->reg.gfx_addr;
         case 0x3CF:
             return v->reg.gfx_reg[v->reg.gfx_addr];
-        case 0x3B4:
         case 0x3D4:
             return v->reg.crt_addr;
-        case 0x3B5:
         case 0x3D5:
             return v->reg.crt_reg[v->reg.crt_addr];
-        case 0x3BA:
         case 0x3DA:
             break;
         case 0xAFFF:
@@ -343,7 +340,7 @@ static vxt_byte in(struct vga_video *v, vxt_word port) {
             return 0;
     }
 
-    // 0x3BA, 0x3C2, 0x3DA
+    // 0x3C2, 0x3DA
     v->reg.flip_3C0 = 0;
     return v->reg.status_reg;
 }
@@ -409,11 +406,9 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
             v->reg.gfx_reg[v->reg.gfx_addr] = data;
             update_video_mode(v);
             break;
-        case 0x3B4:
         case 0x3D4:
             v->reg.crt_addr = data;
             break;
-        case 0x3B5:
         case 0x3D5:
         	v->reg.crt_reg[v->reg.crt_addr] = data;
             switch (v->reg.crt_addr) {
@@ -434,11 +429,6 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
                     update_video_mode(v);
             }
             break;
-        case 0x3D8:
-        case 0x3D9:
-            VXT_LOG("WARNING: CGA register manipulation is not supported on VGA. Switch to the CGA module.");
-            break;
-        case 0x3BA:
         case 0x3DA:
             v->reg.feature_ctrl_reg = data;
             break;
@@ -509,11 +499,9 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
     v->retrace_timer = vxt_system_install_timer(s, p, 0);
     v->scanline_timer = vxt_system_install_timer(s, p, 0);
 
-    vxt_system_install_io_at(s, p, 0x3B4); // --
     vxt_system_install_io_at(s, p, 0x3D4); // R/W: CRT Index
-
-    vxt_system_install_io_at(s, p, 0x3B5); // --
     vxt_system_install_io_at(s, p, 0x3D5); // R/W: CRT Data
+    vxt_system_install_io_at(s, p, 0x3DA); // W: Feature Control
 
     vxt_system_install_io_at(s, p, 0x3C0); // R/W: Attribute Controller Index
     vxt_system_install_io_at(s, p, 0x3C1); // R/W: Attribute Data
@@ -529,12 +517,6 @@ static vxt_error install(struct vga_video *v, vxt_system *s) {
     vxt_system_install_io_at(s, p, 0x3CC); // R: Misc Output
     vxt_system_install_io_at(s, p, 0x3CE); // R/W: Graphics Controller Index
     vxt_system_install_io_at(s, p, 0x3CF); // R/W: Graphics Data
-
-    vxt_system_install_io_at(s, p, 0x3D8); // R/W: Mode Control
-    vxt_system_install_io_at(s, p, 0x3D9); // R/W: Color Control
-
-    vxt_system_install_io_at(s, p, 0x3BA); // --
-    vxt_system_install_io_at(s, p, 0x3DA); // W: Feature Control
 
     vxt_system_install_io_at(s, p, 0xAFFF); // R/W: Plane System Latch
     return VXT_NO_ERROR;

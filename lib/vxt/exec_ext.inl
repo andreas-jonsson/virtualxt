@@ -81,7 +81,14 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
    					rm_write16(p, 0);
    					return;
 				case 6: // LMSW - Load Machine Status Word
-   					VXT_LOG("LMSW - Load Machine Status Word");
+					{
+						vxt_word msw = rm_read16(p);
+						VXT_LOG("LMSW - Load Machine Status Word [%s%s%s%s]",
+							(msw & 1) ? "PE, " : "", (msw & 2) ? "MP, " : "", (msw & 4) ? "EM, " : "", (msw & 8) ? "TS, " : "");
+							
+						if (msw & 1)
+							VXT_LOG("WARNING: Enter protected mode on an XT machine will almost certainly result in system lockup.");
+   					}
    					return;
  			}
  			return;
