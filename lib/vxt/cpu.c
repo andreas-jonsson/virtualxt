@@ -144,6 +144,19 @@ static void do_exec(CONSTSP(cpu) p) {
     }
 }
 
+static vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr) {
+   vxt_byte data = vxt_system_read_byte(p->s, addr);
+   p->bus_transfers++;
+   VALIDATOR_READ(p, addr, data);
+   return data;
+}
+
+static void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data) {
+   vxt_system_write_byte(p->s, addr, data);
+   p->bus_transfers++;
+   VALIDATOR_WRITE(p, addr, data);
+}
+
 int cpu_step(CONSTSP(cpu) p) {
     VALIDATOR_BEGIN(p, &p->regs);
 
@@ -185,34 +198,12 @@ void cpu_reset(CONSTSP(cpu) p) {
 	cpu_reset_cycle_count(p);
 }
 
-vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr) {
-   vxt_byte data = vxt_system_read_byte(p->s, addr);
-   p->bus_transfers++;
-   VALIDATOR_READ(p, addr, data);
-   return data;
-}
-
-void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data) {
-   vxt_system_write_byte(p->s, addr, data);
-   p->bus_transfers++;
-   VALIDATOR_WRITE(p, addr, data);
-}
-
-vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr) {
-   return WORD(cpu_read_byte(p, addr + 1), cpu_read_byte(p, addr));
-}
-
 vxt_word cpu_segment_read_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset) {
    return cpu_read_byte(p, VXT_POINTER(segment, offset));
 }
 
 vxt_word cpu_segment_read_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset) {
    return WORD(cpu_read_byte(p, VXT_POINTER(segment, (offset + 1) & 0xFFFF)), cpu_read_byte(p, VXT_POINTER(segment, offset)));
-}
-
-void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data) {
-   cpu_write_byte(p, addr, LBYTE(data));
-   cpu_write_byte(p, addr + 1, HBYTE(data));
 }
 
 void cpu_segment_write_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data) {

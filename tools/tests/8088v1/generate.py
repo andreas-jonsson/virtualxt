@@ -63,8 +63,10 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
         r->ip = regs.ip; r->flags = regs.flags;
 
 		// INT0
-		vxt_system_write_word(s, 0, 0x400);
-		vxt_system_write_word(s, 2, 0);
+		vxt_system_write_byte(s, 0, 0x40);
+		vxt_system_write_byte(s, 1, 0);
+		vxt_system_write_byte(s, 2, 0);
+		vxt_system_write_byte(s, 3, 0);
 
         vxt_word num_mem;
         TENSURE(fread(&num_mem, 2, 1, fp) == 1);

@@ -210,21 +210,9 @@ static int lua_read_byte(lua_State *L) {
 	return 1;
 }
 
-static int lua_read_word(lua_State *L) {
-	GET_DEV
-	lua_pushinteger(L, vxt_system_read_word(VXT_GET_SYSTEM(e), (vxt_pointer)lua_tointeger(L, -1)));
-	return 1;
-}
-
 static int lua_write_byte(lua_State *L) {
 	GET_DEV
 	vxt_system_write_byte(VXT_GET_SYSTEM(e), (vxt_pointer)lua_tointeger(L, -2), (vxt_byte)lua_tointeger(L, -1));
-	return 0;
-}
-
-static int lua_write_word(lua_State *L) {
-	GET_DEV
-	vxt_system_write_word(VXT_GET_SYSTEM(e), (vxt_pointer)lua_tointeger(L, -2), (vxt_word)lua_tointeger(L, -1));
 	return 0;
 }
 
@@ -351,9 +339,7 @@ static bool initialize_environement(struct lua_env *e, const char *args, void *f
 	MAP_FUNC(frequency);
 
 	MAP_FUNC(read_byte);
-	MAP_FUNC(read_word);
 	MAP_FUNC(write_byte);
-	MAP_FUNC(write_word);
 
 	#undef MAP_FUNC
 

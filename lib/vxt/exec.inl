@@ -407,7 +407,7 @@ static void push_6A(CONSTSP(cpu) p, INST(inst)) {
 
 static void insb_6C(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_write_byte(p, VXT_POINTER(p->regs.ds, p->regs.si), system_in(p->s, p->regs.dx));
+   cpu_segment_write_byte(p, p->regs.ds, p->regs.si, system_in(p->s, p->regs.dx));
    update_di_si(p, 1);
 }
 
@@ -419,7 +419,7 @@ static void insw_6D(CONSTSP(cpu) p, INST(inst)) {
 
 static void outsb_6E(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   system_out(p->s, p->regs.dx, cpu_read_byte(p, VXT_POINTER(p->regs.ds, p->regs.si)));
+   system_out(p->s, p->regs.dx, cpu_segment_read_byte(p, p->regs.ds, p->regs.si));
    update_di_si(p, 1);
 }
 
@@ -675,7 +675,7 @@ static void lahf_9F(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A0(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, read_opcode16(p)));
+   p->regs.al = cpu_segment_read_byte(p, p->seg, read_opcode16(p));
 }
 
 static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
@@ -685,7 +685,7 @@ static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
 
 static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   cpu_write_byte(p, VXT_POINTER(p->seg, read_opcode16(p)), p->regs.al);
+   cpu_segment_write_byte(p, p->seg, read_opcode16(p), p->regs.al);
 }
 
 static void mov_A3(CONSTSP(cpu) p, INST(inst)) {
@@ -876,7 +876,7 @@ static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
 
 static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
    UNUSED(inst);
-   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.bx + p->regs.al));
+   p->regs.al = cpu_segment_read_byte(p, p->seg, p->regs.bx + p->regs.al);
 }
 
 static void salc_D6(CONSTSP(cpu) p, INST(inst)) {

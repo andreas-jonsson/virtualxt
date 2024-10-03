@@ -375,8 +375,6 @@ VXT_API void vxt_system_install_monitor(vxt_system *s, struct vxt_peripheral *de
 
 VXT_API vxt_byte vxt_system_read_byte(vxt_system *s, vxt_pointer addr);
 VXT_API void vxt_system_write_byte(vxt_system *s, vxt_pointer addr, vxt_byte data);
-VXT_API vxt_word vxt_system_read_word(vxt_system *s, vxt_pointer addr);
-VXT_API void vxt_system_write_word(vxt_system *s, vxt_pointer addr, vxt_word data);
 
 /// @private
 _Static_assert(sizeof(vxt_pointer) == 4 && sizeof(vxt_int32) == 4, "invalid integer size");

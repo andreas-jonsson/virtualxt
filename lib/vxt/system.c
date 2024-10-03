@@ -347,15 +347,6 @@ VXT_API void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_b
     dev->io.write(VXT_GET_DEVICE_PTR(dev), addr, data);
 }
 
-VXT_API vxt_word vxt_system_read_word(CONSTP(vxt_system) s, vxt_pointer addr) {
-    return WORD(vxt_system_read_byte(s, addr + 1), vxt_system_read_byte(s, addr));
-}
-
-VXT_API void vxt_system_write_word(CONSTP(vxt_system) s, vxt_pointer addr, vxt_word data) {
-    vxt_system_write_byte(s, addr, LBYTE(data));
-    vxt_system_write_byte(s, addr + 1, HBYTE(data));
-}
-
 vxt_byte system_in(CONSTP(vxt_system) s, vxt_word port) {
     CONSTSP(vxt_peripheral) dev = s->devices[s->io_map[port]];
     s->cpu.bus_transfers++;

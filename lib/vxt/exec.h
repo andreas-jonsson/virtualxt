@@ -68,13 +68,13 @@ static vxt_word sign_extend16(vxt_byte v) {
 static vxt_byte read_opcode8(CONSTSP(cpu) p) {
    vxt_byte data;
    vxt_word ip = p->regs.ip;
-   vxt_pointer ptr = VXT_POINTER(p->regs.cs, ip);
-
+   
    if (p->inst_queue_count > 0) {
       data = *p->inst_queue;
       memmove(p->inst_queue, &p->inst_queue[1], --p->inst_queue_count);
 
       #if defined(VXT_DEBUG_PREFETCH) && !defined(VXT_NO_PREFETCH)
+         vxt_pointer ptr = VXT_POINTER(p->regs.cs, ip);
          if (*p->inst_queue_debug != ptr) {
             VXT_LOG("FATAL: Broken prefetch queue detected! Expected 0x%X but got 0x%X.", *p->inst_queue_debug, ptr);
             p->regs.debug = true;
@@ -82,7 +82,7 @@ static vxt_byte read_opcode8(CONSTSP(cpu) p) {
          memmove(p->inst_queue_debug, &p->inst_queue_debug[1], p->inst_queue_count * sizeof(vxt_pointer));
       #endif
    } else {
-      data = cpu_read_byte(p, ptr);
+      data = cpu_segment_read_byte(p, p->regs.cs, ip);
    }
    p->regs.ip++;
 
@@ -408,8 +408,8 @@ static void call_int(CONSTSP(cpu) p, int n) {
 	push(p, r->cs);
 	push(p, r->ip);
 
-	r->ip = cpu_read_word(p, (vxt_pointer)n * 4);
-	r->cs = cpu_read_word(p, (vxt_pointer)n * 4 + 2);
+	r->ip = cpu_segment_read_word(p, 0, (vxt_pointer)n * 4);
+	r->cs = cpu_segment_read_word(p, 0, (vxt_pointer)n * 4 + 2);
 	r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
 	p->inst_queue_dirty = true;
 
