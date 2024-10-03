@@ -413,11 +413,12 @@ static void call_int(CONSTSP(cpu) p, int n) {
 	r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
 	p->inst_queue_dirty = true;
 
+	p->interrupt = true;
 	if (n == 0x28)
 		p->int28 = true;
 }
 
-static void divZero(CONSTSP(cpu) p) {
+static void div_zero(CONSTSP(cpu) p) {
    p->regs.ip = p->inst_start;
    call_int(p, 0);
 }
@@ -427,8 +428,15 @@ static bool valid_repeat(vxt_byte opcode) {
       return true;
    if ((opcode >= 0xAA) && (opcode <= 0xAF))
       return true;
-   if ((opcode >= 0x6C) && (opcode <= 0x6F)) // Only valid for 186+
+   
+   // Only valid for 186+
+   if ((opcode >= 0x6C) && (opcode <= 0x6F))
       return true;
+      
+   // F6.7, F7.7 - Presence of a REP prefix preceding IDIV will invert the sign of the quotient.
+   if ((opcode == 0xF6) || (opcode == 0xF7))
+      return true;
+
    return false;
 }
 

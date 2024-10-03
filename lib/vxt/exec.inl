@@ -859,7 +859,7 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
    vxt_byte a = p->regs.al;
    vxt_byte b = read_opcode8(p);
    if (!b) {
-      divZero(p);
+      div_zero(p);
       return;
    }
    p->regs.al = a % b;
@@ -1019,7 +1019,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       case 6: // DIV
       {
          if (!v) {
-            divZero(p);
+            div_zero(p);
             return;
          }
 
@@ -1029,7 +1029,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          vxt_byte q8 = q & 0xFF;
 
          if (q != q8) {
-            divZero(p);
+            div_zero(p);
             return;
          }
 
@@ -1041,22 +1041,25 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       {
          vxt_int16 a = p->regs.ax;
          if (a == ((vxt_int16)0x8000)) {
-            divZero(p);
+            div_zero(p);
             return;
          }
 
          vxt_int8 b = v;
          if (!b) {
-            divZero(p);
+            div_zero(p);
             return;
          }
 
          vxt_int16 q = a / b;
+         if (p->repeat)
+			q *= -1;
+         
          vxt_int8 r = a % b;
          vxt_word q8 = (q & 0xFF);
 
          if (q != q8) {
-            divZero(p);
+            div_zero(p);
             return;
          }
 
@@ -1113,7 +1116,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       case 6: // DIV
       {
          if (!v) {
-            divZero(p);
+            div_zero(p);
             return;
          }
 
@@ -1123,7 +1126,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          vxt_word q16 = q & 0xFFFF;
 
          if (q != q16) {
-            divZero(p);
+            div_zero(p);
             return;
          }
 
@@ -1135,24 +1138,27 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       {
          vxt_int32 a = (((vxt_dword)p->regs.dx) << 16) | ((vxt_dword)p->regs.ax);
          if (a == ((vxt_int32)0x80000000)) {
-            divZero(p);
+            div_zero(p);
             return;
          }
 
          vxt_int16 b = v;
          if (!b) {
-            divZero(p);
+            div_zero(p);
             return;
          }
 
          vxt_int32 q = a / b;
          vxt_int16 r = a % b;
          vxt_int16 q16 = q & 0xFFFF;
-
+         
          if (q != q16) {
-            divZero(p);
+            div_zero(p);
             return;
          }
+         
+         if (p->repeat)
+			q16 *= -1;
 
          p->regs.ax = (vxt_word)q16;
          p->regs.dx = (vxt_word)r;

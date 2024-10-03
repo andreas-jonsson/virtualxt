@@ -48,7 +48,8 @@ struct address_mode {
 
 struct cpu {
    struct vxt_registers regs;
-   bool trap, halt, int28, invalid;
+   bool trap, halt, invalid;
+   bool interrupt, int28;
    int cycles;
    vxt_word inst_start;
 

@@ -208,6 +208,7 @@ VXT_API struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
 		oldc = newc;
 		step.cycles += c;
 		step.halted = s->cpu.halt;
+		step.interrupt = s->cpu.interrupt;
 		step.int28 = s->cpu.int28;
 		step.invalid = s->cpu.invalid;
 

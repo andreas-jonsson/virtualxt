@@ -177,7 +177,7 @@ int cpu_step(CONSTSP(cpu) p) {
 
 void cpu_reset_cycle_count(CONSTSP(cpu) p) {
    p->cycles = 0;
-   p->int28 = false;
+   p->interrupt = p->int28 = false;
    p->invalid = false;
 }
 
