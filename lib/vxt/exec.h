@@ -92,112 +92,63 @@ static vxt_word read_opcode16(CONSTSP(cpu) p) {
 static vxt_word get_ea_offset(CONSTSP(cpu) p) {
    CONSTSP(vxt_registers) r = &p->regs;
    CONSTSP(address_mode) m = &p->mode;
-   vxt_word ea = 0;
 
 	switch (m->mod) {
       case 0:
          switch (m->rm) {
-            case 0:
-               ea = r->bx + r->si;
-               break;
-            case 1:
-               ea = r->bx + r->di;
-               break;
-            case 2:
-               ea = r->bp + r->si;
-               break;
-            case 3:
-               ea = r->bp + r->di;
-               break;
-            case 4:
-               ea = r->si;
-               break;
-            case 5:
-               ea = r->di;
-               break;
-            case 6:
-               ea = m->disp;
-               break;
-            case 7:
-               ea = r->bx;
-               break;
+            case 0: return r->bx + r->si;
+            case 1: return r->bx + r->di;
+            case 2: return r->bp + r->si;
+            case 3: return r->bp + r->di;
+            case 4: return r->si;
+            case 5: return r->di;
+            case 6: return m->disp;
+            case 7: return r->bx;
          }
          break;
       case 1:
       case 2:
          switch (m->rm) {
-            case 0:
-               ea = r->bx + r->si + m->disp;
-               break;
-            case 1:
-               ea = r->bx + r->di + m->disp;
-               break;
-            case 2:
-               ea = r->bp + r->si + m->disp;
-               break;
-            case 3:
-               ea = r->bp + r->di + m->disp;
-               break;
-            case 4:
-               ea = r->si + m->disp;
-               break;
-            case 5:
-               ea = r->di + m->disp;
-               break;
-            case 6:
-               ea = r->bp + m->disp;
-               break;
-            case 7:
-               ea = r->bx + m->disp;
-               break;
+            case 0: return r->bx + r->si + m->disp;
+            case 1: return r->bx + r->di + m->disp;
+            case 2: return r->bp + r->si + m->disp;
+            case 3: return r->bp + r->di + m->disp;
+            case 4: return r->si + m->disp;
+            case 5: return r->di + m->disp;
+            case 6: return r->bp + m->disp;
+            case 7: return r->bx + m->disp;
          }
          break;
 	}
-	return ea;
+	UNREACHABLE(0);
 }
 
 static vxt_byte reg_read8(CONSTSP(vxt_registers) r, int reg) {
    switch (reg) {
-      case 0:
-         return r->al;
-      case 1:
-         return r->cl;
-      case 2:
-         return r->dl;
-      case 3:
-         return r->bl;
-      case 4:
-         return r->ah;
-      case 5:
-         return r->ch;
-      case 6:
-         return r->dh;
-      case 7:
-         return r->bh;
+      case 0: return r->al;
+      case 1: return r->cl;
+      case 2: return r->dl;
+      case 3: return r->bl;
+      case 4: return r->ah;
+      case 5: return r->ch;
+      case 6: return r->dh;
+      case 7: return r->bh;
+      default: UNREACHABLE(0);
    }
-   UNREACHABLE(0);
 }
 
 static vxt_word reg_read16(CONSTSP(vxt_registers) r, int reg) {
    switch (reg) {
-      case 0:
-         return r->ax;
-      case 1:
-         return r->cx;
-      case 2:
-         return r->dx;
-      case 3:
-         return r->bx;
-      case 4:
-         return r->sp;
-      case 5:
-         return r->bp;
-      case 6:
-         return r->si;
-      case 7:
-         return r->di;
+      case 0: return r->ax;
+      case 1: return r->cx;
+      case 2: return r->dx;
+      case 3: return r->bx;
+      case 4: return r->sp;
+      case 5: return r->bp;
+      case 6: return r->si;
+      case 7: return r->di;
+      default: UNREACHABLE(0);
    }
-   UNREACHABLE(0);
 }
 
 static void reg_write8(CONSTSP(vxt_registers) r, int reg, vxt_byte data) {
@@ -265,16 +216,11 @@ static void reg_write16(CONSTSP(vxt_registers) r, int reg, vxt_word data) {
 static vxt_word seg_read16(CONSTSP(cpu) p) {
    CONSTSP(vxt_registers) r = &p->regs;
    switch (p->mode.reg & 3) {
-		case 0:
-         return r->es;
-		case 1:
-         return r->cs;
-		case 2:
-			return r->ss;
-		case 3:
-			return r->ds;
-		default:
-         UNREACHABLE(0); // Not sure what should happen here?
+		case 0: return r->es;
+		case 1: return r->cs;
+		case 2: return r->ss;
+		case 3: return r->ds;
+		default: UNREACHABLE(0);
    }
 }
 
@@ -282,20 +228,20 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
    CONSTSP(vxt_registers) r = &p->regs;
    switch (p->mode.reg & 3) {
 		case 0:
-         r->es = data;
-         return;
+			r->es = data;
+			return;
 		case 1:
-         r->cs = data;
-         p->inst_queue_dirty = true;
-         return;
+			r->cs = data;
+			p->inst_queue_dirty = true;
+			return;
 		case 2:
 			r->ss = data;
-         return;
+			return;
 		case 3:
 			r->ds = data;
-         return;
+			return;
 		default:
-         UNREACHABLE(); // Not sure what should happen here?
+			UNREACHABLE();
    }
 }
 

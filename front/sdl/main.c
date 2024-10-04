@@ -192,7 +192,13 @@ static void push_mouse_button_state(struct frontend_mouse_event ev) {
 }
 
 static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
-	(void)s; (void)addr;
+	(void)s;
+	if (addr == VXT_INVALID_POINTER) {
+		printf("Tracer received exit signal!\n");
+		fclose(trace_op_output);
+		fclose(trace_offset_output);
+		exit(0);
+	}
 	fwrite(&data, 1, 1, trace_op_output);
 	fwrite(&addr, sizeof(vxt_pointer), 1, trace_offset_output);
 }
