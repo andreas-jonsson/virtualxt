@@ -30,8 +30,6 @@
 #include "flags.h"
 
 #define TRACE(p, ip, data) { if ((p)->tracer) (p)->tracer((p)->s, VXT_POINTER((p)->regs.cs, (ip)), (data)); }
-#define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq(VXT_GET_DEVICE_PTR((p)->pic), (n)); }
-#define INST(n) const struct instruction * const n
 #define MOD_TARGET_MEM(mode) ((mode).mod < 3)
 
 enum architecture {
@@ -49,7 +47,7 @@ struct instruction {
    bool modregrm;
    int cycles;
    enum architecture arch;
-   void (*func)(CONSTSP(cpu), INST());
+   void (*func)(CONSTSP(cpu));
 };
 
 static vxt_dword sign_extend32(vxt_word v) {

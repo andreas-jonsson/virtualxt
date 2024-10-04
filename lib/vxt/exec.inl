@@ -27,44 +27,42 @@
 #include "shift.inl"
 #include "rep.inl"
 
-#define CARRY (((inst->opcode > 0xF) && (p->regs.flags & VXT_CARRY)) ? 1 : 0)
+#define CARRY (((p->inst->opcode > 0xF) && (p->regs.flags & VXT_CARRY)) ? 1 : 0)
 
-static void add_0_10(CONSTSP(cpu) p, INST(inst)) {
+static void add_0_10(CONSTSP(cpu) p) {
    rm_write8(p, op_add_adc8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg), CARRY));
 }
 
-static void add_1_11(CONSTSP(cpu) p, INST(inst)) {
+static void add_1_11(CONSTSP(cpu) p) {
    rm_write16(p, op_add_adc16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg), CARRY));
 }
 
-static void add_2_12(CONSTSP(cpu) p, INST(inst)) {
+static void add_2_12(CONSTSP(cpu) p) {
    reg_write8(&p->regs, p->mode.reg, op_add_adc8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p), CARRY));
 }
 
-static void add_3_13(CONSTSP(cpu) p, INST(inst)) {
+static void add_3_13(CONSTSP(cpu) p) {
    reg_write16(&p->regs, p->mode.reg, op_add_adc16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p), CARRY));
 }
 
-static void add_4_14(CONSTSP(cpu) p, INST(inst)) {
+static void add_4_14(CONSTSP(cpu) p) {
    p->regs.al = op_add_adc8(&p->regs, p->regs.al, read_opcode8(p), CARRY);
 }
 
-static void add_5_15(CONSTSP(cpu) p, INST(inst)) {
+static void add_5_15(CONSTSP(cpu) p) {
    p->regs.ax = op_add_adc16(&p->regs, p->regs.ax, read_opcode16(p), CARRY);
 }
 
 #undef CARRY
 
-#define PUSH_POP(r)                                            \
-   static void push_ ## r (CONSTSP(cpu) p, INST(inst)) {       \
-      UNUSED(inst);                                            \
-      push(p, p->regs.r);                                      \
-   }                                                           \
-                                                               \
-   static void pop_ ## r (CONSTSP(cpu) p, INST(inst)) {        \
-      UNUSED(inst);                                            \
-      p->regs.r = pop(p);                                      \
-   }                                                           \
+#define PUSH_POP(r)                                \
+   static void push_ ## r (CONSTSP(cpu) p) {       \
+      push(p, p->regs.r);                          \
+   }                                               \
+                                                   \
+   static void pop_ ## r (CONSTSP(cpu) p) {        \
+      p->regs.r = pop(p);                          \
+   }                                               \
 
 #ifndef TESTING
 	PUSH_POP(sp)
@@ -84,94 +82,83 @@ PUSH_POP(di)
 
 // This is the 8086 behaviour. 286 pushes the old value of SP.
 #ifdef TESTING
-	static void push_sp(CONSTSP(cpu) p, INST(inst)) {
-	   UNUSED(inst);
+	static void push_sp(CONSTSP(cpu) p) {
 	   p->regs.sp -= 2;
 	   cpu_segment_write_word(p, p->regs.ss, p->regs.sp, p->regs.sp);
 	}
 
-	static void pop_sp(CONSTSP(cpu) p, INST(inst)) {
-	   UNUSED(inst);
+	static void pop_sp(CONSTSP(cpu) p) {
 	   p->regs.sp = cpu_segment_read_word(p, p->regs.ss, p->regs.sp);
 	}
 #endif
 
-static void push_cs(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void push_cs(CONSTSP(cpu) p) {
    push(p, p->regs.cs);
 }
 
-static void or_8(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void or_8(CONSTSP(cpu) p) {
    rm_write8(p, op_or8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));
 }
 
-static void or_9(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void or_9(CONSTSP(cpu) p) {
    rm_write16(p, op_or16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg)));
 }
 
-static void or_A(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void or_A(CONSTSP(cpu) p) {
    reg_write8(&p->regs, p->mode.reg, op_or8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p)));
 }
 
-static void or_B(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void or_B(CONSTSP(cpu) p) {
    reg_write16(&p->regs, p->mode.reg, op_or16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p)));
 }
 
-static void or_C(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void or_C(CONSTSP(cpu) p) {
    p->regs.al = op_or8(&p->regs, p->regs.al, read_opcode8(p));
 }
 
-static void or_D(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void or_D(CONSTSP(cpu) p) {
    p->regs.ax = op_or16(&p->regs, p->regs.ax, read_opcode16(p));
 }
 
-static void invalid_op(CONSTSP(cpu) p, INST(inst)) {
+static void invalid_op(CONSTSP(cpu) p) {
    VALIDATOR_DISCARD(p);
-   PRINT("invalid opcode: 0x%X", inst->opcode);
+   PRINT("invalid opcode: 0x%X", p->inst->opcode);
    p->regs.debug = true;
 }
 
-static void invalid_prefix(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(p);
-   PANIC("prefix (0x%X) should have been parsed", inst->opcode);
+static void invalid_prefix(CONSTSP(cpu) p) {
+   PANIC("prefix (0x%X) should have been parsed", p->inst->opcode);
 }
 
-#define CARRY (((inst->opcode < 0x1F) && (p->regs.flags & VXT_CARRY)) ? 1 : 0)
+#define CARRY (((p->inst->opcode < 0x1F) && (p->regs.flags & VXT_CARRY)) ? 1 : 0)
 
-static void sub_18_28(CONSTSP(cpu) p, INST(inst)) {
+static void sub_18_28(CONSTSP(cpu) p) {
    rm_write8(p, op_sub_sbb8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg), CARRY));
 }
 
-static void sub_19_29(CONSTSP(cpu) p, INST(inst)) {
+static void sub_19_29(CONSTSP(cpu) p) {
    rm_write16(p, op_sub_sbb16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg), CARRY));
 }
 
-static void sub_1A_2A(CONSTSP(cpu) p, INST(inst)) {
+static void sub_1A_2A(CONSTSP(cpu) p) {
    reg_write8(&p->regs, p->mode.reg, op_sub_sbb8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p), CARRY));
 }
 
-static void sub_1B_2B(CONSTSP(cpu) p, INST(inst)) {
+static void sub_1B_2B(CONSTSP(cpu) p) {
    reg_write16(&p->regs, p->mode.reg, op_sub_sbb16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p), CARRY));
 }
 
-static void sub_1C_2C(CONSTSP(cpu) p, INST(inst)) {
+static void sub_1C_2C(CONSTSP(cpu) p) {
    p->regs.al = op_sub_sbb8(&p->regs, p->regs.al, read_opcode8(p), CARRY);
 }
 
-static void sub_1D_2D(CONSTSP(cpu) p, INST(inst)) {
+static void sub_1D_2D(CONSTSP(cpu) p) {
    p->regs.ax = op_sub_sbb16(&p->regs, p->regs.ax, read_opcode16(p), CARRY);
 }
 
 #undef CARRY
 
-static void das_2F(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void das_2F(CONSTSP(cpu) p) {
    vxt_byte al = p->regs.al;
    vxt_word af = p->regs.flags & VXT_AUXILIARY;
    vxt_word cf = p->regs.flags & VXT_CARRY;
@@ -194,38 +181,31 @@ static void das_2F(CONSTSP(cpu) p, INST(inst)) {
    flag_szp8(&p->regs, p->regs.al);
 }
 
-static void and_20(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void and_20(CONSTSP(cpu) p) {
    rm_write8(p, op_and8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));
 }
 
-static void and_21(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void and_21(CONSTSP(cpu) p) {
    rm_write16(p, op_and16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg)));
 }
 
-static void and_22(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void and_22(CONSTSP(cpu) p) {
    reg_write8(&p->regs, p->mode.reg, op_and8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p)));
 }
 
-static void and_23(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void and_23(CONSTSP(cpu) p) {
    reg_write16(&p->regs, p->mode.reg, op_and16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p)));
 }
 
-static void and_24(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void and_24(CONSTSP(cpu) p) {
    p->regs.al = op_and8(&p->regs, p->regs.al, read_opcode8(p));
 }
 
-static void and_25(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void and_25(CONSTSP(cpu) p) {
    p->regs.ax = op_and16(&p->regs, p->regs.ax, read_opcode16(p));
 }
 
-static void daa_27(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void daa_27(CONSTSP(cpu) p) {
    vxt_byte al = p->regs.al;
    vxt_word af = p->regs.flags & VXT_AUXILIARY;
    vxt_word cf = p->regs.flags & VXT_CARRY;
@@ -247,39 +227,32 @@ static void daa_27(CONSTSP(cpu) p, INST(inst)) {
    flag_szp8(&p->regs, p->regs.al);
 }
 
-static void xor_30(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void xor_30(CONSTSP(cpu) p) {
    rm_write8(p, op_xor8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg)));
 }
 
-static void xor_31(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void xor_31(CONSTSP(cpu) p) {
    rm_write16(p, op_xor16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg)));
 }
 
-static void xor_32(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void xor_32(CONSTSP(cpu) p) {
    reg_write8(&p->regs, p->mode.reg, op_xor8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p)));
 }
 
-static void xor_33(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void xor_33(CONSTSP(cpu) p) {
    reg_write16(&p->regs, p->mode.reg, op_xor16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p)));
 }
 
-static void xor_34(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void xor_34(CONSTSP(cpu) p) {
    p->regs.al = op_xor8(&p->regs, p->regs.al, read_opcode8(p));
 }
 
-static void xor_35(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void xor_35(CONSTSP(cpu) p) {
    p->regs.ax = op_xor16(&p->regs, p->regs.ax, read_opcode16(p));
 }
 
 #define ASCII(name, op)                                                          \
-   static void name (CONSTSP(cpu) p, INST(inst)) {                               \
-      UNUSED(inst);                                                              \
+   static void name (CONSTSP(cpu) p) {                                           \
       if (((p->regs.al & 0xF) > 9) || FLAGS(p->regs.flags, VXT_AUXILIARY)) {     \
          p->regs.al = p->regs.al op 6;                                           \
          p->regs.ah = p->regs.ah op 1;                                           \
@@ -294,52 +267,45 @@ ASCII(aaa_37, +)
 ASCII(aas_3F, -)
 #undef ASCII
 
-static void cmp_38(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cmp_38(CONSTSP(cpu) p) {
    flag_sub_sbb8(&p->regs, rm_read8(p), reg_read8(&p->regs, p->mode.reg), 0);
 }
 
-static void cmp_39(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cmp_39(CONSTSP(cpu) p) {
    flag_sub_sbb16(&p->regs, rm_read16(p), reg_read16(&p->regs, p->mode.reg), 0);
 }
 
-static void cmp_3A(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cmp_3A(CONSTSP(cpu) p) {
    flag_sub_sbb8(&p->regs, reg_read8(&p->regs, p->mode.reg), rm_read8(p), 0);
 }
 
-static void cmp_3B(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cmp_3B(CONSTSP(cpu) p) {
    flag_sub_sbb16(&p->regs, reg_read16(&p->regs, p->mode.reg), rm_read16(p), 0);
 }
 
-static void cmp_3C(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cmp_3C(CONSTSP(cpu) p) {
    flag_sub_sbb8(&p->regs, p->regs.al, read_opcode8(p), 0);
 }
 
-static void cmp_3D(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cmp_3D(CONSTSP(cpu) p) {
    flag_sub_sbb16(&p->regs, p->regs.ax, read_opcode16(p), 0);
 }
 
-static void inc_reg(CONSTSP(cpu) p, INST(inst)) {
+static void inc_reg(CONSTSP(cpu) p) {
    vxt_word c = p->regs.flags & VXT_CARRY;
-   vxt_word r = inst->opcode - 0x40;
+   vxt_word r = p->inst->opcode - 0x40;
    reg_write16(&p->regs, r, op_add_adc16(&p->regs, reg_read16(&p->regs, r), 1, 0));
    SET_FLAG(p->regs.flags, VXT_CARRY, c);
 }
 
-static void dec_reg(CONSTSP(cpu) p, INST(inst)) {
+static void dec_reg(CONSTSP(cpu) p) {
    vxt_word c = p->regs.flags & VXT_CARRY;
-   vxt_word r = inst->opcode - 0x48;
+   vxt_word r = p->inst->opcode - 0x48;
    reg_write16(&p->regs, r, op_sub_sbb16(&p->regs, reg_read16(&p->regs, r), 1, 0));
    SET_FLAG(p->regs.flags, VXT_CARRY, c);
 }
 
-static void pusha_60(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void pusha_60(CONSTSP(cpu) p) {
    vxt_word sp = p->regs.sp;
    push(p, p->regs.ax);
    push(p, p->regs.cx);
@@ -351,8 +317,7 @@ static void pusha_60(CONSTSP(cpu) p, INST(inst)) {
    push(p, p->regs.di);
 }
 
-static void popa_61(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void popa_61(CONSTSP(cpu) p) {
    p->regs.di = pop(p);
    p->regs.si = pop(p);
    p->regs.bp = pop(p);
@@ -363,8 +328,7 @@ static void popa_61(CONSTSP(cpu) p, INST(inst)) {
    p->regs.ax = pop(p);
 }
 
-static void bound_62(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void bound_62(CONSTSP(cpu) p) {
    vxt_dword idx = sign_extend32(reg_read16(&p->regs, p->mode.reg));
    vxt_word offset = get_ea_offset(p);
 
@@ -374,23 +338,21 @@ static void bound_62(CONSTSP(cpu) p, INST(inst)) {
    }
 }
 
-static void arpl_63(CONSTSP(cpu) p, INST(inst)) {
+static void arpl_63(CONSTSP(cpu) p) {
    VALIDATOR_DISCARD(p);
-   UNUSED(inst);
 
    // TODO: Implement
    VXT_LOG("ARPL is not implemented!");
    p->regs.flags &= ~VXT_ZERO;
 }
 
-static void push_68(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void push_68(CONSTSP(cpu) p) {
    push(p, read_opcode16(p));
 }
 
-static void imul_69_6B(CONSTSP(cpu) p, INST(inst)) {
+static void imul_69_6B(CONSTSP(cpu) p) {
    vxt_int32 a = sign_extend32(rm_read16(p));
-   vxt_int32 b = (inst->opcode == 69) ? sign_extend32(sign_extend16(read_opcode8(p))) : sign_extend32(read_opcode16(p));
+   vxt_int32 b = (p->inst->opcode == 69) ? sign_extend32(sign_extend16(read_opcode8(p))) : sign_extend32(read_opcode16(p));
 
    vxt_int32 res = a * b;
    vxt_word res16 = (vxt_word)(res & 0xFFFF);
@@ -400,31 +362,26 @@ static void imul_69_6B(CONSTSP(cpu) p, INST(inst)) {
    rm_write16(p, res16);
 }
 
-static void push_6A(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void push_6A(CONSTSP(cpu) p) {
    push(p, (vxt_word)read_opcode8(p));
 }
 
-static void insb_6C(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void insb_6C(CONSTSP(cpu) p) {
    cpu_segment_write_byte(p, p->regs.ds, p->regs.si, system_in(p->s, p->regs.dx));
    update_di_si(p, 1);
 }
 
-static void insw_6D(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void insw_6D(CONSTSP(cpu) p) {
    cpu_segment_write_word(p, p->regs.ds, p->regs.si, WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
    update_di_si(p, 2);
 }
 
-static void outsb_6E(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void outsb_6E(CONSTSP(cpu) p) {
    system_out(p->s, p->regs.dx, cpu_segment_read_byte(p, p->regs.ds, p->regs.si));
    update_di_si(p, 1);
 }
 
-static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void outsw_6F(CONSTSP(cpu) p) {
    vxt_word data = cpu_segment_read_word(p, p->regs.ds, p->regs.si);
    system_out(p->s, p->regs.dx, (vxt_byte)(data & 0xFF));
    system_out(p->s, p->regs.dx + 1, (vxt_byte)(data >> 8));
@@ -432,8 +389,7 @@ static void outsw_6F(CONSTSP(cpu) p, INST(inst)) {
 }
 
 #define JUMP(name, cond)                                       \
-   static void jump_ ##name (CONSTSP(cpu) p, INST(inst)) {     \
-      UNUSED(inst);                                            \
+   static void jump_ ##name (CONSTSP(cpu) p) {                 \
       vxt_word offset = sign_extend16(read_opcode8(p));        \
       if (cond) {                                              \
          p->regs.ip += offset;                                 \
@@ -460,8 +416,7 @@ JUMP(jle, (FLAGS(p->regs.flags, VXT_SIGN) != FLAGS(p->regs.flags, VXT_OVERFLOW))
 JUMP(jg, (FLAGS(p->regs.flags, VXT_SIGN) == FLAGS(p->regs.flags, VXT_OVERFLOW)) && !FLAGS(p->regs.flags, VXT_ZERO))
 #undef JUMP
 
-static void grp1_80_82(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void grp1_80_82(CONSTSP(cpu) p) {
    vxt_byte a = rm_read8(p);
    vxt_byte b = read_opcode8(p);
    vxt_byte res = 0;
@@ -499,9 +454,9 @@ static void grp1_80_82(CONSTSP(cpu) p, INST(inst)) {
       rm_write8(p, res);
 }
 
-static void grp1_81_83(CONSTSP(cpu) p, INST(inst)) {
+static void grp1_81_83(CONSTSP(cpu) p) {
    vxt_word a = rm_read16(p);
-   vxt_word b = (inst->opcode == 0x81) ? read_opcode16(p) : sign_extend16(read_opcode8(p));
+   vxt_word b = (p->inst->opcode == 0x81) ? read_opcode16(p) : sign_extend16(read_opcode8(p));
    vxt_word res = 0;
 
    switch (p->mode.reg) {
@@ -537,77 +492,64 @@ static void grp1_81_83(CONSTSP(cpu) p, INST(inst)) {
       rm_write16(p, res);
 }
 
-static void test_84(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void test_84(CONSTSP(cpu) p) {
    flag_logic8(&p->regs, reg_read8(&p->regs, p->mode.reg) & rm_read8(p));
 }
 
-static void test_85(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void test_85(CONSTSP(cpu) p) {
    flag_logic16(&p->regs, reg_read16(&p->regs, p->mode.reg) & rm_read16(p));
 }
 
-static void xchg_86(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void xchg_86(CONSTSP(cpu) p) {
    vxt_byte v = rm_read8(p);
    rm_write8(p, reg_read8(&p->regs, p->mode.reg));
    reg_write8(&p->regs, p->mode.reg, v);
 }
 
-static void xchg_87(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void xchg_87(CONSTSP(cpu) p) {
    vxt_word v = rm_read16(p);
    rm_write16(p, reg_read16(&p->regs, p->mode.reg));
    reg_write16(&p->regs, p->mode.reg, v);
 }
 
-static void mov_88(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_88(CONSTSP(cpu) p) {
    rm_write8(p, reg_read8(&p->regs, p->mode.reg));
 }
 
-static void mov_89(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_89(CONSTSP(cpu) p) {
    rm_write16(p, reg_read16(&p->regs, p->mode.reg));
 }
 
-static void mov_8A(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_8A(CONSTSP(cpu) p) {
    reg_write8(&p->regs, p->mode.reg, rm_read8(p));
 }
 
-static void mov_8B(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_8B(CONSTSP(cpu) p) {
    reg_write16(&p->regs, p->mode.reg, rm_read16(p));
 }
 
-static void mov_8C(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_8C(CONSTSP(cpu) p) {
    rm_write16(p, seg_read16(p));
 }
 
-static void lea_8D(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void lea_8D(CONSTSP(cpu) p) {
    reg_write16(&p->regs, p->mode.reg, VXT_POINTER(p->seg, get_ea_offset(p)) - (p->seg << 4));
 }
 
-static void mov_8E(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_8E(CONSTSP(cpu) p) {
    seg_write16(p, rm_read16(p));
 }
 
-static void pop_8F(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void pop_8F(CONSTSP(cpu) p) {
    rm_write16(p, pop(p));
 }
 
-static void nop_90(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(p); UNUSED(inst);
+static void nop_90(CONSTSP(cpu) p) {
+   UNUSED(p);
 }
 
 #define XCHG(a, b)                                                   \
-   static void xchg_ ## a ## _ ## b (CONSTSP(cpu) p, INST(inst)) {   \
-      UNUSED(inst);                                                  \
+   static void xchg_ ## a ## _ ## b (CONSTSP(cpu) p) {               \
       vxt_word tmp = p->regs.a;                                      \
       p->regs.a = p->regs.b;                                         \
       p->regs.b = tmp;                                               \
@@ -622,18 +564,15 @@ XCHG(si, ax)
 XCHG(di, ax)
 #undef XCHG
 
-static void cbw_98(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cbw_98(CONSTSP(cpu) p) {
    p->regs.ah = (p->regs.al & 0x80) ? 0xFF : 0;
 }
 
-static void cwd_99(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cwd_99(CONSTSP(cpu) p) {
    p->regs.dx = (p->regs.ax & 0x8000) ? 0xFFFF : 0;
 }
 
-static void call_9A(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void call_9A(CONSTSP(cpu) p) {
    vxt_word ip = read_opcode16(p);
    vxt_word cs = read_opcode16(p);
    push(p, p->regs.cs);
@@ -643,18 +582,16 @@ static void call_9A(CONSTSP(cpu) p, INST(inst)) {
    p->inst_queue_dirty = true;
 }
 
-static void wait_9B(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(p); UNUSED(inst);
+static void wait_9B(CONSTSP(cpu) p) {
+   UNUSED(p);
    VALIDATOR_DISCARD(p);
 }
 
-static void pushf_9C(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void pushf_9C(CONSTSP(cpu) p) {
    push(p, p->regs.flags);
 }
 
-static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void popf_9D(CONSTSP(cpu) p) {
    p->regs.flags = (pop(p) & ALL_FLAGS) | 2;
    #ifdef FLAG8086
       p->regs.flags |= 0xF000; // 8086 flags
@@ -663,83 +600,70 @@ static void popf_9D(CONSTSP(cpu) p, INST(inst)) {
    #endif
 }
 
-static void sahf_9E(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void sahf_9E(CONSTSP(cpu) p) {
    p->regs.flags = (p->regs.flags & 0xFF00) | (vxt_word)(p->regs.ah & ALL_FLAGS) | 2;
 }
 
-static void lahf_9F(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void lahf_9F(CONSTSP(cpu) p) {
    p->regs.ah = (vxt_byte)(p->regs.flags & 0xFF);
 }
 
-static void mov_A0(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_A0(CONSTSP(cpu) p) {
    p->regs.al = cpu_segment_read_byte(p, p->seg, read_opcode16(p));
 }
 
-static void mov_A1(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_A1(CONSTSP(cpu) p) {
    p->regs.ax = cpu_segment_read_word(p, p->seg, read_opcode16(p));
 }
 
-static void mov_A2(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_A2(CONSTSP(cpu) p) {
    cpu_segment_write_byte(p, p->seg, read_opcode16(p), p->regs.al);
 }
 
-static void mov_A3(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_A3(CONSTSP(cpu) p) {
    cpu_segment_write_word(p, p->seg, read_opcode16(p), p->regs.ax);
 }
 
-static void test_A8(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void test_A8(CONSTSP(cpu) p) {
    flag_logic8(&p->regs, p->regs.al & read_opcode8(p));
 }
 
-static void test_A9(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void test_A9(CONSTSP(cpu) p) {
    flag_logic16(&p->regs, p->regs.ax & read_opcode16(p));
 }
 
-static void mov_reg8(CONSTSP(cpu) p, INST(inst)) {
-   ENSURE(inst->opcode >= 0xB0 && inst->opcode <= 0xB7)
-   reg_write8(&p->regs, inst->opcode - 0xB0, read_opcode8(p));
+static void mov_reg8(CONSTSP(cpu) p) {
+   ENSURE(p->inst->opcode >= 0xB0 && p->inst->opcode <= 0xB7)
+   reg_write8(&p->regs, p->inst->opcode - 0xB0, read_opcode8(p));
 }
 
-static void mov_reg16(CONSTSP(cpu) p, INST(inst)) {
-   ENSURE(inst->opcode >= 0xB8 && inst->opcode <= 0xBF)
-   reg_write16(&p->regs, inst->opcode - 0xB8, read_opcode16(p));
+static void mov_reg16(CONSTSP(cpu) p) {
+   ENSURE(p->inst->opcode >= 0xB8 && p->inst->opcode <= 0xBF)
+   reg_write16(&p->regs, p->inst->opcode - 0xB8, read_opcode16(p));
 }
 
-static void shl_C0(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void shl_C0(CONSTSP(cpu) p) {
    rm_write8(p, bitshift_8(p, rm_read8(p), read_opcode8(p)));
 }
 
-static void shl_C1(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void shl_C1(CONSTSP(cpu) p) {
    rm_write16(p, bitshift_16(p, rm_read16(p), (vxt_byte)read_opcode16(p)));
 }
 
-static void ret_C2(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void ret_C2(CONSTSP(cpu) p) {
    vxt_word ip = pop(p);
    p->regs.sp += read_opcode16(p);
    p->regs.ip = ip;
    p->inst_queue_dirty = true;
 }
 
-static void ret_C3(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void ret_C3(CONSTSP(cpu) p) {
    p->regs.ip = pop(p);
    p->inst_queue_dirty = true;
 }
 
 #define LOAD(name, r)                                                				\
-   static void name (CONSTSP(cpu) p, INST(inst)) {                   				\
-      UNUSED(inst);                                                  				\
+   static void name (CONSTSP(cpu) p) {                   							\
       vxt_word offset = get_ea_offset(p);                     						\
       reg_write16(&p->regs, p->mode.reg, cpu_segment_read_word(p, p->seg, offset));	\
       p->regs.r = cpu_segment_read_word(p, p->seg, offset + 2);						\
@@ -749,18 +673,15 @@ LOAD(les_C4, es)
 LOAD(lds_C5, ds)
 #undef LOAD
 
-static void mov_C6(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_C6(CONSTSP(cpu) p) {
    rm_write8(p, read_opcode8(p));
 }
 
-static void mov_C7(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void mov_C7(CONSTSP(cpu) p) {
    rm_write16(p, read_opcode16(p));
 }
 
-static void enter_C8(CONSTSP(cpu) p, INST(inst)) {
-	UNUSED(inst);
+static void enter_C8(CONSTSP(cpu) p) {
 	vxt_word size = read_opcode16(p);
 	vxt_byte level = read_opcode8(p) & 0x1F;
 
@@ -780,14 +701,12 @@ static void enter_C8(CONSTSP(cpu) p, INST(inst)) {
 	p->regs.bp = sp;
 }
 
-static void leave_C9(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void leave_C9(CONSTSP(cpu) p) {
    p->regs.sp = p->regs.bp;
    p->regs.bp = pop(p);
 }
 
-static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void retf_CA(CONSTSP(cpu) p) {
    vxt_word sp = read_opcode16(p);
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
@@ -795,33 +714,28 @@ static void retf_CA(CONSTSP(cpu) p, INST(inst)) {
    p->inst_queue_dirty = true;
 }
 
-static void retf_CB(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void retf_CB(CONSTSP(cpu) p) {
    p->regs.ip = pop(p);
    p->regs.cs = pop(p);
    p->inst_queue_dirty = true;
 }
 
-static void int_CC(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void int_CC(CONSTSP(cpu) p) {
    call_int(p, 3);
 }
 
-static void int_CD(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void int_CD(CONSTSP(cpu) p) {
    call_int(p, (int)read_opcode8(p));
 }
 
-static void int_CE(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void int_CE(CONSTSP(cpu) p) {
    if (p->regs.flags & VXT_OVERFLOW) {
       p->cycles += 69;
       call_int(p, 4);
    }
 }
 
-static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void iret_CF(CONSTSP(cpu) p) {
    VALIDATOR_DISCARD(p);
    p->inst_queue_dirty = true;
    p->regs.ip = pop(p);
@@ -834,28 +748,23 @@ static void iret_CF(CONSTSP(cpu) p, INST(inst)) {
    #endif
 }
 
-static void grp2_D0(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void grp2_D0(CONSTSP(cpu) p) {
    rm_write8(p, bitshift_8(p, rm_read8(p), 1));
 }
 
-static void grp2_D1(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void grp2_D1(CONSTSP(cpu) p) {
    rm_write16(p, bitshift_16(p, rm_read16(p), 1));
 }
 
-static void grp2_D2(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void grp2_D2(CONSTSP(cpu) p) {
    rm_write8(p, bitshift_8(p, rm_read8(p), p->regs.cl));
 }
 
-static void grp2_D3(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void grp2_D3(CONSTSP(cpu) p) {
    rm_write16(p, bitshift_16(p, rm_read16(p), p->regs.cl));
 }
 
-static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void aam_D4(CONSTSP(cpu) p) {
    vxt_byte a = p->regs.al;
    vxt_byte b = read_opcode8(p);
    if (!b) {
@@ -867,120 +776,101 @@ static void aam_D4(CONSTSP(cpu) p, INST(inst)) {
    flag_szp8(&p->regs, p->regs.al);
 }
 
-static void aad_D5(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void aad_D5(CONSTSP(cpu) p) {
    vxt_word imm = (vxt_word)read_opcode8(p);
    p->regs.ax = ((vxt_word)p->regs.ah * imm + (vxt_word)p->regs.al) & 0xFF;
    flag_szp8(&p->regs, p->regs.al);
 }
 
-static void xlat_D7(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void xlat_D7(CONSTSP(cpu) p) {
    p->regs.al = cpu_segment_read_byte(p, p->seg, p->regs.bx + p->regs.al);
 }
 
-static void salc_D6(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void salc_D6(CONSTSP(cpu) p) {
    p->regs.al = (p->regs.flags & VXT_CARRY) ? 0xFF : 0x0;
 }
 
-static void fpu_dummy(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void fpu_dummy(CONSTSP(cpu) p) {
    VALIDATOR_DISCARD(p);
    
    // 286 only
    call_int(p, 7);
 }
 
-static void in_E4(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void in_E4(CONSTSP(cpu) p) {
    p->regs.al = system_in(p->s, read_opcode8(p));
 }
 
-static void in_E5(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void in_E5(CONSTSP(cpu) p) {
    p->regs.ax = (vxt_word)system_in(p->s, read_opcode8(p)) | 0xFF00;
 }
 
-static void out_E6(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void out_E6(CONSTSP(cpu) p) {
    system_out(p->s, read_opcode8(p), p->regs.al);
 }
 
-static void out_E7(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void out_E7(CONSTSP(cpu) p) {
    vxt_word port = read_opcode8(p);
    system_out(p->s, port, LBYTE(p->regs.ax));
    system_out(p->s, port + 1, HBYTE(p->regs.ax));
 }
 
-static void call_E8(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void call_E8(CONSTSP(cpu) p) {
    vxt_word offset = read_opcode16(p);
    push(p, p->regs.ip);
    p->regs.ip += offset;
    p->inst_queue_dirty = true;
 }
 
-static void jmp_E9(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void jmp_E9(CONSTSP(cpu) p) {
    p->regs.ip += read_opcode16(p);
    p->inst_queue_dirty = true;
 }
 
-static void jmp_EA(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void jmp_EA(CONSTSP(cpu) p) {
    vxt_word ip = read_opcode16(p);
    p->regs.cs = read_opcode16(p);
    p->regs.ip = ip;
    p->inst_queue_dirty = true;
 }
 
-static void jmp_EB(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void jmp_EB(CONSTSP(cpu) p) {
    p->regs.ip += sign_extend16(read_opcode8(p));
    p->inst_queue_dirty = true;
 }
 
-static void in_EC(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void in_EC(CONSTSP(cpu) p) {
    p->regs.al = system_in(p->s, p->regs.dx);
 }
 
-static void in_ED(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void in_ED(CONSTSP(cpu) p) {
    p->regs.ax = WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx));
 }
 
-static void out_EE(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void out_EE(CONSTSP(cpu) p) {
    system_out(p->s, p->regs.dx, p->regs.al);
 }
 
-static void out_EF(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void out_EF(CONSTSP(cpu) p) {
    system_out(p->s, p->regs.dx, LBYTE(p->regs.ax));
    system_out(p->s, p->regs.dx + 1, HBYTE(p->regs.ax));
 }
 
-static void lock_F0(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(p); UNUSED(inst);
+static void lock_F0(CONSTSP(cpu) p) {
+   UNUSED(p);
    VALIDATOR_DISCARD(p);
 }
 
-static void hlt_F4(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void hlt_F4(CONSTSP(cpu) p) {
    VALIDATOR_DISCARD(p);
    p->halt = true;
 }
 
-static void cmc_F5(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cmc_F5(CONSTSP(cpu) p) {
    SET_FLAG_IF(p->regs.flags, VXT_CARRY, !FLAGS(p->regs.flags, VXT_CARRY));
 }
 
-static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void grp3_F6(CONSTSP(cpu) p) {
    vxt_byte v = rm_read8(p);
    switch (p->mode.reg) {
       case 0: // TEST Eb Ib
@@ -1075,8 +965,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
    }
 }
 
-static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void grp3_F7(CONSTSP(cpu) p) {
    vxt_word v = rm_read16(p);
    switch (p->mode.reg) {
       case 0: // TEST Ev Iv
@@ -1174,39 +1063,31 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
    }
 }
 
-static void clc_F8(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void clc_F8(CONSTSP(cpu) p) {
    p->regs.flags &= ~VXT_CARRY;
 }
 
-static void stc_F9(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void stc_F9(CONSTSP(cpu) p) {
    p->regs.flags |= VXT_CARRY;
 }
 
-static void cli_FA(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cli_FA(CONSTSP(cpu) p) {
    p->regs.flags &= ~VXT_INTERRUPT;
 }
 
-static void sti_FB(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void sti_FB(CONSTSP(cpu) p) {
    p->regs.flags |= VXT_INTERRUPT;
 }
 
-static void cld_FC(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void cld_FC(CONSTSP(cpu) p) {
    p->regs.flags &= ~VXT_DIRECTION;
 }
 
-static void std_FD(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void std_FD(CONSTSP(cpu) p) {
    p->regs.flags |= VXT_DIRECTION;
 }
 
-static void grp4_FE(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-
+static void grp4_FE(CONSTSP(cpu) p) {
    vxt_byte v = rm_read8(p);
    vxt_word c = p->regs.flags & VXT_CARRY;
    switch (p->mode.reg) {
@@ -1226,9 +1107,7 @@ static void grp4_FE(CONSTSP(cpu) p, INST(inst)) {
    SET_FLAG(p->regs.flags, VXT_CARRY, c);
 }
 
-static void grp5_FF(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
-
+static void grp5_FF(CONSTSP(cpu) p) {
    vxt_word v = rm_read16(p);
    vxt_word c = p->regs.flags & VXT_CARRY;
    switch (p->mode.reg) {

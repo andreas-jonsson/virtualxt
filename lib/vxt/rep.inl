@@ -24,19 +24,18 @@
 #include "common.h"
 #include "exec.h"
 
-#define REPEAT(name, cycle, op)                                \
-   static void name (CONSTSP(cpu) p, INST(inst)) {             \
-      UNUSED(inst);                                            \
-      if (!p->repeat) {                                        \
-         op                                                    \
-         return;                                               \
-      }                                                        \
-      while (p->regs.cx) {                                     \
-         op                                                    \
-         p->regs.cx--;                                         \
-         p->cycles += cycle;                                   \
-      }                                                        \
-   }                                                           \
+#define REPEAT(name, cycle, op)                    \
+   static void name (CONSTSP(cpu) p) {             \
+      if (!p->repeat) {                            \
+         op                                        \
+         return;                                   \
+      }                                            \
+      while (p->regs.cx) {                         \
+         op                                        \
+         p->regs.cx--;                             \
+         p->cycles += cycle;                       \
+      }                                            \
+   }                                               \
 
 REPEAT(movsb_A4, 17, {
    cpu_segment_write_byte(p, p->regs.es, p->regs.di, cpu_segment_read_byte(p, p->seg, p->regs.si));
@@ -65,8 +64,7 @@ REPEAT(lodsw_AD, 16, {
 #undef REPEAT
 
 #define REPEAT(name, cycle, op)                                                  \
-   static void name (CONSTSP(cpu) p, INST(inst)) {                               \
-      UNUSED(inst);                                                              \
+   static void name (CONSTSP(cpu) p) {                                           \
       if (!p->repeat) {                                                          \
          op                                                                      \
          return;                                                                 \
@@ -109,8 +107,7 @@ REPEAT(scasw_AF, 19, {
 #undef REPEAT
 
 #define LOOP(name, cond, taken, ntaken)                  \
-   static void name (CONSTSP(cpu) p, INST(inst)) {       \
-      UNUSED(inst);                                      \
+   static void name (CONSTSP(cpu) p) {                   \
       vxt_word v = sign_extend16(read_opcode8(p));       \
       if (cond) {                                        \
          p->regs.ip += v;                                \
@@ -126,8 +123,7 @@ LOOP(loopz_E1, --p->regs.cx && (p->regs.flags & VXT_ZERO), 18, 6)
 LOOP(loop_E2, --p->regs.cx, 17, 5)
 #undef LOOP
 
-static void jcxz_E3(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void jcxz_E3(CONSTSP(cpu) p) {
    vxt_word v = sign_extend16(read_opcode8(p));
    if (!p->regs.cx) {
       p->cycles += 12;

@@ -51,7 +51,9 @@ struct cpu {
    bool trap, halt, invalid;
    bool interrupt, int28;
    int cycles;
+   
    vxt_word inst_start;
+   const struct instruction *inst;
 
    vxt_byte opcode, repeat;
    struct address_mode mode;

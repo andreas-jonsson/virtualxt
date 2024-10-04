@@ -112,7 +112,8 @@ static void prep_exec(CONSTSP(cpu) p) {
 }
 
 static void do_exec(CONSTSP(cpu) p) {
-    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
+	const CONSTSP(instruction) inst = &opcode_table[p->opcode];
+    p->inst = inst;
     ENSURE(inst->opcode == p->opcode);
 
     switch (inst->arch) {
@@ -128,7 +129,7 @@ static void do_exec(CONSTSP(cpu) p) {
 
     if (inst->modregrm)
         read_modregrm(p);
-    inst->func(p, inst);
+    inst->func(p);
 
     if (p->invalid)
         call_int(p, 6);
@@ -168,8 +169,7 @@ int cpu_step(CONSTSP(cpu) p) {
         p->cycles++;
     }
 
-    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
-    VALIDATOR_END(p, inst->name, p->opcode, inst->modregrm, p->cycles, &p->regs);
+    VALIDATOR_END(p, p->inst->name, p->opcode, p->inst->modregrm, p->cycles, &p->regs);
 
     ENSURE(p->cycles > 0);
     return p->cycles;
