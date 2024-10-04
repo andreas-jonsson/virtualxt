@@ -419,8 +419,11 @@ static void call_int(CONSTSP(cpu) p, int n) {
 }
 
 static void div_zero(CONSTSP(cpu) p) {
-   p->regs.ip = p->inst_start;
-   call_int(p, 0);
+	#ifndef TESTING
+		// 8088 do not do this.
+		p->regs.ip = p->inst_start;
+	#endif
+	call_int(p, 0);
 }
 
 static bool valid_repeat(vxt_byte opcode) {
@@ -428,15 +431,14 @@ static bool valid_repeat(vxt_byte opcode) {
       return true;
    if ((opcode >= 0xAA) && (opcode <= 0xAF))
       return true;
-   
    // Only valid for 186+
    if ((opcode >= 0x6C) && (opcode <= 0x6F))
       return true;
-      
-   // F6.7, F7.7 - Presence of a REP prefix preceding IDIV will invert the sign of the quotient.
-   if ((opcode == 0xF6) || (opcode == 0xF7))
-      return true;
-
+   #ifdef TESTING
+	   // F6.7, F7.7 - Presence of a REP prefix preceding IDIV will invert the sign of the quotient.
+	   if ((opcode == 0xF6) || (opcode == 0xF7))
+		  return true;
+   #endif
    return false;
 }
 

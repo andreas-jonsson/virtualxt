@@ -63,8 +63,8 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
         r->ip = regs.ip; r->flags = regs.flags;
 
 		// INT0
-		vxt_system_write_byte(s, 0, 0x40);
-		vxt_system_write_byte(s, 1, 0);
+		vxt_system_write_byte(s, 0, 0);
+		vxt_system_write_byte(s, 1, 0x40);
 		vxt_system_write_byte(s, 2, 0);
 		vxt_system_write_byte(s, 3, 0);
 
@@ -101,7 +101,7 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
         
         // Not sure if we should have flags here defined.
         if (!step.interrupt)
-			TASSERT((r->flags & flags_mask) == (regs.flags & flags_mask), "Expected flags register to be 0x%X but it was 0x%X", (regs.flags & flags_mask), (r->flags & flags_mask));
+            TASSERT((r->flags & flags_mask) == (regs.flags & flags_mask), "Expected flags register to be 0x%X but it was 0x%X", (regs.flags & flags_mask), (r->flags & flags_mask));
 
         TENSURE(fread(&num_mem, 2, 1, fp) == 1);
 
@@ -259,8 +259,8 @@ skip_opcodes = (
     (0xFE, 2), (0xFE, 3), (0xFE, 4), (0xFE, 5), (0xFE, 6), (0xFE, 7),
     (0xFF, 7),
 
-    # BUG: All division
-	#      F6.7, F7.7 - Presence of a REP prefix preceding IDIV will invert the sign of the quotient,
+    # BUG: IDIV
+    #      F6.7, F7.7 - Presence of a REP prefix preceding IDIV will invert the sign of the quotient,
 	#      therefore REP prefixes are prepended to 10% of IDIV tests. This was only recently discovered by reenigne.
     (0xF6, 7), (0xF7, 7),
 )

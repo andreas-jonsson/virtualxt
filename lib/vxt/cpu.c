@@ -189,11 +189,13 @@ void cpu_reset(CONSTSP(cpu) p) {
 	#ifdef FLAG8086
 	   // 8086 flags
 	   p->regs.flags |= 0xF000;
+	   p->regs.cs = 0xFFFF;
+	#else
+		p->regs.cs = 0xF000;
+		p->regs.ip = 0xFFF0;
 	#endif
 
-	p->regs.cs = 0xFFFF;
 	p->regs.debug = false;
-
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);
 }

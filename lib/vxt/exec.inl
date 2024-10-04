@@ -885,8 +885,11 @@ static void salc_D6(CONSTSP(cpu) p, INST(inst)) {
 }
 
 static void fpu_dummy(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(p); UNUSED(inst);
+   UNUSED(inst);
    VALIDATOR_DISCARD(p);
+   
+   // 286 only
+   call_int(p, 7);
 }
 
 static void in_E4(CONSTSP(cpu) p, INST(inst)) {
@@ -997,7 +1000,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       }
       case 4: // MUL
       {
-         p->regs.ax = ((vxt_word)v) * ((vxt_word)p->regs.al);
+         p->regs.ax = (vxt_word)v * (vxt_word)p->regs.al;
          flag_szp8(&p->regs, p->regs.al);
          SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, p->regs.ah);
          p->regs.flags &= ~VXT_ZERO;
@@ -1013,7 +1016,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
          p->regs.ax = res;
          flag_szp8(&p->regs, res8);
          p->regs.flags &= ~VXT_ZERO;
-         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int8)res));
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != (vxt_int8)res);
          break;
       }
       case 6: // DIV
@@ -1040,7 +1043,7 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
       case 7: // IDIV
       {
          vxt_int16 a = p->regs.ax;
-         if (a == ((vxt_int16)0x8000)) {
+         if (a == (vxt_int16)0x8000) {
             div_zero(p);
             return;
          }
@@ -1051,17 +1054,19 @@ static void grp3_F6(CONSTSP(cpu) p, INST(inst)) {
             return;
          }
 
-         vxt_int16 q = a / b;
-         if (p->repeat)
-			q *= -1;
-         
+         vxt_int16 q = a / b;         
          vxt_int8 r = a % b;
-         vxt_word q8 = (q & 0xFF);
+         vxt_int8 q8 = (q & 0xFF);
 
          if (q != q8) {
             div_zero(p);
             return;
          }
+         
+         #ifdef TESTING
+            if (p->repeat)
+                q8 *= -1;
+         #endif
 
          p->regs.ah = (vxt_byte)r;
          p->regs.al = (vxt_byte)q8;
@@ -1091,7 +1096,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       }
       case 4: // MUL
       {
-         vxt_dword res = ((vxt_dword)v) * ((vxt_dword)p->regs.ax);
+         vxt_dword res = (vxt_dword)v * (vxt_dword)p->regs.ax;
          p->regs.dx = (vxt_word)(res >> 16);
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          flag_szp16(&p->regs, p->regs.ax);
@@ -1104,13 +1109,13 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
          vxt_int16 a = p->regs.ax;
          vxt_int16 b = v;
 
-         vxt_int32 res = ((vxt_int32)a) * ((vxt_int32)b);
+         vxt_int32 res = (vxt_int32)a * (vxt_int32)b;
          p->regs.ax = (vxt_word)(res & 0xFFFF);
          p->regs.dx = (vxt_word)(res >> 16);
 
          flag_szp16(&p->regs, p->regs.ax);
          p->regs.flags &= ~VXT_ZERO;
-         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int16)res));
+         SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != (vxt_int16)res);
          break;
       }
       case 6: // DIV
@@ -1120,7 +1125,7 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
             return;
          }
 
-         vxt_dword a = (((vxt_dword)p->regs.dx) << 16) | ((vxt_dword)p->regs.ax);
+         vxt_dword a = ((vxt_dword)p->regs.dx << 16) | (vxt_dword)p->regs.ax;
          vxt_dword q = a / v;
          vxt_word r = a % v;
          vxt_word q16 = q & 0xFFFF;
@@ -1136,8 +1141,8 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
       }
       case 7: // IDIV
       {
-         vxt_int32 a = (((vxt_dword)p->regs.dx) << 16) | ((vxt_dword)p->regs.ax);
-         if (a == ((vxt_int32)0x80000000)) {
+         vxt_int32 a = ((vxt_dword)p->regs.dx << 16) | (vxt_dword)p->regs.ax;
+         if (a == (vxt_int32)0x80000000) {
             div_zero(p);
             return;
          }
@@ -1157,8 +1162,10 @@ static void grp3_F7(CONSTSP(cpu) p, INST(inst)) {
             return;
          }
          
-         if (p->repeat)
-			q16 *= -1;
+         #ifdef TESTING
+            if (p->repeat)
+                q16 *= -1;
+         #endif
 
          p->regs.ax = (vxt_word)q16;
          p->regs.dx = (vxt_word)r;
