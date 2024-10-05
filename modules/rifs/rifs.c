@@ -101,7 +101,7 @@ static void time_and_date(time_t *mod_time, vxt_word *time_out, vxt_word *date_o
     }
 }
 
-#if defined(_WIN32) || defined(__linux__) || defined(__NetBSD__)
+#if defined(_WIN32) || defined(__linux__) || defined(__NetBSD__) || defined(__FreeBSD__)
     #include "rifs_win_nix.inl"
 #else
     #include "rifs_dummy.inl"
