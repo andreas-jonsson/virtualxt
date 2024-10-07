@@ -169,7 +169,7 @@ jobs:
         usesh: true
         copyback: false
         prepare: |
-          pkg install -y premake5 gmake sdl2-2
+          pkg install -y premake5 gmake sdl2
         run: |
           git config --global --add safe.directory $(pwd)
           premake5 --test gmake
