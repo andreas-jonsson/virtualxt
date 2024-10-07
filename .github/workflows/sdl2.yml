@@ -166,6 +166,7 @@ jobs:
       uses: vmactions/freebsd-vm@v1
       with:
         envs: VXT_VERSION
+        release: "14.1"
         usesh: true
         copyback: false
         prepare: |
