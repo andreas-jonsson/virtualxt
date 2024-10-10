@@ -329,10 +329,10 @@ static void popa_61(CONSTSP(cpu) p) {
 }
 
 static void bound_62(CONSTSP(cpu) p) {
-   vxt_dword idx = sign_extend32(reg_read16(&p->regs, p->mode.reg));
+   vxt_int16 idx = (vxt_int16)reg_read16(&p->regs, p->mode.reg);
    vxt_word offset = get_ea_offset(p);
 
-   if ((idx < sign_extend32(cpu_segment_read_word(p, p->seg, offset))) || (idx > sign_extend32(cpu_segment_read_word(p, p->seg, offset + 2)))) {
+   if ((idx < (vxt_int16)cpu_segment_read_word(p, p->seg, offset)) || (idx > (vxt_int16)cpu_segment_read_word(p, p->seg, offset + 2))) {
       p->regs.ip = p->inst_start;
       call_int(p, 5);
    }
@@ -352,7 +352,7 @@ static void push_68(CONSTSP(cpu) p) {
 
 static void imul_69_6B(CONSTSP(cpu) p) {
    vxt_int32 a = sign_extend32(rm_read16(p));
-   vxt_int32 b = (p->inst->opcode == 69) ? sign_extend32(sign_extend16(read_opcode8(p))) : sign_extend32(read_opcode16(p));
+   vxt_int32 b = (p->inst->opcode == 69) ? sign_extend32(read_opcode16(p)) : sign_extend32(sign_extend16(read_opcode8(p)));
 
    vxt_int32 res = a * b;
    vxt_word res16 = (vxt_word)(res & 0xFFFF);
@@ -363,29 +363,7 @@ static void imul_69_6B(CONSTSP(cpu) p) {
 }
 
 static void push_6A(CONSTSP(cpu) p) {
-   push(p, (vxt_word)read_opcode8(p));
-}
-
-static void insb_6C(CONSTSP(cpu) p) {
-   cpu_segment_write_byte(p, p->regs.ds, p->regs.si, system_in(p->s, p->regs.dx));
-   update_di_si(p, 1);
-}
-
-static void insw_6D(CONSTSP(cpu) p) {
-   cpu_segment_write_word(p, p->regs.ds, p->regs.si, WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
-   update_di_si(p, 2);
-}
-
-static void outsb_6E(CONSTSP(cpu) p) {
-   system_out(p->s, p->regs.dx, cpu_segment_read_byte(p, p->regs.ds, p->regs.si));
-   update_di_si(p, 1);
-}
-
-static void outsw_6F(CONSTSP(cpu) p) {
-   vxt_word data = cpu_segment_read_word(p, p->regs.ds, p->regs.si);
-   system_out(p->s, p->regs.dx, (vxt_byte)(data & 0xFF));
-   system_out(p->s, p->regs.dx + 1, (vxt_byte)(data >> 8));
-   update_di_si(p, 2);
+   push(p, sign_extend16(read_opcode8(p)));
 }
 
 #define JUMP(name, cond)                                       \
@@ -647,7 +625,7 @@ static void shl_C0(CONSTSP(cpu) p) {
 }
 
 static void shl_C1(CONSTSP(cpu) p) {
-   rm_write16(p, bitshift_16(p, rm_read16(p), (vxt_byte)read_opcode16(p)));
+   rm_write16(p, bitshift_16(p, rm_read16(p), read_opcode8(p)));
 }
 
 static void ret_C2(CONSTSP(cpu) p) {

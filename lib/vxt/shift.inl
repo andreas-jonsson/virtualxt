@@ -37,8 +37,8 @@ static vxt_byte bitshift_8(CONSTSP(cpu) p, vxt_byte v, vxt_byte c) {
 	if (c == 0)
 		return v;
 
-   vxt_byte o = v;
-   vxt_byte s;
+	vxt_byte o = v;
+	vxt_byte s;
 
 	for (int i = 0; i < c; i++) {
 		switch (p->mode.reg) {
@@ -67,6 +67,7 @@ static vxt_byte bitshift_8(CONSTSP(cpu) p, vxt_byte v, vxt_byte c) {
             SET_FLAG_IF(p->regs.flags, VXT_CARRY, s);
             break;
          case 4: // SHL r/m8
+         case 6:
             SET_FLAG_IF(p->regs.flags, VXT_CARRY, v & 0x80);
             v <<= 1;
             break;
@@ -98,6 +99,7 @@ static vxt_byte bitshift_8(CONSTSP(cpu) p, vxt_byte v, vxt_byte c) {
          OVERFLOW_RIGHT(v >> 6);
          break;
       case 4:
+      case 6:
          SET_FLAG_IF(p->regs.flags, VXT_OVERFLOW, (v >> 7) != (vxt_byte)(p->regs.flags & VXT_CARRY));
          flag_szp8(&p->regs, v);
          break;
@@ -117,8 +119,8 @@ static vxt_word bitshift_16(CONSTSP(cpu) p, vxt_word v, vxt_byte c) {
 	if (c == 0)
 		return v;
 
-   vxt_word o = v;
-   vxt_word s;
+	vxt_word o = v;
+	vxt_word s;
 
 	for (int i = 0; i < c; i++) {
 		switch (p->mode.reg) {
@@ -147,6 +149,7 @@ static vxt_word bitshift_16(CONSTSP(cpu) p, vxt_word v, vxt_byte c) {
             SET_FLAG_IF(p->regs.flags, VXT_CARRY, s);
             break;
          case 4: // SHL r/m8
+         case 6:
             SET_FLAG_IF(p->regs.flags, VXT_CARRY, v & 0x8000);
             v <<= 1;
             break;
@@ -178,6 +181,7 @@ static vxt_word bitshift_16(CONSTSP(cpu) p, vxt_word v, vxt_byte c) {
          OVERFLOW_RIGHT(v >> 14);
          break;
       case 4:
+      case 6:
          SET_FLAG_IF(p->regs.flags, VXT_OVERFLOW, (v >> 15) != (vxt_byte)(p->regs.flags & VXT_CARRY));
          flag_szp16(&p->regs, v);
          break;

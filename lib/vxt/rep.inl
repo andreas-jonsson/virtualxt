@@ -37,6 +37,24 @@
       }                                            \
    }                                               \
 
+REPEAT(insb_6C, 4, {
+   cpu_segment_write_byte(p, p->regs.es, p->regs.di, system_in(p->s, p->regs.dx));
+   p->regs.di += (p->regs.flags & VXT_DIRECTION) ? -1 : 1;
+})
+REPEAT(insw_6D, 4, {
+   cpu_segment_write_word(p, p->regs.es, p->regs.di, WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
+   p->regs.di += (p->regs.flags & VXT_DIRECTION) ? -2 : 2;
+})
+REPEAT(outsb_6E, 4, {
+   system_out(p->s, p->regs.dx, cpu_segment_read_byte(p, p->seg, p->regs.si));
+   p->regs.si += (p->regs.flags & VXT_DIRECTION) ? -1 : 1;
+})
+REPEAT(outsw_6F, 4, {
+   vxt_word data = cpu_segment_read_word(p, p->seg, p->regs.si);
+   system_out(p->s, p->regs.dx, data & 0xFF);
+   system_out(p->s, p->regs.dx + 1, data >> 8);
+   p->regs.si += (p->regs.flags & VXT_DIRECTION) ? -2 : 2;
+})
 REPEAT(movsb_A4, 17, {
    cpu_segment_write_byte(p, p->regs.es, p->regs.di, cpu_segment_read_byte(p, p->seg, p->regs.si));
    update_di_si(p, 1);
