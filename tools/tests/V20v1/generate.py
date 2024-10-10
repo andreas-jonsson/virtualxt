@@ -250,14 +250,12 @@ def gen_tests(input_name):
 c_test_name = "lib/vxt/v20_tests.c"
 data_dir = "tools/tests/V20v1"
 
-i186_opcodes = (
+intel_186_opcodes = (
 	0x60, 0x61, 0x62, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F,
 	0xC0, 0xC1, 0xC8, 0xC9,
 )
 
 skip_opcodes = (
-    # BUG with IMUL?
-    0x69, 0x6B,
 )
 
 check_and_download("metadata.json")
@@ -267,7 +265,7 @@ check_cycles = "false"
 with open(c_test_name, "w") as f: f.write(c_header.format(cycles = check_cycles))
 
 for opcode,data in index_file.items():
-    if not int(opcode, 16) in i186_opcodes:
+    if not int(opcode, 16) in intel_186_opcodes:
         continue
         
     if "reg" in data:

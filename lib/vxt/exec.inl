@@ -352,14 +352,14 @@ static void push_68(CONSTSP(cpu) p) {
 
 static void imul_69_6B(CONSTSP(cpu) p) {
    vxt_int32 a = sign_extend32(rm_read16(p));
-   vxt_int32 b = (p->inst->opcode == 69) ? sign_extend32(read_opcode16(p)) : sign_extend32(sign_extend16(read_opcode8(p)));
+   vxt_int32 b = (p->inst->opcode == 0x69) ? sign_extend32(read_opcode16(p)) : sign_extend32(sign_extend16(read_opcode8(p)));
 
    vxt_int32 res = a * b;
    vxt_word res16 = (vxt_word)(res & 0xFFFF);
 
    flag_szp16(&p->regs, res16);
-   SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int16)res));
-   rm_write16(p, res16);
+   SET_FLAG_IF(p->regs.flags, VXT_CARRY|VXT_OVERFLOW, res != ((vxt_int16)res));   
+   reg_write16(&p->regs, p->mode.reg, res16);
 }
 
 static void push_6A(CONSTSP(cpu) p) {
