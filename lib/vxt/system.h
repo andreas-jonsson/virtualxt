@@ -29,8 +29,10 @@
 
 #define MAX_TIMERS 256
 #define INT64 long long
-#define UMA_SIZE (0x10000 - 16)
 #define PERIPHERAL_SIGNATURE 0xFAF129C3
+
+ // Set this to 64K (not 64-16) because anything less causes problem with himem.sys.
+#define EXT_MEM_SIZE 0x10000
 
 #define VERIFY_PERIPHERAL(p, r)										\
 	if (((struct peripheral*)(p))->sig != PERIPHERAL_SIGNATURE) {	\
@@ -61,7 +63,7 @@ struct system {
 
    vxt_byte io_map[VXT_IO_MAP_SIZE];
    vxt_byte mem_map[VXT_MEM_MAP_SIZE];
-   vxt_byte ext_mem[UMA_SIZE];
+   vxt_byte ext_mem[EXT_MEM_SIZE];
 
    vxt_allocator *alloc;
    struct cpu cpu;

@@ -381,7 +381,7 @@ VXT_API vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
 		
 	if (addr >= 0x100000) {
 		addr -= 0x100000;
-		return (addr >= UMA_SIZE) ? 0xFF : s->ext_mem[addr];
+		return (addr >= EXT_MEM_SIZE) ? 0xFF : s->ext_mem[addr];
 	}
 
 	CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
@@ -394,7 +394,7 @@ VXT_API void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_b
 		
 	if (addr >= 0x100000) {
 		addr -= 0x100000;
-		if (addr < UMA_SIZE)
+		if (addr < EXT_MEM_SIZE)
 			s->ext_mem[addr] = data;
 		return;
 	}

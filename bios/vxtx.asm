@@ -54,6 +54,17 @@ int_13_handler:
     pop ax
 
     iret
+    
+int_15_handler:
+    cmp ah, 0x88
+    jne .error
+    mov ax, 64 ; Extended memory in KB.
+    clc
+    iret
+.error:
+    mov ah, 0x86
+    stc
+    iret
 
 int_19_handler:
     push bp
@@ -77,6 +88,9 @@ install_handlers:
     mov word [INT_13_OFFSET], int_13_handler
     mov [INT_13_OFFSET+2], cs
 
+    mov word [INT_15_OFFSET], int_15_handler
+    mov [INT_15_OFFSET+2], cs
+    
     mov word [INT_19_OFFSET], int_19_handler
     mov [INT_19_OFFSET+2], cs
     
@@ -95,6 +109,7 @@ install_handlers:
 ;;;;;;;;;;;;;;;;;; Data ;;;;;;;;;;;;;;;;;;
 
 INT_13_OFFSET  equ 0x4C
+INT_15_OFFSET  equ 0x54
 INT_19_OFFSET  equ 0x64
 
 db 'VXTX - VirtualXT BIOS Extensions', 0xA
