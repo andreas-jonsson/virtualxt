@@ -93,7 +93,7 @@ static void prep_exec(CONSTSP(cpu) p) {
    } else if (UNLIKELY(interrupt)) {
       p->halt = p->trap = false;
       if (LIKELY(p->pic != NULL)) {
-         int n = p->pic->pic.next(VXT_GET_DEVICE_PTR(p->pic));
+         int n = p->pic->pic.next(vxt_peripheral_device(p->pic));
          if (n >= 0)
             call_int(p, n);
       }

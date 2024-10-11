@@ -14,7 +14,8 @@ Browser version is avalible [here](https://realmode.games).
 
 ## Features
 
-* Intel 8088 (80186) processor
+* Intel 286 processor
+* PC/XT chipset
 * Hardware CPU validator
 * CGA or VGA compatible graphics
 * GLaBIOS or Turbo XT BIOS 3.1 with extensions
