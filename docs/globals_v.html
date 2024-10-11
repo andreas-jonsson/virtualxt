@@ -55,6 +55,9 @@ $(document).ready(function(){initNavTree('globals_v.html',''); initResizable(); 
 <div class="textblock">Here is a list of all functions, variables, defines, enums, and typedefs with links to the files they belong to:</div>
 
 <h3><a id="index_v"></a>- v -</h3><ul>
+<li>vxt_allocate_peripheral()
+: <a class="el" href="vxt_8h.html#ab7fcb02d20dcdf70993eaa41cc338274">vxt.h</a>
+</li>
 <li>vxt_allocator
 : <a class="el" href="vxt_8h.html#ac10b97a0ac675a0471f30c4432a64190">vxt.h</a>
 </li>
@@ -76,8 +79,8 @@ $(document).ready(function(){initNavTree('globals_v.html',''); initResizable(); 
 <li>VXT_DEFAULT_FREQUENCY
 : <a class="el" href="vxt_8h.html#a7039c760b686c523e078f2e6d142526d">vxt.h</a>
 </li>
-<li>vxt_device_id
-: <a class="el" href="vxt_8h.html#a571d86caa501fa57b72a107c1ca14bfb">vxt.h</a>
+<li>vxt_device_peripheral()
+: <a class="el" href="vxt_8h.html#a6506b13ae2212e6970056e14c67e117c">vxt.h</a>
 </li>
 <li>VXT_DIRECTION
 : <a class="el" href="vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55ba85b18f694eb08b980b3c9cf9e61ef23e">vxt.h</a>
@@ -93,9 +96,6 @@ $(document).ready(function(){initNavTree('globals_v.html',''); initResizable(); 
 </li>
 <li>VXT_GET_DEVICE
 : <a class="el" href="vxt_8h.html#a5b8462ad190ca575fee53b3b3bae89b0">vxt.h</a>
-</li>
-<li>VXT_GET_DEVICE_PTR
-: <a class="el" href="vxt_8h.html#a94a5d89bbc59f27ea98c88ee8418d50a">vxt.h</a>
 </li>
 <li>VXT_GET_PERIPHERAL
 : <a class="el" href="vxt_8h.html#a0cba0b3408dcce72968ec3faee58d379">vxt.h</a>
@@ -117,9 +117,6 @@ $(document).ready(function(){initNavTree('globals_v.html',''); initResizable(); 
 </li>
 <li>VXT_INTERRUPT
 : <a class="el" href="vxt_8h.html#a06fc87d81c62e9abb8790b6e5713c55ba1e19b9ffe254cd61cc1ab16b0b36fff0">vxt.h</a>
-</li>
-<li>VXT_INVALID_DEVICE_ID
-: <a class="el" href="vxt_8h.html#aedee3310691d61f01335d01cb93a0752">vxt.h</a>
 </li>
 <li>VXT_INVALID_POINTER
 : <a class="el" href="vxt_8h.html#af5b876880e067c418ea0cf9a93f97117">vxt.h</a>
@@ -247,14 +244,11 @@ $(document).ready(function(){initNavTree('globals_v.html',''); initResizable(); 
 <li>VXT_PERIPHERAL_CREATE
 : <a class="el" href="vxt_8h.html#a0c89cdb4e155ab72fba3810851dca890">vxt.h</a>
 </li>
-<li>vxt_peripheral_id()
-: <a class="el" href="vxt_8h.html#aeacfcb7a73f32f135634def7d99e6582">vxt.h</a>
+<li>vxt_peripheral_device()
+: <a class="el" href="vxt_8h.html#a9507fd08e81f46eb500721a2bd20022c">vxt.h</a>
 </li>
 <li>vxt_peripheral_name()
 : <a class="el" href="vxt_8h.html#a4086cf4c7baf686d4b4cbf5b0c256a9c">vxt.h</a>
-</li>
-<li>VXT_PERIPHERAL_SIZE
-: <a class="el" href="vxt_8h.html#ac5a6be00d2dbdbf70e8423edd1df0402">vxt.h</a>
 </li>
 <li>vxt_peripheral_system()
 : <a class="el" href="vxt_8h.html#ab1ec1b8b8ee9a993e51db442483027b4">vxt.h</a>
@@ -328,14 +322,14 @@ $(document).ready(function(){initNavTree('globals_v.html',''); initResizable(); 
 <li>vxt_system_read_byte()
 : <a class="el" href="vxt_8h.html#ad72e866fe07a7e17d0ce563c8941fd86">vxt.h</a>
 </li>
-<li>vxt_system_read_word()
-: <a class="el" href="vxt_8h.html#ad0ae0e8d17a2f823b3ce21e60ca597ee">vxt.h</a>
-</li>
 <li>vxt_system_registers()
 : <a class="el" href="vxt_8h.html#a7b55087e34ab4ce1cf09bbf2903707ba">vxt.h</a>
 </li>
 <li>vxt_system_reset()
 : <a class="el" href="vxt_8h.html#abf38c1171596038b8edebaebae730893">vxt.h</a>
+</li>
+<li>vxt_system_set_a20()
+: <a class="el" href="vxt_8h.html#aa341772c20e115b6d1820570743567c8">vxt.h</a>
 </li>
 <li>vxt_system_set_frequency()
 : <a class="el" href="vxt_8h.html#a1aa165aa185acea6cf191036cba810b5">vxt.h</a>
@@ -363,9 +357,6 @@ $(document).ready(function(){initNavTree('globals_v.html',''); initResizable(); 
 </li>
 <li>vxt_system_write_byte()
 : <a class="el" href="vxt_8h.html#a29ac63a4908ad5ca36e16521db7acb7d">vxt.h</a>
-</li>
-<li>vxt_system_write_word()
-: <a class="el" href="vxt_8h.html#a32e1735c9199c74cecf660748e4cd6c8">vxt.h</a>
 </li>
 <li>vxt_timer_id
 : <a class="el" href="vxt_8h.html#a05691a5b6a191969b75e371ad5d5fd0d">vxt.h</a>
