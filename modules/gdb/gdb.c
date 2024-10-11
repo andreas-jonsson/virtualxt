@@ -357,15 +357,11 @@ int gdb_sys_putchar(struct gdb_state *state, int ch) {
 }
 
 int gdb_sys_mem_readb(struct gdb_state *state, address addr, char *val) {
-	if (addr > 0xFFFFF)
-		return GDB_EOF;
     *val = (char)vxt_system_read_byte(state->sys, addr);
     return 0;
 }
 
 int gdb_sys_mem_writeb(struct gdb_state *state, address addr, char val) {
-	if (addr > 0xFFFFF)
-		return GDB_EOF;
     vxt_system_write_byte(state->sys, addr, (vxt_byte)val);
     return 0;
 }

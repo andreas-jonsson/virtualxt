@@ -32,6 +32,9 @@ struct vxt_peripheral *kbc_create(vxt_allocator *alloc);
 bool kbc_key_event(struct vxt_peripheral *p, enum vxtu_scancode key, bool force);
 vxt_int16 kbc_generate_sample(struct vxt_peripheral *p, int freq);
 
+// Fast-A20 switch
+struct vxt_peripheral *a20_create(vxt_allocator *alloc, void *frontend, const char *args);
+
 static struct vxt_peripheral *pic_create(vxt_allocator *alloc, void *frontend, const char *args) {
     (void)frontend; (void)args;
 	return vxtu_pic_create(alloc);
@@ -109,4 +112,4 @@ static struct vxt_peripheral *ppi_kbc_create(vxt_allocator *alloc, void *fronten
     return p;
 }
 
-VXTU_MODULE_ENTRIES(&pic_create, &dma_create, &pit_create, &ppi_kbc_create)
+VXTU_MODULE_ENTRIES(&pic_create, &dma_create, &pit_create, &ppi_kbc_create, &a20_create)

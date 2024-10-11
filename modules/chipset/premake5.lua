@@ -1,4 +1,5 @@
 files {
     "chipset.c",
-    "kbc.c"
+    "kbc.c",
+    "a20.c"
 }

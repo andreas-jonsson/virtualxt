@@ -226,13 +226,15 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 19; j++)
+            for (j = 0; j < 20; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
                    strcmp(option->olong, "--version") == 0) {
             puts(version);
             return EXIT_FAILURE;
+        } else if (strcmp(option->olong, "--a20") == 0) {
+            args->a20 = option->value;
         } else if (strcmp(option->olong, "--clean") == 0) {
             args->clean = option->value;
         } else if (strcmp(option->olong, "--edit") == 0) {
@@ -299,8 +301,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, (char *) "10.0", NULL, NULL,
-        NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, (char *) "10.0", NULL,
+        NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
               "",
@@ -310,6 +312,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --hdboot                Prefer booting from harddrive.",
               "  --halt                  Debug break on startup.",
               "  --mute                  Disable audio.",
+              "  --a20                   Enable support for A20 line.",
               "  --no-activity           Disable disk activity indicator.",
               "  --no-idle               Disable CPU idle on INT28.",
               "  --clean                 Remove config file and write a new default one.",
@@ -327,6 +330,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
     struct Argument arguments[] = {NULL
     };
     struct Option options[] = {
+        {NULL, "--a20", 0, 0, NULL},
         {NULL, "--clean", 0, 0, NULL},
         {NULL, "--edit", 0, 0, NULL},
         {NULL, "--halt", 0, 0, NULL},
@@ -349,7 +353,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 16;
+    elements.n_options = 17;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;

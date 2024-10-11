@@ -583,6 +583,8 @@ static int load_config(void *user, const char *section, const char *name, const 
 			args.hdboot |= atoi(value);
 		else if (!strcmp("halt", name))
 			args.halt |= atoi(value);
+		else if (!strcmp("a20", name))
+			args.a20 |= atoi(value);
 		else if (!strcmp("mute", name))
 			args.mute |= atoi(value);
 		else if (!strcmp("no-activity", name))
@@ -745,6 +747,7 @@ static bool write_default_config(const char *path, bool clean) {
 		"\n[args]\n"
 		";halt=1\n"
 		";hdboot=1\n"
+		";a20=1\n"
 		";harddrive=boot/freedos_hd.img\n"
 		"\n[ch36x_isa]\n"
 		"port=0x201\n"
@@ -946,6 +949,11 @@ int main(int argc, char *argv[]) {
 			vxt_system_configure(vxt, "rifs", "root", args.rifs);
 		else
 			vxt_system_configure(vxt, "rifs", "readonly", "1");
+	#endif
+	
+	#ifdef VXTU_MODULE_CHIPSET
+		if (args.a20)
+			vxt_system_configure(vxt, "args", "a20", "1");
 	#endif
 
 	#ifdef VXTU_MODULE_GDB

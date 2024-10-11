@@ -205,6 +205,8 @@ VXT_API struct vxt_peripheral *vxt_allocate_peripheral(vxt_allocator *alloc, siz
 
 VXT_API void vxt_system_reset(CONSTP(vxt_system) s) {
     cpu_reset(&s->cpu);
+    s->a20 = false;
+    
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_peripheral) d = s->devices[i];
         if (d->reset)
@@ -312,6 +314,10 @@ VXT_API void vxt_system_set_frequency(CONSTP(vxt_system) s, int freq) {
     s->frequency = freq;
 }
 
+VXT_API void vxt_system_set_a20(CONSTP(vxt_system) s, bool enable) {
+	s->a20 = enable;
+}
+
 VXT_API void vxt_system_install_monitor(CONSTP(vxt_system) s, struct vxt_peripheral *dev, const char *name, void *reg, enum vxt_monitor_flag flags) {
 	if (s->num_monitors < VXT_MAX_MONITORS)
 		s->monitors[s->num_monitors++] = (struct vxt_monitor){ dev ? vxt_peripheral_name(dev) : "CPU", name, reg, flags };
@@ -357,25 +363,44 @@ VXT_API void vxt_system_install_io(CONSTP(vxt_system) s, struct vxt_peripheral *
 
 VXT_API void vxt_system_install_mem(CONSTP(vxt_system) s, struct vxt_peripheral *dev, vxt_pointer from, vxt_pointer to) {
 	VERIFY_PERIPHERAL(dev,);
+	if ((from | to) & ~0xFFFFF)
+		VXT_LOG("ERROR: Trying to register memory above 1MB!");
+	
 	if ((from | (to + 1)) & 0xF)
 		VXT_LOG("ERROR: Trying to register unaligned address!");
 
-	from = (from >> 4) & 0xFFFF;
-	to = (to >> 4) & 0xFFFF;
+	from = from >> 4;
+	to = to >> 4;
 	while (from <= to)
 		s->mem_map[from++] = ((struct peripheral*)dev)->idx;
 }
 
 VXT_API vxt_byte vxt_system_read_byte(CONSTP(vxt_system) s, vxt_pointer addr) {
-    addr &= 0xFFFFF;
-    CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
-    return dev->io.read(vxt_peripheral_device(dev), addr);
+	if (!s->a20)
+		addr &= 0xEFFFFF;
+		
+	if (addr >= 0x100000) {
+		addr -= 0x100000;
+		return (addr >= UMA_SIZE) ? 0xFF : s->ext_mem[addr];
+	}
+
+	CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
+	return dev->io.read(vxt_peripheral_device(dev), addr);
 }
 
 VXT_API void vxt_system_write_byte(CONSTP(vxt_system) s, vxt_pointer addr, vxt_byte data) {
-    addr &= 0xFFFFF;
-    CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
-    dev->io.write(vxt_peripheral_device(dev), addr, data);
+	if (!s->a20)
+		addr &= 0xEFFFFF;
+		
+	if (addr >= 0x100000) {
+		addr -= 0x100000;
+		if (addr < UMA_SIZE)
+			s->ext_mem[addr] = data;
+		return;
+	}
+	
+	CONSTSP(vxt_peripheral) dev = s->devices[s->mem_map[addr >> 4]];
+	dev->io.write(vxt_peripheral_device(dev), addr, data);
 }
 
 vxt_byte system_in(CONSTP(vxt_system) s, vxt_word port) {
