@@ -327,7 +327,7 @@ workspace "virtualxt"
             end
         end
 
-        files { "front/sdl/*.h", "front/sdl/*.c" }
+        files { "front/sdl2/*.h", "front/sdl2/*.c" }
         includedirs { "lib/vxt/include", "lib/inih", "lib/microui/src", "front/common" }
         links { "vxt", "inih", "microui" }
 
@@ -359,7 +359,57 @@ workspace "virtualxt"
 
         filter "toolset:gcc"
             buildoptions { "-Wno-uninitialized", "-Wno-missing-field-initializers", "-Wno-missing-braces" }
+            
+    project "sdl3-frontend"
+        kind "ConsoleApp"
+        targetname "virtualxt"
+        targetdir "build/sdl3"
+        
+        files "modules/modules.h"
+        includedirs "modules"
 
+        if not _OPTIONS["no-modules"] then
+            if _OPTIONS["dynamic"] then
+				dependson "modules"
+			else
+                links(modules)
+                for _,f in ipairs(modules_link_callback) do
+					f()
+					filter {}
+                end
+            end
+        end
+
+        files { "front/sdl3/*.h", "front/sdl3/*.c" }
+        includedirs { "lib/vxt/include", "lib/inih", "lib/microui/src", "front/common" }
+        links { "vxt", "inih", "microui" }
+
+        cleancommands {
+            "{RMDIR} build/sdl3",
+            "make clean %{cfg.buildcfg}"
+        }
+
+        filter "action:vs*"
+            libdirs { path.join(_OPTIONS["sdl-config"], "lib", "x64") }
+            includedirs { path.join(_OPTIONS["sdl-config"], "include") }
+            links { "SDL3", "SDL3main" }
+
+        filter "not action:vs*"
+            local sdl_cfg = path.join(_OPTIONS["sdl-config"], "sdl3-config")
+            buildoptions { string.format("`%s --cflags`", sdl_cfg) }
+            linkoptions { string.format("`%s --libs`", sdl_cfg) }
+
+		filter "toolset:clang or gcc"
+			links "m"
+			buildoptions "-Wno-unused-parameter"
+			linkoptions "-Wl,-rpath,'$$ORIGIN'/../lib"
+
+		filter "toolset:clang"
+            buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
+
+        filter "toolset:gcc"
+            buildoptions { "-Wno-uninitialized", "-Wno-missing-field-initializers", "-Wno-missing-braces" }
+            
     project "terminal-frontend"
         kind "ConsoleApp"
         targetname "vxterm"
