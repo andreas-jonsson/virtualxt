@@ -14,20 +14,19 @@ Browser version is avalible [here](https://realmode.games).
 
 ## Features
 
-* Intel 8088 (80186) processor
+* Intel 286 processor
+* PC/XT chipset
 * Hardware CPU validator
 * CGA or VGA compatible graphics
-* GLaBIOS or Turbo XT BIOS 3.1 with extensions
-* Keyboard controller with 83-key XT-style keyboard
-* Serial port with Microsoft 2-button mouse
-* Floppy and hard disk emulation
-* ISA passthrough​using Arstech USB2ISA adapter
-* Direct file share with host
-* Flexible module system
-* Integerated GDB server
+* EMS and UMA memory
 * AdLib music synthesizer
-* EMS memory expansion
+* Serial UARTs
 * Ethernet adapter
+* Direct file share with host
+* ISA passthrough​ using Arstech USB2ISA adapter
+* GLaBIOS or Turbo XT BIOS 3.1 with extensions
+* Integerated GDB server
+* Flexible module system
 * and more...
 
 ## Screenshots
@@ -43,9 +42,9 @@ Browser version is avalible [here](https://realmode.games).
 The emulator is written in C11 and can be compiled with most modern C compilers. In order to generate a Makefile you need to install [Premake](https://premake.github.io/). You also need to have [SDL2](https://www.libsdl.org/) installed on your system or pass `--sdl-path=<path to lib>` to the premake script.
 
 ```
-git clone -b release https://github.com/andreas-jonsson/virtualxt.git
+git clone https://github.com/andreas-jonsson/virtualxt.git
 cd virtualxt
-premake5 --modules gmake
+premake5 gmake
 make sdl2-frontend
 ```
 

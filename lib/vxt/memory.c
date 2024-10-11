@@ -55,11 +55,9 @@ static const char *name(struct memory *m) {
 }
 
 VXT_API struct vxt_peripheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only) {
-    int size = VXT_PERIPHERAL_SIZE(memory) + amount;
     struct VXT_PERIPHERAL(struct memory) *PERIPHERAL;
-    *(void**)&PERIPHERAL = alloc(NULL, size);
+    *(void**)&PERIPHERAL = (void*)vxt_allocate_peripheral((alloc), sizeof(struct memory) + amount);
 
-    vxt_memclear(PERIPHERAL, size);
     struct memory *mem = VXT_GET_DEVICE(memory, PERIPHERAL);
 
     #ifndef VXTU_MEMCLEAR

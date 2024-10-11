@@ -30,7 +30,9 @@ jobs:
           echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
 
       - name: Generate
-        run: ./tools/tests/8088v1/generate.py
+        run: |
+          ./tools/tests/8088v1/generate.py
+          ./tools/tests/V20v1/generate.py
 
       - name: Premake
         run: premake5 --test gmake

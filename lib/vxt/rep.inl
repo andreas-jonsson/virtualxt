@@ -24,22 +24,39 @@
 #include "common.h"
 #include "exec.h"
 
-#define REPEAT(name, cycle, op)                                \
-   static void name (CONSTSP(cpu) p, INST(inst)) {             \
-      UNUSED(inst);                                            \
-      if (!p->repeat) {                                        \
-         op                                                    \
-         return;                                               \
-      }                                                        \
-      while (p->regs.cx) {                                     \
-         op                                                    \
-         p->regs.cx--;                                         \
-         p->cycles += cycle;                                   \
-      }                                                        \
-   }                                                           \
+#define REPEAT(name, cycle, op)                    \
+   static void name (CONSTSP(cpu) p) {             \
+      if (!p->repeat) {                            \
+         op                                        \
+         return;                                   \
+      }                                            \
+      while (p->regs.cx) {                         \
+         op                                        \
+         p->regs.cx--;                             \
+         p->cycles += cycle;                       \
+      }                                            \
+   }                                               \
 
+REPEAT(insb_6C, 4, {
+   cpu_segment_write_byte(p, p->regs.es, p->regs.di, system_in(p->s, p->regs.dx));
+   p->regs.di += (p->regs.flags & VXT_DIRECTION) ? -1 : 1;
+})
+REPEAT(insw_6D, 4, {
+   cpu_segment_write_word(p, p->regs.es, p->regs.di, WORD(system_in(p->s, p->regs.dx + 1), system_in(p->s, p->regs.dx)));
+   p->regs.di += (p->regs.flags & VXT_DIRECTION) ? -2 : 2;
+})
+REPEAT(outsb_6E, 4, {
+   system_out(p->s, p->regs.dx, cpu_segment_read_byte(p, p->seg, p->regs.si));
+   p->regs.si += (p->regs.flags & VXT_DIRECTION) ? -1 : 1;
+})
+REPEAT(outsw_6F, 4, {
+   vxt_word data = cpu_segment_read_word(p, p->seg, p->regs.si);
+   system_out(p->s, p->regs.dx, data & 0xFF);
+   system_out(p->s, p->regs.dx + 1, data >> 8);
+   p->regs.si += (p->regs.flags & VXT_DIRECTION) ? -2 : 2;
+})
 REPEAT(movsb_A4, 17, {
-   cpu_write_byte(p, VXT_POINTER(p->regs.es, p->regs.di), cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.si)));
+   cpu_segment_write_byte(p, p->regs.es, p->regs.di, cpu_segment_read_byte(p, p->seg, p->regs.si));
    update_di_si(p, 1);
 })
 REPEAT(movsw_A5, 25, {
@@ -47,7 +64,7 @@ REPEAT(movsw_A5, 25, {
    update_di_si(p, 2);
 })
 REPEAT(stosb_AA, 10, {
-   cpu_write_byte(p, VXT_POINTER(p->regs.es, p->regs.di), p->regs.al);
+   cpu_segment_write_byte(p, p->regs.es, p->regs.di, p->regs.al);
    update_di(p, 1);
 })
 REPEAT(stosw_AB, 14, {
@@ -55,7 +72,7 @@ REPEAT(stosw_AB, 14, {
    update_di(p, 2);
 })
 REPEAT(lodsb_AC, 16, {
-   p->regs.al = cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.si));
+   p->regs.al = cpu_segment_read_byte(p, p->seg, p->regs.si);
    update_si(p, 1);
 })
 REPEAT(lodsw_AD, 16, {
@@ -65,8 +82,7 @@ REPEAT(lodsw_AD, 16, {
 #undef REPEAT
 
 #define REPEAT(name, cycle, op)                                                  \
-   static void name (CONSTSP(cpu) p, INST(inst)) {                               \
-      UNUSED(inst);                                                              \
+   static void name (CONSTSP(cpu) p) {                                           \
       if (!p->repeat) {                                                          \
          op                                                                      \
          return;                                                                 \
@@ -85,8 +101,8 @@ REPEAT(lodsw_AD, 16, {
    }                                                                             \
 
 REPEAT(cmpsb_A6, 30, {
-   vxt_byte a = cpu_read_byte(p, VXT_POINTER(p->seg, p->regs.si));
-   vxt_byte b = cpu_read_byte(p, VXT_POINTER(p->regs.es, p->regs.di));
+   vxt_byte a = cpu_segment_read_byte(p, p->seg, p->regs.si);
+   vxt_byte b = cpu_segment_read_byte(p, p->regs.es, p->regs.di);
    update_di_si(p, 1);
    flag_sub_sbb8(&p->regs, a, b, 0);
 })
@@ -97,7 +113,7 @@ REPEAT(cmpsw_A7, 30, {
    flag_sub_sbb16(&p->regs, a, b, 0);
 })
 REPEAT(scasb_AE, 15, {
-   vxt_byte v = cpu_read_byte(p, VXT_POINTER(p->regs.es, p->regs.di));
+   vxt_byte v = cpu_segment_read_byte(p, p->regs.es, p->regs.di);
    update_di(p, 1);
    flag_sub_sbb8(&p->regs, p->regs.al, v, 0);
 })
@@ -109,8 +125,7 @@ REPEAT(scasw_AF, 19, {
 #undef REPEAT
 
 #define LOOP(name, cond, taken, ntaken)                  \
-   static void name (CONSTSP(cpu) p, INST(inst)) {       \
-      UNUSED(inst);                                      \
+   static void name (CONSTSP(cpu) p) {                   \
       vxt_word v = sign_extend16(read_opcode8(p));       \
       if (cond) {                                        \
          p->regs.ip += v;                                \
@@ -126,8 +141,7 @@ LOOP(loopz_E1, --p->regs.cx && (p->regs.flags & VXT_ZERO), 18, 6)
 LOOP(loop_E2, --p->regs.cx, 17, 5)
 #undef LOOP
 
-static void jcxz_E3(CONSTSP(cpu) p, INST(inst)) {
-   UNUSED(inst);
+static void jcxz_E3(CONSTSP(cpu) p) {
    vxt_word v = sign_extend16(read_opcode8(p));
    if (!p->regs.cx) {
       p->cycles += 12;

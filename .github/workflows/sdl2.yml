@@ -154,3 +154,26 @@ jobs:
       #  env:
       #    BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
       #  run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push.sh; fi
+
+  freebsd-build:
+    runs-on: ubuntu-latest
+    name: Build (FreeBSD AMD64)
+    env:
+      VXT_VERSION: 1.1.0
+    steps:
+    - uses: actions/checkout@v4
+    - name: Test and Build
+      uses: vmactions/freebsd-vm@v1
+      with:
+        envs: VXT_VERSION
+        release: "14.1"
+        usesh: true
+        copyback: false
+        prepare: |
+          pkg install -y premake5 gmake sdl2
+        run: |
+          git config --global --add safe.directory $(pwd)
+          premake5 --test gmake
+          gmake clean test
+          premake5 gmake
+          gmake clean sdl2-frontend

@@ -30,14 +30,7 @@
 #include "flags.h"
 
 #define TRACE(p, ip, data) { if ((p)->tracer) (p)->tracer((p)->s, VXT_POINTER((p)->regs.cs, (ip)), (data)); }
-#define IRQ(p, n) { VALIDATOR_DISCARD((p)); ENSURE((p)->pic); (p)->pic->pic.irq(VXT_GET_DEVICE_PTR((p)->pic), (n)); }
-#define INST(n) const struct instruction * const n
 #define MOD_TARGET_MEM(mode) ((mode).mod < 3)
-
-#define CR0_PE 0x0  // Protected mode enable
-#define CR0_MP 0x1  // Monitor processor extension
-#define CR0_EM 0x2  // Emulate processor extension
-#define CR0_TS 0x4  // Task switched
 
 enum architecture {
 	ARCH_INVALID,
@@ -54,7 +47,7 @@ struct instruction {
    bool modregrm;
    int cycles;
    enum architecture arch;
-   void (*func)(CONSTSP(cpu), INST());
+   void (*func)(CONSTSP(cpu));
 };
 
 static vxt_dword sign_extend32(vxt_word v) {
@@ -68,13 +61,13 @@ static vxt_word sign_extend16(vxt_byte v) {
 static vxt_byte read_opcode8(CONSTSP(cpu) p) {
    vxt_byte data;
    vxt_word ip = p->regs.ip;
-   vxt_pointer ptr = VXT_POINTER(p->regs.cs, ip);
-
+   
    if (p->inst_queue_count > 0) {
       data = *p->inst_queue;
       memmove(p->inst_queue, &p->inst_queue[1], --p->inst_queue_count);
 
       #if defined(VXT_DEBUG_PREFETCH) && !defined(VXT_NO_PREFETCH)
+         vxt_pointer ptr = VXT_POINTER(p->regs.cs, ip);
          if (*p->inst_queue_debug != ptr) {
             VXT_LOG("FATAL: Broken prefetch queue detected! Expected 0x%X but got 0x%X.", *p->inst_queue_debug, ptr);
             p->regs.debug = true;
@@ -82,7 +75,7 @@ static vxt_byte read_opcode8(CONSTSP(cpu) p) {
          memmove(p->inst_queue_debug, &p->inst_queue_debug[1], p->inst_queue_count * sizeof(vxt_pointer));
       #endif
    } else {
-      data = cpu_read_byte(p, ptr);
+      data = cpu_segment_read_byte(p, p->regs.cs, ip);
    }
    p->regs.ip++;
 
@@ -99,112 +92,63 @@ static vxt_word read_opcode16(CONSTSP(cpu) p) {
 static vxt_word get_ea_offset(CONSTSP(cpu) p) {
    CONSTSP(vxt_registers) r = &p->regs;
    CONSTSP(address_mode) m = &p->mode;
-   vxt_word ea = 0;
 
 	switch (m->mod) {
       case 0:
          switch (m->rm) {
-            case 0:
-               ea = r->bx + r->si;
-               break;
-            case 1:
-               ea = r->bx + r->di;
-               break;
-            case 2:
-               ea = r->bp + r->si;
-               break;
-            case 3:
-               ea = r->bp + r->di;
-               break;
-            case 4:
-               ea = r->si;
-               break;
-            case 5:
-               ea = r->di;
-               break;
-            case 6:
-               ea = m->disp;
-               break;
-            case 7:
-               ea = r->bx;
-               break;
+            case 0: return r->bx + r->si;
+            case 1: return r->bx + r->di;
+            case 2: return r->bp + r->si;
+            case 3: return r->bp + r->di;
+            case 4: return r->si;
+            case 5: return r->di;
+            case 6: return m->disp;
+            case 7: return r->bx;
          }
          break;
       case 1:
       case 2:
          switch (m->rm) {
-            case 0:
-               ea = r->bx + r->si + m->disp;
-               break;
-            case 1:
-               ea = r->bx + r->di + m->disp;
-               break;
-            case 2:
-               ea = r->bp + r->si + m->disp;
-               break;
-            case 3:
-               ea = r->bp + r->di + m->disp;
-               break;
-            case 4:
-               ea = r->si + m->disp;
-               break;
-            case 5:
-               ea = r->di + m->disp;
-               break;
-            case 6:
-               ea = r->bp + m->disp;
-               break;
-            case 7:
-               ea = r->bx + m->disp;
-               break;
+            case 0: return r->bx + r->si + m->disp;
+            case 1: return r->bx + r->di + m->disp;
+            case 2: return r->bp + r->si + m->disp;
+            case 3: return r->bp + r->di + m->disp;
+            case 4: return r->si + m->disp;
+            case 5: return r->di + m->disp;
+            case 6: return r->bp + m->disp;
+            case 7: return r->bx + m->disp;
          }
          break;
 	}
-	return ea;
+	UNREACHABLE(0);
 }
 
 static vxt_byte reg_read8(CONSTSP(vxt_registers) r, int reg) {
    switch (reg) {
-      case 0:
-         return r->al;
-      case 1:
-         return r->cl;
-      case 2:
-         return r->dl;
-      case 3:
-         return r->bl;
-      case 4:
-         return r->ah;
-      case 5:
-         return r->ch;
-      case 6:
-         return r->dh;
-      case 7:
-         return r->bh;
+      case 0: return r->al;
+      case 1: return r->cl;
+      case 2: return r->dl;
+      case 3: return r->bl;
+      case 4: return r->ah;
+      case 5: return r->ch;
+      case 6: return r->dh;
+      case 7: return r->bh;
+      default: UNREACHABLE(0);
    }
-   UNREACHABLE(0);
 }
 
 static vxt_word reg_read16(CONSTSP(vxt_registers) r, int reg) {
    switch (reg) {
-      case 0:
-         return r->ax;
-      case 1:
-         return r->cx;
-      case 2:
-         return r->dx;
-      case 3:
-         return r->bx;
-      case 4:
-         return r->sp;
-      case 5:
-         return r->bp;
-      case 6:
-         return r->si;
-      case 7:
-         return r->di;
+      case 0: return r->ax;
+      case 1: return r->cx;
+      case 2: return r->dx;
+      case 3: return r->bx;
+      case 4: return r->sp;
+      case 5: return r->bp;
+      case 6: return r->si;
+      case 7: return r->di;
+      default: UNREACHABLE(0);
    }
-   UNREACHABLE(0);
 }
 
 static void reg_write8(CONSTSP(vxt_registers) r, int reg, vxt_byte data) {
@@ -272,16 +216,11 @@ static void reg_write16(CONSTSP(vxt_registers) r, int reg, vxt_word data) {
 static vxt_word seg_read16(CONSTSP(cpu) p) {
    CONSTSP(vxt_registers) r = &p->regs;
    switch (p->mode.reg & 3) {
-		case 0:
-         return r->es;
-		case 1:
-         return r->cs;
-		case 2:
-			return r->ss;
-		case 3:
-			return r->ds;
-		default:
-         UNREACHABLE(0); // Not sure what should happen here?
+		case 0: return r->es;
+		case 1: return r->cs;
+		case 2: return r->ss;
+		case 3: return r->ds;
+		default: UNREACHABLE(0);
    }
 }
 
@@ -289,20 +228,20 @@ static void seg_write16(CONSTSP(cpu) p, vxt_word data) {
    CONSTSP(vxt_registers) r = &p->regs;
    switch (p->mode.reg & 3) {
 		case 0:
-         r->es = data;
-         return;
+			r->es = data;
+			return;
 		case 1:
-         r->cs = data;
-         p->inst_queue_dirty = true;
-         return;
+			r->cs = data;
+			p->inst_queue_dirty = true;
+			return;
 		case 2:
 			r->ss = data;
-         return;
+			return;
 		case 3:
 			r->ds = data;
-         return;
+			return;
 		default:
-         UNREACHABLE(); // Not sure what should happen here?
+			UNREACHABLE();
    }
 }
 
@@ -408,18 +347,22 @@ static void call_int(CONSTSP(cpu) p, int n) {
 	push(p, r->cs);
 	push(p, r->ip);
 
-	r->ip = cpu_read_word(p, (vxt_pointer)n * 4);
-	r->cs = cpu_read_word(p, (vxt_pointer)n * 4 + 2);
+	r->ip = cpu_segment_read_word(p, 0, (vxt_pointer)n * 4);
+	r->cs = cpu_segment_read_word(p, 0, (vxt_pointer)n * 4 + 2);
 	r->flags &= ~(VXT_INTERRUPT|VXT_TRAP);
 	p->inst_queue_dirty = true;
 
+	p->interrupt = true;
 	if (n == 0x28)
 		p->int28 = true;
 }
 
-static void divZero(CONSTSP(cpu) p) {
-   p->regs.ip = p->inst_start;
-   call_int(p, 0);
+static void div_zero(CONSTSP(cpu) p) {
+	#ifndef TESTING
+		// 8088 do not do this.
+		p->regs.ip = p->inst_start;
+	#endif
+	call_int(p, 0);
 }
 
 static bool valid_repeat(vxt_byte opcode) {
@@ -427,8 +370,14 @@ static bool valid_repeat(vxt_byte opcode) {
       return true;
    if ((opcode >= 0xAA) && (opcode <= 0xAF))
       return true;
-   if ((opcode >= 0x6C) && (opcode <= 0x6F)) // Only valid for 186+
+   // Only valid for 186+
+   if ((opcode >= 0x6C) && (opcode <= 0x6F))
       return true;
+   #ifdef TESTING
+	   // F6.7, F7.7 - Presence of a REP prefix preceding IDIV will invert the sign of the quotient.
+	   if ((opcode == 0xF6) || (opcode == 0xF7))
+		  return true;
+   #endif
    return false;
 }
 

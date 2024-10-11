@@ -6,6 +6,7 @@ Options:
   --hdboot                Prefer booting from harddrive.
   --halt                  Debug break on startup.
   --mute                  Disable audio.
+  --a20                   Enable support for A20 line.
   --no-activity           Disable disk activity indicator.
   --no-idle               Disable CPU idle on INT28.
   --clean                 Remove config file and write a new default one.

@@ -121,7 +121,7 @@ static vxt_byte mem_read(struct gdb *dbg, vxt_pointer addr) {
     }
 
     struct vxt_peripheral *p = vxt_system_peripheral(s, dbg->mem_map[addr >> 4]);
-    return p->io.read(VXT_GET_DEVICE_PTR(p), addr);
+    return p->io.read(vxt_peripheral_device(p), addr);
 }
 
 static void mem_write(struct gdb *dbg, vxt_pointer addr, vxt_byte data) {
@@ -140,7 +140,7 @@ static void mem_write(struct gdb *dbg, vxt_pointer addr, vxt_byte data) {
     }
 
     struct vxt_peripheral *p = vxt_system_peripheral(s, dbg->mem_map[addr >> 4]);
-    p->io.write(VXT_GET_DEVICE_PTR(p), addr, data);
+    p->io.write(vxt_peripheral_device(p), addr, data);
 }
 
 static bool open_server_socket(struct gdb *dbg) {
@@ -357,15 +357,11 @@ int gdb_sys_putchar(struct gdb_state *state, int ch) {
 }
 
 int gdb_sys_mem_readb(struct gdb_state *state, address addr, char *val) {
-	if (addr > 0xFFFFF)
-		return GDB_EOF;
     *val = (char)vxt_system_read_byte(state->sys, addr);
     return 0;
 }
 
 int gdb_sys_mem_writeb(struct gdb_state *state, address addr, char val) {
-	if (addr > 0xFFFFF)
-		return GDB_EOF;
     vxt_system_write_byte(state->sys, addr, (vxt_byte)val);
     return 0;
 }

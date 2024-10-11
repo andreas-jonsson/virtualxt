@@ -192,7 +192,13 @@ static void push_mouse_button_state(struct frontend_mouse_event ev) {
 }
 
 static void tracer(vxt_system *s, vxt_pointer addr, vxt_byte data) {
-	(void)s; (void)addr;
+	(void)s;
+	if (addr == VXT_INVALID_POINTER) {
+		printf("Tracer received exit signal!\n");
+		fclose(trace_op_output);
+		fclose(trace_offset_output);
+		exit(0);
+	}
 	fwrite(&data, 1, 1, trace_op_output);
 	fwrite(&addr, sizeof(vxt_pointer), 1, trace_offset_output);
 }
@@ -577,6 +583,8 @@ static int load_config(void *user, const char *section, const char *name, const 
 			args.hdboot |= atoi(value);
 		else if (!strcmp("halt", name))
 			args.halt |= atoi(value);
+		else if (!strcmp("a20", name))
+			args.a20 |= atoi(value);
 		else if (!strcmp("mute", name))
 			args.mute |= atoi(value);
 		else if (!strcmp("no-activity", name))
@@ -739,6 +747,7 @@ static bool write_default_config(const char *path, bool clean) {
 		"\n[args]\n"
 		";halt=1\n"
 		";hdboot=1\n"
+		";a20=1\n"
 		";harddrive=boot/freedos_hd.img\n"
 		"\n[ch36x_isa]\n"
 		"port=0x201\n"
@@ -941,6 +950,11 @@ int main(int argc, char *argv[]) {
 		else
 			vxt_system_configure(vxt, "rifs", "readonly", "1");
 	#endif
+	
+	#ifdef VXTU_MODULE_CHIPSET
+		if (args.a20)
+			vxt_system_configure(vxt, "args", "a20", "1");
+	#endif
 
 	#ifdef VXTU_MODULE_GDB
 		if (args.halt)
@@ -1121,8 +1135,8 @@ int main(int argc, char *argv[]) {
 						if (ppi_device && (e.key.keysym.mod & KMOD_ALT)) {
 							printf("Toggle turbo!\n");
 							SYNC(
-								vxt_byte data = ppi_device->io.in(VXT_GET_DEVICE_PTR(ppi_device), 0x61);
-								ppi_device->io.out(VXT_GET_DEVICE_PTR(ppi_device), 0x61, data ^ 4);
+								vxt_byte data = ppi_device->io.in(vxt_peripheral_device(ppi_device), 0x61);
+								ppi_device->io.out(vxt_peripheral_device(ppi_device), 0x61, data ^ 4);
 							);
 						} else if (e.key.keysym.mod & KMOD_CTRL) {
 							open_window(ctx, "Eject");

@@ -77,30 +77,37 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
             vxt_system_write_byte(s, mem.addr, mem.data);
         }}
 
-        struct vxt_step step = vxt_system_step(s, 0);
-        TENSURE_NO_ERR(step.err);
+		bool unsupported_prefix = strstr(name, "repc") || strstr(name, "repnc");
+		struct vxt_step step = {{0}};
+		
+		if (!unsupported_prefix) {{
+			step = vxt_system_step(s, 0);
+			TENSURE_NO_ERR(step.err);
+		}}
 
-        TENSURE(fread(&regs, sizeof(struct registers), 1, fp) == 1);
+		TENSURE(fread(&regs, sizeof(struct registers), 1, fp) == 1);
 
-        CHECK_REG(ax);
-        CHECK_REG(bx);
-        CHECK_REG(cx);
-        CHECK_REG(dx);
+		if (!unsupported_prefix) {{
+			CHECK_REG(ax);
+			CHECK_REG(bx);
+			CHECK_REG(cx);
+			CHECK_REG(dx);
 
-        CHECK_REG(cs);
-        CHECK_REG(ss);
-        CHECK_REG(ds);
-        CHECK_REG(es);
+			CHECK_REG(cs);
+			CHECK_REG(ss);
+			CHECK_REG(ds);
+			CHECK_REG(es);
 
-        CHECK_REG(sp);
-        CHECK_REG(bp);
-        CHECK_REG(si);
-        CHECK_REG(di);
+			CHECK_REG(sp);
+			CHECK_REG(bp);
+			CHECK_REG(si);
+			CHECK_REG(di);
 
-        CHECK_REG(ip);
+			CHECK_REG(ip);
+		}}
         
         // Not sure if we should have flags here defined.
-        if (!step.interrupt)
+        if (!step.interrupt && !unsupported_prefix)
             TASSERT((r->flags & flags_mask) == (regs.flags & flags_mask), "Expected flags register to be 0x%X but it was 0x%X", (regs.flags & flags_mask), (r->flags & flags_mask));
 
         TENSURE(fread(&num_mem, 2, 1, fp) == 1);
@@ -110,7 +117,7 @@ static int execute_test(struct Test T, int *index, char *name, const char *input
             TENSURE(fread(&mem, sizeof(struct memory), 1, fp) == 1);
             
             // If there was an interrupt, undefined flags might be on the stack.
-            if (!step.interrupt) {{
+            if (!step.interrupt && !unsupported_prefix) {{
                 vxt_byte data = vxt_system_read_byte(s, mem.addr);
                 TASSERT(data == mem.data, "Expected memory at address 0x%X to be 0x%X(%d) but it is 0x%X(%d)", mem.addr, mem.data, mem.data, data, data);
             }}
@@ -144,8 +151,13 @@ TEST({name},
 )
 """
 
-def pack_test(data, output):
+def pack_test(data, alt, output):
     regs = data["regs"]
+    if alt:
+        for name,reg in alt["regs"].items():
+            if name not in regs:
+                regs[name] = reg
+    
     output.write(struct.pack("HHHHHHHHHHHHHH",
         regs["ax"], regs["bx"], regs["cx"], regs["dx"],
         regs["cs"], regs["ss"], regs["ds"], regs["es"],
@@ -161,8 +173,8 @@ def pack_test(data, output):
 def write_test(data, output):
     output.write(data["name"].encode("ASCII"))
     output.write(struct.pack("B", 0))
-    pack_test(data["initial"], output)
-    pack_test(data["final"], output)
+    pack_test(data["initial"], None, output)
+    pack_test(data["final"], data["initial"], output)
     output.write(struct.pack("HB", len(data["cycles"]), len(data["final"]["queue"])))
 
 def check_and_download(filename):
@@ -170,7 +182,7 @@ def check_and_download(filename):
     if not os.path.exists(filepath):
         print("Downloading: " + filename)
 
-        url = "https://github.com/virtualxt/ProcessorTests/raw/main/8088/v1/" + filename
+        url = "https://github.com/virtualxt/v20/raw/main/v1_native/" + filename
         resp = requests.get(url)
         if resp.status_code != requests.codes.ok:
             return False
@@ -208,7 +220,7 @@ def gen_tests(input_name):
     output_file = "{}/{}.bin".format(data_dir, input_name)
 
     with open(c_test_name, "a") as f:
-        f.write(c_body.format(name = "opcode_" + input_name.replace(".", "_"), input = output_file))
+        f.write(c_body.format(name = "opcode_V20_" + input_name.replace(".", "_"), input = output_file))
 
     output = open(output_file, "wb")
     output.write(struct.pack("I", 0))
@@ -226,9 +238,6 @@ def gen_tests(input_name):
                 flags_mask = int(opcode_ref["flags-mask"])
             output.write(struct.pack("H", flags_mask))
 
-            #if input_name == "C4" and num_tests == 9495:
-            #    print(json.dumps(test, indent=4))
-
             write_test(test, output)
             num_tests += 1
 
@@ -238,40 +247,27 @@ def gen_tests(input_name):
 
 ####################### Start #######################
 
-c_test_name = "lib/vxt/8088_tests.c"
-data_dir = "tools/tests/8088v1"
+c_test_name = "lib/vxt/v20_tests.c"
+data_dir = "tools/tests/V20v1"
 
-skip_opcodes = (
-    # Prefixes
-    0x26, 0x2E, 0x36, 0x3E, 0xF0, 0xF2, 0xF3,
-
-    # Wait and Halt instruction
-    0x9B, 0xF4,
-
-    # FPU instructions
-    0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF,
-
-    # Undefined instructions
-    0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
-    0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F,
-    0xC0, 0xC1, 0xC8, 0xC9, 0xF1,
-    (0xD0, 6), (0xD1, 6), (0xD2, 6), (0xD3, 6),
-    (0xFE, 2), (0xFE, 3), (0xFE, 4), (0xFE, 5), (0xFE, 6), (0xFE, 7),
-    (0xFF, 7),
-
-    # BUG: IDIV
-    #      F6.7, F7.7 - Presence of a REP prefix preceding IDIV will invert the sign of the quotient,
-	#      therefore REP prefixes are prepended to 10% of IDIV tests. This was only recently discovered by reenigne.
-    (0xF6, 7), (0xF7, 7),
+intel_186_opcodes = (
+	0x60, 0x61, 0x62, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F,
+	0xC0, 0xC1, 0xC8, 0xC9,
 )
 
-check_and_download("8088.json")
-index_file = json.loads(open(data_dir + "/8088.json", "r").read())
+skip_opcodes = (
+)
+
+check_and_download("metadata.json")
+index_file = json.loads(open(data_dir + "/metadata.json", "r").read())["opcodes"]
 
 check_cycles = "false"
 with open(c_test_name, "w") as f: f.write(c_header.format(cycles = check_cycles))
 
 for opcode,data in index_file.items():
+    if not int(opcode, 16) in intel_186_opcodes:
+        continue
+        
     if "reg" in data:
         for reg in data["reg"]:
             gen_tests("{}.{}".format(opcode, reg))

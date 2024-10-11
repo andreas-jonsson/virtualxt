@@ -358,7 +358,7 @@ workspace "virtualxt"
             buildoptions { "-Wno-missing-field-initializers", "-Wno-missing-braces" }
 
         filter "toolset:gcc"
-            buildoptions "-Wno-maybe-uninitialized"
+            buildoptions { "-Wno-uninitialized", "-Wno-missing-field-initializers", "-Wno-missing-braces" }
 
     project "terminal-frontend"
         kind "ConsoleApp"

@@ -24,9 +24,8 @@
 #include "common.h"
 #include "exec.h"
 
-static void extended_F(CONSTSP(cpu) p, INST(inst)) {
+static void extended_F(CONSTSP(cpu) p) {
     VALIDATOR_DISCARD(p);
-    UNUSED(inst);
 
     #ifdef TESTING
 
@@ -111,9 +110,8 @@ static void extended_F(CONSTSP(cpu) p, INST(inst)) {
     #endif
 }
 
-static void storeall_F1(CONSTSP(cpu) p, INST(inst)) {
+static void storeall_F1(CONSTSP(cpu) p) {
     VALIDATOR_DISCARD(p);
-    UNUSED(inst);
 
     if (read_opcode16(p) != 0xF04) {
         p->invalid = true;

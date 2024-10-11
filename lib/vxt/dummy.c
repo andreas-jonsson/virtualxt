@@ -65,8 +65,9 @@ static vxt_error install(void *p, vxt_system *s) {
 }
 
 void init_dummy_device(vxt_system *s) {
-    struct _vxt_peripheral *dummy = &((struct system*)s)->dummy;
+    struct peripheral *dummy = &((struct system*)s)->dummy;
     dummy->s = s;
+    dummy->sig = PERIPHERAL_SIGNATURE;
 
     struct vxt_peripheral *d = &dummy->p;
 

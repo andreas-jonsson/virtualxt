@@ -93,7 +93,7 @@ static void prep_exec(CONSTSP(cpu) p) {
    } else if (UNLIKELY(interrupt)) {
       p->halt = p->trap = false;
       if (LIKELY(p->pic != NULL)) {
-         int n = p->pic->pic.next(VXT_GET_DEVICE_PTR(p->pic));
+         int n = p->pic->pic.next(vxt_peripheral_device(p->pic));
          if (n >= 0)
             call_int(p, n);
       }
@@ -112,7 +112,8 @@ static void prep_exec(CONSTSP(cpu) p) {
 }
 
 static void do_exec(CONSTSP(cpu) p) {
-    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
+	const CONSTSP(instruction) inst = &opcode_table[p->opcode];
+    p->inst = inst;
     ENSURE(inst->opcode == p->opcode);
 
     switch (inst->arch) {
@@ -128,7 +129,7 @@ static void do_exec(CONSTSP(cpu) p) {
 
     if (inst->modregrm)
         read_modregrm(p);
-    inst->func(p, inst);
+    inst->func(p);
 
     if (p->invalid)
         call_int(p, 6);
@@ -144,6 +145,19 @@ static void do_exec(CONSTSP(cpu) p) {
     }
 }
 
+static vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr) {
+   vxt_byte data = vxt_system_read_byte(p->s, addr);
+   p->bus_transfers++;
+   VALIDATOR_READ(p, addr, data);
+   return data;
+}
+
+static void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data) {
+   vxt_system_write_byte(p->s, addr, data);
+   p->bus_transfers++;
+   VALIDATOR_WRITE(p, addr, data);
+}
+
 int cpu_step(CONSTSP(cpu) p) {
     VALIDATOR_BEGIN(p, &p->regs);
 
@@ -155,8 +169,7 @@ int cpu_step(CONSTSP(cpu) p) {
         p->cycles++;
     }
 
-    const CONSTSP(instruction) inst = &opcode_table[p->opcode];
-    VALIDATOR_END(p, inst->name, p->opcode, inst->modregrm, p->cycles, &p->regs);
+    VALIDATOR_END(p, p->inst->name, p->opcode, p->inst->modregrm, p->cycles, &p->regs);
 
     ENSURE(p->cycles > 0);
     return p->cycles;
@@ -164,7 +177,7 @@ int cpu_step(CONSTSP(cpu) p) {
 
 void cpu_reset_cycle_count(CONSTSP(cpu) p) {
    p->cycles = 0;
-   p->int28 = false;
+   p->interrupt = p->int28 = false;
    p->invalid = false;
 }
 
@@ -176,30 +189,15 @@ void cpu_reset(CONSTSP(cpu) p) {
 	#ifdef FLAG8086
 	   // 8086 flags
 	   p->regs.flags |= 0xF000;
+	   p->regs.cs = 0xFFFF;
+	#else
+		p->regs.cs = 0xF000;
+		p->regs.ip = 0xFFF0;
 	#endif
 
-	p->regs.cs = 0xFFFF;
 	p->regs.debug = false;
-
 	p->inst_queue_count = 0;
 	cpu_reset_cycle_count(p);
-}
-
-vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr) {
-   vxt_byte data = vxt_system_read_byte(p->s, addr);
-   p->bus_transfers++;
-   VALIDATOR_READ(p, addr, data);
-   return data;
-}
-
-void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data) {
-   vxt_system_write_byte(p->s, addr, data);
-   p->bus_transfers++;
-   VALIDATOR_WRITE(p, addr, data);
-}
-
-vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr) {
-   return WORD(cpu_read_byte(p, addr + 1), cpu_read_byte(p, addr));
 }
 
 vxt_word cpu_segment_read_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset) {
@@ -208,11 +206,6 @@ vxt_word cpu_segment_read_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset
 
 vxt_word cpu_segment_read_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset) {
    return WORD(cpu_read_byte(p, VXT_POINTER(segment, (offset + 1) & 0xFFFF)), cpu_read_byte(p, VXT_POINTER(segment, offset)));
-}
-
-void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data) {
-   cpu_write_byte(p, addr, LBYTE(data));
-   cpu_write_byte(p, addr + 1, HBYTE(data));
 }
 
 void cpu_segment_write_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data) {

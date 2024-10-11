@@ -32,7 +32,7 @@ typedef size_t bool;
 
 #include <sys/limits.h>
 
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__bsdi__) || defined(__DragonFly__) || defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
+#elif defined(__NetBSD__) || defined(__OpenBSD__) || defined(__bsdi__) || defined(__DragonFly__) || defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
 
 #include <sys/syslimits.h>
 
@@ -82,6 +82,7 @@ typedef size_t bool;
 struct DocoptArgs {
     
     /* options without arguments */
+    size_t a20;
     size_t clean;
     size_t edit;
     size_t halt;
@@ -101,7 +102,7 @@ struct DocoptArgs {
     char *trace;
     /* special */
     const char *usage_pattern;
-    const char *help_message[19];
+    const char *help_message[20];
 };
 
 struct DocoptArgs docopt(int, char *[], bool, const char *);

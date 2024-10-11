@@ -141,10 +141,9 @@ extern "C" {
     #define VXT_API
 #endif
 
-#define VXT_POINTER(s, o) ( (((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o))) & 0xFFFFF )
-#define VXT_INVALID_POINTER ((vxt_pointer)0xFFFFFFFF)
-#define VXT_INVALID_DEVICE_ID ((vxt_device_id)0xFF)
-#define VXT_INVALID_TIMER_ID ((vxt_timer_id)-1)
+#define VXT_POINTER(s, o)    ( ((((vxt_pointer)(vxt_word)(s)) << 4) + (vxt_pointer)(vxt_word)(o)) & 0xFFFFFF )
+#define VXT_INVALID_POINTER  ( (vxt_pointer)0xFFFFFFFF )
+#define VXT_INVALID_TIMER_ID ( (vxt_timer_id)-1 )
 
 #define _VXT_ERROR_CODES(x)                                                     \
     x(0, VXT_NO_ERROR,                  "no error")                             \
@@ -161,11 +160,8 @@ typedef enum {_VXT_ERROR_CODES(_VXT_ERROR_ENUM) _VXT_NUM_ERRORS} vxt_error;
 #define VXT_USER_ERROR(e) ((vxt_error)(e) + _VXT_NUM_ERRORS)
 #define VXT_GET_USER_ERROR(e) ((vxt_error)(e) - _VXT_NUM_ERRORS)
 
-typedef vxt_byte vxt_device_id;
 typedef int vxt_timer_id;
-
 typedef struct system vxt_system;
-
 typedef void *vxt_allocator(void*, size_t);
 
 enum {
@@ -203,7 +199,8 @@ struct vxt_registers {
 
 struct vxt_step {
     int cycles;
-    bool halted, int28, invalid;
+    bool halted, invalid;
+    bool interrupt, int28;
     vxt_error err;
 };
 
@@ -236,22 +233,18 @@ struct vxt_monitor {
     enum vxt_monitor_flag flags;
 };
 
-#define VXT_GET_DEVICE_PTR(pir) ( (void*)((char*)(pir) + sizeof(struct _vxt_peripheral)) )
-#define VXT_GET_DEVICE(type, pir) ( (struct type*)VXT_GET_DEVICE_PTR(pir) )
-#define VXT_GET_PERIPHERAL(dev) ( (struct vxt_peripheral*)((char*)(dev) - sizeof(struct _vxt_peripheral)) )
-#define VXT_GET_SYSTEM(dev) ((struct _vxt_peripheral*)VXT_GET_PERIPHERAL(dev))->s
+#define VXT_GET_DEVICE(type, pir) ( (struct type*)vxt_peripheral_device((struct vxt_peripheral*)pir) )
+#define VXT_GET_PERIPHERAL(dev) ( vxt_device_peripheral((void*)dev) )
+#define VXT_GET_SYSTEM(dev) ( vxt_peripheral_system(VXT_GET_PERIPHERAL(dev)) )
 
-#define VXT_PERIPHERAL_SIZE(type) ( sizeof(struct _vxt_peripheral) + sizeof(struct type) )
-
-#define VXT_PERIPHERAL_CREATE(alloc, type, body) {                          \
-        struct VXT_PERIPHERAL(struct type) *PERIPHERAL;                     \
-        *(void**)&PERIPHERAL = (alloc)(NULL, VXT_PERIPHERAL_SIZE(type));    \
-        vxt_memclear(PERIPHERAL, VXT_PERIPHERAL_SIZE(type));                \
-        struct type *DEVICE = VXT_GET_DEVICE(type, PERIPHERAL);             \
-        { body ; }                                                          \
-        (void)DEVICE;                                                       \
-        return (struct vxt_peripheral*)PERIPHERAL;                          \
-    }                                                                       \
+#define VXT_PERIPHERAL_CREATE(alloc, type, body) {                                             \
+        struct VXT_PERIPHERAL(struct type) *PERIPHERAL;                                        \
+        *(void**)&PERIPHERAL = (void*)vxt_allocate_peripheral((alloc), sizeof(struct type));   \
+        struct type *DEVICE = VXT_GET_DEVICE(type, PERIPHERAL);                                \
+        { body ; }                                                                             \
+        (void)DEVICE;                                                                          \
+        return (struct vxt_peripheral*)PERIPHERAL;                                             \
+    }                                                                                          \
 
 #define VXT_PERIPHERAL(ty) {                                        \
 	vxt_error (*install)(ty*, vxt_system*);                         \
@@ -283,14 +276,6 @@ struct vxt_monitor {
 
 /// Interface for ISA bus devices.
 struct vxt_peripheral VXT_PERIPHERAL(void);
-
-/// @private
-struct _vxt_peripheral {
-    struct vxt_peripheral p;
-    vxt_device_id id;
-    vxt_system *s;
-    // User device data is located at the end of this struct.
-};
 
 struct vxt_validator {
     void *userdata;
@@ -350,6 +335,7 @@ VXT_API struct vxt_registers *vxt_system_registers(vxt_system *s);
 
 VXT_API int vxt_system_frequency(vxt_system *s);
 VXT_API void vxt_system_set_frequency(vxt_system *s, int freq);
+VXT_API void vxt_system_set_a20(vxt_system *s, bool enable);
 VXT_API void vxt_system_set_tracer(vxt_system *s, void (*tracer)(vxt_system*,vxt_pointer,vxt_byte));
 VXT_API void vxt_system_set_validator(vxt_system *s, const struct vxt_validator *intrf);
 VXT_API void vxt_system_set_userdata(vxt_system *s, void *data);
@@ -358,10 +344,14 @@ VXT_API vxt_allocator *vxt_system_allocator(vxt_system *s);
 
 VXT_API const vxt_byte *vxt_system_io_map(vxt_system *s);
 VXT_API const vxt_byte *vxt_system_mem_map(vxt_system *s);
+
 VXT_API const struct vxt_monitor *vxt_system_monitor(vxt_system *s, vxt_byte idx);
 VXT_API struct vxt_peripheral *vxt_system_peripheral(vxt_system *s, vxt_byte idx);
+
+VXT_API struct vxt_peripheral *vxt_allocate_peripheral(vxt_allocator *alloc, size_t size);
+VXT_API struct vxt_peripheral *vxt_device_peripheral(void *dev);
+VXT_API void *vxt_peripheral_device(const struct vxt_peripheral *p);
 VXT_API vxt_system *vxt_peripheral_system(const struct vxt_peripheral *p);
-VXT_API vxt_device_id vxt_peripheral_id(const struct vxt_peripheral *p);
 
 VXT_API void vxt_system_interrupt(vxt_system *s, int n);
 VXT_API void vxt_system_wait(vxt_system *s, int cycles);
@@ -375,8 +365,6 @@ VXT_API void vxt_system_install_monitor(vxt_system *s, struct vxt_peripheral *de
 
 VXT_API vxt_byte vxt_system_read_byte(vxt_system *s, vxt_pointer addr);
 VXT_API void vxt_system_write_byte(vxt_system *s, vxt_pointer addr, vxt_byte data);
-VXT_API vxt_word vxt_system_read_word(vxt_system *s, vxt_pointer addr);
-VXT_API void vxt_system_write_word(vxt_system *s, vxt_pointer addr, vxt_word data);
 
 /// @private
 _Static_assert(sizeof(vxt_pointer) == 4 && sizeof(vxt_int32) == 4, "invalid integer size");

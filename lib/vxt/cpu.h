@@ -48,9 +48,12 @@ struct address_mode {
 
 struct cpu {
    struct vxt_registers regs;
-   bool trap, halt, int28, invalid;
+   bool trap, halt, invalid;
+   bool interrupt, int28;
    int cycles;
+   
    vxt_word inst_start;
+   const struct instruction *inst;
 
    vxt_byte opcode, repeat;
    struct address_mode mode;
@@ -71,16 +74,13 @@ struct cpu {
    vxt_system *s;
 };
 
-vxt_byte cpu_read_byte(CONSTSP(cpu) p, vxt_pointer addr);
-void cpu_write_byte(CONSTSP(cpu) p, vxt_pointer addr, vxt_byte data);
-vxt_word cpu_read_word(CONSTSP(cpu) p, vxt_pointer addr);
-vxt_word cpu_segment_read_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset);
-vxt_word cpu_segment_read_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset);
-void cpu_write_word(CONSTSP(cpu) p, vxt_pointer addr, vxt_word data);
-void cpu_segment_write_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data);
-void cpu_segment_write_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data);
 void cpu_reset(CONSTSP(cpu) p);
 void cpu_reset_cycle_count(CONSTSP(cpu) p);
 int cpu_step(CONSTSP(cpu) p);
+
+vxt_word cpu_segment_read_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset);
+vxt_word cpu_segment_read_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset);
+void cpu_segment_write_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data);
+void cpu_segment_write_word(CONSTSP(cpu) p, vxt_word segment, vxt_word offset, vxt_word data);
 
 #endif
