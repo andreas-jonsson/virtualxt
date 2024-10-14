@@ -19,4 +19,7 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
-#include "../../modules/cga/cga.c"
+int main(int argc, char *argv[]) {
+	(void)argc; (void)argv;
+	return 0;
+}

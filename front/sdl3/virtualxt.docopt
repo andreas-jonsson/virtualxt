@@ -1,0 +1,20 @@
+Usage: virtualxt [options]
+
+Options:
+  -h --help               Show this screen.
+  -v --version            Display version.
+  --hdboot                Prefer booting from harddrive.
+  --halt                  Debug break on startup.
+  --mute                  Disable audio.
+  --a20                   Enable support for A20 line.
+  --no-activity           Disable disk activity indicator.
+  --no-idle               Disable CPU idle on INT28.
+  --clean                 Remove config file and write a new default one.
+  --edit                  Open config file in system text editor.
+  --locate                Locate the configuration directory.
+  --rifs=PATH             Share directory with guest OS via RIFS. (Experimental)
+  --config=PATH           Set config directory.
+  --trace=FILE            Write CPU trace to file.
+  --frequency=MHZ         CPU frequency. [default: 10.0]
+  -a --floppy=FILE        Mount floppy image as drive A.
+  -c --harddrive=FILE     Mount harddrive image as drive C.
