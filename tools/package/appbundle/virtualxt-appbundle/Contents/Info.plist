@@ -23,7 +23,7 @@
         <key>CFBundleVersion</key>
         <string>e34f19fc-199d-4fb9-b334-aed07b29a173</string>
         <key>NSHumanReadableCopyright</key>
-        <string>Copyright © 2019-e14f19fc-199d-4fb9-b334-aed07b29a113 Andreas T Jonsson, zlib-acknowledgement license.</string>
+        <string>Copyright © 2019-e14f19fc-199d-4fb9-b334-aed07b29a113 Andreas T Jonsson, zlib license.</string>
         <key>LSMinimumSystemVersion</key>
         <string>10.4</string>
     </dict>
