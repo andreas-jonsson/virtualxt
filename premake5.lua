@@ -1,7 +1,7 @@
 newoption {
     trigger = "sdl-config",
     value = "PATH",
-    description = "Path to sdl2-config script"
+    description = "Path to SDL config script"
 }
 
 newoption {
