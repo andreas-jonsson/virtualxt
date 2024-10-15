@@ -1175,7 +1175,7 @@ int main(int argc, char *argv[]) {
 			);
 
 			if (ticks > 10000) {
-				snprintf(buffer, sizeof(buffer), "VirtualXT - %.2f MHz%s", mhz, turbo ? " (Turbo)" : "");
+				snprintf(buffer, sizeof(buffer), "VirtualXT - %.2f MHz%s", mhz, turbo ? "" : " (No Turbo)");
 			} else {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
 			}
