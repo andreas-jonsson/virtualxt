@@ -79,7 +79,7 @@ static void out(struct ppi *c, vxt_word port, vxt_byte data) {
                 c->speaker_callback(VXT_GET_PERIPHERAL(c), spk_enable ? vxtu_pit_get_frequency(c->pit, 2) : 0.0, c->speaker_callback_data);
         }
 
-        bool turbo_enabled = (data & 4) != 0;
+        bool turbo_enabled = (data & 4) == 0;
         if (turbo_enabled != c->turbo_enabled) {
             c->turbo_enabled = turbo_enabled;
             VXT_LOG("Turbo mode %s!", turbo_enabled ? "on" : "off");
@@ -130,8 +130,8 @@ static vxt_error timer(struct ppi *c, vxt_timer_id id, int cycles) {
 
 static vxt_error reset(struct ppi *c) {
     c->data_port = 0;
-    c->port_61 = 14;
-    c->turbo_enabled = false;
+    c->port_61 = 0;
+    c->turbo_enabled = true;
 
 	c->spk_sample_index = 0;
 	c->spk_enabled = false;
