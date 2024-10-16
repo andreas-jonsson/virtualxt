@@ -105,7 +105,9 @@ static vxt_error install(struct pic *c, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct pic *c) {
+static vxt_error reset(struct pic *c, struct pic *state) {
+    if (state)
+        return VXT_CANT_RESTORE;
     vxt_memclear(c, sizeof(struct pic));
     return VXT_NO_ERROR;
 }

@@ -102,7 +102,9 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 	}
 }
 
-static vxt_error reset(struct network *n) {
+static vxt_error reset(struct network *n, struct network *state) {
+	if (state)
+		return VXT_CANT_RESTORE;
 	n->can_recv = false;
 	n->pkg_len = 0;
 	n->buf_seg = n->buf_offset = 0;

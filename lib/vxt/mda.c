@@ -94,7 +94,10 @@ static vxt_error install(struct mda_video *m, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct mda_video *m) {
+static vxt_error reset(struct mda_video *m, struct mda_video *state) {
+    if (state)
+        return VXT_CANT_RESTORE;
+
     m->cursor_visible = true;
     m->cursor_offset = 0;
     m->is_dirty = true;

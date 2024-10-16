@@ -495,7 +495,9 @@ static vxt_error install(struct rifs *fs, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct rifs *fs) {
+static vxt_error reset(struct rifs *fs, struct rifs *state) {
+    if (state)
+        return VXT_CANT_RESTORE;
     for (int i = 0; i < MAX_DOS_PROC; i++) {
         struct dos_proc *proc = &fs->processes[i];
         if (proc->active) {
