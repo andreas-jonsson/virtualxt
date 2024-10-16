@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define VERSION "1.1.0"
+#define VERSION "1.2.0"
 #define COMMAND_PORT 0xB4
 #define DATA_PORT 0xB5
 #define PPI_PORT 0x61
