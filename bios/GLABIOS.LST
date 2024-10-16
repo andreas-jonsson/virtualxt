@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-1
 
 
@@ -57,7 +57,7 @@ GLaBIOS                                                     Page     1-1
 				;  MAKE.BAT
 				;
 				; or
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-2
 
 
@@ -108,7 +108,7 @@ GLaBIOS                                                     Page     1-2
  = 004C				ARCH_LASER		EQU	'L'			; VTech Laser Turbo XT
  = 0042				ARCH_BOOK88		EQU	'B'			; Book 8088
  = 0051				ARCH_CPQ		EQU	'Q'			; Compaq Portable XT
- = 0041				ARCH_VIRTUALXT	EQU	'A'			; VirtualXT Emulator
+ = 004A				ARCH_VIRTUALXT	EQU	'J'			; VirtualXT Emulator
 				
 				;
 				; CPU Instruction Set Target
@@ -116,7 +116,7 @@ GLaBIOS                                                     Page     1-2
  = 0038				CPU_8088		EQU	'8'			; 808x compatible
  = 0056				CPU_V20		EQU	'V'			; V20 only
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-3
 
 
@@ -175,7 +175,7 @@ GLaBIOS                                                     Page     1-3
 				
 				;----------------------------------------------------------------------------;
 				; CGA Snow Removal Method
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-4
 
 
@@ -234,7 +234,7 @@ GLaBIOS                                                     Page     1-4
  = 0001				BASIC_ROM		=	1		; BASIC ROM support at 0F600h
  = FE00				OPT_ROM_END		=	0FE00H	; Option ROM scan ending address (must be xx00)
  = 0001				FDC_ENABLE		=	1		; Enable INT 13h floppy support
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-5
 
 
@@ -293,7 +293,7 @@ GLaBIOS                                                     Page     1-5
  = 3/10				UNSAFE_FLP_DIV	EQU	<3/10>	; 30%
 				;UNSAFE_FLP_DIV	EQU	<1/4>		; 25%
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-6
 
 
@@ -352,7 +352,7 @@ GLaBIOS                                                     Page     1-6
 				; Configuration for Compaq XT (incomplete)
 				;
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-7
 
 
@@ -362,7 +362,7 @@ GLaBIOS                                                     Page     1-7
 				;----------------------------------------------------------------------------;
 				; Configuration for the VirtualXT emulator
 				;
- = 0001				TURBO_TYPE		=	TURBO_STD		; standard PPI 61h (1=turbo, 0=normal)
+ = 0001				TURBO_TYPE		=	TURBO_STD		; standard PPI 61h (0=turbo, 1=normal)
  = 02E0				MAX_RAM 		=	MAX_RAM_CGA		; 736 KB Max detectable low RAM
  = 0001				MAX_RAM_AUTO	=	1				; select max RAM from video switch
  = 0000				CGA_SNOW_REMOVE	=	0				; disable CGA snow removal
@@ -411,7 +411,7 @@ GLaBIOS                                                     Page     1-7
 				;----------------------------------------------------------------------------;
 				; POST colors and visuals
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-8
 
 
@@ -470,7 +470,7 @@ GLaBIOS                                                     Page     1-8
 				; column label width plus separator
  = 0009				POST_COL_VT		EQU	POST_COL_LBL_W + L_POST_L
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-9
 
 
@@ -529,7 +529,7 @@ GLaBIOS                                                     Page     1-9
  =				BEEP_ERR_LOW	EQU	BEEP_C5		;  alternating error beeps
 				
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-10
 
 
@@ -588,7 +588,7 @@ GLaBIOS                                                     Page     1-10
  = 0070				TD_WS			EQU	70H			; RAM, I/O wait state control
  = 0090				TD_TURBO		EQU	90H			; Write 2 for Turbo, 3 for Normal
  = 00E0				TD_MEM		EQU	0E0H			; Memory bank switch
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-11
 
 
@@ -647,7 +647,7 @@ GLaBIOS                                                     Page     1-11
 				R)
  = 02E8				COM4_DATA		EQU	COM3_DATA-100H	; 02E8H: TX/RX Buffer, Divisor LSB (RW)
  = 02EA				COM4_IIR		EQU	COM4_DATA+2		; 02EAH: Interrupt Identification Register (
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-12
 
 
@@ -706,7 +706,7 @@ GLaBIOS                                                     Page     1-12
  = 0010				FDC_ST_ERR_CRC	EQU	10H			; ECC/CRC error on disk read
  = 0020				FDC_ST_ERR_FDC	EQU	20H			; Controller error
  = 0040				FDC_ST_ERR_SEEK	EQU	40H			; Seek failure
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-13
 
 
@@ -765,7 +765,7 @@ GLaBIOS                                                     Page     1-13
  0009  00			HDST		DB	? 	; 09 head settle time in milliseconds
  000A  00			FMST		DB	? 	; 0A motor startup time in eighths of a second
  000B				DBT	ENDS
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-14
 
 
@@ -824,7 +824,7 @@ GLaBIOS                                                     Page     1-14
 				; Convert two bytes to word (big endian)
 				;----------------------------------------------------------------------------;
 				DBW	RECORD	HWB:8, LWB:8
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-15
 
 
@@ -883,7 +883,7 @@ GLaBIOS                                                     Page     1-15
 				
 				;----------------------------------------------------------------------------;
 				; GLaBIOS Equipment Flags (40:12H)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-16
 
 
@@ -942,7 +942,7 @@ GLaBIOS                                                     Page     1-16
 				;   5	    |			- K2NL	num-lock key is depressed
 				;    4    |			- K2SL	scroll lock key is depressed
 				;     3   |			- K2PA	pause (Ctrl-NumLock) is active
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-17
 
 
@@ -1001,7 +1001,7 @@ GLaBIOS                                                     Page     1-17
 				; 84218421
 				; 7 	    |			- FWIF	1=working interrupt flag
 				;  654    |			- FSTBD	unused
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-18
 
 
@@ -1060,7 +1060,7 @@ GLaBIOS                                                     Page     1-18
 				;      210|			- FSD		(see below)
 				;----------------------------------------------------------------------------;
 				; FSD values:
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-19
 
 
@@ -1119,7 +1119,7 @@ GLaBIOS                                                     Page     1-19
 				; Bits
 				;	 76  Last Command Status
 				;	 00  command terminated successfully
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-20
 
 
@@ -1178,7 +1178,7 @@ GLaBIOS                                                     Page     1-20
 				;      2  |			- LCINI	0 = initialize printer,  (pin 16)
 				;       1 |			- LCLF	1 = auto line feed,  (pin 14)
 				;        0|			- LCOUT	1 = output data to printer,  (pin 1)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-21
 
 
@@ -1237,7 +1237,7 @@ GLaBIOS                                                     Page     1-21
 				;    4    |			- LBI		1 = break interrupt  (BI)
 				;     3   |			- LFE		1 = framing error (FE)
 				;      2  |			- LPE		1 = parity error (PE)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-22
 
 
@@ -1296,7 +1296,7 @@ GLaBIOS                                                     Page     1-22
 				;  6      |		- CR2		1 = Channel 2 request
 				;   5     |		- CR1		1 = Channel 1 request
 				;    4    |		- CR0		1 = Channel 0 request
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-23
 
 
@@ -1355,7 +1355,7 @@ GLaBIOS                                                     Page     1-23
 				;    4    |		- IRQ4
 				;     3   |		- IRQ3
 				;      2  |		- IRQ2
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-24
 
 
@@ -1414,7 +1414,7 @@ GLaBIOS                                                     Page     1-24
 				; 84218421
 				; 7654    |			- VSX		unused
 				;     3   |			- VSVS	vertical retrace, RAM access OK (next 1.25ms)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-25
 
 
@@ -1473,7 +1473,7 @@ GLaBIOS                                                     Page     1-25
 				; Normal operation: Mode 0, Ports A,C (U and L) as INPUT, Port B as OUTPUT
 				; 84218421
 				; 1 	    |			- PPEN	1=Active
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-26
 
 
@@ -1532,7 +1532,7 @@ GLaBIOS                                                     Page     1-26
 				;  6      |			- PC2IE	0=no i/o channel error, 1 i/o channel check error
 				;   5     |			- PC2T2	timer 2 output
 				;    4    |			- PC2CI	cassette data input
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-27
 
 
@@ -1591,7 +1591,7 @@ GLaBIOS                                                     Page     1-27
 				;----------------------------------------------------------------------------;
 				; Input:
 				;	LBL	= forward jump destination
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-28
 
 
@@ -1650,7 +1650,7 @@ GLaBIOS                                                     Page     1-28
 						ENDM
 				
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-29
 
 
@@ -1709,7 +1709,7 @@ GLaBIOS                                                     Page     1-29
 							IFNB <SET_BDA>
 					POP	DS
 					POP	CX
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-30
 
 
@@ -1768,7 +1768,7 @@ GLaBIOS                                                     Page     1-30
 					ROL4	_AL					; shift value into position
 									ELSE
 					ROR	AL, FLAG_BIT			; shift value into position
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-31
 
 
@@ -1827,7 +1827,7 @@ GLaBIOS                                                     Page     1-31
 							ELSE				; is in high byte
 				FLAG_MASK	= HIGH MASK FLAG
 				FLAG_BIT	= (FLAG - 8) AND 0111B
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-32
 
 
@@ -1886,7 +1886,7 @@ GLaBIOS                                                     Page     1-32
 				;----------------------------------------------------------------------------;
 				; Input:
 				;	FLAG = field name from GB_FLAGS RECORD
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-33
 
 
@@ -1945,7 +1945,7 @@ GLaBIOS                                                     Page     1-33
 				;----------------------------------------------------------------------------;
 				PRINTLN_SZ	MACRO	SZ, SAVE_REGS
 						IFNB	<SAVE_REGS>
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-34
 
 
@@ -2004,7 +2004,7 @@ GLaBIOS                                                     Page     1-34
 						ENDIF
 						IFNB	<ZERO_BH>
 					MOV	BX, LOW INNER_ATTR		; BH = 0, BL = attribute
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-35
 
 
@@ -2063,7 +2063,7 @@ GLaBIOS                                                     Page     1-35
 				BEEP_ON MACRO 	TONE
 						IFNB	<TONE>
 					MOV	AX, TONE 				; custom tone
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-36
 
 
@@ -2122,7 +2122,7 @@ GLaBIOS                                                     Page     1-36
 						ENDIF
 						ENDIF
 						ENDIF
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-37
 
 
@@ -2181,7 +2181,7 @@ GLaBIOS                                                     Page     1-37
  = 000D				_BP	EQU	V20_R <1, _CH>
  = 000E				_SI	EQU	V20_R <1, _DH>
  = 000F				_DI	EQU	V20_R <1, _BH>
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-38
 
 
@@ -2240,7 +2240,7 @@ GLaBIOS                                                     Page     1-38
 				; AL(high nibble) clobbered
 				;----------------------------------------------------------------------------;
 				ROL4		MACRO R8
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-39
 
 
@@ -2299,7 +2299,7 @@ GLaBIOS                                                     Page     1-39
 							IF CPU_TYPE	EQ CPU_V20 AND (WIDTH FLAG) EQ 1 AND USE_V20
 					CLR1		_BP, FLAG			; V20: Clear FLAG
 							ELSE
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-40
 
 
@@ -2358,7 +2358,7 @@ GLaBIOS                                                     Page     1-40
 					SHR	AL, 1					; [2] in horizontal?
 					JC	WAIT_NO_HSYNC			; [4/16] if so, wait for next one
 				WAIT_BLANK:
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-41
 
 
@@ -2417,7 +2417,7 @@ GLaBIOS                                                     Page     1-41
  0026  0000			IVT_09_SEG		DW	?			; INT 09H - Keyboard Segment
  0040						ORG 10H*4
  0040  0000			IVT_10		DW	?			; INT 10H - BIOS video services
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-42
 
 
@@ -2476,7 +2476,7 @@ GLaBIOS                                                     Page     1-42
 				coding
  0008  0003[			LPT_ADDR		DW	3 DUP(?) 		; 08H  LPT1-3 base addresses
 	   ????			
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-43
 
 
@@ -2535,7 +2535,7 @@ GLaBIOS                                                     Page     1-43
 				 controller
  0065  00			VID_MODE_REG	DB	?			; 65H  6845 CRT mode control register value (port 3x
 				8H)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-44
 
 
@@ -2594,7 +2594,7 @@ GLaBIOS                                                     Page     1-44
  0096  00			EKB_FLAGS1		KBFLAGS3 <>			; 96H  Keyboard mode/type (Enhanced)
  0097  00			EKB_FLAGS2		KBFLAGS4 <>			; 97H  Keyboard LED flags (Enhanced)
  00A0						ORG	0A0H
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-45
 
 
@@ -2653,7 +2653,7 @@ GLaBIOS                                                     Page     1-45
  7DFE  0000			IPL_ID		DW	?			; 0AA55H if valid MBR
  7E00				_IPL_SEG	ENDS
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-46
 
 
@@ -2712,7 +2712,7 @@ GLaBIOS                                                     Page     1-46
 				
 				;----------------------------------------------------------------------------;
 				; F600:0000 - ROM BASIC segment
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-47
 
 
@@ -2771,7 +2771,7 @@ GLaBIOS                                                     Page     1-47
 				; F000:E000: Top of BIOS ROM 8K segment
 				;----------------------------------------------------------------------------;
  E000						ORG	0E000H
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-48
 
 
@@ -2830,7 +2830,7 @@ GLaBIOS                                                     Page     1-48
  E05B				BOOT	PROC	NEAR
  E05B  FA				CLI 					; disable CPU interrupts
  E05C  FC				CLD					; clear direction flag
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-49
 
 
@@ -2889,7 +2889,7 @@ GLaBIOS                                                     Page     1-49
 				;----------------------------------------------------------------------------;
 				; [4] Disable MDA/CGA adapters (for now)
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-50
 
 
@@ -2948,7 +2948,7 @@ GLaBIOS                                                     Page     1-50
 				
 				
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-51
 
 
@@ -3007,7 +3007,7 @@ GLaBIOS                                                     Page     1-51
 				; [10] Test Channel #1 on 8253 timer chip.
 				;----------------------------------------------------------------------------;
 				; Channel #1 on 8253 timer chip. Channel #1 is used in RAM refresh process.  
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-52
 
 
@@ -3066,7 +3066,7 @@ GLaBIOS                                                     Page     1-52
 				;----------------------------------------------------------------------------;
 				; [9B] 8253 PIT Programmable Interval Timer Initialization Channel 1
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-53
 
 
@@ -3125,7 +3125,7 @@ GLaBIOS                                                     Page     1-53
 				;----------------------------------------------------------------------------;
 				; 01 			; Mode 1 (Single)
 				;   0 		; INC: address decrement
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-54
 
 
@@ -3184,7 +3184,7 @@ GLaBIOS                                                     Page     1-54
 				;
 				; Input: CX = 0 from [13D]
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-55
 
 
@@ -3243,7 +3243,7 @@ GLaBIOS                                                     Page     1-55
  E16B                        1	??0009: 
  E16B  E16D R                1		DW	OFFSET ??000A 
  E16D                        1	??000A: 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-56
 
 
@@ -3302,7 +3302,7 @@ GLaBIOS                                                     Page     1-56
 				;----------------------------------------------------------------------------;
 				; [22] 8259A PIC Test
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-57
 
 
@@ -3361,7 +3361,7 @@ GLaBIOS                                                     Page     1-57
 				;----------------------------------------------------------------------------;
 				; [23] Setup Channel #0 on 8253 timer chip.
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-58
 
 
@@ -3420,7 +3420,7 @@ GLaBIOS                                                     Page     1-58
 				; Check CPU type
 				;----------------------------------------------------------------------------;
 				; If V20 is build target but V20 not detected - beep 1 long, 4 short
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-59
 
 
@@ -3479,7 +3479,7 @@ GLaBIOS                                                     Page     1-59
 				;----------------------------------------------------------------------------;
 				; Is a 5160 or standard PPI
 				;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-60
 
 
@@ -3538,7 +3538,7 @@ GLaBIOS                                                     Page     1-60
  E21B  24 FD				AND	AL, NOT MASK FPU			; otherwise clear FPU flag
 							ENDIF
  E21D				SETTINGS_SAVE:
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-61
 
 
@@ -3597,7 +3597,7 @@ GLaBIOS                                                     Page     1-61
  E239  75 05				JNZ	VID_MODE_OK				; jump if mode valid or video option ROM loa
 				ded
  E23B  B3 33				MOV	BL, BEEP_SL <3,3>			; Beep 3 long, 3 short
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-62
 
 
@@ -3656,7 +3656,7 @@ GLaBIOS                                                     Page     1-62
  E26E  B4 02				MOV	AH, 2 				; reset cursor position
  E270  CD 10				INT	10H 					; row = DH, column = DL
 							ENDIF
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-63
 
 
@@ -3715,7 +3715,7 @@ GLaBIOS                                                     Page     1-63
 				;					ELSE
  E27B  A8 04				TEST	AL, MASK PBTB			; standard turbo bit set?
 				;					ENDIF
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-64
 
 
@@ -3774,7 +3774,7 @@ GLaBIOS                                                     Page     1-64
  E2D5				INT_02_NMI_HALT:
  E2D5  33 C0				XOR	AX, AX				; reset video, clear screen
  E2D7  E6 A0				OUT	NMI_R0, AL				; mask the unmaskable
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-65
 
 
@@ -3833,7 +3833,7 @@ GLaBIOS                                                     Page     1-65
  E303  BA 03FA				MOV	DX, COM1_IIR			; 3FAH: COM1 Interrupt Ident Reg
  E306				COM_DETECT_LOOP:
  E306  32 C0				XOR	AL, AL				; AL = 0
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-66
 
 
@@ -3892,7 +3892,7 @@ GLaBIOS                                                     Page     1-66
  E34A				NEXT_LPT_PORT:
  E34A  E2 E0				LOOP	LPT_DETECT_LOOP
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-67
 
 
@@ -3951,7 +3951,7 @@ GLaBIOS                                                     Page     1-67
  E370  E4 21				IN	AL, INT_IMR 			; get PIC Port 1 INT mask
  E372  96				XCHG	AX, SI 				; SI = save previous INT mask
  E373  B0 FD				MOV	AL, NOT MASK IRQ1			; unmask only keyboard interrupt
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-68
 
 
@@ -4010,7 +4010,7 @@ GLaBIOS                                                     Page     1-68
 					POST_FLAG_SET  PKEY			; otherwise set flag for keyboard error
 			     1				ELSE 
  E399  81 CD 2000            1		OR	BP, MASK PKEY			; Set FLAG 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-69
 
 
@@ -4069,7 +4069,7 @@ GLaBIOS                                                     Page     1-69
 				
  E3C7				POST_BOOT_TYPE ENDP
 							ENDIF
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-70
 
 
@@ -4128,7 +4128,7 @@ GLaBIOS                                                     Page     1-70
 				;----------------------------------------------------------------------------;
  E3ED  FB				STI 						; Interrupts now enabled
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-71
 
 
@@ -4187,7 +4187,7 @@ GLaBIOS                                                     Page     1-71
  E41C				HDD_POST ENDP
 				
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-72
 
 
@@ -4246,7 +4246,7 @@ GLaBIOS                                                     Page     1-72
 			     1			IFDIFI <NL_ANY_KEY>,<SI>			; if SZ is not SI 
  E449  BE E4A5 R             1		MOV	SI, OFFSET NL_ANY_KEY 
 			     1			ENDIF 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-73
 
 
@@ -4305,7 +4305,7 @@ GLaBIOS                                                     Page     1-73
  E476  CD 18				INT	18H					; Try vectored ROM BASIC or boot failure
 											; INT 18h should never return...
 											;  fall through just in case
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-74
 
 
@@ -4364,7 +4364,7 @@ GLaBIOS                                                     Page     1-74
  E4BC				POST_STRINGS PROC
 				;----------------------------------------------------------------------------;
 				; POST Test Strings
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-75
 
 
@@ -4423,7 +4423,7 @@ GLaBIOS                                                     Page     1-75
 					PUSHX	BP, DS, ES				; call preserve these registers
 			     1				IFNB <BP>			; exit if last reg 
  E50B  55                    1		PUSH	BP 					; push register and repeat 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-76
 
 
@@ -4482,7 +4482,7 @@ GLaBIOS                                                     Page     1-76
  E53F  58				POP	AX					; restore IMR
  E540  E6 21				OUT	INT_IMR, AL				; reset IMR
  E542  FC				CLD						; ensure direction flag forward
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-77
 
 
@@ -4541,7 +4541,7 @@ GLaBIOS                                                     Page     1-77
  E561  C3				RET
  E562				ROM_CHECKSUM ENDP
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-78
 
 
@@ -4600,7 +4600,7 @@ GLaBIOS                                                     Page     1-78
 							ELSE
  E582  B1 06				MOV	CL, 6					; 8088: shift right 6 times to get K
  E584  D3 EA				SHR	DX, CL
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-79
 
 
@@ -4659,7 +4659,7 @@ GLaBIOS                                                     Page     1-79
  E5C7  1F				POP	DS
  E5C8  C3				RET
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-80
 
 
@@ -4718,7 +4718,7 @@ GLaBIOS                                                     Page     1-80
 				; Test Memory Address Lines on a 16KB block
 				;----------------------------------------------------------------------------;
 				; Write a byte to the first address in a segment and write a different
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-81
 
 
@@ -4777,7 +4777,7 @@ GLaBIOS                                                     Page     1-81
 				;
 				; Size: 26 bytes
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-82
 
 
@@ -4836,7 +4836,7 @@ GLaBIOS                                                     Page     1-82
 				;
 				; AX clobbered
 				; Size: 53 bytes
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-83
 
 
@@ -4895,7 +4895,7 @@ GLaBIOS                                                     Page     1-83
 				; Output: AX = current counter
 				; Time: 123 clock cycles (including CALL)
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-84
 
 
@@ -4954,7 +4954,7 @@ GLaBIOS                                                     Page     1-84
  E6F8  8E C1				MOV	ES, CX				; ES = IPL Segment (0000)
  E6FA  BF 0078 R			MOV	DI, OFFSET IVT_1E			; INT 1E vector table address
  E6FD  B8 EFC7 R			MOV	AX, OFFSET INT_1E 		; INT 1E DBT address
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-85
 
 
@@ -5013,7 +5013,7 @@ GLaBIOS                                                     Page     1-85
 						ENDIF
 				
 				;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-86
 
 
@@ -5072,7 +5072,7 @@ GLaBIOS                                                     Page     1-86
  E746  BF ---- R			MOV	DI, SEG _BDA 		; DS = BDA
  E749  8E DF				MOV	DS, DI
  E74B  8B FA				MOV	DI, DX 			; DI = COM port index (0-3)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-87
 
 
@@ -5131,7 +5131,7 @@ GLaBIOS                                                     Page     1-87
  E779				INT_14_0_SET_BAUD:
  E779  87 D7				XCHG	DX, DI 			; DX = 3F8/2F8, DI = 3FB/2FB (4)
 										; AL = Divisor LSB, AH = Divisor MSB (4)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-88
 
 
@@ -5190,7 +5190,7 @@ GLaBIOS                                                     Page     1-88
 			     3				ENDIF 
 			     2				ENDIF 
 			     1				ENDIF 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-89
 
 
@@ -5249,7 +5249,7 @@ GLaBIOS                                                     Page     1-89
  E7B6  83 C2 04				ADD	DX, COM1_MCR-COM1_DATA		; DX = 3FC/2FC - Modem Control Register
  E7B9  B0 01				MOV	AL, MASK DTR			; activate DTR
  E7BB  EE				OUT	DX, AL				; set DTR
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-90
 
 
@@ -5308,7 +5308,7 @@ GLaBIOS                                                     Page     1-90
  E7EA				INT_14_POLL_RET:
  E7EA  C3				RET
  E7EB				INT_14_POLL_PORT ENDP
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-91
 
 
@@ -5367,7 +5367,7 @@ GLaBIOS                                                     Page     1-91
  E804  8A DF				MOV	BL, BH			; BL = starting bit to compare
  E806				WB_READ_LOOP:
  E806  EC				IN	AL, DX			; read low byte
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-92
 
 
@@ -5426,7 +5426,7 @@ GLaBIOS                                                     Page     1-92
  E82E						ORG 0E82EH
  E82E				INT_16 PROC
 						ASSUME DS:_BDA
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-93
 
 
@@ -5485,7 +5485,7 @@ GLaBIOS                                                     Page     1-93
 						IF KB_HLT_WAIT EQ 1
  E854  F4				HLT					; wait for keystroke interrupt
 						ENDIF
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-94
 
 
@@ -5544,7 +5544,7 @@ GLaBIOS                                                     Page     1-94
 					POST_CODE					; optionally display beep code on POST card
 					AAM_I	10H					; split nibbles
  E879  D4 10                 1		DB	0D4H, 10H			; AAM	imm 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-95
 
 
@@ -5603,7 +5603,7 @@ GLaBIOS                                                     Page     1-95
 			     1			ELSE 
  E8B0  B8 054C               1		MOV	AX, BEEP_DEFAULT 
 			     1			ENDIF 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-96
 
 
@@ -5662,7 +5662,7 @@ GLaBIOS                                                     Page     1-96
  E8DC				MEEPMEEP ENDP
  E8DC				MEEPMEEP_Z ENDP
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-97
 
 
@@ -5721,7 +5721,7 @@ GLaBIOS                                                     Page     1-97
  E900  43 4F 4C 44 00		POST_COLD		DB	'COLD', 0
 								ENDIF
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-98
 
 
@@ -5780,7 +5780,7 @@ GLaBIOS                                                     Page     1-98
  E944				POST_ERROR_MSG ENDP
 				
  E944				POST_ERR_MSG ENDP
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-99
 
 
@@ -5839,7 +5839,7 @@ GLaBIOS                                                     Page     1-99
  E96D  07				POP	ES
  E96E  C3				RET
 						ASSUME ES:NOTHING
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-100
 
 
@@ -5898,7 +5898,7 @@ GLaBIOS                                                     Page     1-100
 				;  http://www.techhelpmanual.com/106-int_09h__keyboard_interrupt.html
 				;  https://www.phatcode.net/res/223/files/html/Chapter_20/CH20-1.html
 				;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-101
 
 
@@ -5957,7 +5957,7 @@ GLaBIOS                                                     Page     1-101
  E99F  57                    4		PUSH	DI 					; push register and repeat 
 			     4		PUSHX	SI, , , , , ,  
 			     5				IFNB <SI>			; exit if last reg 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-102
 
 
@@ -6016,7 +6016,7 @@ GLaBIOS                                                     Page     1-102
  E9DB				KB_INT_CHECK_FN_KEY_DONE:				; not a function key
 				
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-103
 
 
@@ -6075,7 +6075,7 @@ GLaBIOS                                                     Page     1-103
 				;----------------------------------------------------------------------------;
  EA0A				INT_KB_SET_PAUSE:
  EA0A  BB 0018 R			MOV	BX, OFFSET KB_FLAGS2			; (-1 byte to use indirect)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-104
 
 
@@ -6134,7 +6134,7 @@ GLaBIOS                                                     Page     1-104
  EA44  F5				CMC							; CF if not alpha
  EA45				IS_ALPHA_DONE:
  EA45  58				POP	AX						; restore original AL
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-105
 
 
@@ -6193,7 +6193,7 @@ GLaBIOS                                                     Page     1-105
  EA71  8B 3E 001C R			MOV	DI, KB_BUF_TL 				; DI = tail ptr
  EA75  8D 75 02				LEA	SI, [DI][2]					; SI = next (maybe)
  EA78  83 FE 3E				CMP	SI, KB_BUF_END_B				; is next >= end of buffer?
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-106
 
 
@@ -6252,7 +6252,7 @@ GLaBIOS                                                     Page     1-106
 				;
  EA95				INT_KB_ALT PROC
  EA95  80 FC 39				CMP	AH, 39H					; is space bar?
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-107
 
 
@@ -6311,7 +6311,7 @@ GLaBIOS                                                     Page     1-107
 				;----------------------------------------------------------------------------;
 				; Handle CTRL exceptions after ASCII or scan code is modified. These require
 				; a lookup table since they do not follow a predictable pattern.
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-108
 
 
@@ -6370,7 +6370,7 @@ GLaBIOS                                                     Page     1-108
  EB12				INT_KB_CTRL:
  EB12  F6 C2 08				TEST	DL, MASK K1AL				; is ALT also currently held?
  EB15  74 BC				JZ	INT_KB_CTRL_NO_ALT			; jump if no ALT
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-109
 
 
@@ -6429,7 +6429,7 @@ GLaBIOS                                                     Page     1-109
 				;----------------------------------------------------------------------------;
 				; 5. Is a flag key?
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-110
 
 
@@ -6488,7 +6488,7 @@ GLaBIOS                                                     Page     1-110
 				;
  EB62				INT_KB_FLAG_TOGGLE:
  EB62  30 47 FF				XOR	_KB_FLAGS1, AL				; toggle flag
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-111
 
 
@@ -6547,7 +6547,7 @@ GLaBIOS                                                     Page     1-111
 				; Keyboard scancode mapping tables
 				;----------------------------------------------------------------------------;
 				; For each scan code this table contains ASCII characters. The first byte is
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-112
 
 
@@ -6606,7 +6606,7 @@ GLaBIOS                                                     Page     1-112
 	   20			
 			 ]	
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-113
 
 
@@ -6665,7 +6665,7 @@ GLaBIOS                                                     Page     1-113
 			 ]	
 				
  EC28  0002[				DB	2 DUP(46H OR 80H)			; 46H		*Scroll Lock
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-114
 
 
@@ -6724,7 +6724,7 @@ GLaBIOS                                                     Page     1-114
 				;	AH = function request number
 				;	AL = number of sectors	(1-128)
 				;	CH = cylinder number	(0-1023)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-115
 
 
@@ -6783,7 +6783,7 @@ GLaBIOS                                                     Page     1-115
 						ASSUME DS:_BDA
  EC59  FB				STI 						; enable interrupts
  EC5A  FC				CLD
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-116
 
 
@@ -6842,7 +6842,7 @@ GLaBIOS                                                     Page     1-116
 			     3				IFNB <DX>			; exit if last reg 
  EC8E  5A                    3		POP	DX 					; pop register and repeat 
 			     3		POPX	, , , , , ,  
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-117
 
 
@@ -6901,7 +6901,7 @@ GLaBIOS                                                     Page     1-117
 				;----------------------------------------------------------------------------;
  EC98				INT_13_0 PROC
  EC98  BA 03F2				MOV	DX, FDC_CTRL			; port 3F2H, FDC Digital Output
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-118
 
 
@@ -6960,7 +6960,7 @@ GLaBIOS                                                     Page     1-118
  ECCE  E8 EE9A R			CALL	FDC_SEND 				; send command in AL, CF if error
  ECD1  72 0C				JC	INT_13_0_DONE
  ECD3  B0 00				MOV	AL, DBT.SRT				; [1] step rate time, head unload time
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-119
 
 
@@ -7019,7 +7019,7 @@ GLaBIOS                                                     Page     1-119
 				;	3. Set up DMA
 				;	4. seek drive DL to cylinder CH, head DH
 				; 	5. send command
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-120
 
 
@@ -7078,7 +7078,7 @@ GLaBIOS                                                     Page     1-120
 				;		Exit with DMA Boundary error if segment is exceeded.
 				;	- Reset the high/low byte flip-flop (send any value to I/O port 0CH)
 				;	- Set DMA mode for Channel 2 to either Verify, Read or Write/Format
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-121
 
 
@@ -7137,7 +7137,7 @@ GLaBIOS                                                     Page     1-121
  ED46  E6 05				OUT	DMA_2_C, AL
  ED48  FB				STI						; Enable interrupts
  ED49  B0 02				MOV	AL, DMA_SMR <0, 2>		; DMA clear single channel 2 mask bit
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-122
 
 
@@ -7196,7 +7196,7 @@ GLaBIOS                                                     Page     1-122
 				; Output:
 				;	AL = number of sectors read, written or verified
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-123
 
 
@@ -7255,7 +7255,7 @@ GLaBIOS                                                     Page     1-123
  EDB2  A0 0047 R			MOV	AL, FDC_LAST_ST.SEC		; AL = FDC reported end sector
  EDB5  8A D5				MOV	DL, CH				; DL = start track
  EDB7  3B 55 04				CMP	DX, WORD PTR _FDC_LAST_ST.CYL	; rolled to next head or track?
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-124
 
 
@@ -7314,7 +7314,7 @@ GLaBIOS                                                     Page     1-124
  EDE4  B1 01				MOV	CL, 1					; format always starts at sector 1
  EDE6  EB C0				JMP	SHORT FDC_RWV_SEND_WAIT		; send, wait for WIF and get status
  EDE8				FDC_FORMAT ENDP
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-125
 
 
@@ -7373,7 +7373,7 @@ GLaBIOS                                                     Page     1-125
  EE16  72 16				JC	FDC_SEEK_ERR
  EE18  34 60				XOR	AL, FDC_ST0 <01B, 1>		; select abnormal term, seek complete
  EE1A  24 60				AND	AL, FDC_ST0 <01B, 1>		; ZF = abnormal term AND seek complete
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-126
 
 
@@ -7432,7 +7432,7 @@ GLaBIOS                                                     Page     1-126
  EE35				FDC_MOTOR_ON:
  EE35  8A CA				MOV	CL, DL 				; move to CL for shift
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-127
 
 
@@ -7491,7 +7491,7 @@ GLaBIOS                                                     Page     1-127
  EE86  08 6D FD				OR	_FD_CAL_ST, CH 			; mark drive as calibrated and CLC
 				
 							IF FDC_ADV_SEEK EQ 1
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-128
 
 
@@ -7550,7 +7550,7 @@ GLaBIOS                                                     Page     1-128
  EE9A  53				PUSH	BX
  EE9B  B3 01				MOV	BL, 1					; flag is 1 if SEND operation
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-129
 
 
@@ -7609,7 +7609,7 @@ GLaBIOS                                                     Page     1-129
 				;----------------------------------------------------------------------------;
 				; Completed with success
 				;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-130
 
 
@@ -7668,7 +7668,7 @@ GLaBIOS                                                     Page     1-130
 				;	AH = 0 if success, 80H if failure
 				;----------------------------------------------------------------------------;
  EEE7				FDC_RECV_STATUS PROC
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-131
 
 
@@ -7727,7 +7727,7 @@ GLaBIOS                                                     Page     1-131
  EF11  C3				RET
 				
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-132
 
 
@@ -7786,7 +7786,7 @@ GLaBIOS                                                     Page     1-132
 				; FDC Status register to INT 13h error map
 				; Note: Must check from most sig bit to lowest since higher
 				; bits are more meaningful.
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-133
 
 
@@ -7845,7 +7845,7 @@ GLaBIOS                                                     Page     1-133
 				; floppy disk working interrupt flag at 40:3E, bit 7.
 				;----------------------------------------------------------------------------;
  EF57						ORG 0EF57H
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-134
 
 
@@ -7904,7 +7904,7 @@ GLaBIOS                                                     Page     1-134
 				
 				;
 				; 20 BYTES HERE
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-135
 
 
@@ -7963,7 +7963,7 @@ GLaBIOS                                                     Page     1-135
 				;
 				; https://www.stanislavs.org/helppc/ports.html
 				; https://en.wikipedia.org/wiki/Parallel_port#IBM_PC_implementation
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-136
 
 
@@ -8022,7 +8022,7 @@ GLaBIOS                                                     Page     1-136
 				;----------------------------------------------------------------------------;
 				; Write character and returns status
 				;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-137
 
 
@@ -8081,7 +8081,7 @@ GLaBIOS                                                     Page     1-137
 				; Output:
 				;	AH = status:
 				;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-138
 
 
@@ -8140,7 +8140,7 @@ GLaBIOS                                                     Page     1-138
 				
  F032				CRLF_SHOW_CURSOR PROC
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-139
 
 
@@ -8199,7 +8199,7 @@ GLaBIOS                                                     Page     1-139
 				;----------------------------------------------------------------------------;
 				; INT 10h - Function Jump Table
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-140
 
 
@@ -8258,7 +8258,7 @@ GLaBIOS                                                     Page     1-140
 			     3		PUSHX	, , , , , ,  
 			     3				ENDIF 
 			     2				ENDIF 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-141
 
 
@@ -8317,7 +8317,7 @@ GLaBIOS                                                     Page     1-141
 				;	ZF = 1 if mode is 2 or 3
 				;	ZF = 0 all others
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-142
 
 
@@ -8376,7 +8376,7 @@ GLaBIOS                                                     Page     1-142
 				
 				; 80x25 CGA text
 						ELSE
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-143
 
 
@@ -8435,7 +8435,7 @@ GLaBIOS                                                     Page     1-143
  F0DF  0C			
  F0E0  00			
  F0E1  00			
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-144
 
 
@@ -8494,7 +8494,7 @@ GLaBIOS                                                     Page     1-144
 			     3		PUSHX	CX, SI, , , , ,  
 			     4				IFNB <CX>			; exit if last reg 
  F0E7  51                    4		PUSH	CX 					; push register and repeat 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-145
 
 
@@ -8553,7 +8553,7 @@ GLaBIOS                                                     Page     1-145
  F11C  BE 0030				MOV	SI, O_INT_1D_MDA			; SI = MDA CRTD offset
  F11F  EB 26				JMP	SHORT INT_10_0_DETECT_DONE	; MDA mode selected, continue
  F121				INT_10_0_IS_CGA:
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-146
 
 
@@ -8612,7 +8612,7 @@ GLaBIOS                                                     Page     1-146
  F17A  40				INC	AX					; next register index
  F17B  46				INC	SI					; next byte in table
  F17C  E2 F9				LOOP	INT_10_0_CRTC_LOOP
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-147
 
 
@@ -8671,7 +8671,7 @@ GLaBIOS                                                     Page     1-147
 				;	CL = cursor ending scan line (cursor bottom) (low order 5 bits)
 				;----------------------------------------------------------------------------;
  F1A0				INT_10_1 PROC
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-148
 
 
@@ -8730,7 +8730,7 @@ GLaBIOS                                                     Page     1-148
 				
 				;----------------------------------------------------------------------------;
 				; 2. Set cursor position in 6845 Cursor address register
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-149
 
 
@@ -8789,7 +8789,7 @@ GLaBIOS                                                     Page     1-149
  F1FD  8A C7				MOV	AL, BH			; AL = video page
  F1FF  98				CBW					; AX = video page
  F200  97				XCHG	AX, DI			; DI = video page
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-150
 
 
@@ -8848,7 +8848,7 @@ GLaBIOS                                                     Page     1-150
  F218  F7 E7				MUL	DI				; AX = offset of start of page regen buffer
  F21A  A3 004E R			MOV	VID_SEG, AX			; write to BDA
  F21D  D1 E8				SHR	AX, 1				; video segment byte-indexed
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-151
 
 
@@ -8907,7 +8907,7 @@ GLaBIOS                                                     Page     1-151
 				; it will scroll incorrectly. This behavior has been preserved.
 				;----------------------------------------------------------------------------;
  F234				INT_10_7 PROC
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-152
 
 
@@ -8966,7 +8966,7 @@ GLaBIOS                                                     Page     1-152
  F249  A0 004A R			MOV	AL, BYTE PTR VID_COLS	; AL = video mode columns
  F24C  3A D0				CMP	DL, AL			; is rect right column > screen columns?
  F24E  72 03				JB	INT_10_BOUNDS_OK
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-153
 
 
@@ -9025,7 +9025,7 @@ GLaBIOS                                                     Page     1-153
  F28B  2B D9				SUB	BX, CX			;  on next row (subtract twice to WORD align)
  F28D  9D				POPF					; set ZF if scroll up
  F28E  74 04				JZ	INT_10_CGA_CHECK		; jump if scroll up
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-154
 
 
@@ -9084,7 +9084,7 @@ GLaBIOS                                                     Page     1-154
 			     1				IFNB <BP>			; exit if last reg 
  F2B9  5D                    1		POP	BP 					; pop register and repeat 
 			     1		POPX	SI, BX, AX, , , ,  
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-155
 
 
@@ -9143,7 +9143,7 @@ GLaBIOS                                                     Page     1-155
  F2E3  9E				SAHF					; set ZF if scroll up
  F2E4  74 0A				JZ	INT_10_SCR_GFX_RDY	; jump if scroll up
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-156
 
 
@@ -9202,7 +9202,7 @@ GLaBIOS                                                     Page     1-156
 				
 				;----------------------------------------------------------------------------;
 				; Clear old window rectangle
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-157
 
 
@@ -9261,7 +9261,7 @@ GLaBIOS                                                     Page     1-157
 				
  F356  76 F6				JBE	INT_10_8_FAST		; if not GFX modes 4,5,6 jump to fast text
 										; fall through to graphics
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-158
 
 
@@ -9320,7 +9320,7 @@ GLaBIOS                                                     Page     1-158
  F376				INT_10_8_GFX_LOW_1:
  F376  8B 04				MOV	AX, [SI]			; AX = next two chars from video mem
  F378  86 C4				XCHG	AL, AH			; convert endian from WORD read
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-159
 
 
@@ -9379,7 +9379,7 @@ GLaBIOS                                                     Page     1-159
 				; Search again in user charset at 0000:007C (INT 1Fh).
 				;
  F3BA  99				CWD					; DX = 0000h
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-160
 
 
@@ -9438,7 +9438,7 @@ GLaBIOS                                                     Page     1-160
 				;	AH = 09 or 0A
 				;	AL = ASCII character to write
 				;	BH = display page  (or mode 13h, background pixel value)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-161
 
 
@@ -9497,7 +9497,7 @@ GLaBIOS                                                     Page     1-161
 				;----------------------------------------------------------------------------;
  F404				INT_10_9A_MODE_GFX PROC
 					PUSHX	AX, BX, DX, SI, DS
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-162
 
 
@@ -9556,7 +9556,7 @@ GLaBIOS                                                     Page     1-162
 				;	BL = foreground color
 				;	CX = number of times to repeat character
 				;	DS:SI = start of character offset in font bitmap table
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-163
 
 
@@ -9615,7 +9615,7 @@ GLaBIOS                                                     Page     1-163
  F45C  86 C4				XCHG	AL, AH			; convert endian
  F45E  59				POP	CX
  F45F  5B				POP	BX
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-164
 
 
@@ -9674,7 +9674,7 @@ GLaBIOS                                                     Page     1-164
 				; High-res (640x200) graphics mode 6
 				;----------------------------------------------------------------------------;
 				; Input:
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-165
 
 
@@ -9733,7 +9733,7 @@ GLaBIOS                                                     Page     1-165
 				; Input: DS = BDA
 				; Output:
 				;	DI = Current cursor vid mem offset
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-166
 
 
@@ -9792,7 +9792,7 @@ GLaBIOS                                                     Page     1-166
  F4CD  80 E3 1F				AND	BL, 00011111B			; isolate color bits
  F4D0  EB 0B				JMP	SHORT INT_10_B_DONE
  F4D2				INT_10_B_SET_PAL:
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-167
 
 
@@ -9851,7 +9851,7 @@ GLaBIOS                                                     Page     1-167
  F50F				INT_10_C ENDP
 				
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-168
 
 
@@ -9910,7 +9910,7 @@ GLaBIOS                                                     Page     1-168
 				
 				;----------------------------------------------------------------------------;
 				; Unpack pixel bit(s)
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-169
 
 
@@ -9969,7 +9969,7 @@ GLaBIOS                                                     Page     1-169
 				;	AH = 0E
 				;	AL = ASCII character to write
 				;	BH = page number (text modes) - override it with BDA value though
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-170
 
 
@@ -10028,7 +10028,7 @@ GLaBIOS                                                     Page     1-170
  F573  48				DEC	AX				; fix 0 index (79 or 39)
  F574  3A D0				CMP	DL, AL			; reached end of screen cols?
  F576  72 02				JB	NEXT_COL			; jump if not
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-171
 
 
@@ -10087,7 +10087,7 @@ GLaBIOS                                                     Page     1-171
 			     4		POPX	, , , , , ,  
 			     4				ENDIF 
 			     3				ENDIF 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-172
 
 
@@ -10146,7 +10146,7 @@ GLaBIOS                                                     Page     1-172
 				; Output:
 				;	DI = memory offset of current cursor in memory
 				;	ES = video RAM segment
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-173
 
 
@@ -10205,7 +10205,7 @@ GLaBIOS                                                     Page     1-173
  F5FC  29					DB	101001B	; 07: 80x25 Monochrome text (MDA, HERC)
 				
  F5FD				INT_10 ENDP
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-174
 
 
@@ -10264,7 +10264,7 @@ GLaBIOS                                                     Page     1-174
 				
 				;----------------------------------------------------------------------------;
 				; Check if VGA
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-175
 
 
@@ -10323,7 +10323,7 @@ GLaBIOS                                                     Page     1-175
  F66A  74 03				JZ CPU_CHECK_TYPE_2_DONE	; jump if 8088
  F66C  BE E4E6 R			MOV	SI, OFFSET POST_V20		; if not, is V20
  F66F				CPU_CHECK_TYPE_2_DONE:
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-176
 
 
@@ -10382,7 +10382,7 @@ GLaBIOS                                                     Page     1-176
 			     1						ELSE		; 0-2 shifts use single op(s) 
 			     1							REPT ??002F 
 			     1		ROL	AL, 1					; shift value into position 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-177
 
 
@@ -10441,7 +10441,7 @@ GLaBIOS                                                     Page     1-177
 				;	CX = number of ports to show
 				;----------------------------------------------------------------------------;
  F6B9				SHOW_PORT_COUNT PROC
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-178
 
 
@@ -10500,7 +10500,7 @@ GLaBIOS                                                     Page     1-178
  F6E4  E8 F73D R			CALL	MOVE_COL			; move cursor to separator column
  F6E7  56				PUSH	SI				; save end of string
  F6E8  BE E4FA R			MOV	SI, OFFSET POST_LSEP	; write separator string with
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-179
 
 
@@ -10559,7 +10559,7 @@ GLaBIOS                                                     Page     1-179
  F716  B9 0002				MOV	CX, 2
  F719  BB 0003				MOV	BX, LOW POST_CLR_TXT	; Fall through to OUT_SZ_ATTR and RET
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-180
 
 
@@ -10618,7 +10618,7 @@ GLaBIOS                                                     Page     1-180
 				
 				;----------------------------------------------------------------------------;
 				; Locate cursor to column on current line
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-181
 
 
@@ -10677,7 +10677,7 @@ GLaBIOS                                                     Page     1-181
 			     1				ENDIF 
 							ENDIF
  F753  C3				RET
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-182
 
 
@@ -10736,7 +10736,7 @@ GLaBIOS                                                     Page     1-182
  F768  BB 000A				MOV	BX, 10			; decimal divisor = 10
  F76B				OUT_DECU_R:
  F76B  52				PUSH	DX				; save remainder digit / caller DX
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-183
 
 
@@ -10795,7 +10795,7 @@ GLaBIOS                                                     Page     1-183
 							ENDIF
  F79B  E8 F79F R			CALL	NIB_HEX 			; write low nibble of AL as HEX to console
  F79E  58				POP	AX 				; restore AL
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-184
 
 
@@ -10854,7 +10854,7 @@ GLaBIOS                                                     Page     1-184
  F841				INT_12 PROC
 						ASSUME DS:_BDA
  F841  FB				STI 					; interrupts on
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-185
 
 
@@ -10913,7 +10913,7 @@ GLaBIOS                                                     Page     1-185
  F863				INT_15 ENDP
 				
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-186
 
 
@@ -10972,7 +10972,7 @@ GLaBIOS                                                     Page     1-186
 			     1			IFNB	<1> 
  F87D  59                    1		POP	CX 
  F87E  5B                    1		POP	BX 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-187
 
 
@@ -11031,7 +11031,7 @@ GLaBIOS                                                     Page     1-187
 			     2				IFNB <CX>			; exit if last reg 
  F8C1  59                    2		POP	CX 					; pop register and repeat 
 			     2		POPX	, , , , , ,  
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-188
 
 
@@ -11090,7 +11090,7 @@ GLaBIOS                                                     Page     1-188
        69 66 65 20 67 69	
        76 65 73 20 79 6F	
        75 20 6C 65 6D 6F	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-189
 
 
@@ -11149,7 +11149,7 @@ GLaBIOS                                                     Page     1-189
  F94D  E8 F713 R             1		CALL	POST_END_COL 
  F950  58				POP	AX
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-190
 
 
@@ -11208,7 +11208,7 @@ GLaBIOS                                                     Page     1-190
 				
  F98A  52 4F 4D 00		S_OPT_ROM	DB	'ROM', 0
  F98E  53 69 7A 65 00		S_OPT_SIZE	DB	'Size', 0
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-191
 
 
@@ -11267,7 +11267,7 @@ GLaBIOS                                                     Page     1-191
  F9C1  42				INC	DX				; DX = 3x5h data port
  F9C2  EC				IN	AL, DX			; read LSB
 				
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-192
 
 
@@ -11326,7 +11326,7 @@ GLaBIOS                                                     Page     1-192
  F9F3  98				CBW					; AH = 0, AL = col
  F9F4  D3 E0				SHL	AX, CL			; AX = col * 8
  F9F6  93				XCHG	AX, BX			; BX = pixel column
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-193
 
 
@@ -11385,7 +11385,7 @@ GLaBIOS                                                     Page     1-193
  FA11				INT_10_4_LOW:
  FA11  B1 03				MOV	CL, 3				; shift counter 3 for * 8
  FA13  8B D8				MOV	BX, AX			; BL = DL for pixel column
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-194
 
 
@@ -11444,7 +11444,7 @@ GLaBIOS                                                     Page     1-194
  FABE  FF C3 99 BD BD 99		DB	0FFH, 0C3H, 099H, 0BDH, 0BDH, 099H, 0C3H, 0FFH	; 0AH
        C3 FF			
  FAC6  3F 0D 1C 3E 63 63		DB	03FH, 00DH, 01CH, 03EH, 063H, 063H, 03EH, 000H	; 0BH
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-195
 
 
@@ -11503,7 +11503,7 @@ GLaBIOS                                                     Page     1-195
        C7 00			
  FB9E  3C 66 3C 38 6D 66		DB	03CH, 066H, 03CH, 038H, 06DH, 066H, 03DH, 000H	; 26H &
        3D 00			
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-196
 
 
@@ -11562,7 +11562,7 @@ GLaBIOS                                                     Page     1-196
  FC76  3C 66 66 7E 66 66		DB	03CH, 066H, 066H, 07EH, 066H, 066H, 066H, 000H	; 41H A
        66 00			
  FC7E  7E 63 63 7E 63 63		DB	07EH, 063H, 063H, 07EH, 063H, 063H, 07EH, 000H	; 42H B
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-197
 
 
@@ -11621,7 +11621,7 @@ GLaBIOS                                                     Page     1-197
        02 00			
  FD56  3E 06 06 06 06 06		DB	03EH, 006H, 006H, 006H, 006H, 006H, 03EH, 000H	; 5DH ]
        3E 00			
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-198
 
 
@@ -11680,7 +11680,7 @@ GLaBIOS                                                     Page     1-198
  FE2E  00 00 63 36 1C 36		DB	000H, 000H, 063H, 036H, 01CH, 036H, 063H, 000H	; 78H x
        63 00			
  FE36  00 00 66 66 66 3E		DB	000H, 000H, 066H, 066H, 066H, 03EH, 006H, 07CH	; 79H y
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-199
 
 
@@ -11739,7 +11739,7 @@ GLaBIOS                                                     Page     1-199
  FE8A				INT_1A_DONE:
 					;STI 						; re-enable interrupts
  FE8A  5E				POP	SI
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-200
 
 
@@ -11798,7 +11798,7 @@ GLaBIOS                                                     Page     1-200
 				;  	  if reaches 0, turns off motor
 				; - only take jumps on special cases
 				;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-201
 
 
@@ -11857,7 +11857,7 @@ GLaBIOS                                                     Page     1-201
 				; Check if day has rolled over (24H + 9.67s) and reset 32 bit ticker if so
 				;
  FED1				INT_08_TICK_DAY:
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-202
 
 
@@ -11916,7 +11916,7 @@ GLaBIOS                                                     Page     1-202
  FEF9  FF23 R				DW  OFFSET INT_IRQ		; INT 0B	IRQ3 COM2
  FEFB  FF23 R				DW  OFFSET INT_IRQ		; INT 0C	IRQ4 COM1
  FEFD  FF23 R				DW  OFFSET INT_IRQ		; INT 0D	IRQ5 XT FDC
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-203
 
 
@@ -11975,7 +11975,7 @@ GLaBIOS                                                     Page     1-203
  FF43  1F				POP	DS
  FF44  58				POP	AX
  FF45  CF				IRET
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-204
 
 
@@ -12034,7 +12034,7 @@ GLaBIOS                                                     Page     1-204
 				;	8. Restore screen cursor position
 				;	9. Set BDA status to either success (0) or error (-1)
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-205
 
 
@@ -12093,7 +12093,7 @@ GLaBIOS                                                     Page     1-205
  FF80  B4 08				MOV	AH, 8					; get char/attr at current position
  FF82  CD 10				INT	10H					; AL = char at current position
  FF84  E8 FFB3 R			CALL	LPT_CHAR				; print char in AL
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-206
 
 
@@ -12152,7 +12152,7 @@ GLaBIOS                                                     Page     1-206
  FFAF  72 11				JC	LPT_CHAR_EXIT			; exit if print error
 				
 				;----------------------------------------------------------------------------;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-207
 
 
@@ -12211,7 +12211,7 @@ GLaBIOS                                                     Page     1-207
 				;----------------------------------------------------------------------------;
 				; Test Status Word
 				;
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-208
 
 
@@ -12260,7 +12260,7 @@ GLaBIOS                                                     Page     1-208
  FFEB  38				DB	CPU_TYPE			; architecture target
  FFEC  54				DB	ARCH_TYPE
 							IF ARCH_SUB_TYPE NE 0
- FFED  41				DB	ARCH_SUB_TYPE		; add optional ARCH sub-identifier
+ FFED  4A				DB	ARCH_SUB_TYPE		; add optional ARCH sub-identifier
 							ENDIF
  FFEE  20				DB	' '				; space before date
  FFEF  00				DB	0
@@ -12270,7 +12270,7 @@ GLaBIOS                                                     Page     1-208
 				;
 				BYTES_HERE	POWER_ON
  = 0000                      1	BYTES_HERE_POWER_ON = POWER_ON-$ 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Page     1-209
 
 
@@ -12290,7 +12290,7 @@ GLABIOS.ASM(12524): warning A4102: Segment near (or at) 64K limit
 				
 				END
 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-1
 
 
@@ -12342,7 +12342,7 @@ TEST1  . . . . . . . . . . . . .  	   1
 TEST_EFLAG . . . . . . . . . . .  	   5
 TEST_GFLAG . . . . . . . . . . .  	   1
 V20_OP1  . . . . . . . . . . . .  	   6
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-2
 
 
@@ -12401,7 +12401,7 @@ CRTC . . . . . . . . . . . . . .  	0010	0010
   CSL  . . . . . . . . . . . . .  	000A
   CEL  . . . . . . . . . . . . .  	000B
   SA_H . . . . . . . . . . . . .  	000C
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-3
 
 
@@ -12460,7 +12460,7 @@ EFLAGS86 . . . . . . . . . . . .  	0008	0008
   FAF  . . . . . . . . . . . . .  	0004	0001	0010	0000
   FR2  . . . . . . . . . . . . .  	0003	0001	0008	0000
   FPF  . . . . . . . . . . . . .  	0002	0001	0004	0000
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-4
 
 
@@ -12519,7 +12519,7 @@ FDC_MODE . . . . . . . . . . . .  	0008	0008
   FM18 . . . . . . . . . . . . .  	0004	0001	0010	0000
   FM0X . . . . . . . . . . . . .  	0003	0001	0008	0000
   FM0D . . . . . . . . . . . . .  	0002	0001	0004	0000
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-5
 
 
@@ -12578,7 +12578,7 @@ KB . . . . . . . . . . . . . . .  	0010	0002
   KBS  . . . . . . . . . . . . .  	0000	000A	03FF	0000
 KBBRK  . . . . . . . . . . . . .  	0008	0002
   KBRK . . . . . . . . . . . . .  	0007	0001	0080	0000
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-6
 
 
@@ -12637,7 +12637,7 @@ NMI  . . . . . . . . . . . . . .  	0008	0002
   NMIE . . . . . . . . . . . . .  	0007	0001	0080	0000
   NMIX . . . . . . . . . . . . .  	0000	0007	007F	0000
 OCW1 . . . . . . . . . . . . . .  	0008	0008
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-7
 
 
@@ -12696,7 +12696,7 @@ PPI_C_X_H  . . . . . . . . . . .  	0008	0006
   PC2PE  . . . . . . . . . . . .  	0007	0001	0080	0000
   PC2IE  . . . . . . . . . . . .  	0006	0001	0040	0000
   PC2T2  . . . . . . . . . . . .  	0005	0001	0020	0000
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-8
 
 
@@ -12755,7 +12755,7 @@ VID_CSGFX  . . . . . . . . . . .  	0008	0005
   CGIN . . . . . . . . . . . . .  	0003	0001	0008	0008
   CGBG . . . . . . . . . . . . .  	0000	0003	0007	0007
 VID_CSTXT  . . . . . . . . . . .  	0008	0004
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-9
 
 
@@ -12809,17 +12809,17 @@ ARCH_LASER . . . . . . . . . . .  	NUMBER	004C
 ARCH_M88 . . . . . . . . . . . .  	NUMBER	004D	
 ARCH_MARTY . . . . . . . . . . .  	NUMBER	0043	
 ARCH_MIST  . . . . . . . . . . .  	NUMBER	0049	
-ARCH_SUB_TYPE  . . . . . . . . .  	TEXT  "A"		
+ARCH_SUB_TYPE  . . . . . . . . .  	TEXT  "J"		
 ARCH_TD3300  . . . . . . . . . .  	NUMBER	0053	
 ARCH_TURBO . . . . . . . . . . .  	NUMBER	0054	
 ARCH_TYPE  . . . . . . . . . . .  	ALIAS	 ARCH_TURBO		
 ARCH_UM82  . . . . . . . . . . .  	NUMBER	0055	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-10
 
 
 ARCH_VEN888  . . . . . . . . . .  	NUMBER	0056	
-ARCH_VIRTUALXT . . . . . . . . .  	NUMBER	0041	
+ARCH_VIRTUALXT . . . . . . . . .  	NUMBER	004A	
 ATKB_CMD . . . . . . . . . . . .  	NUMBER	0064	
 ATKB_IO  . . . . . . . . . . . .  	NUMBER	0060	
 
@@ -12873,7 +12873,7 @@ BOOT_SPEED . . . . . . . . . . .  	ALIAS	 BOOT_TURBO
 BOOT_TURBO . . . . . . . . . . .  	NUMBER	0054	
 BROWN  . . . . . . . . . . . . .  	NUMBER	0006	
 BS . . . . . . . . . . . . . . .  	NUMBER	0008	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-11
 
 
@@ -12932,7 +12932,7 @@ CLEAR_POST_SCREEN  . . . . . . .  	L NEAR	E455	BIOS
 COLD_BOOT  . . . . . . . . . . .  	NUMBER	0000	
 COM  . . . . . . . . . . . . . .  		0009	
 COM1_DATA  . . . . . . . . . . .  	NUMBER	03F8	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-12
 
 
@@ -12991,7 +12991,7 @@ DARKGRAY . . . . . . . . . . . .  	NUMBER	0008
 DARKGREEN  . . . . . . . . . . .  	NUMBER	0002	
 DARKMAGENTA  . . . . . . . . . .  	NUMBER	0005	
 DARKRED  . . . . . . . . . . . .  	NUMBER	0004	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-13
 
 
@@ -13050,7 +13050,7 @@ DWORD_HEX  . . . . . . . . . . .  	N PROC	F77F	BIOS	Length = 0032
 DWS  . . . . . . . . . . . . . .  		0005	
 
 EKB_FLAGS1 . . . . . . . . . . .  	L BYTE	0096	_BDA
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-14
 
 
@@ -13109,7 +13109,7 @@ FDC_HLT_WAIT . . . . . . . . . .  	NUMBER	0001
 FDC_INIT_DMA . . . . . . . . . .  	L NEAR	ED0C	BIOS
 FDC_INIT_DMA_EXIT  . . . . . . .  	L NEAR	ED4D	BIOS
 FDC_IPL_SW . . . . . . . . . . .  	NUMBER	0000	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-15
 
 
@@ -13168,7 +13168,7 @@ FDC_WAIT_ERR_EXIT_OK . . . . . .  	L NEAR	EF3F	BIOS
 FDC_WAIT_EXIT  . . . . . . . . .  	L NEAR	EEC5	BIOS
 FDC_WAIT_INT . . . . . . . . . .  	N PROC	EF6A	BIOS	Length = 0025
 FDC_WAIT_INT_DONE  . . . . . . .  	L NEAR	EF8C	BIOS
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-16
 
 
@@ -13227,7 +13227,7 @@ FOUND_ROM  . . . . . . . . . . .  	L NEAR	E51D	BIOS
 FPF  . . . . . . . . . . . . . .  		0002	
 FPU  . . . . . . . . . . . . . .  		0001	
 FPU_CHECK  . . . . . . . . . . .  	L NEAR	F675	BIOS
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-17
 
 
@@ -13286,7 +13286,7 @@ HD_PORT  . . . . . . . . . . . .  	L BYTE	0077	_BDA
 HEART  . . . . . . . . . . . . .  	NUMBER	0003	
 HELLO_RAND_TAGLINE . . . . . . .  	N PROC	F8C7	BIOS	Length = 006F
 HELLO_WORLD  . . . . . . . . . .  	L NEAR	E24C	BIOS
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-18
 
 
@@ -13345,7 +13345,7 @@ INT_10_3 . . . . . . . . . . . .  	N PROC	F1FC	BIOS	Length = 0011
 INT_10_3_CUR_PAGE  . . . . . . .  	N PROC	F1EF	BIOS	Length = 001E
 INT_10_4 . . . . . . . . . . . .  	N PROC	F99F	BIOS	Length = 0080
 INT_10_4_CAL_1 . . . . . . . . .  	L NEAR	F9DA	BIOS
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-19
 
 
@@ -13404,7 +13404,7 @@ INT_10_B_SET_COL . . . . . . . .  	L NEAR	F4CB	BIOS
 INT_10_B_SET_PAL . . . . . . . .  	L NEAR	F4D2	BIOS
 INT_10_C . . . . . . . . . . . .  	N PROC	F4EE	BIOS	Length = 0021
 INT_10_CGA_CHECK . . . . . . . .  	L NEAR	F294	BIOS
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-20
 
 
@@ -13463,7 +13463,7 @@ INT_13_BAD_CMD . . . . . . . . .  	L NEAR	EC7E	BIOS
 INT_13_DONE  . . . . . . . . . .  	L NEAR	EC80	BIOS
 INT_13_EXIT  . . . . . . . . . .  	L NEAR	EC8C	BIOS
 INT_13_EXIT_1  . . . . . . . . .  	L NEAR	EC8F	BIOS
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-21
 
 
@@ -13522,7 +13522,7 @@ INT_KB_ALT . . . . . . . . . . .  	N PROC	EA95	BIOS	Length = 003E
 INT_KB_ALT_BREAK . . . . . . . .  	L NEAR	EB8C	BIOS
 INT_KB_ALT_SKIP  . . . . . . . .  	L BYTE	EC1A	BIOS
 INT_KB_CHECK_CTRL_NUM  . . . . .  	L NEAR	E9F0	BIOS
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-22
 
 
@@ -13581,7 +13581,7 @@ IRQ3 . . . . . . . . . . . . . .  		0003
 IRQ4 . . . . . . . . . . . . . .  		0004	
 IRQ5 . . . . . . . . . . . . . .  		0005	
 IRQ6 . . . . . . . . . . . . . .  		0006	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-23
 
 
@@ -13640,7 +13640,7 @@ KB_BUF_TL  . . . . . . . . . . .  	L WORD	001C	_BDA
 KB_FILTER_SC . . . . . . . . . .  	NUMBER	0000	
 KB_FLAGS . . . . . . . . . . . .  	L WORD	0017	_BDA
 KB_FLAGS1  . . . . . . . . . . .  	L BYTE	0017	_BDA
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-24
 
 
@@ -13699,7 +13699,7 @@ LASER_TURBO  . . . . . . . . . .  	NUMBER	01F0
 LBI  . . . . . . . . . . . . . .  		0004	
 LBN  . . . . . . . . . . . . . .  		0000	
 LCBK . . . . . . . . . . . . . .  		0006	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-25
 
 
@@ -13758,7 +13758,7 @@ L_POST_L . . . . . . . . . . . .  	NUMBER	0002
 L_VECTOR_TABLE . . . . . . . . .  	NUMBER	001F	
 L_VID_BDA  . . . . . . . . . . .  	NUMBER	001E	
 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-26
 
 
@@ -13817,7 +13817,7 @@ NL_ANY_KEY . . . . . . . . . . .  	L BYTE	E4A5	BIOS
 NL_Z . . . . . . . . . . . . . .  	L BYTE	E485	BIOS
 NMIE . . . . . . . . . . . . . .  		0007	
 NMIX . . . . . . . . . . . . . .  		0000	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-27
 
 
@@ -13876,7 +13876,7 @@ PCIE . . . . . . . . . . . . . .  		0006
 PCMB . . . . . . . . . . . . . .  		0002	
 PCPE . . . . . . . . . . . . . .  		0007	
 PCT2 . . . . . . . . . . . . . .  		0005	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-28
 
 
@@ -13935,7 +13935,7 @@ POST_DETECT_COM  . . . . . . . .  	L NEAR	E2FE	BIOS
 POST_DETECT_GAM  . . . . . . . .  	L NEAR	E2F3	BIOS
 POST_DETECT_LPT  . . . . . . . .  	L NEAR	E324	BIOS
 POST_DETECT_PORTS  . . . . . . .  	N PROC	E2E3	BIOS	Length = 0069
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-29
 
 
@@ -13994,7 +13994,7 @@ POST_TAB_COL_I . . . . . . . . .  	NUMBER	0013
 POST_TEST_CHK_ROM  . . . . . . .  	NUMBER	0001	
 POST_TEST_DMA  . . . . . . . . .  	NUMBER	0001	
 POST_TEST_DMA_TC0  . . . . . . .  	NUMBER	0001	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-30
 
 
@@ -14053,7 +14053,7 @@ ROM_SCAN_POST_DONE . . . . . . .  	L NEAR	F96E	BIOS
 ROM_SCAN_POST_EXIT . . . . . . .  	L NEAR	F971	BIOS
 ROPC . . . . . . . . . . . . . .  		0000	
 RTC_DATA . . . . . . . . . . . .  	L WORD	00EE	_BDA
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-31
 
 
@@ -14112,7 +14112,7 @@ TSRE . . . . . . . . . . . . . .  		0006
 TURBO  . . . . . . . . . . . . .  		0003	
 TURBO_NONE . . . . . . . . . . .  	NUMBER	0000	
 TURBO_REV  . . . . . . . . . . .  	NUMBER	0002	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-32
 
 
@@ -14171,7 +14171,7 @@ VID_VEC  . . . . . . . . . . . .  	L WORD	0003	_VID_BIOS
 VL . . . . . . . . . . . . . . .  	NUMBER	00B3	
 VRW  . . . . . . . . . . . . . .  		0003	
 VSHS . . . . . . . . . . . . . .  		0000	
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-33
 
 
@@ -14230,7 +14230,7 @@ ZERO_ALL_START . . . . . . . . .  	L NEAR	E5BC	BIOS
 ??001D . . . . . . . . . . . . .  	L NEAR	E890	BIOS
 ??001E . . . . . . . . . . . . .  	L NEAR	E897	BIOS
 ??001F . . . . . . . . . . . . .  	L NEAR	E899	BIOS
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-34
 
 
@@ -14283,7 +14283,7 @@ _SI  . . . . . . . . . . . . . .  	NUMBER	000E
 _SP  . . . . . . . . . . . . . .  	NUMBER	000C	
 __POWER_ON . . . . . . . . . . .  	L FAR 	0000	RESET
 
-Microsoft (R) Macro Assembler Version 5.10                  10/15/24 15:11:5
+Microsoft (R) Macro Assembler Version 5.10                  10/16/24 09:28:0
 GLaBIOS                                                     Symbols-35
 
 
@@ -14292,7 +14292,7 @@ GLaBIOS                                                     Symbols-35
   14138 Total   Lines
    1522 Symbols
 
-  46474 + 311893 Bytes symbol space free
+  46588 + 311779 Bytes symbol space free
 
       1 Warning Errors
       0 Severe  Errors

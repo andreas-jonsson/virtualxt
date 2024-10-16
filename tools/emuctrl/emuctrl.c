@@ -77,7 +77,7 @@ static unsigned char read_data(void) {
 static void turbo_on(void) {
 #asm
 	in al, PPI_PORT
-	or al, #0x4
+	and al, #0xFB
 	out PPI_PORT, al
 #endasm
 }
@@ -85,7 +85,7 @@ static void turbo_on(void) {
 static void turbo_off(void) {
 #asm
 	in al, PPI_PORT
-	and al, #0xFB
+	or al, #0x4
 	out PPI_PORT, al
 #endasm
 }
