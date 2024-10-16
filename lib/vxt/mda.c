@@ -95,16 +95,16 @@ static vxt_error install(struct mda_video *m, vxt_system *s) {
 }
 
 static vxt_error reset(struct mda_video *m, struct mda_video *state) {
-    if (state)
-        return VXT_CANT_RESTORE;
+    if (state) {
+        memcpy(m, state, sizeof(struct mda_video));
+    } else {
+		m->cursor_visible = true;
+		m->cursor_offset = 0;
+		m->is_dirty = true;
 
-    m->cursor_visible = true;
-    m->cursor_offset = 0;
-    m->is_dirty = true;
-
-    for (int i = 0; i < 0x800; i++)
-        m->dirty_cell[i] = true;
-
+		for (int i = 0; i < 0x800; i++)
+			m->dirty_cell[i] = true;
+    }
     return VXT_NO_ERROR;
 }
 

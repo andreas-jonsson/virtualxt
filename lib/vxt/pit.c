@@ -111,8 +111,9 @@ static vxt_error install(struct pit *c, vxt_system *s) {
 
 static vxt_error reset(struct pit *c, struct pit *state) {
     if (state)
-        return VXT_CANT_RESTORE;
-    vxt_memclear(c, sizeof(struct pit));
+        memcpy(c, state, sizeof(struct pit));
+    else
+        vxt_memclear(c, sizeof(struct pit));
     return VXT_NO_ERROR;
 }
 
