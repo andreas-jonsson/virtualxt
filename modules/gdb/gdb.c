@@ -309,7 +309,7 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
         vreg->ds = (vxt_word)r[GDB_CPU_I386_REG_DS];
         vreg->es = (vxt_word)r[GDB_CPU_I386_REG_ES];
 
-        vreg->flags = (vxt_word)(r[GDB_CPU_I386_REG_PS] & ALL_FLAGS) | 0xF002;
+        vreg->flags = (vxt_word)(r[GDB_CPU_I386_REG_PS] & ALL_FLAGS) | 2;
         vreg->ip = (vxt_word)(r[GDB_CPU_I386_REG_PC] - r[GDB_CPU_I386_REG_CS] * 16);
         vreg->sp = (vxt_word)(r[GDB_CPU_I386_REG_ESP] - r[GDB_CPU_I386_REG_SS] * 16);
     }
