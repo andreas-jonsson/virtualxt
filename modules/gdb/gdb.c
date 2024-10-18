@@ -28,6 +28,7 @@
     #include <winsock2.h>
     #include <ws2tcpip.h>
     #define close closesocket
+    #define sleep Sleep
 #else
     #include <unistd.h>
     #include <sys/socket.h>
@@ -186,7 +187,7 @@ static bool accept_client(struct gdb *dbg, vxt_system *sys) {
     if ((dbg->state.client = accept(dbg->server, (struct sockaddr*)&addr, &ln)) == -1)
         return false;
         
-    int one = 1;
+    const int one = 1;
     setsockopt(dbg->state.client, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 
     dbg->state.num_bps = 0;
