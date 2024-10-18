@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
 		if ((pcap_next_ex(handle, &header, &data) <= 0) || (header->len == 0))
 			continue;
 			
-		if (sendto(sockfd, (void*)data, header->len, 0, (const struct sockaddr*)&addr, sizeof(addr)) != header->len)
+		if (sendto(sockfd, (void*)data, header->len, 0, (const struct sockaddr*)&addr, sizeof(addr)) != (int)header->len)
 			puts("WARNING: Could not send packet to emulator!");
 		else
 			DEBUG("Package sent: %d bytes", header->len);
