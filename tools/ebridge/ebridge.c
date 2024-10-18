@@ -1,0 +1,210 @@
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
+//
+// This software is provided 'as-is', without any express or implied
+// warranty. In no event will the authors be held liable for any damages
+// arising from the use of this software.
+//
+// Permission is granted to anyone to use this software for any purpose,
+// including commercial applications, and to alter it and redistribute it
+// freely, subject to the following restrictions:
+//
+// 1. The origin of this software must not be misrepresented; you must not
+//    claim that you wrote the original software. If you use this software
+//    in a product, an acknowledgment in the product documentation would be
+//    appreciated but is not required.
+//
+// 2. Altered source versions must be plainly marked as such, and must not be
+//    misrepresented as being the original software.
+//
+// 3. This notice may not be removed or altered from any source
+//    distribution.
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <pcap/pcap.h>
+
+#ifndef _WIN32
+	#include <sys/socket.h>
+	#include <arpa/inet.h>
+#endif
+
+unsigned int debug_msg_count = 0;
+//#define DEBUG(str) { printf("[%d] DEBUG: %s\n", debug_msg_count++, str); }
+#define DEBUG(str) {}
+
+#define MAX_PACKET_SIZE 0x5DC // Hardcoded in the driver extension and module.
+#define PORT 1235
+
+pcap_t *handle = NULL;
+int sockfd = -1;
+unsigned char buffer[MAX_PACKET_SIZE] = {0};
+char nif[64] = {0};
+
+static bool has_data(int fd) {
+	if (fd == -1)
+		return false;
+
+	fd_set fds;
+	FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+	struct timeval timeout = {0};
+
+    return select(fd + 1, &fds, NULL, NULL, &timeout) > 0;
+}
+
+static pcap_t *init_pcap(void) {
+	pcap_t *handle = NULL;
+	pcap_if_t *devs = NULL;
+	char buffer[PCAP_ERRBUF_SIZE] = {0};
+
+	puts("Initialize network:");
+
+	if (pcap_findalldevs(&devs, buffer)) {
+		printf("pcap_findalldevs() failed with error: %s\n", buffer);
+		return NULL;
+	}
+
+	int i = 0;
+	pcap_if_t *dev = NULL;
+	for (dev = devs; dev; dev = dev->next) {
+		i++;
+		if (!strcmp(dev->name, nif))
+			break;
+	}
+
+	if (!dev) {
+		puts("No network interface found! (Check device name.)");
+		pcap_freealldevs(devs);
+		return NULL;
+	}
+
+	if (!(handle = pcap_open_live(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, 1, buffer))) {
+		printf("pcap error: %s\n", buffer);
+		pcap_freealldevs(devs);
+		return NULL;
+	}
+
+	printf("%d - %s\n", i, dev->name);
+	pcap_freealldevs(devs);
+	return handle;
+}
+
+static bool list_devices(int *prefered) {
+	pcap_if_t *devs = NULL;
+	char buffer[PCAP_ERRBUF_SIZE] = {0};
+
+	if (pcap_findalldevs(&devs, buffer)) {
+		printf("pcap_findalldevs() failed with error: %s\n", buffer);
+		return false;
+	}
+
+	puts("Host network devices:");
+
+	int i = 0;
+	pcap_if_t *selected = NULL;
+
+	for (pcap_if_t *dev = devs; dev; dev = dev->next) {
+		printf("%d - %s", ++i, dev->name);
+		if (dev->description)
+			printf(" (%s)", dev->description);
+
+		if (!(dev->flags & PCAP_IF_LOOPBACK) && ((dev->flags & PCAP_IF_CONNECTION_STATUS) == PCAP_IF_CONNECTION_STATUS_CONNECTED)) {
+			for (struct pcap_addr *pa = dev->addresses; pa; pa = pa->next) {
+				if (pa->addr->sa_family == AF_INET) {
+					struct sockaddr_in *sin = (struct sockaddr_in*)pa->addr;
+					printf(" - %s", inet_ntoa(sin->sin_addr));
+					if (selected)
+						selected = dev;
+				}
+			}
+		}
+		puts("");
+	}
+
+	pcap_freealldevs(devs);
+	if (prefered && selected)
+		*prefered = i;
+	return true;
+}
+
+int main(int argc, char *argv[]) {
+	if (argc < 2) {
+		puts("Usage: ebridge <network-device>");
+		return -1;
+	}
+	strncpy(nif, argv[1], sizeof(nif) - 1);
+	
+	if (!list_devices(NULL))
+		return -2;
+
+	if (!(handle = init_pcap()))
+		return -3;
+		
+	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		puts("ERROR: Could not create socket!");
+		return -4;
+	}
+	
+	socklen_t addr_len = 0;
+	struct sockaddr_in addr = {0};
+	
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	addr.sin_port = htons(PORT);
+	
+	if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+		puts("ERROR: Bind failed");
+		return -5;
+	}
+	
+	addr.sin_port = htons(PORT + 1);
+	
+	puts("Waiting for packets...");
+	
+	for (;;) {
+		if (!addr_len)
+			sleep(1);
+
+		ssize_t pkt_sz = 0;
+		if (has_data(sockfd)) {
+			socklen_t ln = sizeof(addr);
+			pkt_sz = recvfrom(sockfd, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&addr, &ln);
+			if (pkt_sz <= 0) {
+				DEBUG("'recvfrom' failed!");
+				continue;
+			}
+			
+			if (!addr_len) {
+				addr_len = ln;
+				puts("Connected to emulator!");
+			} else {
+				DEBUG("Package received!");
+			}
+		}
+
+		if (!addr_len) {
+			DEBUG("Waiting for initial connection...");
+			continue;
+		}
+			
+		if (pkt_sz > 0) {
+			if (pcap_sendpacket(handle, buffer, pkt_sz))
+				puts("WARNING: Could not send packet on physical network!");
+		}
+		
+		const unsigned char *data = NULL;
+		struct pcap_pkthdr *header = NULL;
+		
+		if (pcap_next_ex(handle, &header, &data) <= 0)
+			continue;
+			
+		if (sendto(sockfd, data, header->len, 0, (const struct sockaddr*)&addr, sizeof(addr)) != header->len)
+			puts("WARNING: Could not send packet to emulator!");
+		else
+			DEBUG("Package sent!");
+	}
+
+	close(sockfd);
+}

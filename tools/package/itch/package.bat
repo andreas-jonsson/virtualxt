@@ -2,11 +2,12 @@
 
 set PACKAGE_DEST="%GITHUB_WORKSPACE%\package\virtualxt"
 if exist %PACKAGE_DEST%\ rmdir /q /s %PACKAGE_DEST%
-mkdir %PACKAGE_DEST%\bios %PACKAGE_DEST%\boot %PACKAGE_DEST%\modules\include\vxt
+mkdir %PACKAGE_DEST%\bios %PACKAGE_DEST%\boot
 
 copy "%GITHUB_WORKSPACE%\SDL2-%SDL2_VERSION%\x86_64-w64-mingw32\bin\SDL2.dll" %PACKAGE_DEST%
 
 copy build\sdl2\virtualxt.exe %PACKAGE_DEST%
+copy build\ebridge\ebridge.exe %PACKAGE_DEST%
 copy bios\pcxtbios.bin %PACKAGE_DEST%\bios
 copy bios\GLABIOS.ROM %PACKAGE_DEST%\bios
 copy bios\GLaTICK_0.8.4_AT.ROM %PACKAGE_DEST%\bios

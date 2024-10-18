@@ -21,38 +21,40 @@
 
 #include <vxt/vxtu.h>
 
-#ifdef LIBPCAP
-
 #include <string.h>
 #include <stdlib.h>
-#include <pcap/pcap.h>
+#include <time.h>
 
 #ifndef _WIN32
 	#include <sys/socket.h>
-	#include <netinet/in.h>
 	#include <arpa/inet.h>
 #endif
 
-// This is hardcoded in the driver extension.
-#define MAX_PACKET_SIZE 0x3F00
+#define MAX_PACKET_SIZE 0x5DC // Hardcoded in the driver extension.
+#define POLL_DELAY 10000
+#define PORT 1235
 
-struct network {
-	pcap_t *handle;
+struct ebridge {
 	bool can_recv;
-	char nif[128];
+	
+	int sockfd;
+	struct sockaddr_in addr;
+	char bridge_addr[64];
 
-	int pkg_len;
+	// Temp buffer for package
 	vxt_byte buffer[MAX_PACKET_SIZE];
+	
+	vxt_word pkg_len;
 	vxt_word buf_seg;
 	vxt_word buf_offset;
 };
 
-static vxt_byte in(struct network *n, vxt_word port) {
+static vxt_byte in(struct ebridge *n, vxt_word port) {
 	(void)n; (void)port;
 	return 0; // Return 0 to indicate that we have a network card.
 }
 
-static void out(struct network *n, vxt_word port, vxt_byte data) {
+static void out(struct ebridge *n, vxt_word port, vxt_byte data) {
 	/*
 		This is the API of Fake86's packet driver
 		with the VirtualXT extension.
@@ -79,13 +81,13 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 			for (int i = 0; i < (int)r->cx; i++)
 				n->buffer[i] = vxt_system_read_byte(s, VXT_POINTER(r->ds, r->si + i));
 
-			if (pcap_sendpacket(n->handle, n->buffer, r->cx))
+			if (sendto(n->sockfd, n->buffer, r->cx, 0, (const struct sockaddr*)&n->addr, sizeof(n->addr)) != r->cx)
 				VXT_LOG("Could not send packet!");
 			break;
 		case 2: // Return packet info (packet buffer in DS:SI, length in CX)
 			r->ds = n->buf_seg;
 			r->si = n->buf_offset;
-			r->cx = (vxt_word)n->pkg_len;
+			r->cx = n->pkg_len;
 			break;
 		case 3: // Copy packet to final destination (given in ES:DI)
 			for (int i = 0; i < (int)r->cx; i++)
@@ -102,137 +104,88 @@ static void out(struct network *n, vxt_word port, vxt_byte data) {
 	}
 }
 
-static vxt_error reset(struct network *n, struct network *state) {
+static vxt_error reset(struct ebridge *n, struct ebridge *state) {
 	if (state)
 		return VXT_CANT_RESTORE;
+		
+	n->pkg_len = n->buf_offset = 0;
+	n->buf_seg = 0xD000;
 	n->can_recv = false;
-	n->pkg_len = 0;
-	n->buf_seg = n->buf_offset = 0;
 	return VXT_NO_ERROR;
 }
 
-static const char *name(struct network *n) {
+static const char *name(struct ebridge *n) {
 	(void)n; return "Network Adapter (Fake86 Interface)";
 }
 
-static vxt_error timer(struct network *n, vxt_timer_id id, int cycles) {
+static bool has_data(int fd) {
+	if (fd == -1)
+		return false;
+
+	fd_set fds;
+	FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+	struct timeval timeout = {0};
+
+    return select(fd + 1, &fds, NULL, NULL, &timeout) > 0;
+}
+
+static vxt_error timer(struct ebridge *n, vxt_timer_id id, int cycles) {
 	(void)id; (void)cycles;
 	vxt_system *s = VXT_GET_SYSTEM(n);
 
-	if (!n->can_recv || !n->buf_seg)
+check_data:
+
+	if (!n->can_recv || !has_data(n->sockfd))
 		return VXT_NO_ERROR;
 
-	const vxt_byte *data = NULL;
-	struct pcap_pkthdr *header = NULL;
-
-	if (pcap_next_ex(n->handle, &header, &data) <= 0)
-		return VXT_NO_ERROR;
-
-	if (header->len > MAX_PACKET_SIZE) {
-		VXT_LOG("Invalid package size!");
-		return VXT_NO_ERROR;
+	struct sockaddr_in addr;
+	socklen_t addr_len = sizeof(addr);
+	
+	ssize_t sz = recvfrom(n->sockfd, n->buffer, MAX_PACKET_SIZE, MSG_WAITALL, (struct sockaddr*)&addr, &addr_len);
+	if (sz <= 0) {
+		VXT_LOG("'recvfrom' failed!");
+		goto check_data;
 	}
 
 	n->can_recv = false;
-	n->pkg_len = header->len;
+	n->pkg_len = (vxt_word)sz;
 
 	for (int i = 0; i < n->pkg_len; i++)
-		vxt_system_write_byte(s, VXT_POINTER(n->buf_seg, n->buf_offset + i), data[i]);
+		vxt_system_write_byte(s, VXT_POINTER(n->buf_seg, n->buf_offset + i), n->buffer[i]);
 	vxt_system_interrupt(s, 6);
 
 	return VXT_NO_ERROR;
 }
 
-static pcap_t *init_pcap(struct network *n) {
-	pcap_t *handle = NULL;
-	pcap_if_t *devs = NULL;
-	char buffer[PCAP_ERRBUF_SIZE] = {0};
-
-	puts("Initialize network:");
-
-	if (pcap_findalldevs(&devs, buffer)) {
-		VXT_LOG("pcap_findalldevs() failed with error: %s", buffer);
-		return NULL;
-	}
-
-	int i = 0;
-	pcap_if_t *dev = NULL;
-	for (dev = devs; dev; dev = dev->next) {
-		i++;
-		if (!strcmp(dev->name, n->nif))
-			break;
-	}
-
-	if (!dev) {
-		VXT_LOG("No network interface found! (Check device name.)");
-		pcap_freealldevs(devs);
-		return NULL;
-	}
-
-	if (!(handle = pcap_open_live(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, 1, buffer))) {
-		VXT_LOG("pcap error: %s", buffer);
-		pcap_freealldevs(devs);
-		return NULL;
-	}
-
-	printf("%d - %s\n", i, dev->name);
-	pcap_freealldevs(devs);
-	return handle;
-}
-
-static bool list_devices(int *prefered) {
-	pcap_if_t *devs = NULL;
-	char buffer[PCAP_ERRBUF_SIZE] = {0};
-
-	if (pcap_findalldevs(&devs, buffer)) {
-		VXT_LOG("pcap_findalldevs() failed with error: %s", buffer);
-		return false;
-	}
-
-	puts("Host network devices:");
-
-	int i = 0;
-	pcap_if_t *selected = NULL;
-
-	for (pcap_if_t *dev = devs; dev; dev = dev->next) {
-		printf("%d - %s", ++i, dev->name);
-		if (dev->description)
-			printf(" (%s)", dev->description);
-
-		if (!(dev->flags & PCAP_IF_LOOPBACK) && ((dev->flags & PCAP_IF_CONNECTION_STATUS) == PCAP_IF_CONNECTION_STATUS_CONNECTED)) {
-			for (struct pcap_addr *pa = dev->addresses; pa; pa = pa->next) {
-				if (pa->addr->sa_family == AF_INET) {
-					struct sockaddr_in *sin = (struct sockaddr_in*)pa->addr;
-					printf(" - %s", inet_ntoa(sin->sin_addr));
-					if (selected)
-						selected = dev;
-				}
-			}
-		}
-		puts("");
-	}
-
-	pcap_freealldevs(devs);
-	if (prefered && selected)
-		*prefered = i;
-	return true;
-}
-
-static vxt_error install(struct network *n, vxt_system *s) {
-	struct vxt_peripheral *p = VXT_GET_PERIPHERAL(n);
-	if (!list_devices(NULL))
+static vxt_error install(struct ebridge *n, vxt_system *s) {
+	if ((n->sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		VXT_LOG("Could not create socket!");
 		return VXT_USER_ERROR(0);
+	}
+	
+	VXT_LOG("Server address: %s:%d", n->bridge_addr, PORT);
+	VXT_LOG("Network MTU: %d", MAX_PACKET_SIZE);
 
-	if (!(n->handle = init_pcap(n)))
+	n->addr.sin_family = AF_INET;
+	n->addr.sin_addr.s_addr = inet_addr(n->bridge_addr);
+	n->addr.sin_port = htons(PORT + 1);
+	
+	if (bind(n->sockfd, (struct sockaddr*)&n->addr, sizeof(n->addr)) < 0) {
+		VXT_LOG("Bind failed");
 		return VXT_USER_ERROR(1);
+	}
+	
+	n->addr.sin_port = htons(PORT);
 
+	struct vxt_peripheral *p = VXT_GET_PERIPHERAL(n);
 	vxt_system_install_io_at(s, p, 0xB2);
-	vxt_system_install_timer(s, p, 10000);
+	vxt_system_install_timer(s, p, POLL_DELAY);
 	return VXT_NO_ERROR;
 }
 
-VXTU_MODULE_CREATE(network, {
-	strncpy(DEVICE->nif, ARGS, sizeof(DEVICE->nif) - 1);
+VXTU_MODULE_CREATE(ebridge, {
+	strncpy(DEVICE->bridge_addr, *ARGS ? ARGS : "127.0.0.1", sizeof(DEVICE->bridge_addr) - 1);
 
 	PERIPHERAL->install = &install;
 	PERIPHERAL->name = &name;
@@ -241,10 +194,3 @@ VXTU_MODULE_CREATE(network, {
 	PERIPHERAL->io.in = &in;
 	PERIPHERAL->io.out = &out;
 })
-
-#else
-
-struct network { int _; };
-VXTU_MODULE_CREATE(network, { return NULL; })
-
-#endif

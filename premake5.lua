@@ -221,6 +221,22 @@ workspace "virtualxt"
         defines "VXT_EXPORT"
         removefiles { "lib/vxt/testing.h", "lib/vxt/testsuit.c" }
 
+	project "ebridge-tool"
+		kind "ConsoleApp"
+		targetname "ebridge"
+		targetdir "build/ebridge"
+		
+		defines { "LIBPCAP", "_DEFAULT_SOURCE=1" }
+		files "tools/ebridge/ebridge.c"
+
+		filter "system:windows"
+			includedirs "../../tools/npcap/sdk/Include"
+			defines "_WINSOCK_DEPRECATED_NO_WARNINGS"
+			links { "Ws2_32", "tools/npcap/sdk/Lib/x64/wpcap" }
+			
+		filter "not system:windows"
+			links "pcap"
+
     project "libretro-frontend"
         kind "SharedLib"
         targetname "virtualxt_libretro"

@@ -30,7 +30,7 @@ intFC_handler:
     iret
 
 packet_buffer:
-	times 0x3F00 dd 0
+	times 0x5DC dd 0 ; 1500 bytes
 
 end_of_resident:
 
