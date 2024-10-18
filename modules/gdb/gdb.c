@@ -188,7 +188,7 @@ static bool accept_client(struct gdb *dbg, vxt_system *sys) {
         return false;
         
     const int one = 1;
-    setsockopt(dbg->state.client, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+    setsockopt(dbg->state.client, IPPROTO_TCP, TCP_NODELAY, (void*)&one, sizeof(one));
 
     dbg->state.num_bps = 0;
     dbg->state.sys = sys;
