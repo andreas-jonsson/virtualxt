@@ -84,7 +84,7 @@ static void out(struct ebridge *n, vxt_word port, vxt_byte data) {
 			for (int i = 0; i < (int)r->cx; i++)
 				n->buffer[i] = vxt_system_read_byte(s, VXT_POINTER(r->ds, r->si + i));
 
-			if (sendto(n->sockfd, n->buffer, r->cx, 0, (const struct sockaddr*)&n->addr, sizeof(n->addr)) != r->cx)
+			if (sendto(n->sockfd, (void*)n->buffer, r->cx, 0, (const struct sockaddr*)&n->addr, sizeof(n->addr)) != r->cx)
 				VXT_LOG("Could not send packet!");
 			break;
 		case 2: // Return packet info (packet buffer in DS:SI, length in CX)
@@ -145,7 +145,7 @@ check_data:
 	struct sockaddr_in addr;
 	socklen_t addr_len = sizeof(addr);
 	
-	ssize_t sz = recvfrom(n->sockfd, n->buffer, MAX_PACKET_SIZE, MSG_WAITALL, (struct sockaddr*)&addr, &addr_len);
+	ssize_t sz = recvfrom(n->sockfd, (void*)n->buffer, MAX_PACKET_SIZE, 0, (struct sockaddr*)&addr, &addr_len);
 	if (sz <= 0) {
 		VXT_LOG("'recvfrom' failed!");
 		goto check_data;

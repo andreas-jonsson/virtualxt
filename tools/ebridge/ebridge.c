@@ -39,7 +39,7 @@ unsigned int debug_msg_count = 0;
 
 pcap_t *handle = NULL;
 int sockfd = -1;
-unsigned char buffer[MAX_PACKET_SIZE] = {0};
+char buffer[MAX_PACKET_SIZE] = {0};
 char nif[64] = {0};
 
 static bool has_data(int fd) {
@@ -87,6 +87,13 @@ static pcap_t *init_pcap(void) {
 	}
 
 	printf("%d - %s\n", i, dev->name);
+	
+	if (pcap_activate(handle) == PCAP_WARNING_PROMISC_NOTSUP) {
+		printf("ERROR: Promiscuous mode is not supported on: %s\n", dev->name);
+		pcap_freealldevs(devs);
+		return NULL;
+	}
+	
 	pcap_freealldevs(devs);
 	return handle;
 }
@@ -131,13 +138,11 @@ static bool list_devices(int *prefered) {
 
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
-		puts("Usage: ebridge <network-device>");
+		puts("Usage: ebridge <network-device>\n");
+		list_devices(NULL);
 		return -1;
 	}
 	strncpy(nif, argv[1], sizeof(nif) - 1);
-	
-	if (!list_devices(NULL))
-		return -2;
 
 	if (!(handle = init_pcap()))
 		return -3;
@@ -170,7 +175,7 @@ int main(int argc, char *argv[]) {
 		ssize_t pkt_sz = 0;
 		if (has_data(sockfd)) {
 			socklen_t ln = sizeof(addr);
-			pkt_sz = recvfrom(sockfd, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&addr, &ln);
+			pkt_sz = recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &ln);
 			if (pkt_sz <= 0) {
 				DEBUG("'recvfrom' failed!");
 				continue;
@@ -197,7 +202,7 @@ int main(int argc, char *argv[]) {
 		const unsigned char *data = NULL;
 		struct pcap_pkthdr *header = NULL;
 		
-		if (pcap_next_ex(handle, &header, &data) <= 0)
+		if ((pcap_next_ex(handle, &header, &data) <= 0) || (header->len == 0))
 			continue;
 			
 		if (sendto(sockfd, data, header->len, 0, (const struct sockaddr*)&addr, sizeof(addr)) != header->len)
