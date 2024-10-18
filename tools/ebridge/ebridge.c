@@ -65,7 +65,7 @@ static pcap_t *init_pcap(void) {
 	puts("Initialize network:");
 
 	if (pcap_findalldevs(&devs, buffer)) {
-		printf("pcap_findalldevs() failed with error: %s\n", buffer);
+		printf("'pcap_findalldevs' failed with error: %s\n", buffer);
 		return NULL;
 	}
 

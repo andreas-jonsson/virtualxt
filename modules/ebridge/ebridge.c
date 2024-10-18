@@ -30,6 +30,7 @@
 #else
 	#include <sys/socket.h>
 	#include <sys/select.h>
+	#include <sys/types.h>
 	#include <arpa/inet.h>
 #endif
 
