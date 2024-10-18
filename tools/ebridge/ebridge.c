@@ -142,13 +142,13 @@ static bool list_devices(int *prefered) {
 }
 
 int main(int argc, char *argv[]) {
-    #ifdef _WIN32
-        WSADATA ws_data;
-        if (WSAStartup(MAKEWORD(2, 2), &ws_data)) {
-            puts("ERROR: WSAStartup failed!");
-            return -1;
-        }
-    #endif
+	#ifdef _WIN32
+		WSADATA ws_data;
+		if (WSAStartup(MAKEWORD(2, 2), &ws_data)) {
+			puts("ERROR: WSAStartup failed!");
+			return -1;
+		}
+	#endif
 	
 	if (argc < 2) {
 		puts("Usage: ebridge <network-device>\n");

@@ -27,6 +27,8 @@
 
 #ifdef _WIN32
 	#include <windows.h>
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
 #else
 	#include <sys/socket.h>
 	#include <sys/select.h>
@@ -163,6 +165,14 @@ check_data:
 }
 
 static vxt_error install(struct ebridge *n, vxt_system *s) {
+	#ifdef _WIN32
+		WSADATA ws_data;
+		if (WSAStartup(MAKEWORD(2, 2), &ws_data)) {
+			puts("ERROR: WSAStartup failed!");
+			return -1;
+		}
+	#endif
+	
 	if ((n->sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		VXT_LOG("Could not create socket!");
 		return VXT_USER_ERROR(0);
