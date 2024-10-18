@@ -25,13 +25,16 @@
 #include <stdlib.h>
 #include <time.h>
 
-#ifndef _WIN32
+#ifdef _WIN32
+	#include <windows.h>
+#else
 	#include <sys/socket.h>
+	#include <sys/select.h>
 	#include <arpa/inet.h>
 #endif
 
-#define MAX_PACKET_SIZE 0x5DC // Hardcoded in the driver extension.
-#define POLL_DELAY 10000
+#define MAX_PACKET_SIZE 0x5DC	// Hardcoded in the driver extension.
+#define POLL_DELAY 10000		// 10ms
 #define PORT 1235
 
 struct ebridge {
