@@ -39,7 +39,7 @@ unsigned int debug_msg_count = 0;
 
 pcap_t *handle = NULL;
 int sockfd = -1;
-char buffer[MAX_PACKET_SIZE] = {0};
+unsigned char buffer[MAX_PACKET_SIZE] = {0};
 char nif[64] = {0};
 
 static bool has_data(int fd) {
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
 		ssize_t pkt_sz = 0;
 		if (has_data(sockfd)) {
 			socklen_t ln = sizeof(addr);
-			pkt_sz = recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &ln);
+			pkt_sz = recvfrom(sockfd, (void*)buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &ln);
 			if (pkt_sz <= 0) {
 				DEBUG("'recvfrom' failed!");
 				continue;
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
 		if ((pcap_next_ex(handle, &header, &data) <= 0) || (header->len == 0))
 			continue;
 			
-		if (sendto(sockfd, data, header->len, 0, (const struct sockaddr*)&addr, sizeof(addr)) != header->len)
+		if (sendto(sockfd, (void*)data, header->len, 0, (const struct sockaddr*)&addr, sizeof(addr)) != header->len)
 			puts("WARNING: Could not send packet to emulator!");
 		else
 			DEBUG("Package sent!");
