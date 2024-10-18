@@ -230,7 +230,7 @@ workspace "virtualxt"
 		files "tools/ebridge/ebridge.c"
 
 		filter "system:windows"
-			includedirs "../../tools/npcap/sdk/Include"
+			includedirs "tools/npcap/sdk/Include"
 			defines "_WINSOCK_DEPRECATED_NO_WARNINGS"
 			links { "Ws2_32", "tools/npcap/sdk/Lib/x64/wpcap" }
 			
