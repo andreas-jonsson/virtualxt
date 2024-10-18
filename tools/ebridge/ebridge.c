@@ -25,14 +25,17 @@
 #include <unistd.h>
 #include <pcap/pcap.h>
 
-#ifndef _WIN32
+#ifdef _WIN32
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
+#else
 	#include <sys/socket.h>
 	#include <arpa/inet.h>
 #endif
 
 unsigned int debug_msg_count = 0;
-//#define DEBUG(str) { printf("[%d] DEBUG: %s\n", debug_msg_count++, str); }
-#define DEBUG(str) {}
+#define DEBUG(...) { printf("[%d] DEBUG: ", debug_msg_count++); printf(__VA_ARGS__); printf("\n"); }
+//#define DEBUG(...) {}
 
 #define MAX_PACKET_SIZE 0x5DC // Hardcoded in the driver extension and module.
 #define PORT 1235
@@ -80,21 +83,23 @@ static pcap_t *init_pcap(void) {
 		return NULL;
 	}
 
-	if (!(handle = pcap_open_live(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, 1, buffer))) {
+	#ifdef _WIN32
+		handle = pcap_open(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, 1, NULL, buffer);
+	#else
+		handle = pcap_open_live(dev->name, 0xFFFF, 1, 1, buffer);
+	#endif
+	
+	if (!handle) {
 		printf("pcap error: %s\n", buffer);
 		pcap_freealldevs(devs);
 		return NULL;
 	}
 
 	printf("%d - %s\n", i, dev->name);
-	
-	if (pcap_activate(handle) == PCAP_WARNING_PROMISC_NOTSUP) {
-		printf("ERROR: Promiscuous mode is not supported on: %s\n", dev->name);
-		pcap_freealldevs(devs);
-		return NULL;
-	}
-	
 	pcap_freealldevs(devs);
+	
+	if (*buffer)
+		printf("pcap warning: %s\n", buffer);
 	return handle;
 }
 
@@ -103,7 +108,7 @@ static bool list_devices(int *prefered) {
 	char buffer[PCAP_ERRBUF_SIZE] = {0};
 
 	if (pcap_findalldevs(&devs, buffer)) {
-		printf("pcap_findalldevs() failed with error: %s\n", buffer);
+		printf("'pcap_findalldevs' failed with error: %s\n", buffer);
 		return false;
 	}
 
@@ -137,10 +142,18 @@ static bool list_devices(int *prefered) {
 }
 
 int main(int argc, char *argv[]) {
+    #ifdef _WIN32
+        WSADATA ws_data;
+        if (WSAStartup(MAKEWORD(2, 2), &ws_data)) {
+            puts("ERROR: WSAStartup failed!");
+            return -1;
+        }
+    #endif
+	
 	if (argc < 2) {
 		puts("Usage: ebridge <network-device>\n");
 		list_devices(NULL);
-		return -1;
+		return -2;
 	}
 	strncpy(nif, argv[1], sizeof(nif) - 1);
 
@@ -212,4 +225,5 @@ int main(int argc, char *argv[]) {
 	}
 
 	close(sockfd);
+	pcap_close(handle);
 }
