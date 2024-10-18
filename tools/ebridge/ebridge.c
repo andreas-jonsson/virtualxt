@@ -30,7 +30,9 @@
 	#include <ws2tcpip.h>
 #else
 	#include <sys/socket.h>
+	#include <sys/select.h>
 	#include <arpa/inet.h>
+	#include <netinet/in.h>
 #endif
 
 unsigned int debug_msg_count = 0;
@@ -221,7 +223,7 @@ int main(int argc, char *argv[]) {
 		if (sendto(sockfd, (void*)data, header->len, 0, (const struct sockaddr*)&addr, sizeof(addr)) != header->len)
 			puts("WARNING: Could not send packet to emulator!");
 		else
-			DEBUG("Package sent!");
+			DEBUG("Package sent: %d bytes", header->len);
 	}
 
 	close(sockfd);

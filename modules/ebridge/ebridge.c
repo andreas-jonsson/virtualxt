@@ -26,14 +26,13 @@
 #include <time.h>
 
 #ifdef _WIN32
-	#include <windows.h>
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 #else
 	#include <sys/socket.h>
 	#include <sys/select.h>
-	#include <sys/types.h>
 	#include <arpa/inet.h>
+	#include <netinet/in.h>
 #endif
 
 #define MAX_PACKET_SIZE 0x5DC	// Hardcoded in the driver extension.
@@ -102,6 +101,8 @@ static void out(struct ebridge *n, vxt_word port, vxt_byte data) {
 		case 4: // Disable packet reception
 			n->can_recv = false;
 			break;
+		case 5: // DEBUG
+			break;
 		case 0xFF: // Setup packet buffer
 			n->buf_seg = r->cs;
 			n->buf_offset = r->dx;
@@ -138,9 +139,6 @@ static bool has_data(int fd) {
 
 static vxt_error timer(struct ebridge *n, vxt_timer_id id, int cycles) {
 	(void)id; (void)cycles;
-	vxt_system *s = VXT_GET_SYSTEM(n);
-
-check_data:
 
 	if (!n->can_recv || !has_data(n->sockfd))
 		return VXT_NO_ERROR;
@@ -151,16 +149,17 @@ check_data:
 	ssize_t sz = recvfrom(n->sockfd, (void*)n->buffer, MAX_PACKET_SIZE, 0, (struct sockaddr*)&addr, &addr_len);
 	if (sz <= 0) {
 		VXT_LOG("'recvfrom' failed!");
-		goto check_data;
+		return VXT_NO_ERROR;
 	}
 
 	n->can_recv = false;
 	n->pkg_len = (vxt_word)sz;
 
+	vxt_system *s = VXT_GET_SYSTEM(n);
 	for (int i = 0; i < n->pkg_len; i++)
 		vxt_system_write_byte(s, VXT_POINTER(n->buf_seg, n->buf_offset + i), n->buffer[i]);
+		
 	vxt_system_interrupt(s, 6);
-
 	return VXT_NO_ERROR;
 }
 
