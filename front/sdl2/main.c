@@ -733,7 +733,7 @@ static bool write_default_config(const char *path, bool clean) {
 		"joystick=0x201\n"
 		"ems=lotech_ems\n"
 		"mouse=0x3F8\n"
-		";ebridge=127.0.0.1\n"
+		";ebridge=127.0.0.1:1235,1236\n"
 		";serial=0x2F8,/dev/ttyUSB0\n"
 		";covox=0x378,disney\n"
 		";arstech_isa=\n"

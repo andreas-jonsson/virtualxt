@@ -38,8 +38,8 @@
 #endif
 
 #define MAX_PACKET_SIZE 0xFFF0	// Should match server MTU.
-#define POLL_DELAY 10000		// 10ms
-#define PORT 1235
+#define POLL_DELAY 1000			// Poll every millisecond.
+#define DEFAULT_PORT 1235
 
 const vxt_byte default_mac[6] = { 0x00, 0x0B, 0xAD, 0xC0, 0xFF, 0xEE };
 
@@ -73,6 +73,9 @@ enum pkt_driver_command {
 
 struct ebridge {
 	bool can_recv;
+	
+	vxt_word rx_port;
+	vxt_word tx_port;
 	
 	int sockfd;
 	struct sockaddr_in addr;
@@ -267,7 +270,7 @@ static vxt_error timer(struct ebridge *n, vxt_timer_id id, int cycles) {
 	}
 	
 	// Perhaps this should be done by the bridge?
-	if (memcmp(n->rx_buffer, n->mac_addr, 6))
+	if (memcmp(n->rx_buffer, n->mac_addr, sizeof(n->mac_addr)))
 		return VXT_NO_ERROR;
 
 	n->can_recv = false;
@@ -291,19 +294,20 @@ static vxt_error install(struct ebridge *n, vxt_system *s) {
 		return VXT_USER_ERROR(0);
 	}
 	
-	VXT_LOG("Server address: %s:%d", n->bridge_addr, PORT);
-	VXT_LOG("Network MTU: %d", MAX_PACKET_SIZE);
+	VXT_PRINT("Ebridge server address: %s:%d", n->bridge_addr, n->rx_port);
+	VXT_PRINT((n->rx_port != n->tx_port) ? ",%d\n" : "\n", n->tx_port);
+	VXT_PRINT("Ebridge MTU: %d\n", MAX_PACKET_SIZE);
 
 	n->addr.sin_family = AF_INET;
 	n->addr.sin_addr.s_addr = inet_addr(n->bridge_addr);
-	n->addr.sin_port = htons(PORT + 1);
+	n->addr.sin_port = htons(n->tx_port);
 	
 	if (bind(n->sockfd, (struct sockaddr*)&n->addr, sizeof(n->addr)) < 0) {
 		VXT_LOG("Bind failed");
 		return VXT_USER_ERROR(1);
 	}
 	
-	n->addr.sin_port = htons(PORT);
+	n->addr.sin_port = htons(n->rx_port);
 
 	struct vxt_peripheral *p = VXT_GET_PERIPHERAL(n);
 	vxt_system_install_io_at(s, p, 0xB2);
@@ -312,8 +316,16 @@ static vxt_error install(struct ebridge *n, vxt_system *s) {
 }
 
 VXTU_MODULE_CREATE(ebridge, {
-	strncpy(DEVICE->bridge_addr, *ARGS ? ARGS : "127.0.0.1", sizeof(DEVICE->bridge_addr) - 1);
 	memcpy(DEVICE->mac_addr, default_mac, sizeof(default_mac));
+	DEVICE->rx_port = DEVICE->tx_port = DEFAULT_PORT;
+	
+	const char *port_str = strchr(ARGS, ':');
+	if (port_str) {
+		sscanf(port_str + 1, "%hu,%hu", &DEVICE->rx_port, &DEVICE->tx_port);
+		memcpy(DEVICE->bridge_addr, ARGS, port_str - ARGS);
+	} else {
+		strcpy(DEVICE->bridge_addr, ARGS);
+	}
 
 	PERIPHERAL->install = &install;
 	PERIPHERAL->name = &name;
