@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <assert.h>
+
 #ifdef _WIN32
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
@@ -35,9 +37,39 @@
 	#include <netinet/in.h>
 #endif
 
-#define MAX_PACKET_SIZE 0x5DC	// Hardcoded in the driver extension.
+#define MAX_PACKET_SIZE 0xFFF0	// Should match server MTU.
 #define POLL_DELAY 10000		// 10ms
 #define PORT 1235
+
+const vxt_byte default_mac[6] = { 0x00, 0x0B, 0xAD, 0xC0, 0xFF, 0xEE };
+
+enum pkt_driver_error {
+	BAD_HANDLE = 1,		// Invalid handle number.
+	NO_CLASS,			// No interfaces of specified class found.
+	NO_TYPE,			// No interfaces of specified type found.
+	NO_NUMBER,			// No interfaces of specified number found.
+	BAD_TYPE,			// Bad packet type specified.
+	NO_MULTICAST,		// This interface does not support multicast.
+	CANT_TERMINATE,		// This packet driver cannot terminate.
+	BAD_MODE,			// An invalid receiver mode was specified.
+	NO_SPACE,			// Operation failed because of insufficient space.
+	TYPE_INUSE,			// The type had previously been accessed, and not released.
+	BAD_COMMAND,		// The command was out of range, or not implemented.
+	CANT_SEND,			// The packet couldn't be sent (usually hardware error).
+	CANT_SET,			// Hardware address couldn't be changed (more than 1 handle open).
+	BAD_ADDRESS,		// Hardware address has bad length or format.
+	CANT_RESET			// Couldn't reset interface (more than 1 handle open).
+};
+
+enum pkt_driver_command {
+	DRIVE_INFO = 1,
+	ACCESS_TYPE,
+	RELEASE_TYPE,
+	SEND_PACKET,
+	TERMINATE,
+	GET_ADDRESS,
+	RESET_INTERFACE
+};
 
 struct ebridge {
 	bool can_recv;
@@ -45,14 +77,35 @@ struct ebridge {
 	int sockfd;
 	struct sockaddr_in addr;
 	char bridge_addr[64];
+	
+	vxt_byte mac_addr[6];
 
 	// Temp buffer for package
 	vxt_byte buffer[MAX_PACKET_SIZE];
 	
-	vxt_word pkg_len;
-	vxt_word buf_seg;
-	vxt_word buf_offset;
+	vxt_word rx_len;
+	vxt_byte rx_buffer[MAX_PACKET_SIZE];
+	
+	vxt_word cb_seg;
+	vxt_word cb_offset;
 };
+
+static const char *command_to_string(int cmd) {
+	#define CASE(cmd) case cmd: return #cmd;
+	switch (cmd) {
+		CASE(DRIVE_INFO)
+		CASE(ACCESS_TYPE)
+		CASE(RELEASE_TYPE)
+		CASE(SEND_PACKET)
+		CASE(TERMINATE)
+		CASE(GET_ADDRESS)
+		CASE(RESET_INTERFACE)
+		case 0xFE: return "GET_CALLBACK";
+		case 0xFF: return "COPY_PACKAGE";
+	}
+	#undef CASE
+	return "UNSUPPORTED COMMAND";
+}
 
 static vxt_byte in(struct ebridge *n, vxt_word port) {
 	(void)n; (void)port;
@@ -60,27 +113,58 @@ static vxt_byte in(struct ebridge *n, vxt_word port) {
 }
 
 static void out(struct ebridge *n, vxt_word port, vxt_byte data) {
-	/*
-		This is the API of Fake86's packet driver
-		with the VirtualXT extension.
-
-		References:
-			http://crynwr.com/packet_driver.html
-			http://crynwr.com/drivers/
-	*/
-
 	(void)port; (void)data;
 	vxt_system *s = VXT_GET_SYSTEM(n);
 	struct vxt_registers *r = vxt_system_registers(s);
 
+	// Assume no error
+	r->flags &= ~VXT_CARRY;
+	
+	#define ENSURE_HANDLE assert(r->bx == 0)
+	#define LOG_COMMAND VXT_LOG(command_to_string(r->ah));
+
 	switch (r->ah) {
-		case 0: // Enable packet reception
-			n->can_recv = true;
+		case DRIVE_INFO: LOG_COMMAND
+			r->bx = 1; // version
+			r->ch = 1; // class
+			r->dx = 1; // type
+			r->cl = 0; // number
+			r->al = 1; // functionality
+			// Name in DS:SI is filled in by the driver.
 			break;
-		case 1: // Send packet of CX at DS:SI
+		case ACCESS_TYPE: LOG_COMMAND
+			assert(r->cx == 0);
+
+			// We only support capturing all types.
+			// typelen != any_type
+			if (r->cx != 0) {
+				r->flags |= VXT_CARRY;
+				r->dh = BAD_TYPE;
+				return;
+			}
+
+			n->can_recv = true;
+			n->cb_seg = r->es;
+			n->cb_offset = r->di;
+
+			VXT_LOG("Callback address: %X:%X", r->es, r->di);
+
+			r->ax = 0; // Handle
+			break;
+		case RELEASE_TYPE: LOG_COMMAND
+			ENSURE_HANDLE;
+			break;
+		case TERMINATE: LOG_COMMAND
+			ENSURE_HANDLE;
+			r->flags |= VXT_CARRY;
+			r->dh = CANT_TERMINATE;
+			return;
+		case SEND_PACKET:
 			if (r->cx > MAX_PACKET_SIZE) {
-				VXT_LOG("Can't send! Invalid package size.");
-				break;
+				VXT_LOG("Can't send! Invalid package size!");
+				r->flags |= VXT_CARRY;
+				r->dh = CANT_SEND;
+				return;
 			}
 
 			for (int i = 0; i < (int)r->cx; i++)
@@ -88,26 +172,57 @@ static void out(struct ebridge *n, vxt_word port, vxt_byte data) {
 
 			if (sendto(n->sockfd, (void*)n->buffer, r->cx, 0, (const struct sockaddr*)&n->addr, sizeof(n->addr)) != r->cx)
 				VXT_LOG("Could not send packet!");
+				
+			VXT_LOG("Sent package with size: %d bytes", r->cx);
 			break;
-		case 2: // Return packet info (packet buffer in DS:SI, length in CX)
-			r->ds = n->buf_seg;
-			r->si = n->buf_offset;
-			r->cx = n->pkg_len;
-			break;
-		case 3: // Copy packet to final destination (given in ES:DI)
+		case GET_ADDRESS: LOG_COMMAND
+			ENSURE_HANDLE;
+			if (r->cx < 6) {
+				VXT_LOG("Can't fit address!");
+				r->flags |= VXT_CARRY;
+				r->dh = NO_SPACE;
+				return;
+			}
+
+			r->cx = 6;
 			for (int i = 0; i < (int)r->cx; i++)
-				vxt_system_write_byte(s, VXT_POINTER(r->es, r->di + i), vxt_system_read_byte(s, VXT_POINTER(n->buf_seg, n->buf_offset + i)));
+				vxt_system_write_byte(s, VXT_POINTER(r->es, r->di + i), n->mac_addr[i]);
 			break;
-		case 4: // Disable packet reception
-			n->can_recv = false;
+		case RESET_INTERFACE: LOG_COMMAND
+			ENSURE_HANDLE;
+			VXT_LOG("Reset interface!");
+			n->can_recv = false; // Not sure about this...
+			n->rx_len = 0;
 			break;
-		case 5: // DEBUG
+		case 0xFE: // get_callback
+			r->es = n->cb_seg;
+			r->di = n->cb_offset;
+			r->bx = 0; // Handle
+			r->cx = (vxt_word)n->rx_len;
 			break;
-		case 0xFF: // Setup packet buffer
-			n->buf_seg = r->cs;
-			n->buf_offset = r->dx;
-			VXT_LOG("Packet buffer is located at %04X:%04X", r->cs, r->dx);
+		case 0xFF: // copy_package
+			// Do we have a valid buffer?
+			if (r->es || r->di) {
+				for (int i = 0; i < n->rx_len; i++)
+					vxt_system_write_byte(s, VXT_POINTER(r->es, r->di + i), n->rx_buffer[i]);
+
+				// Callback expects buffer in DS:SI
+				r->ds = r->es;
+				r->si = r->di;
+				r->cx = (vxt_word)n->rx_len;
+				
+				VXT_LOG("Received package with size: %d bytes", n->rx_len);
+			} else {
+				VXT_LOG("Package discarded by driver!");
+			}
+
+			n->rx_len = 0;
+			n->can_recv = true;
 			break;
+		default: LOG_COMMAND
+			r->flags |= VXT_CARRY;
+			r->dh = BAD_COMMAND;
+			return;
 	}
 }
 
@@ -115,14 +230,13 @@ static vxt_error reset(struct ebridge *n, struct ebridge *state) {
 	if (state)
 		return VXT_CANT_RESTORE;
 		
-	n->pkg_len = n->buf_offset = 0;
-	n->buf_seg = 0xD000;
+	n->rx_len = n->cb_seg = n->cb_offset = 0;
 	n->can_recv = false;
 	return VXT_NO_ERROR;
 }
 
 static const char *name(struct ebridge *n) {
-	(void)n; return "Network Adapter (Fake86 Interface)";
+	(void)n; return "Network Adapter";
 }
 
 static bool has_data(int fd) {
@@ -139,27 +253,27 @@ static bool has_data(int fd) {
 
 static vxt_error timer(struct ebridge *n, vxt_timer_id id, int cycles) {
 	(void)id; (void)cycles;
-
+	
 	if (!n->can_recv || !has_data(n->sockfd))
 		return VXT_NO_ERROR;
 
 	struct sockaddr_in addr;
 	socklen_t addr_len = sizeof(addr);
 	
-	ssize_t sz = recvfrom(n->sockfd, (void*)n->buffer, MAX_PACKET_SIZE, 0, (struct sockaddr*)&addr, &addr_len);
+	ssize_t sz = recvfrom(n->sockfd, (void*)n->rx_buffer, MAX_PACKET_SIZE, 0, (struct sockaddr*)&addr, &addr_len);
 	if (sz <= 0) {
 		VXT_LOG("'recvfrom' failed!");
 		return VXT_NO_ERROR;
 	}
+	
+	// Perhaps this should be done by the bridge?
+	if (memcmp(n->rx_buffer, n->mac_addr, 6))
+		return VXT_NO_ERROR;
 
 	n->can_recv = false;
-	n->pkg_len = (vxt_word)sz;
+	n->rx_len = (vxt_word)sz;
 
-	vxt_system *s = VXT_GET_SYSTEM(n);
-	for (int i = 0; i < n->pkg_len; i++)
-		vxt_system_write_byte(s, VXT_POINTER(n->buf_seg, n->buf_offset + i), n->buffer[i]);
-		
-	vxt_system_interrupt(s, 6);
+	vxt_system_interrupt(VXT_GET_SYSTEM(n), 6);
 	return VXT_NO_ERROR;
 }
 
@@ -199,6 +313,7 @@ static vxt_error install(struct ebridge *n, vxt_system *s) {
 
 VXTU_MODULE_CREATE(ebridge, {
 	strncpy(DEVICE->bridge_addr, *ARGS ? ARGS : "127.0.0.1", sizeof(DEVICE->bridge_addr) - 1);
+	memcpy(DEVICE->mac_addr, default_mac, sizeof(default_mac));
 
 	PERIPHERAL->install = &install;
 	PERIPHERAL->name = &name;

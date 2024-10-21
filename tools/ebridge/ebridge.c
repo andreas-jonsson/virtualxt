@@ -35,11 +35,14 @@
 	#include <netinet/in.h>
 #endif
 
-unsigned int debug_msg_count = 0;
-#define DEBUG(...) { printf("[%d] DEBUG: ", debug_msg_count++); printf(__VA_ARGS__); printf("\n"); }
-//#define DEBUG(...) {}
+#if 0
+	unsigned int debug_msg_count = 0;
+	#define DEBUG(...) { printf("[%d] DEBUG: ", debug_msg_count++); printf(__VA_ARGS__); printf("\n"); }
+#else
+	#define DEBUG(...) {}
+#endif
 
-#define MAX_PACKET_SIZE 0x5DC // Hardcoded in the driver extension and module.
+#define MAX_PACKET_SIZE 0xFFF0 // Should match MTU in the module.
 #define PORT 1235
 
 pcap_t *handle = NULL;
@@ -85,12 +88,7 @@ static pcap_t *init_pcap(void) {
 		return NULL;
 	}
 
-	#ifdef _WIN32
-		handle = pcap_open(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS, 1, NULL, buffer);
-	#else
-		handle = pcap_open_live(dev->name, 0xFFFF, 1, 1, buffer);
-	#endif
-	
+	handle = pcap_open(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS|PCAP_OPENFLAG_NOCAPTURE_LOCAL, 1, NULL, buffer);
 	if (!handle) {
 		printf("pcap error: %s\n", buffer);
 		pcap_freealldevs(devs);
@@ -219,7 +217,7 @@ int main(int argc, char *argv[]) {
 		
 		if ((pcap_next_ex(handle, &header, &data) <= 0) || (header->len == 0))
 			continue;
-			
+
 		if (sendto(sockfd, (void*)data, header->len, 0, (const struct sockaddr*)&addr, sizeof(addr)) != (int)header->len)
 			puts("WARNING: Could not send packet to emulator!");
 		else
