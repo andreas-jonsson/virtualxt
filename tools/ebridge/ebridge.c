@@ -88,7 +88,12 @@ static pcap_t *init_pcap(void) {
 		return NULL;
 	}
 
-	handle = pcap_open(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS|PCAP_OPENFLAG_NOCAPTURE_LOCAL, 1, NULL, buffer);
+	#ifdef _WIN32
+		handle = pcap_open(dev->name, 0xFFFF, PCAP_OPENFLAG_PROMISCUOUS|PCAP_OPENFLAG_NOCAPTURE_LOCAL, 1, NULL, buffer);
+	#else
+		handle = pcap_open_live(dev->name, 0xFFFF, 1, 1, buffer);
+	#endif
+	
 	if (!handle) {
 		printf("pcap error: %s\n", buffer);
 		pcap_freealldevs(devs);
