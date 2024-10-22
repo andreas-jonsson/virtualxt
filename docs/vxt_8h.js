@@ -48,7 +48,8 @@ var vxt_8h =
       [ "VXT_USER_TERMINATION", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047aebc9bde81021d51eb886bfea944c558c", null ],
       [ "VXT_NO_PIC", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a80ff11543be9e05d7582d046639c7d98", null ],
       [ "VXT_NO_DMA", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a3d4155ce6f53a99a61ec44ee7ff74c11", null ],
-      [ "_______VXT_NUM_ERRORS", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047abdefb94c83d862989a3f4bc64289d83f", null ]
+      [ "VXT_CANT_RESTORE", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047a02d280d5b2a23aceb1f59082d46ebbf2", null ],
+      [ "________VXT_NUM_ERRORS", "vxt_8h.html#a92d453d4948af479acd4592cd50ac047afadba8550d030fa4cb02c42520af6519", null ]
     ] ],
     [ "vxt_monitor_flag", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471", [
       [ "VXT_MONITOR_SIZE_BYTE", "vxt_8h.html#a370d6c332fe2045eb6d27dbba3118471a3f3672802400005b4f41427fb9c246e7", null ],

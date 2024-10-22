@@ -172,7 +172,8 @@ Enumerations</h2></td></tr>
 , <br />
 &#160;&#160;<a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047a80ff11543be9e05d7582d046639c7d98">VXT_NO_PIC</a> = 4
 , <a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047a3d4155ce6f53a99a61ec44ee7ff74c11">VXT_NO_DMA</a> = 5
-, <a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047abdefb94c83d862989a3f4bc64289d83f">_______VXT_NUM_ERRORS</a>
+, <a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047a02d280d5b2a23aceb1f59082d46ebbf2">VXT_CANT_RESTORE</a> = 6
+, <a class="el" href="vxt_8h.html#a92d453d4948af479acd4592cd50ac047afadba8550d030fa4cb02c42520af6519">________VXT_NUM_ERRORS</a>
 <br />
  }</td></tr>
 <tr class="separator:a92d453d4948af479acd4592cd50ac047"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -618,7 +619,7 @@ Functions</h2></td></tr>
 <div class="line">    vxt_error (*install)(ty*, <a class="code" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a>*);                         \</div>
 <div class="line">    vxt_error (*config)(ty*,<span class="keyword">const</span> <span class="keywordtype">char</span>*,<span class="keyword">const</span> <span class="keywordtype">char</span>*,<span class="keyword">const</span> <span class="keywordtype">char</span>*);   \</div>
 <div class="line">    vxt_error (*destroy)(ty*);                                      \</div>
-<div class="line">    vxt_error (*reset)(ty*);                                        \</div>
+<div class="line">    vxt_error (*reset)(ty*,ty*);                                    \</div>
 <div class="line">    vxt_error (*timer)(ty*,<a class="code" href="vxt_8h.html#a05691a5b6a191969b75e371ad5d5fd0d">vxt_timer_id</a>,int);                       \</div>
 <div class="line">    const <span class="keywordtype">char</span>* (*name)(ty*);                                       \</div>
 <div class="line">    enum <a class="code" href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7">vxt_pclass</a> (*pclass)(ty*);                                 \</div>
@@ -641,11 +642,11 @@ Functions</h2></td></tr>
 <div class="line">        void (*write)(ty*,<a class="code" href="vxt_8h.html#a2236a1c7fabb4e887ef168a3e721fa08">vxt_byte</a>,<a class="code" href="vxt_8h.html#a2236a1c7fabb4e887ef168a3e721fa08">vxt_byte</a>);                       \</div>
 <div class="line">    } dma;                                                          \</div>
 <div class="line">}                                                                   \</div>
-<div class="ttc" id="avxt_8h_html_a05691a5b6a191969b75e371ad5d5fd0d"><div class="ttname"><a href="vxt_8h.html#a05691a5b6a191969b75e371ad5d5fd0d">vxt_timer_id</a></div><div class="ttdeci">int vxt_timer_id</div><div class="ttdef"><b>Definition:</b> vxt.h:161</div></div>
+<div class="ttc" id="avxt_8h_html_a05691a5b6a191969b75e371ad5d5fd0d"><div class="ttname"><a href="vxt_8h.html#a05691a5b6a191969b75e371ad5d5fd0d">vxt_timer_id</a></div><div class="ttdeci">int vxt_timer_id</div><div class="ttdef"><b>Definition:</b> vxt.h:162</div></div>
 <div class="ttc" id="avxt_8h_html_a2236a1c7fabb4e887ef168a3e721fa08"><div class="ttname"><a href="vxt_8h.html#a2236a1c7fabb4e887ef168a3e721fa08">vxt_byte</a></div><div class="ttdeci">uint8_t vxt_byte</div><div class="ttdef"><b>Definition:</b> vxt.h:114</div></div>
 <div class="ttc" id="avxt_8h_html_a8ddd768ac3f172fef269e0cab64baa12"><div class="ttname"><a href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a></div><div class="ttdeci">uint16_t vxt_word</div><div class="ttdef"><b>Definition:</b> vxt.h:115</div></div>
-<div class="ttc" id="avxt_8h_html_aa3ddedb822fcd71e56229096428cb1d7"><div class="ttname"><a href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7">vxt_pclass</a></div><div class="ttdeci">vxt_pclass</div><div class="ttdef"><b>Definition:</b> vxt.h:205</div></div>
-<div class="ttc" id="avxt_8h_html_ab32d007ba08cc6202817ca09d15cf802"><div class="ttname"><a href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a></div><div class="ttdeci">struct system vxt_system</div><div class="ttdef"><b>Definition:</b> vxt.h:162</div></div>
+<div class="ttc" id="avxt_8h_html_aa3ddedb822fcd71e56229096428cb1d7"><div class="ttname"><a href="vxt_8h.html#aa3ddedb822fcd71e56229096428cb1d7">vxt_pclass</a></div><div class="ttdeci">vxt_pclass</div><div class="ttdef"><b>Definition:</b> vxt.h:206</div></div>
+<div class="ttc" id="avxt_8h_html_ab32d007ba08cc6202817ca09d15cf802"><div class="ttname"><a href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a></div><div class="ttdeci">struct system vxt_system</div><div class="ttdef"><b>Definition:</b> vxt.h:163</div></div>
 <div class="ttc" id="avxt_8h_html_acdaa6dbd7750ec3dcc0d0e822dba8ea6"><div class="ttname"><a href="vxt_8h.html#acdaa6dbd7750ec3dcc0d0e822dba8ea6">vxt_pointer</a></div><div class="ttdeci">uint32_t vxt_pointer</div><div class="ttdef"><b>Definition:</b> vxt.h:117</div></div>
 </div><!-- fragment -->
 </div>
@@ -689,9 +690,9 @@ Functions</h2></td></tr>
 <div class="line">        (void)DEVICE;                                                                          \</div>
 <div class="line">        return (<span class="keyword">struct</span> vxt_peripheral*)PERIPHERAL;                                             \</div>
 <div class="line">    }                                                                                          \</div>
-<div class="ttc" id="avxt_8h_html_a5b8462ad190ca575fee53b3b3bae89b0"><div class="ttname"><a href="vxt_8h.html#a5b8462ad190ca575fee53b3b3bae89b0">VXT_GET_DEVICE</a></div><div class="ttdeci">#define VXT_GET_DEVICE(type, pir)</div><div class="ttdef"><b>Definition:</b> vxt.h:234</div></div>
+<div class="ttc" id="avxt_8h_html_a5b8462ad190ca575fee53b3b3bae89b0"><div class="ttname"><a href="vxt_8h.html#a5b8462ad190ca575fee53b3b3bae89b0">VXT_GET_DEVICE</a></div><div class="ttdeci">#define VXT_GET_DEVICE(type, pir)</div><div class="ttdef"><b>Definition:</b> vxt.h:235</div></div>
 <div class="ttc" id="avxt_8h_html_ab7fcb02d20dcdf70993eaa41cc338274"><div class="ttname"><a href="vxt_8h.html#ab7fcb02d20dcdf70993eaa41cc338274">vxt_allocate_peripheral</a></div><div class="ttdeci">VXT_API struct vxt_peripheral * vxt_allocate_peripheral(vxt_allocator *alloc, size_t size)</div></div>
-<div class="ttc" id="avxt_8h_html_ac8841df8fcdf2daf9e1d45c950e8aae9"><div class="ttname"><a href="vxt_8h.html#ac8841df8fcdf2daf9e1d45c950e8aae9">VXT_PERIPHERAL</a></div><div class="ttdeci">#define VXT_PERIPHERAL(ty)</div><div class="ttdef"><b>Definition:</b> vxt.h:247</div></div>
+<div class="ttc" id="avxt_8h_html_ac8841df8fcdf2daf9e1d45c950e8aae9"><div class="ttname"><a href="vxt_8h.html#ac8841df8fcdf2daf9e1d45c950e8aae9">VXT_PERIPHERAL</a></div><div class="ttdeci">#define VXT_PERIPHERAL(ty)</div><div class="ttdef"><b>Definition:</b> vxt.h:248</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1018,7 +1019,8 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="a92d453d4948af479acd4592cd50ac047aebc9bde81021d51eb886bfea944c558c"></a>VXT_USER_TERMINATION&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a92d453d4948af479acd4592cd50ac047a80ff11543be9e05d7582d046639c7d98"></a>VXT_NO_PIC&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a92d453d4948af479acd4592cd50ac047a3d4155ce6f53a99a61ec44ee7ff74c11"></a>VXT_NO_DMA&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a92d453d4948af479acd4592cd50ac047abdefb94c83d862989a3f4bc64289d83f"></a>_______VXT_NUM_ERRORS&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a92d453d4948af479acd4592cd50ac047a02d280d5b2a23aceb1f59082d46ebbf2"></a>VXT_CANT_RESTORE&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a92d453d4948af479acd4592cd50ac047afadba8550d030fa4cb02c42520af6519"></a>________VXT_NUM_ERRORS&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
 </div>
