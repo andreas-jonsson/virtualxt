@@ -136,7 +136,9 @@ static vxt_error install(struct ch36x_isa *d, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct ch36x_isa *d) {
+static vxt_error reset(struct ch36x_isa *d, struct ch36x_isa *state) {
+    if (state)
+        return VXT_CANT_RESTORE;
     if (d->fd) {
         ch36x_set_int_routine(d->fd, NULL);
         ch36x_close(d->fd);

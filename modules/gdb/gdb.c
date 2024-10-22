@@ -28,6 +28,7 @@
     #include <winsock2.h>
     #include <ws2tcpip.h>
     #define close closesocket
+    #define sleep Sleep
 #else
     #include <unistd.h>
     #include <sys/socket.h>
@@ -186,8 +187,8 @@ static bool accept_client(struct gdb *dbg, vxt_system *sys) {
     if ((dbg->state.client = accept(dbg->server, (struct sockaddr*)&addr, &ln)) == -1)
         return false;
         
-    int one = 1;
-    setsockopt(dbg->state.client, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+    const int one = 1;
+    setsockopt(dbg->state.client, IPPROTO_TCP, TCP_NODELAY, (void*)&one, sizeof(one));
 
     dbg->state.num_bps = 0;
     dbg->state.sys = sys;
@@ -309,7 +310,7 @@ static vxt_error timer(struct gdb *dbg, vxt_timer_id id, int cycles) {
         vreg->ds = (vxt_word)r[GDB_CPU_I386_REG_DS];
         vreg->es = (vxt_word)r[GDB_CPU_I386_REG_ES];
 
-        vreg->flags = (vxt_word)(r[GDB_CPU_I386_REG_PS] & ALL_FLAGS) | 0xF002;
+        vreg->flags = (vxt_word)(r[GDB_CPU_I386_REG_PS] & ALL_FLAGS) | 2;
         vreg->ip = (vxt_word)(r[GDB_CPU_I386_REG_PC] - r[GDB_CPU_I386_REG_CS] * 16);
         vreg->sp = (vxt_word)(r[GDB_CPU_I386_REG_ESP] - r[GDB_CPU_I386_REG_SS] * 16);
     }

@@ -194,7 +194,10 @@ static vxt_error install(struct uart *u, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct uart *u) {
+static vxt_error reset(struct uart *u, struct uart *state) {
+    if (state)
+        return VXT_CANT_RESTORE;
+
     vxt_memclear(&u->regs, sizeof(struct vxtu_uart_registers));
     u->regs.divisor = 12;
     u->regs.msr = 0x30;

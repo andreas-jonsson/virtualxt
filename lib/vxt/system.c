@@ -207,8 +207,10 @@ VXT_API void vxt_system_reset(CONSTP(vxt_system) s) {
     
     for (int i = 0; i < s->num_devices; i++) {
         CONSTSP(vxt_peripheral) d = s->devices[i];
-        if (d->reset)
-            d->reset(vxt_peripheral_device(d));
+        if (d->reset) {
+            vxt_error err = d->reset(vxt_peripheral_device(d), NULL);
+            ENSURE(err == VXT_NO_ERROR);
+        }
     }
 }
 

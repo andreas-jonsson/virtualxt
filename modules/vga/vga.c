@@ -436,10 +436,12 @@ static void out(struct vga_video *v, vxt_word port, vxt_byte data) {
     }
 }
 
-static vxt_error reset(struct vga_video *v) {
-    v->reg.status_reg = 0;
-    v->is_dirty = true;
-    return VXT_NO_ERROR;
+static vxt_error reset(struct vga_video *v, struct vga_video *state) {
+	if (state)
+		return VXT_CANT_RESTORE;
+	v->reg.status_reg = 0;
+	v->is_dirty = true;
+	return VXT_NO_ERROR;
 }
 
 static const char *name(struct vga_video *v) {

@@ -128,7 +128,10 @@ static vxt_error timer(struct ppi *c, vxt_timer_id id, int cycles) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct ppi *c) {
+static vxt_error reset(struct ppi *c, struct ppi *state) {
+    if (state)
+        return VXT_CANT_RESTORE;
+
     c->data_port = 0;
     c->port_61 = 0;
     c->turbo_enabled = true;

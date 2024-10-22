@@ -126,12 +126,14 @@ static vxt_error destroy(struct lua_env *e) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct lua_env *e) {
-    if (lua_getglobal(e->L, "reset") == LUA_TFUNCTION)
-    	lua_call(e->L, 0, 0);
+static vxt_error reset(struct lua_env *e, struct lua_env *state) {
+	if (state)
+		return VXT_CANT_RESTORE;
+	if (lua_getglobal(e->L, "reset") == LUA_TFUNCTION)
+		lua_call(e->L, 0, 0);
 	else
 		lua_pop(e->L, 1);
-    return VXT_NO_ERROR;
+	return VXT_NO_ERROR;
 }
 
 static vxt_error timer(struct lua_env *e, vxt_timer_id id, int cycles) {

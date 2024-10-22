@@ -42,9 +42,11 @@ static vxt_error install(struct post *c, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct post *c) {
-    c->code = 0;
-    return VXT_NO_ERROR;
+static vxt_error reset(struct post *c, struct post *state) {
+	if (state)
+		return VXT_CANT_RESTORE;
+	c->code = 0;
+	return VXT_NO_ERROR;
 }
 
 static const char *name(struct post *c) {

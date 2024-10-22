@@ -121,17 +121,20 @@ static vxt_error timer(struct kbc *c, vxt_timer_id id, int cycles) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct kbc *c) {
-    c->command_port = c->data_port = 0;
-    c->port_61 = 14;
+static vxt_error reset(struct kbc *c, struct kbc *state) {
+	if (state)
+		return VXT_CANT_RESTORE;
+
+	c->command_port = c->data_port = 0;
+	c->port_61 = 14;
 
 	c->spk_sample_index = 0;
 	c->spk_enabled = false;
 
-    c->keyboard_enable = true;
-    c->queue_size = 0;
+	c->keyboard_enable = true;
+	c->queue_size = 0;
 
-    return VXT_NO_ERROR;
+	return VXT_NO_ERROR;
 }
 
 static const char *name(struct kbc *c) {

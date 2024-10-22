@@ -53,7 +53,9 @@ static vxt_error install(struct a20 *c, vxt_system *s) {
 	return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct a20 *c) {
+static vxt_error reset(struct a20 *c, struct a20 *state) {
+	if (state)
+		return VXT_CANT_RESTORE;
 	c->port_92 = 0;
 	return VXT_NO_ERROR;
 }

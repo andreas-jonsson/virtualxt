@@ -99,9 +99,11 @@ static vxt_error install(struct covox *c, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct covox *c) {
+static vxt_error reset(struct covox *c, struct covox *state) {
+	if (state)
+		return VXT_CANT_RESTORE;
 	c->fifo_len = 0;
-    return VXT_NO_ERROR;
+	return VXT_NO_ERROR;
 }
 
 static const char *name(struct covox *c) {
