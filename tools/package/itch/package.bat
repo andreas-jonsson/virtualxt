@@ -15,6 +15,6 @@ copy bios\vxtx.bin %PACKAGE_DEST%\bios
 copy bios\vgabios.bin %PACKAGE_DEST%\bios
 copy boot\freedos.img %PACKAGE_DEST%\boot
 copy boot\freedos_hd.img %PACKAGE_DEST%\boot
-copy boot\elks.img %PACKAGE_DEST%\boot
+copy boot\elks_hd.img %PACKAGE_DEST%\boot
 copy tools\package\itch\itch.windows.toml %PACKAGE_DEST%\.itch.toml
 copy tools\npcap\npcap-1.72.exe %PACKAGE_DEST%\npcap-installer.exe
