@@ -42,12 +42,17 @@
 	#define DEBUG(...) {}
 #endif
 
+#define PRINT_MAC(prefix, suffix)																		\
+	printf(prefix "%02X:%02X:%02X:%02X:%02X:%02X" suffix,												\
+	client_addr[0], client_addr[1], client_addr[2], client_addr[3], client_addr[4], client_addr[5])		\
+
 #define MAX_PACKET_SIZE 0xFFF0 // Should match MTU in the module.
 #define PORT 1235
 
 pcap_t *handle = NULL;
 int sockfd = -1;
 unsigned char buffer[MAX_PACKET_SIZE] = {0};
+unsigned char client_addr[6] = {0};
 char nif[64] = {0};
 
 static bool has_data(int fd) {
@@ -201,9 +206,15 @@ int main(int argc, char *argv[]) {
 			
 			if (!addr_len) {
 				addr_len = ln;
-				puts("Connected to emulator!");
+				memcpy(client_addr, &buffer[6], sizeof(client_addr));
+				PRINT_MAC("Connected to emulator: ", "\n");
 			} else {
 				DEBUG("Package received!");
+				
+				if (memcmp(&buffer[6], client_addr, sizeof(client_addr))) {
+					memcpy(client_addr, &buffer[6], sizeof(client_addr));
+					PRINT_MAC("WARNING: Client changed MAC address: ", "\n");
+				}
 			}
 		}
 
@@ -220,7 +231,10 @@ int main(int argc, char *argv[]) {
 		const unsigned char *data = NULL;
 		struct pcap_pkthdr *header = NULL;
 		
-		if ((pcap_next_ex(handle, &header, &data) <= 0) || (header->len == 0))
+		if ((pcap_next_ex(handle, &header, &data) <= 0) || (header->len <= 6))
+			continue;
+		
+		if (memcmp(data, client_addr, sizeof(client_addr)))
 			continue;
 
 		if (sendto(sockfd, (void*)data, header->len, 0, (const struct sockaddr*)&addr, sizeof(addr)) != (int)header->len)

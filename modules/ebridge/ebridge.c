@@ -269,7 +269,7 @@ static vxt_error timer(struct ebridge *n, vxt_timer_id id, int cycles) {
 		return VXT_NO_ERROR;
 	}
 	
-	// Perhaps this should be done by the bridge?
+	// This should be done by the bridge but we need to be sure.
 	if (memcmp(n->rx_buffer, n->mac_addr, sizeof(n->mac_addr)))
 		return VXT_NO_ERROR;
 
