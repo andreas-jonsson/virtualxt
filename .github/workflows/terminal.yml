@@ -15,8 +15,6 @@ jobs:
   netbsd-build:
     name: Build (NetBSD AMD64)
     runs-on: ubuntu-latest
-    env:
-      VXT_VERSION: 1.2.0
     steps:
     - uses: actions/checkout@v4
     - name: Test and Build

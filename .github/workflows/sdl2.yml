@@ -158,8 +158,6 @@ jobs:
   freebsd-build:
     runs-on: ubuntu-latest
     name: Build (FreeBSD AMD64)
-    env:
-      VXT_VERSION: 1.1.0
     steps:
     - uses: actions/checkout@v4
     - name: Test and Build
