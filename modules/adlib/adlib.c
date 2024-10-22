@@ -77,7 +77,9 @@ static vxt_error install(struct adlib *a, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct adlib *a) {
+static vxt_error reset(struct adlib *a, struct adlib *state) {
+    if (state)
+        return VXT_CANT_RESTORE;
     OPL3_Reset(&a->chip, a->freq);
     return VXT_NO_ERROR;
 }

@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 #define VXT_VERSION_MAJOR 1
-#define VXT_VERSION_MINOR 1
+#define VXT_VERSION_MINOR 2
 #define VXT_VERSION_PATCH 0
 
 #ifdef VXT_VERSION_RELEASE
@@ -150,6 +150,7 @@ extern "C" {
     x(3, VXT_USER_TERMINATION,          "user requested termination")           \
     x(4, VXT_NO_PIC,                    "could not find interrupt controller")  \
     x(5, VXT_NO_DMA,                    "could not find dma controller")        \
+    x(6, VXT_CANT_RESTORE,              "could not restore serialized state")   \
 
 #define _VXT_ERROR_ENUM(id, name, text) name = id,
 typedef enum {_VXT_ERROR_CODES(_VXT_ERROR_ENUM) _VXT_NUM_ERRORS} vxt_error;
@@ -248,7 +249,7 @@ struct vxt_monitor {
 	vxt_error (*install)(ty*, vxt_system*);                         \
     vxt_error (*config)(ty*,const char*,const char*,const char*);   \
     vxt_error (*destroy)(ty*);                                      \
-    vxt_error (*reset)(ty*);                                        \
+    vxt_error (*reset)(ty*,ty*);                                    \
     vxt_error (*timer)(ty*,vxt_timer_id,int);                       \
     const char* (*name)(ty*);                                       \
     enum vxt_pclass (*pclass)(ty*);                                 \

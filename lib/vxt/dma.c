@@ -42,10 +42,14 @@ struct dma {
 	} channel[4];
 };
 
-static vxt_error reset(struct dma *c) {
-    vxt_memclear(c, sizeof(struct dma));
-    for (int i = 0; i < 4; i++)
-        c->channel[i].masked = true;
+static vxt_error reset(struct dma *c, struct dma *state) {
+    if (state) {
+        memcpy(c, state, sizeof(struct dma));
+    } else {
+        vxt_memclear(c, sizeof(struct dma));
+        for (int i = 0; i < 4; i++)
+            c->channel[i].masked = true;
+    }
     return VXT_NO_ERROR;
 }
 
@@ -145,7 +149,7 @@ static void out(struct dma *c, vxt_word port, vxt_byte data) {
                 c->flip = false;
                 break;
             case 0xD: // Master reset
-                reset(c);
+                reset(c, NULL);
                 break;
             case 0xF: // Write mask register
                 for (int i = 0; i < 4; i++)

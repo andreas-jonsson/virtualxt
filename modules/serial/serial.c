@@ -178,9 +178,11 @@ static vxt_error install(struct serial *c, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct serial *c) {
+static vxt_error reset(struct serial *c, struct serial *state) {
+	if (state)
+		return VXT_CANT_RESTORE;
 	setup_serial(c);
-    return VXT_NO_ERROR;
+	return VXT_NO_ERROR;
 }
 
 static vxt_error destroy(struct serial *c) {

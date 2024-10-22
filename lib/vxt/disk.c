@@ -200,7 +200,9 @@ static vxt_error install(struct disk *c, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct disk *c) {
+static vxt_error reset(struct disk *c, struct disk *state) {
+    if (state)
+        return VXT_CANT_RESTORE;
     for (int i = 0; i < 0x100; i++) {
         struct drive *d = &c->disks[i];
         d->ah = 0; d->cf = 0;

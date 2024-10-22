@@ -82,8 +82,10 @@ static vxt_error install(struct arstech_isa *d, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct arstech_isa *d) {
+static vxt_error reset(struct arstech_isa *d, struct arstech_isa *state) {
 	(void)d;
+    if (state)
+        return VXT_CANT_RESTORE;
     ArsExit();
     return ArsInit() ? VXT_NO_ERROR : VXT_USER_ERROR(0);
 }

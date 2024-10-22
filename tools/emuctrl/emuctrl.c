@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define VERSION "1.1.0"
+#define VERSION "1.2.0"
 #define COMMAND_PORT 0xB4
 #define DATA_PORT 0xB5
 #define PPI_PORT 0x61
@@ -77,7 +77,7 @@ static unsigned char read_data(void) {
 static void turbo_on(void) {
 #asm
 	in al, PPI_PORT
-	or al, #0x4
+	and al, #0xFB
 	out PPI_PORT, al
 #endasm
 }
@@ -85,7 +85,7 @@ static void turbo_on(void) {
 static void turbo_off(void) {
 #asm
 	in al, PPI_PORT
-	and al, #0xFB
+	or al, #0x4
 	out PPI_PORT, al
 #endasm
 }

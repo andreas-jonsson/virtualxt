@@ -733,9 +733,9 @@ static bool write_default_config(const char *path, bool clean) {
 		"joystick=0x201\n"
 		"ems=lotech_ems\n"
 		"mouse=0x3F8\n"
+		";ebridge=127.0.0.1:1235,1236\n"
 		";serial=0x2F8,/dev/ttyUSB0\n"
 		";covox=0x378,disney\n"
-		";network=eth0\n"
 		";arstech_isa=\n"
 		";ch36x_isa=/dev/ch36xpci0\n"
 		";lua=lua/serial_debug.lua,0x3F8\n"
@@ -1175,7 +1175,7 @@ int main(int argc, char *argv[]) {
 			);
 
 			if (ticks > 10000) {
-				snprintf(buffer, sizeof(buffer), "VirtualXT - %.2f MHz%s", mhz, turbo ? " (Turbo)" : "");
+				snprintf(buffer, sizeof(buffer), "VirtualXT - %.2f MHz%s", mhz, turbo ? "" : " (Slow Clock)");
 			} else {
 				snprintf(buffer, sizeof(buffer), "VirtualXT - <Press F12 for help>");
 			}

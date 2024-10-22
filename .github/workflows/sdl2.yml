@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  VXT_VERSION: 1.1.0
+  VXT_VERSION: 1.2.0
   SDL2_VERSION: 2.28.5
 
 jobs:
@@ -47,8 +47,8 @@ jobs:
         
       - name: Build
         run: |
-          premake5 --modules --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
-          make clean sdl2-frontend
+          premake5 --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
+          make clean sdl2-frontend ebridge-tool
 
       #- name: Package
       #  run: ./tools/package/itch/package.linux.sh
@@ -99,8 +99,8 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="${GITHUB_WORKSPACE}/premake5":"${GITHUB_WORKSPACE}/SDL2-${SDL2_VERSION}/x86_64-w64-mingw32/bin":"$PATH"
-          premake5 --cc=gcc --modules gmake
-          make clean sdl2-frontend
+          premake5 --cc=gcc gmake
+          make clean sdl2-frontend ebridge-tool
 
       - name: Package
         run: ./tools/package/itch/package.bat
@@ -144,8 +144,8 @@ jobs:
 
       - name: Build
         run: |
-          premake5 --modules --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
-          make clean sdl2-frontend
+          premake5 --sdl-config="${GITHUB_WORKSPACE}/sdl_bin/bin" gmake
+          make clean sdl2-frontend ebridge-tool
 
       #- name: Package
       #  run: ./tools/package/itch/package.osx.sh
@@ -176,4 +176,4 @@ jobs:
           premake5 --test gmake
           gmake clean test
           premake5 gmake
-          gmake clean sdl2-frontend
+          gmake clean sdl2-frontend ebridge-tool

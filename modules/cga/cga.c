@@ -228,7 +228,10 @@ static vxt_error install(struct cga_video *c, vxt_system *s) {
     return VXT_NO_ERROR;
 }
 
-static vxt_error reset(struct cga_video *c) {
+static vxt_error reset(struct cga_video *c, struct cga_video *state) {
+    if (state)
+        return VXT_CANT_RESTORE;
+
     c->cursor_visible = true;
     c->cursor_start = 6;
     c->cursor_end = 7;
