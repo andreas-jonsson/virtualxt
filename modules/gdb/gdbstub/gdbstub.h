@@ -933,7 +933,7 @@ static int gdb_write(struct gdb_state *state, const char *buf, unsigned int len)
 static int gdb_read(struct gdb_state *state, char *buf, unsigned int buf_len,
                     unsigned int len)
 {
-    char c;
+    int c;
 
     if (buf_len < len) {
         /* Buffer too small */
@@ -944,7 +944,7 @@ static int gdb_read(struct gdb_state *state, char *buf, unsigned int buf_len,
         if ((c = gdb_sys_getc(state)) == GDB_EOF) {
             return GDB_EOF;
         }
-        *buf++ = c;
+        *buf++ = (char)c;
     }
 
     return 0;
